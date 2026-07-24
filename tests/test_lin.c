@@ -75,7 +75,7 @@ static void test_lin_master_schedule(void)
     };
 
     SYN_LIN_Master master;
-    TEST_ASSERT_EQUAL_INT(SYN_ERR_INVALID_PARAM, syn_lin_master_init(NULL, slots, 2));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_lin_master_init(NULL, slots, 2));
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_lin_master_init(&master, slots, 2));
 
     const SYN_LIN_ScheduleSlot *active = NULL;

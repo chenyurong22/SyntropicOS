@@ -94,6 +94,7 @@ typedef struct {
     uint8_t               dtr1;                 /**< Data Transfer Register 1 */
     uint8_t               dtr2;                 /**< Data Transfer Register 2 */
     bool                  write_mem_enabled;    /**< True when write memory enabled */
+    bool                  dapc_sequence_active; /**< True when DAPC sequence active */
 } SYN_DALI_SlaveState;
 
 /* ── Standard DALI Command Definitions (IEC 62386-102) ─────────────────── */
@@ -107,6 +108,7 @@ typedef struct {
 #define SYN_DALI_CMD_RECALL_MIN                  0x06U
 #define SYN_DALI_CMD_STEP_DOWN_AND_OFF           0x07U
 #define SYN_DALI_CMD_ON_AND_STEP_UP              0x08U
+#define SYN_DALI_CMD_ENABLE_DAPC_SEQUENCE        0x09U
 #define SYN_DALI_CMD_GO_TO_SCENE_BASE            0x10U /* 0x10..0x1F */
 
 #define SYN_DALI_CMD_RESET                       0x20U
@@ -147,18 +149,18 @@ typedef struct {
 #define SYN_DALI_CMD_QUERY_RANDOM_ADDR_L         0xC4U
 
 /* Special / Configuration Commands */
-#define SYN_DALI_SPEC_TERMINATE                  0x00U
+#define SYN_DALI_SPEC_TERMINATE                  0xA1U
 #define SYN_DALI_SPEC_DTR0                       0xA3U
-#define SYN_DALI_SPEC_INITIALISE                 0x01U
-#define SYN_DALI_SPEC_RANDOMISE                  0x02U
-#define SYN_DALI_SPEC_COMPARE                    0x03U
-#define SYN_DALI_SPEC_WITHDRAW                   0x04U
-#define SYN_DALI_SPEC_SEARCHADDRH                0x05U
-#define SYN_DALI_SPEC_SEARCHADDRM                0x06U
-#define SYN_DALI_SPEC_SEARCHADDRL                0x07U
-#define SYN_DALI_SPEC_PROGRAM_SHORT_ADDR         0x08U
-#define SYN_DALI_SPEC_VERIFY_SHORT_ADDR          0x09U
-#define SYN_DALI_SPEC_QUERY_SHORT_ADDR           0x0AU
+#define SYN_DALI_SPEC_INITIALISE                 0xA5U
+#define SYN_DALI_SPEC_RANDOMISE                  0xA7U
+#define SYN_DALI_SPEC_COMPARE                    0xA9U
+#define SYN_DALI_SPEC_WITHDRAW                   0xABU
+#define SYN_DALI_SPEC_SEARCHADDRH                0xB1U
+#define SYN_DALI_SPEC_SEARCHADDRM                0xB3U
+#define SYN_DALI_SPEC_SEARCHADDRL                0xB5U
+#define SYN_DALI_SPEC_PROGRAM_SHORT_ADDR         0xB7U
+#define SYN_DALI_SPEC_VERIFY_SHORT_ADDR          0xB9U
+#define SYN_DALI_SPEC_QUERY_SHORT_ADDR           0xBBU
 #define SYN_DALI_SPEC_DTR1                       0xC3U
 #define SYN_DALI_SPEC_DTR2                       0xC5U
 

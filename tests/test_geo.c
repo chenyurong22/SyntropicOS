@@ -147,7 +147,6 @@ static void test_pos_from_gga_fix_qualities(void)
 
 static void test_geo_null_params(void)
 {
-    SYN_ENU enu;
     double val;
 
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_wgs84_to_ecef(0, 0, 0, NULL, &val, &val));

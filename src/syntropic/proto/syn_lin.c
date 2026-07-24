@@ -138,10 +138,6 @@ SYN_Status syn_lin_slave_add_frame(SYN_LIN_Slave *slave, uint8_t id, uint8_t len
         return SYN_INVALID_PARAM;
     }
 
-    if (slave->frame_count >= SYN_LIN_SLAVE_MAX_FRAMES) {
-        return SYN_ERROR;
-    }
-
     /* Check if frame ID is already registered */
     for (size_t i = 0; i < slave->frame_count; i++) {
         if (slave->frames[i].active && slave->frames[i].id == id) {
@@ -150,6 +146,10 @@ SYN_Status syn_lin_slave_add_frame(SYN_LIN_Slave *slave, uint8_t id, uint8_t len
             slave->frames[i].checksum_mode = mode;
             return SYN_OK;
         }
+    }
+
+    if (slave->frame_count >= SYN_LIN_SLAVE_MAX_FRAMES) {
+        return SYN_ERROR;
     }
 
     SYN_LIN_SlaveFrame *f = &slave->frames[slave->frame_count++];

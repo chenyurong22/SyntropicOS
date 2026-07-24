@@ -241,6 +241,14 @@ static void poll_rx(SYN_MqttClient *c)
             }
             c->last_activity_ms = syn_port_get_tick_ms();
             c->rx_rem_len += (uint32_t)(b & 127) * c->rx_mult;
+            if (c->rx_mult > 2097152U) {
+                /* Malformed varint (more than 4 bytes) — disconnect */
+                syn_port_sock_close(c->sock);
+                c->sock = SYN_SOCKET_INVALID;
+                c->state = SYN_MQTT_DISCONNECTED;
+                c->rx_phase = SYN_MQTT_RX_IDLE;
+                return;
+            }
             c->rx_mult *= 128;
 
             if ((b & 128) == 0) {

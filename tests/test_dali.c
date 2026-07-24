@@ -135,6 +135,27 @@ static void test_dali_slave_commands(void)
     syn_dali_decode_forward(raw_cmd, &req);
     TEST_ASSERT_EQUAL(SYN_OK, syn_dali_slave_process(&slave, &req, &resp_data, &has_resp));
     TEST_ASSERT_EQUAL(180, slave.actual_level);
+
+    /* Command 9: Enable DAPC Sequence */
+    raw_cmd = syn_dali_encode_forward((5 << 1) | 1, SYN_DALI_CMD_ENABLE_DAPC_SEQUENCE);
+    syn_dali_decode_forward(raw_cmd, &req);
+    TEST_ASSERT_EQUAL(SYN_OK, syn_dali_slave_process(&slave, &req, &resp_data, &has_resp));
+    TEST_ASSERT_TRUE(slave.dapc_sequence_active);
+
+    /* Command 7: Step Down and Off */
+    slave.actual_level = slave.cfg.min_level;
+    raw_cmd = syn_dali_encode_forward((5 << 1) | 1, SYN_DALI_CMD_STEP_DOWN_AND_OFF);
+    syn_dali_decode_forward(raw_cmd, &req);
+    TEST_ASSERT_EQUAL(SYN_OK, syn_dali_slave_process(&slave, &req, &resp_data, &has_resp));
+    TEST_ASSERT_EQUAL(0, slave.actual_level);
+    TEST_ASSERT_FALSE(slave.lamp_on);
+
+    /* Command 8: On and Step Up */
+    raw_cmd = syn_dali_encode_forward((5 << 1) | 1, SYN_DALI_CMD_ON_AND_STEP_UP);
+    syn_dali_decode_forward(raw_cmd, &req);
+    TEST_ASSERT_EQUAL(SYN_OK, syn_dali_slave_process(&slave, &req, &resp_data, &has_resp));
+    TEST_ASSERT_EQUAL(slave.cfg.min_level, slave.actual_level);
+    TEST_ASSERT_TRUE(slave.lamp_on);
 }
 
 static void test_dali_manchester_codec(void)
@@ -153,9 +174,268 @@ static void test_dali_manchester_codec(void)
     TEST_ASSERT_FALSE(syn_dali_manchester_decode_byte(bit_out, &decoded));
 }
 
+static void test_dali_extended_coverage(void)
+{
+    SYN_DALI_SlaveState slave;
+    SYN_DALI_SlaveConfig cfg = {
+        .short_address = 10,
+        .group_mask = 0x0505,
+        .min_level = 10,
+        .max_level = 250,
+        .power_on_level = 200,
+        .system_failure_level = 150
+    };
+    TEST_ASSERT_EQUAL(SYN_OK, syn_dali_slave_init(&slave, &cfg));
+
+    uint8_t resp_data = 0;
+    bool has_resp = false;
+    SYN_DALI_ForwardFrame req;
+
+    /* Up / Down / Step Down commands */
+    slave.actual_level = 100;
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_UP), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(101, slave.actual_level);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_DOWN), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(100, slave.actual_level);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_STEP_DOWN), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(99, slave.actual_level);
+
+    /* Recall Min & Reset */
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_RECALL_MIN), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(10, slave.actual_level);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_RESET), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(200, slave.actual_level);
+
+    /* Store DTR registers */
+    slave.dtr0 = 120;
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_STORE_ACTUAL_LEVEL_IN_DTR), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(200, slave.dtr0);
+
+    slave.dtr0 = 15;
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_STORE_DTR_AS_MIN_LEVEL), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(15, slave.cfg.min_level);
+
+    slave.dtr0 = 160;
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_STORE_DTR_AS_SYS_FAIL_LEVEL), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(160, slave.cfg.system_failure_level);
+
+    slave.dtr0 = 180;
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_STORE_DTR_AS_POWER_ON_LEVEL), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(180, slave.cfg.power_on_level);
+
+    slave.dtr0 = 5;
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_STORE_DTR_AS_FADE_TIME), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(5, slave.cfg.fade_time);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_STORE_DTR_AS_FADE_RATE), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(5, slave.cfg.fade_rate);
+
+    slave.dtr0 = (20 << 1);
+    syn_dali_decode_forward(syn_dali_encode_forward((10 << 1) | 1, SYN_DALI_CMD_STORE_DTR_AS_SHORT_ADDR), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(20, slave.cfg.short_address);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_ENABLE_WRITE_MEMORY), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_TRUE(slave.write_mem_enabled);
+
+    /* Queries */
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_STATUS), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_TRUE(has_resp);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_CONTENT_DTR), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(slave.dtr0, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_CONTENT_DTR1), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(slave.dtr1, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_CONTENT_DTR2), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(slave.dtr2, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_GROUPS_0_7), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0x05, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_GROUPS_8_15), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0x05, resp_data);
+
+    slave.random_address = 0x123456;
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_RANDOM_ADDR_H), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0x12, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_RANDOM_ADDR_M), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0x34, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_RANDOM_ADDR_L), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0x56, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_MAX_LEVEL), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(slave.cfg.max_level, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_MIN_LEVEL), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(slave.cfg.min_level, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_POWER_ON_LEVEL), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(slave.cfg.power_on_level, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_QUERY_SYS_FAIL_LEVEL), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(slave.cfg.system_failure_level, resp_data);
+
+    /* Scene Remove */
+    syn_dali_decode_forward(syn_dali_encode_forward((20 << 1) | 1, SYN_DALI_CMD_REMOVE_FROM_SCENE_BASE + 1), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(SYN_DALI_MASK_LEVEL, slave.scenes[1]);
+
+    /* Special commands */
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_DTR1, 0xAA), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0xAA, slave.dtr1);
+
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_DTR2, 0xBB), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0xBB, slave.dtr2);
+
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_INITIALISE, 0x00), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_TRUE(slave.initialise_active);
+
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_RANDOMISE, 0xAB), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0xAB1234, slave.random_address);
+
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_SEARCHADDRH, 0xAB), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_SEARCHADDRM, 0x12), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_SEARCHADDRL, 0x34), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0xAB1234, slave.search_address);
+
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_COMPARE, 0x00), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_TRUE(has_resp);
+    TEST_ASSERT_EQUAL(0xFF, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_PROGRAM_SHORT_ADDR, (25 << 1)), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(25, slave.cfg.short_address);
+
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_VERIFY_SHORT_ADDR, (25 << 1)), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_TRUE(has_resp);
+
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_QUERY_SHORT_ADDR, 0x00), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_TRUE(has_resp);
+    TEST_ASSERT_EQUAL((25 << 1) | 1, resp_data);
+
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_TERMINATE, 0x00), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_FALSE(slave.initialise_active);
+
+    /* Additional edge-case coverage */
+    SYN_DALI_SlaveState mask_slave;
+    SYN_DALI_SlaveConfig mask_cfg = {
+        .power_on_level = SYN_DALI_MASK_LEVEL,
+        .max_level = 240
+    };
+    TEST_ASSERT_EQUAL(SYN_OK, syn_dali_slave_init(&mask_slave, &mask_cfg));
+    TEST_ASSERT_EQUAL(240, mask_slave.actual_level);
+
+    /* Direct Arc Level set to 0 */
+    syn_dali_decode_forward(syn_dali_encode_forward((25 << 1) | 0, 0), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0, slave.actual_level);
+    TEST_ASSERT_FALSE(slave.lamp_on);
+
+    /* Broadcast & Group command matching */
+    syn_dali_decode_forward(syn_dali_encode_forward(0xFF, SYN_DALI_CMD_RECALL_MAX), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(slave.cfg.max_level, slave.actual_level);
+
+    uint8_t group0_addr = (0x80 | (0 << 1)) | 1;
+    syn_dali_decode_forward(syn_dali_encode_forward(group0_addr, SYN_DALI_CMD_OFF), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0, slave.actual_level);
+
+    /* Step Down below min_level */
+    slave.actual_level = slave.cfg.min_level;
+    syn_dali_decode_forward(syn_dali_encode_forward((25 << 1) | 1, SYN_DALI_CMD_STEP_DOWN), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(0, slave.actual_level);
+    TEST_ASSERT_FALSE(slave.lamp_on);
+
+    /* Step Down and Off above min_level */
+    slave.actual_level = 100;
+    syn_dali_decode_forward(syn_dali_encode_forward((25 << 1) | 1, SYN_DALI_CMD_STEP_DOWN_AND_OFF), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(99, slave.actual_level);
+
+    /* On and Step Up when already ON */
+    slave.lamp_on = true;
+    slave.actual_level = 100;
+    syn_dali_decode_forward(syn_dali_encode_forward((25 << 1) | 1, SYN_DALI_CMD_ON_AND_STEP_UP), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(101, slave.actual_level);
+
+    /* Verify short address mismatch path */
+    has_resp = false;
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_VERIFY_SHORT_ADDR, (40 << 1)), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_FALSE(has_resp);
+
+    /* Query short address when unassigned */
+    SYN_DALI_SlaveState unassigned_slave;
+    SYN_DALI_SlaveConfig unassigned_cfg = { .short_address = SYN_DALI_SHORT_ADDR_UNASSIGNED };
+    syn_dali_slave_init(&unassigned_slave, &unassigned_cfg);
+    syn_dali_decode_forward(syn_dali_encode_forward(SYN_DALI_SPEC_QUERY_SHORT_ADDR, 0x00), &req);
+    syn_dali_slave_process(&unassigned_slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_TRUE(has_resp);
+    TEST_ASSERT_EQUAL(0xFF, resp_data);
+
+    /* Unknown special command fallback */
+    syn_dali_decode_forward(syn_dali_encode_forward(0xFD, 0x00), &req);
+    syn_dali_slave_process(&slave, &req, &resp_data, &has_resp);
+
+    /* Invalid parameters checks */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_dali_slave_init(NULL, &cfg));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_dali_slave_process(NULL, &req, &resp_data, &has_resp));
+    TEST_ASSERT_FALSE(syn_dali_decode_forward(0, NULL));
+    TEST_ASSERT_FALSE(syn_dali_decode_backward(0, NULL));
+    TEST_ASSERT_EQUAL(0, syn_dali_manchester_encode_byte(0, NULL));
+    TEST_ASSERT_FALSE(syn_dali_manchester_decode_byte(NULL, &resp_data));
+}
+
 void run_dali_tests(void)
 {
     RUN_TEST(test_dali_frame_codec);
     RUN_TEST(test_dali_slave_commands);
     RUN_TEST(test_dali_manchester_codec);
+    RUN_TEST(test_dali_extended_coverage);
 }

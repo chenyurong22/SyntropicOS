@@ -184,6 +184,28 @@ SYN_Status syn_dali_slave_process(SYN_DALI_SlaveState *slave,
             slave->lamp_on = true;
             break;
 
+        case SYN_DALI_CMD_STEP_DOWN_AND_OFF:
+            if (slave->actual_level > slave->cfg.min_level) {
+                slave->actual_level--;
+            } else {
+                slave->actual_level = 0;
+                slave->lamp_on = false;
+            }
+            break;
+
+        case SYN_DALI_CMD_ON_AND_STEP_UP:
+            if (!slave->lamp_on || slave->actual_level == 0) {
+                slave->actual_level = slave->cfg.min_level;
+                slave->lamp_on = true;
+            } else if (slave->actual_level < slave->cfg.max_level) {
+                slave->actual_level++;
+            }
+            break;
+
+        case SYN_DALI_CMD_ENABLE_DAPC_SEQUENCE:
+            slave->dapc_sequence_active = true;
+            break;
+
         case SYN_DALI_CMD_RESET:
             slave->actual_level = slave->cfg.power_on_level;
             slave->lamp_on = (slave->actual_level > 0);

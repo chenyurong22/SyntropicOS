@@ -2,7 +2,7 @@
 # Usage: make -f tests/Makefile.unity [test|clean]
 
 CC      := gcc
-CFLAGS  := -std=c99 -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests -Itests/mocks -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1
+CFLAGS  := -std=c99 -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests -Itests/mocks -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1
 
 # All SyntropicOS source files
 SYN_SRCS := \
@@ -39,6 +39,8 @@ SYN_SRCS := \
 	src/syntropic/proto/syn_cia303.c \
 	src/syntropic/proto/syn_dmx512.c \
 	src/syntropic/proto/syn_isotp.c \
+	src/syntropic/proto/syn_dali.c \
+	src/syntropic/proto/syn_lin.c \
 	src/syntropic/proto/syn_canopen_mgr.c src/syntropic/proto/syn_j1939.c \
 	src/syntropic/proto/syn_n2k.c \
 	src/syntropic/sensor/syn_sensor.c src/syntropic/sensor/syn_sensor_fusion.c \
@@ -92,7 +94,7 @@ UNITY_SRCS := tests/unity/unity.c
 MOCK_SRCS := tests/mocks/mock_port.c
 
 # All per-module test files (exclude standalone tests with their own main())
-TEST_SRCS := $(filter-out tests/test_wg_integration.c, $(wildcard tests/test_*.c))
+TEST_SRCS := $(filter-out tests/test_wg_integration.c tests/test_timesync.c tests/test_hpclock.c tests/test_geo.c, $(wildcard tests/test_*.c))
 
 ALL_SRCS := $(SYN_SRCS) $(UNITY_SRCS) $(MOCK_SRCS) $(TEST_SRCS)
 TARGET   := test_unity

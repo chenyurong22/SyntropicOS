@@ -158,16 +158,15 @@ SYN_PT_Status syn_dns_resolve_task(SYN_PT *pt, SYN_Task *task)
     /* Build query */
     r->txid = (uint16_t)(syn_port_get_tick_ms() & 0xFFFF);
     memset(r->buf, 0, 12);
-    r->buf[0] = (uint8_t)(r->txid >> 8); 
-    r->buf[1] = (uint8_t)(r->txid & 0xFF); /* Transaction ID */
-    r->buf[2] = 0x01; r->buf[3] = 0x00; /* Flags: Standard query, recursion desired */
-    r->buf[5] = 0x01;                   /* Questions = 1 */
+    syn_poke_u16(r->txid, r->buf, 0); /* Transaction ID */
+    syn_poke_u16(0x0100, r->buf, 2);  /* Flags: Standard query, recursion desired */
+    syn_poke_u16(0x0001, r->buf, 4);  /* Questions = 1 */
 
     {
         size_t pos = 12;
         pos += encode_qname(r->buf + pos, r->hostname);
-        r->buf[pos++] = 0x00; r->buf[pos++] = 0x01; /* QTYPE = A */
-        r->buf[pos++] = 0x00; r->buf[pos++] = 0x01; /* QCLASS = IN */
+        syn_poke_u16(0x0001, r->buf, pos); pos += 2; /* QTYPE = A */
+        syn_poke_u16(0x0001, r->buf, pos); pos += 2; /* QCLASS = IN */
         r->query_len = pos;
     }
 
@@ -204,19 +203,24 @@ SYN_PT_Status syn_dns_resolve_task(SYN_PT *pt, SYN_Task *task)
     PT_END(pt);
 }
 
-
+/* ════════════════════════════════════════════════════════════════════════ */
+/*  mDNS Responder Task                                                    */
+/* ════════════════════════════════════════════════════════════════════════ */
 
 SYN_Status syn_mdns_init(SYN_Mdns *mdns, const char *hostname, const uint8_t ip[4])
 {
     SYN_ASSERT(mdns != NULL);
     SYN_ASSERT(hostname != NULL);
+    SYN_ASSERT(ip != NULL);
 
     memset(mdns, 0, sizeof(*mdns));
     mdns->hostname = hostname;
     memcpy(mdns->ip, ip, 4);
 
     mdns->sock = syn_port_udp_open(5353);
-    if (mdns->sock == SYN_SOCKET_INVALID) return SYN_ERROR;
+    if (mdns->sock == SYN_SOCKET_INVALID) {
+        return SYN_ERROR;
+    }
 
     if (syn_port_udp_join_multicast(mdns->sock, "224.0.0.251") != SYN_OK) {
         syn_port_sock_close(mdns->sock);
@@ -279,8 +283,8 @@ SYN_PT_Status syn_mdns_task(SYN_PT *pt, SYN_Task *task)
             int n = syn_port_udp_recvfrom(mdns->sock, buf, sizeof(buf), &from, 0);
             if (n > 12) {
                 size_t rx_len = (size_t)n;
-                uint16_t flags     = (uint16_t)(((uint16_t)buf[2] << 8) | buf[3]);
-                uint16_t questions = (uint16_t)(((uint16_t)buf[4] << 8) | buf[5]);
+                uint16_t flags     = syn_peek_u16(buf, 2);
+                uint16_t questions = syn_peek_u16(buf, 4);
                 
                 /* Parse if it's a query (Flags QR bit = 0) */
                 if ((flags & 0x8000) == 0 && questions > 0) {
@@ -301,8 +305,8 @@ SYN_PT_Status syn_mdns_task(SYN_PT *pt, SYN_Task *task)
                         uint8_t resp[256];
                         memset(resp, 0, 12);
                         /* Flags: 0x8400 (Authoritative Answer, Response) */
-                        resp[2] = 0x84; resp[3] = 0x00;
-                        resp[7] = 0x01; /* Answers = 1 */
+                        syn_poke_u16(0x8400, resp, 2);
+                        syn_poke_u16(0x0001, resp, 6); /* Answers = 1 */
 
                         size_t rpos = 12;
                         rpos += encode_qname(resp + rpos, mdns->hostname);
@@ -313,11 +317,11 @@ SYN_PT_Status syn_mdns_task(SYN_PT *pt, SYN_Task *task)
                         rpos += 5;
                         resp[rpos++] = 0;
 
-                        resp[rpos++] = 0x00; resp[rpos++] = 0x01; /* TYPE = A */
-                        resp[rpos++] = 0x80; resp[rpos++] = 0x01; /* CLASS = IN + cache flush */
-                        resp[rpos++] = 0x00; resp[rpos++] = 0x00; resp[rpos++] = 0x00; resp[rpos++] = 0x78; /* TTL = 120 */
-                        resp[rpos++] = 0x00; resp[rpos++] = 0x04; /* RDLEN = 4 */
-                        memcpy(resp + rpos, mdns->ip, 4);          /* Address */
+                        syn_poke_u16(0x0001, resp, rpos); rpos += 2; /* TYPE = A */
+                        syn_poke_u16(0x8001, resp, rpos); rpos += 2; /* CLASS = IN + cache flush */
+                        syn_poke_u32(120, resp, rpos);    rpos += 4; /* TTL = 120 */
+                        syn_poke_u16(4, resp, rpos);      rpos += 2; /* RDLEN = 4 */
+                        memcpy(resp + rpos, mdns->ip, 4);            /* Address */
                         rpos += 4;
 
                         /* Send mDNS reply back to multicast group 224.0.0.251:5353 */

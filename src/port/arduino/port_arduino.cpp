@@ -760,19 +760,19 @@ void syn_port_wdt_feed(void)
 extern "C" {
 #include "syntropic/port/syn_port_serial.h"
 
-SYN_WEAK SYN_Status syn_port_serial_init(uint32_t baudrate)
+SYN_Status syn_port_serial_init(uint32_t baudrate)
 {
     if (baudrate == 0) baudrate = 115200;
     Serial.begin(baudrate);
     return SYN_OK;
 }
 
-SYN_WEAK int syn_port_serial_write(const uint8_t *data, size_t len)
+int syn_port_serial_write(const uint8_t *data, size_t len)
 {
     return (int)Serial.write(data, len);
 }
 
-SYN_WEAK int syn_port_serial_read(uint8_t *buf, size_t max_len)
+int syn_port_serial_read(uint8_t *buf, size_t max_len)
 {
     size_t count = 0;
     while (count < max_len && Serial.available() > 0) {

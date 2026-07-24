@@ -10,11 +10,6 @@
  *   - Structured logging
  *
  * Open the Serial Monitor at 115200 baud and type "help".
- *
- * Documentation & Related Features:
- *   - Debug & CLI Guide:    https://outlookhazy.github.io/SyntropicOS/modules/debug/
- *   - CLI API Reference:    https://outlookhazy.github.io/SyntropicOS/syntropic/group__syn__debug/
- *   - State Machines (FSM): https://outlookhazy.github.io/SyntropicOS/modules/core/ (syn_fsm.h)
  */
 
 #include <SyntropicOS.h>
@@ -89,10 +84,6 @@ static const SYN_CLI_Command commands[] = {
     { "fsm", "Drive the demo state machine", cmd_fsm },
 };
 
-/* ── Platform hooks ───────────────────────────────────────────────────── */
-
-extern "C" void syn_assert_failed(const char *f, int l) { (void)f; (void)l; for(;;); }
-
 /* ── Tasks ────────────────────────────────────────────────────────────── */
 
 static SYN_PT_Status blink_task(SYN_PT *pt, SYN_Task *task)
@@ -105,17 +96,24 @@ static SYN_PT_Status blink_task(SYN_PT *pt, SYN_Task *task)
     PT_END(pt);
 }
 
+/**
+ * CLI Task: Reads up to 16 bytes per pass to prevent starving other tasks
+ * if the serial stream is flooded. Yields immediately when data is processed
+ * so other tasks can run.
+ */
 static SYN_PT_Status cli_task(SYN_PT *pt, SYN_Task *task)
 {
-    uint8_t ch;
+    uint8_t buf[16];
     PT_BEGIN(pt);
     for (;;) {
-        int r = syn_port_serial_read(&ch, 1);
+        int r = syn_port_serial_read(buf, sizeof(buf));
         if (r > 0) {
-            syn_cli_process_char(&cli, (char)ch);
-            PT_YIELD(pt);
+            for (int i = 0; i < r; i++) {
+                syn_cli_process_char(&cli, (char)buf[i]);
+            }
+            PT_YIELD(pt); // Yield control to other tasks after processing 16 bytes
         } else {
-            PT_TASK_DELAY_MS(pt, task, 20);
+            PT_TASK_DELAY_MS(pt, task, 10);
         }
     }
     PT_END(pt);
@@ -135,7 +133,7 @@ void setup()
     syn_cli_init(&cli, commands, sizeof(commands)/sizeof(commands[0]),
                  "> ");
     syn_cli_set_scheduler(&sched);
-    syn_cli_printf(&cli, "\r\n--- SyntropicOS ---\r\n");
+    syn_cli_printf(&cli, "\r\n--- SyntropicOS SerialCLI ---\r\n");
     syn_cli_print_prompt(&cli);
 
     syn_task_create(&tasks[0], "blink", blink_task, 2, NULL);

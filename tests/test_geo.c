@@ -109,22 +109,40 @@ static void test_3d_distance(void)
     TEST_ASSERT_DOUBLE_WITHIN(1e-5, 13.0, dist);
 }
 
-static void test_pos_from_gga_rtk(void)
+static void test_pos_from_gga_fix_qualities(void)
 {
-    SYN_NMEA_GGA gga;
-    gga.latitude = 37.7749;
-    gga.longitude = -122.4194;
-    gga.altitude_m = 15.5f;
-    gga.fix_quality = SYN_NMEA_FIX_RTK;
-    gga.valid = true;
-
+    SYN_NMEA_GGA gga = {
+        .latitude = 37.7749,
+        .longitude = -122.4194,
+        .altitude_m = 15.5f,
+        .valid = true
+    };
     SYN_GeoPos pos;
-    SYN_Status st = syn_geo_pos_from_gga(&gga, &pos);
 
-    TEST_ASSERT_EQUAL(SYN_OK, st);
-    TEST_ASSERT_TRUE(pos.valid);
-    TEST_ASSERT_EQUAL(SYN_NMEA_FIX_RTK, pos.fix_type);
-    TEST_ASSERT_FLOAT_WITHIN(1e-4f, 0.01f, pos.accuracy_m);  /* 1 cm RTK Fixed */
+    /* RTK Fixed -> 0.01m */
+    gga.fix_quality = SYN_NMEA_FIX_RTK;
+    syn_geo_pos_from_gga(&gga, &pos);
+    TEST_ASSERT_FLOAT_WITHIN(1e-4f, 0.01f, pos.accuracy_m);
+
+    /* RTK Float -> 0.20m */
+    gga.fix_quality = SYN_NMEA_FIX_FLOAT_RTK;
+    syn_geo_pos_from_gga(&gga, &pos);
+    TEST_ASSERT_FLOAT_WITHIN(1e-4f, 0.20f, pos.accuracy_m);
+
+    /* DGPS -> 1.00m */
+    gga.fix_quality = SYN_NMEA_FIX_DGPS;
+    syn_geo_pos_from_gga(&gga, &pos);
+    TEST_ASSERT_FLOAT_WITHIN(1e-4f, 1.00f, pos.accuracy_m);
+
+    /* GPS -> 2.50m */
+    gga.fix_quality = SYN_NMEA_FIX_GPS;
+    syn_geo_pos_from_gga(&gga, &pos);
+    TEST_ASSERT_FLOAT_WITHIN(1e-4f, 2.50f, pos.accuracy_m);
+
+    /* Invalid / Default -> 50.0m */
+    gga.fix_quality = SYN_NMEA_FIX_INVALID;
+    syn_geo_pos_from_gga(&gga, &pos);
+    TEST_ASSERT_FLOAT_WITHIN(1e-4f, 50.00f, pos.accuracy_m);
 }
 
 static void test_geo_null_params(void)
@@ -154,7 +172,7 @@ int main(void)
     RUN_TEST(test_wgs84_to_enu_10m_north);
     RUN_TEST(test_haversine_distance);
     RUN_TEST(test_3d_distance);
-    RUN_TEST(test_pos_from_gga_rtk);
+    RUN_TEST(test_pos_from_gga_fix_qualities);
     RUN_TEST(test_geo_null_params);
     return UNITY_END();
 }

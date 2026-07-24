@@ -11,6 +11,7 @@
 
 #include "syn_sntp.h"
 #include "../util/syn_assert.h"
+#include "../util/syn_pack.h"
 #include "../port/syn_port_system.h"
 #include <string.h>
 #include <stdio.h>
@@ -19,21 +20,6 @@
 
 static SYN_Status sntp_send_request(const SYN_SNTP *sntp, SYN_Socket sock);
 static SYN_Status sntp_parse_packet(SYN_SNTP *sntp, const uint8_t *pkt, size_t len);
-
-/* ── API ────────────────────────────────────────────────────────────────── */
-
-/**
- * @brief Read a big-endian uint32 from a byte buffer.
- * @param p Source bytes.
- * @return 32-bit value.
- */
-static inline uint32_t load32_be(const uint8_t *p)
-{
-    return ((uint32_t)p[0] << 24)
-         | ((uint32_t)p[1] << 16)
-         | ((uint32_t)p[2] <<  8)
-         | ((uint32_t)p[3]);
-}
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
@@ -72,8 +58,8 @@ static SYN_Status sntp_parse_packet(SYN_SNTP *sntp, const uint8_t *pkt, size_t l
     if (pkt[1] == 0) return SYN_ERROR;  /* kiss-of-death */
 
     /* Extract transmit timestamp (bytes 40–47, NTP epoch big-endian) */
-    uint32_t ntp_s    = load32_be(pkt + 40);
-    uint32_t ntp_frac = load32_be(pkt + 44);
+    uint32_t ntp_s    = syn_peek_u32(pkt, 40);
+    uint32_t ntp_frac = syn_peek_u32(pkt, 44);
 
     if (ntp_s < SYN_SNTP_EPOCH_OFFSET) return SYN_ERROR;
 

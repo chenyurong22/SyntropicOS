@@ -5,6 +5,7 @@
 
 #include "syn_lss.h"
 #include "../util/syn_assert.h"
+#include "../util/syn_pack.h"
 #include <string.h>
 
 void syn_lss_slave_init(SYN_LSSSlave *slave, const SYN_LSSAddress *addr, uint8_t initial_node_id)
@@ -82,10 +83,7 @@ bool syn_lss_slave_process(SYN_LSSSlave *slave, const SYN_CAN_Frame *frame, SYN_
     case SYN_LSS_CS_INQUIRE_VENDOR:
         if (slave->mode == SYN_LSS_MODE_CONFIGURATION) {
             resp->data[0] = SYN_LSS_CS_INQUIRE_VENDOR;
-            resp->data[1] = (uint8_t)(slave->addr.vendor_id);
-            resp->data[2] = (uint8_t)(slave->addr.vendor_id >> 8);
-            resp->data[3] = (uint8_t)(slave->addr.vendor_id >> 16);
-            resp->data[4] = (uint8_t)(slave->addr.vendor_id >> 24);
+            syn_poke_u32_le(slave->addr.vendor_id, resp->data, 1);
             return true;
         }
         break;
@@ -93,10 +91,7 @@ bool syn_lss_slave_process(SYN_LSSSlave *slave, const SYN_CAN_Frame *frame, SYN_
     case SYN_LSS_CS_INQUIRE_PRODUCT:
         if (slave->mode == SYN_LSS_MODE_CONFIGURATION) {
             resp->data[0] = SYN_LSS_CS_INQUIRE_PRODUCT;
-            resp->data[1] = (uint8_t)(slave->addr.product_code);
-            resp->data[2] = (uint8_t)(slave->addr.product_code >> 8);
-            resp->data[3] = (uint8_t)(slave->addr.product_code >> 16);
-            resp->data[4] = (uint8_t)(slave->addr.product_code >> 24);
+            syn_poke_u32_le(slave->addr.product_code, resp->data, 1);
             return true;
         }
         break;
@@ -104,10 +99,7 @@ bool syn_lss_slave_process(SYN_LSSSlave *slave, const SYN_CAN_Frame *frame, SYN_
     case SYN_LSS_CS_INQUIRE_REV:
         if (slave->mode == SYN_LSS_MODE_CONFIGURATION) {
             resp->data[0] = SYN_LSS_CS_INQUIRE_REV;
-            resp->data[1] = (uint8_t)(slave->addr.revision_no);
-            resp->data[2] = (uint8_t)(slave->addr.revision_no >> 8);
-            resp->data[3] = (uint8_t)(slave->addr.revision_no >> 16);
-            resp->data[4] = (uint8_t)(slave->addr.revision_no >> 24);
+            syn_poke_u32_le(slave->addr.revision_no, resp->data, 1);
             return true;
         }
         break;
@@ -115,10 +107,7 @@ bool syn_lss_slave_process(SYN_LSSSlave *slave, const SYN_CAN_Frame *frame, SYN_
     case SYN_LSS_CS_INQUIRE_SERIAL:
         if (slave->mode == SYN_LSS_MODE_CONFIGURATION) {
             resp->data[0] = SYN_LSS_CS_INQUIRE_SERIAL;
-            resp->data[1] = (uint8_t)(slave->addr.serial_no);
-            resp->data[2] = (uint8_t)(slave->addr.serial_no >> 8);
-            resp->data[3] = (uint8_t)(slave->addr.serial_no >> 16);
-            resp->data[4] = (uint8_t)(slave->addr.serial_no >> 24);
+            syn_poke_u32_le(slave->addr.serial_no, resp->data, 1);
             return true;
         }
         break;

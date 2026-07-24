@@ -11,6 +11,7 @@
 
 #include "syn_mqtt.h"
 #include "../util/syn_assert.h"
+#include "../util/syn_pack.h"
 #include "../port/syn_port_system.h"
 #include <string.h>
 
@@ -59,7 +60,7 @@ static bool send_mqtt_connect(SYN_MqttClient *c)
     size_t pos = 1;
     pos += encode_remaining_len(tx + pos, rem_len);
 
-    tx[pos++] = 0x00; tx[pos++] = 0x04;
+    syn_poke_u16(0x0004, tx, pos); pos += 2;
     tx[pos++] = 'M'; tx[pos++] = 'Q'; tx[pos++] = 'T'; tx[pos++] = 'T';
     tx[pos++] = 0x04; /* Level 3.1.1 */
 
@@ -68,22 +69,21 @@ static bool send_mqtt_connect(SYN_MqttClient *c)
     if (c->password != NULL) flags |= 0x40;
     tx[pos++] = flags;
 
-    tx[pos++] = (uint8_t)(c->keep_alive_s >> 8);
-    tx[pos++] = (uint8_t)(c->keep_alive_s & 0xFF);
+    syn_poke_u16(c->keep_alive_s, tx, pos); pos += 2;
 
     uint16_t cid_len = (uint16_t)strlen(c->client_id);
-    tx[pos++] = (uint8_t)(cid_len >> 8); tx[pos++] = (uint8_t)(cid_len & 255);
+    syn_poke_u16(cid_len, tx, pos); pos += 2;
     memcpy(tx + pos, c->client_id, cid_len); pos += cid_len;
 
     if (c->username != NULL) {
         uint16_t u_len = (uint16_t)strlen(c->username);
-        tx[pos++] = (uint8_t)(u_len >> 8); tx[pos++] = (uint8_t)(u_len & 255);
+        syn_poke_u16(u_len, tx, pos); pos += 2;
         memcpy(tx + pos, c->username, u_len); pos += u_len;
     }
 
     if (c->password != NULL) {
         uint16_t p_len = (uint16_t)strlen(c->password);
-        tx[pos++] = (uint8_t)(p_len >> 8); tx[pos++] = (uint8_t)(p_len & 255);
+        syn_poke_u16(p_len, tx, pos); pos += 2;
         memcpy(tx + pos, c->password, p_len); pos += p_len;
     }
 
@@ -114,7 +114,7 @@ static void handle_publish(SYN_MqttClient *c, const uint8_t *payload, uint32_t l
 {
     if (len < 2) return;
     
-    uint16_t topic_len = (uint16_t)(((uint16_t)payload[0] << 8) | payload[1]);
+    uint16_t topic_len = syn_peek_u16(payload, 0);
     if ((uint32_t)(2 + topic_len) > len) return;
 
     /* Extract topic string dynamically */
@@ -129,7 +129,7 @@ static void handle_publish(SYN_MqttClient *c, const uint8_t *payload, uint32_t l
 
     if (qos > 0) {
         if (payload_offset + 2 > len) return;
-        packet_id = (uint16_t)(((uint16_t)payload[payload_offset] << 8) | payload[payload_offset+1]);
+        packet_id = syn_peek_u16(payload, payload_offset);
         payload_offset += 2;
     }
 
@@ -139,7 +139,10 @@ static void handle_publish(SYN_MqttClient *c, const uint8_t *payload, uint32_t l
 
     /* QoS 1 ACK (PUBACK) */
     if (qos == 1) {
-        const uint8_t puback[] = { 0x40, 0x02, (uint8_t)(packet_id >> 8), (uint8_t)(packet_id & 255) };
+        uint8_t puback[4];
+        puback[0] = 0x40;
+        puback[1] = 0x02;
+        syn_poke_u16(packet_id, puback, 2);
         syn_port_sock_send_all(c->sock, puback, 4);
     }
 }
@@ -169,7 +172,7 @@ static void process_packet(SYN_MqttClient *c)
     } else if (type == 0x40) {
         /* PUBACK */
         if (rem_len >= 2) {
-            uint16_t pid = (uint16_t)(((uint16_t)c->rx_buf[0] << 8) | c->rx_buf[1]);
+            uint16_t pid = syn_peek_u16(c->rx_buf, 0);
             if (pid == c->pending_puback_id) {
                 c->pending_puback_id = 0;
             }
@@ -205,22 +208,22 @@ static void poll_rx(SYN_MqttClient *c)
 
         switch (c->rx_phase) {
         case SYN_MQTT_RX_IDLE: {
-            uint8_t header;
-            int n = syn_port_sock_recv(c->sock, &header, 1, 0);
+            uint8_t hdr;
+            int n = syn_port_sock_recv(c->sock, &hdr, 1, 0);
             if (n < 0) return; /* No data ready */
             if (n == 0) {
-                /* Connection closed by server */
+                /* Connection closed */
                 syn_port_sock_close(c->sock);
                 c->sock = SYN_SOCKET_INVALID;
                 c->state = SYN_MQTT_DISCONNECTED;
                 return;
             }
             c->last_activity_ms = syn_port_get_tick_ms();
-            c->rx_header  = header;
+            c->rx_header = hdr;
             c->rx_rem_len = 0;
-            c->rx_mult    = 1;
-            c->rx_phase   = SYN_MQTT_RX_REMAINING_LEN;
-            c->rx_deadline= syn_port_get_tick_ms() + MQTT_RECV_TIMEOUT_MS;
+            c->rx_mult = 1;
+            c->rx_phase = SYN_MQTT_RX_REMAINING_LEN;
+            c->rx_deadline = syn_port_get_tick_ms() + MQTT_RECV_TIMEOUT_MS;
             break;
         }
 
@@ -229,7 +232,7 @@ static void poll_rx(SYN_MqttClient *c)
             int n = syn_port_sock_recv(c->sock, &b, 1, 0);
             if (n < 0) return; /* No data ready */
             if (n == 0) {
-                /* Connection closed during packet header */
+                /* Connection closed during header */
                 syn_port_sock_close(c->sock);
                 c->sock = SYN_SOCKET_INVALID;
                 c->state = SYN_MQTT_DISCONNECTED;
@@ -238,14 +241,6 @@ static void poll_rx(SYN_MqttClient *c)
             }
             c->last_activity_ms = syn_port_get_tick_ms();
             c->rx_rem_len += (uint32_t)(b & 127) * c->rx_mult;
-            if (c->rx_mult > 128UL * 128UL * 128UL) {
-                /* Multiplier overflow error */
-                syn_port_sock_close(c->sock);
-                c->sock = SYN_SOCKET_INVALID;
-                c->state = SYN_MQTT_DISCONNECTED;
-                c->rx_phase = SYN_MQTT_RX_IDLE;
-                return;
-            }
             c->rx_mult *= 128;
 
             if ((b & 128) == 0) {
@@ -366,11 +361,11 @@ SYN_Status syn_mqtt_publish(SYN_MqttClient *client, const char *topic,
     pos += encode_remaining_len(tx + pos, rem_len);
 
     uint16_t t_len = (uint16_t)strlen(topic);
-    tx[pos++] = (uint8_t)(t_len >> 8); tx[pos++] = (uint8_t)(t_len & 255);
+    syn_poke_u16(t_len, tx, pos); pos += 2;
     memcpy(tx + pos, topic, t_len); pos += t_len;
 
     if (qos > 0) {
-        tx[pos++] = (uint8_t)(pkt_id >> 8); tx[pos++] = (uint8_t)(pkt_id & 255);
+        syn_poke_u16(pkt_id, tx, pos); pos += 2;
     }
     if (len > 0 && payload != NULL) {
         memcpy(tx + pos, payload, len); pos += len;
@@ -405,10 +400,10 @@ SYN_Status syn_mqtt_subscribe(SYN_MqttClient *client, const char *topic, uint8_t
     size_t pos = 1;
     pos += encode_remaining_len(tx + pos, rem_len);
 
-    tx[pos++] = (uint8_t)(pkt_id >> 8); tx[pos++] = (uint8_t)(pkt_id & 255);
+    syn_poke_u16(pkt_id, tx, pos); pos += 2;
 
     uint16_t t_len = (uint16_t)strlen(topic);
-    tx[pos++] = (uint8_t)(t_len >> 8); tx[pos++] = (uint8_t)(t_len & 255);
+    syn_poke_u16(t_len, tx, pos); pos += 2;
     memcpy(tx + pos, topic, t_len); pos += t_len;
 
     tx[pos++] = qos;

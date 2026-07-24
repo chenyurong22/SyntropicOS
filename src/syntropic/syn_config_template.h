@@ -22,6 +22,7 @@
 #define SYN_USE_EXTI           1   /**< GPIO interrupt dispatcher           */
 #define SYN_USE_HPCLOCK        1   /**< High-precision 64-bit system clock  */
 #define SYN_USE_TIMESYNC       1   /**< GPS/RTC time discipline service     */
+#define SYN_USE_GEO            1   /**< WGS84 & 3D local ENU geodetic math  */
 /* Console serial (syn_port_serial) is always available — used by CLI/log.  */
 /* I2C/SPI device helpers are header-only — always available.               */
 

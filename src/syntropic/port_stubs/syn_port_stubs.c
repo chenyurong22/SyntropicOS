@@ -661,3 +661,17 @@ SYN_WEAK int syn_port_serial_read(uint8_t *buf, size_t max_len)
     syn_assert_failed(__FILE__, __LINE__);
     return -1;
 }
+
+/* ── HPClock stubs ─────────────────────────────────────────────────────── */
+
+SYN_WEAK volatile uint32_t *syn_port_hpclock_lsb_ptr(void)
+{
+    syn_assert_failed(__FILE__, __LINE__);
+    return (volatile uint32_t *)0; /* unreachable */
+}
+
+SYN_WEAK uint32_t syn_port_hpclock_freq_hz(void)
+{
+    syn_assert_failed(__FILE__, __LINE__);
+    return 0; /* unreachable */
+}

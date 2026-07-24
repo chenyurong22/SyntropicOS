@@ -162,6 +162,10 @@ extern "C" {
   #include "drivers/syn_can.h"
 #endif
 
+#if !defined(SYN_USE_HPCLOCK) || SYN_USE_HPCLOCK
+  #include "drivers/syn_hpclock.h"
+#endif
+
 /* ── Protothreads & Scheduler ───────────────────────────────────────────── */
 
 #if !defined(SYN_USE_PT) || SYN_USE_PT

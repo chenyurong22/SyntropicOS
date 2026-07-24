@@ -20,6 +20,7 @@
 #define SYN_USE_UART           1   /**< Peripheral UARTs (Modbus, GPS, etc) */
 #define SYN_USE_ADC            1   /**< ADC with oversampling + calibration */
 #define SYN_USE_EXTI           1   /**< GPIO interrupt dispatcher           */
+#define SYN_USE_HPCLOCK        1   /**< High-precision 64-bit system clock  */
 /* Console serial (syn_port_serial) is always available — used by CLI/log.  */
 /* I2C/SPI device helpers are header-only — always available.               */
 

@@ -23,19 +23,45 @@ uint64_t syn_hpclock_resolve(const SYN_HPTimestamp *ts)
     SYN_ASSERT(ts != NULL);
 
     /*
-     * If lsb_1 < lsb_2 the counter did not wrap between the two
-     * LSB reads, so msb_2 is the correct high word for lsb_1.
+     * Three reads: msb_1, lsb, msb_2.
      *
-     * If lsb_1 >= lsb_2 the counter wrapped (overflowed) between
-     * the reads, meaning msb_2 was incremented by the overflow ISR
-     * after lsb_1 was captured.  Subtract one to get the MSB that
-     * was current at the instant of lsb_1.
+     * The timer overflow ISR (highest priority) can preempt at any
+     * point during the capture.  Two cases:
+     *
+     *   msb_1 == msb_2:
+     *       No overflow during the capture window.  Use either MSB.
+     *
+     *   msb_1 != msb_2:
+     *       Overflow occurred during the window.  The hardware counter
+     *       wrapped from 0xFFFFFFFF to 0x00000000 at some point between
+     *       the msb_1 and msb_2 reads.  The LSB value tells us which
+     *       side of the wrap it was captured on:
+     *
+     *       - lsb < 0x80000000:  The counter already wrapped before the
+     *         LSB read.  lsb is a small post-wrap value.  Use msb_2
+     *         (the post-overflow count).
+     *
+     *       - lsb >= 0x80000000: The counter had not yet wrapped when
+     *         the LSB was read.  lsb is a large pre-wrap value.  Use
+     *         msb_1 (the pre-overflow count).
+     *
+     * Safety of the half-range check:  the three reads complete in
+     * ~10 CPU cycles.  Half a 32-bit counter period at any practical
+     * system clock (≥ 1 MHz) is > 2000 seconds.  The LSB cannot
+     * advance through half the range during the capture window.
      */
-    uint32_t msb = (ts->lsb_1 < ts->lsb_2)
-                    ? ts->msb_2
-                    : ts->msb_2 - 1u;
+    uint32_t msb;
 
-    return ((uint64_t)msb << 32) | (uint64_t)ts->lsb_1;
+    if (ts->msb_1 == ts->msb_2) {
+        /* No overflow in the capture window. */
+        msb = ts->msb_1;
+    } else {
+        /* Overflow occurred — determine which side of the wrap. */
+        msb = (ts->lsb < 0x80000000u) ? ts->msb_2   /* post-wrap  */
+                                       : ts->msb_1;  /* pre-wrap   */
+    }
+
+    return ((uint64_t)msb << 32) | (uint64_t)ts->lsb;
 }
 
 /* ── Conversion ────────────────────────────────────────────────────────── */

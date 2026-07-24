@@ -21,6 +21,13 @@
  *   4. Define `syn_port_hpclock_freq_hz()` to return the timer's clock
  *      frequency.
  *
+ *   5. **The overflow ISR MUST have the highest interrupt priority in the
+ *      system.**  The resolve algorithm assumes the overflow ISR can
+ *      preempt any context that calls SYN_HPCLOCK_CAPTURE().  If a
+ *      higher-priority ISR captures a timestamp while the overflow ISR
+ *      is pended, the resolved tick will be silently wrong by one full
+ *      counter period.  There is no runtime detection of this error.
+ *
  * @par Example — STM32 TIM2 at 84 MHz
  * @code
  *   // In your platform port file:
@@ -32,6 +39,7 @@
  *       return 84000000UL;
  *   }
  *
+ *   // Priority 0 = highest on Cortex-M NVIC
  *   void TIM2_IRQHandler(void) {
  *       SYN_HPCLOCK_OVERFLOW_TICK();
  *       LL_TIM_ClearFlag_UPDATE(TIM2);

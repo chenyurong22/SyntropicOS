@@ -3,7 +3,7 @@
  * @brief High-precision clock — 64-bit system-clock-precision timestamps.
  *
  * Provides a zero-overhead timestamp capture primitive and deferred
- * resolution.  The capture is a macro that performs four volatile reads
+ * resolution.  The capture is a macro that performs three volatile reads
  * with no branching — suitable for use inside ISRs where every cycle
  * counts.  Resolution is a pure function called lazily in main context.
  *
@@ -13,6 +13,27 @@
  * snapshot; the overflow ambiguity is resolved only when you ask for
  * the 64-bit tick value.  This keeps ISR latency deterministic and
  * independent of the resolution logic.
+ *
+ * ## Read sequence: msb_1, lsb, msb_2
+ *
+ * The overflow counter is read before and after the hardware counter.
+ * Resolution uses the two MSB values to detect overflow:
+ *
+ *   - `msb_1 == msb_2`:  No overflow during the window.  Use either.
+ *   - `msb_1 != msb_2`:  Overflow occurred.  The LSB value tells us
+ *     whether it was captured before or after the wrap:
+ *       - `lsb < 0x80000000`:  Counter already wrapped → use msb_2.
+ *       - `lsb >= 0x80000000`: Counter hasn't wrapped → use msb_1.
+ *
+ * The half-range check is safe because the three reads complete in
+ * ~10 CPU cycles, while half a 32-bit counter period at system clock
+ * is billions of cycles.  The LSB value is always unambiguously on
+ * one side of the boundary.
+ *
+ * ## ISR priority constraint
+ *
+ * The timer overflow ISR **must** have the highest interrupt priority
+ * in the system.  See syn_port_hpclock.h for details.
  *
  * ## Usage
  * @code
@@ -53,44 +74,45 @@ extern "C" {
 /* ── Timestamp ─────────────────────────────────────────────────────────── */
 
 /**
- * @brief Raw high-precision timestamp — four-word snapshot.
+ * @brief Raw high-precision timestamp — three-word snapshot.
  *
- * Stores two pairs of (LSB, MSB) reads.  The first LSB read is the
- * "true" captured instant; the second pair is used during resolution
- * to detect and correct for a timer overflow that may have occurred
- * between the reads.
+ * The overflow counter is read before and after the hardware counter
+ * register.  Resolution compares the two MSB reads to detect whether
+ * an overflow occurred during the capture, and uses the LSB value to
+ * determine which MSB is correct for the captured instant.
  *
- * 16 bytes, naturally aligned.
+ * 12 bytes, naturally aligned.
  */
 typedef struct {
-    uint32_t lsb_1;   /**< First read of hardware counter register    */
-    uint32_t msb_1;   /**< First read of overflow counter             */
-    uint32_t lsb_2;   /**< Second read of hardware counter register   */
-    uint32_t msb_2;   /**< Second read of overflow counter            */
+    uint32_t msb_1;   /**< First read of overflow counter              */
+    uint32_t lsb;     /**< Read of hardware counter register            */
+    uint32_t msb_2;   /**< Second read of overflow counter              */
 } SYN_HPTimestamp;
 
 /** @brief Static initializer for SYN_HPTimestamp (all zeros). */
-#define SYN_HPTIMESTAMP_INIT  { 0, 0, 0, 0 }
+#define SYN_HPTIMESTAMP_INIT  { 0, 0, 0 }
 
 /* ── Capture macro ─────────────────────────────────────────────────────── */
 
 /**
  * @brief Snapshot the high-precision clock into a timestamp struct.
  *
- * Four volatile reads, no branching, no function call overhead.
- * Safe to call from ISR context.  Compiler barriers between the
- * LSB (peripheral bus) and MSB (SRAM) reads prevent reordering.
+ * Three volatile reads, no branching, no function call overhead.
+ * Safe to call from ISR context (provided the overflow ISR has a
+ * higher priority — see syn_port_hpclock.h).
+ *
+ * Compiler barriers between the MSB (SRAM) and LSB (peripheral bus)
+ * reads prevent the compiler from reordering the accesses.
  *
  * @param ts  An SYN_HPTimestamp lvalue (not a pointer).
  */
-#define SYN_HPCLOCK_CAPTURE(ts) do {                            \
-    volatile uint32_t *syn_hp_lsb_p_ = syn_port_hpclock_lsb_ptr(); \
-    (ts).lsb_1 = *syn_hp_lsb_p_;                               \
-    SYN_COMPILER_BARRIER();                                     \
-    (ts).msb_1 = syn_hpclock_msb;                               \
-    (ts).lsb_2 = *syn_hp_lsb_p_;                               \
-    SYN_COMPILER_BARRIER();                                     \
-    (ts).msb_2 = syn_hpclock_msb;                               \
+#define SYN_HPCLOCK_CAPTURE(ts) do {                                    \
+    volatile uint32_t *syn_hp_lsb_p_ = syn_port_hpclock_lsb_ptr();     \
+    (ts).msb_1 = syn_hpclock_msb;                                       \
+    SYN_COMPILER_BARRIER();                                             \
+    (ts).lsb   = *syn_hp_lsb_p_;                                       \
+    SYN_COMPILER_BARRIER();                                             \
+    (ts).msb_2 = syn_hpclock_msb;                                       \
 } while (0)
 
 /* ── Resolution ────────────────────────────────────────────────────────── */
@@ -98,10 +120,11 @@ typedef struct {
 /**
  * @brief Resolve a raw timestamp into a 64-bit tick count.
  *
- * Detects whether a timer overflow occurred between the two LSB reads
- * by checking monotonicity: if lsb_1 < lsb_2, no overflow and msb_2
- * is correct; if lsb_1 >= lsb_2, the counter wrapped and msb_2 is
- * decremented by one.  The result is (corrected_msb << 32) | lsb_1.
+ * If `msb_1 == msb_2`, no overflow occurred and either MSB is correct.
+ * If they differ, the overflow happened during the capture window and
+ * the LSB value determines which side of the wrap it was captured on:
+ * a small LSB (< 0x80000000) means post-wrap (use msb_2), a large LSB
+ * means pre-wrap (use msb_1).
  *
  * This is a pure function — no side effects, no hardware access.
  *
@@ -142,8 +165,7 @@ uint64_t syn_hpclock_elapsed(const SYN_HPTimestamp *start,
  */
 static inline bool syn_hpclock_is_zero(const SYN_HPTimestamp *ts)
 {
-    return (ts->lsb_1 == 0) && (ts->msb_1 == 0) &&
-           (ts->lsb_2 == 0) && (ts->msb_2 == 0);
+    return (ts->msb_1 == 0) && (ts->lsb == 0) && (ts->msb_2 == 0);
 }
 
 #ifdef __cplusplus

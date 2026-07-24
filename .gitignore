@@ -26,6 +26,7 @@ Thumbs.db
 
 # Gemini agent data
 .gemini/
+.agents/
 build/
 site/
 tools/

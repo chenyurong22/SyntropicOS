@@ -17,6 +17,7 @@
  */
 
 #include "syn_x25519.h"
+#include "../util/syn_pack.h"
 #include <string.h>
 
 /** @brief Field element (GF(2^255 - 19)) represented by 16 × 16-bit limbs. */
@@ -87,8 +88,7 @@ static void pack25519(uint8_t o[32], const gf n)
         sel25519(t, m, (int)(1 - b));
     }
     for (i = 0; i < 16; i++) {
-        o[2*i]     = (uint8_t)(t[i] & 0xFF);
-        o[2*i + 1] = (uint8_t)(t[i] >> 8);
+        syn_poke_u16_le((uint16_t)t[i], o, 2 * i);
     }
 }
 
@@ -99,8 +99,9 @@ static void pack25519(uint8_t o[32], const gf n)
 static void unpack25519(gf o, const uint8_t n[32])
 {
     int i;
-    for (i = 0; i < 16; i++)
-        o[i] = (int64_t)n[2*i] | ((int64_t)n[2*i+1] << 8);
+    for (i = 0; i < 16; i++) {
+        o[i] = (int64_t)syn_peek_u16_le(n, 2 * i);
+    }
     o[15] &= 0x7FFF;
 }
 

@@ -149,8 +149,7 @@ SYN_Status syn_j1939_build_tp_bam(uint8_t sa, uint32_t pgn, uint16_t total_bytes
     uint8_t total_packets = (uint8_t)((total_bytes + 6U) / 7U);
 
     frame->data[0] = SYN_J1939_TP_CTRL_BAM;
-    frame->data[1] = (uint8_t)(total_bytes & 0xFFU);
-    frame->data[2] = (uint8_t)((total_bytes >> 8) & 0xFFU);
+    syn_poke_u16_le(total_bytes, frame->data, 1);
     frame->data[3] = total_packets;
     frame->data[4] = 0xFFU; /* Reserved */
     frame->data[5] = (uint8_t)(pgn & 0xFFU);
@@ -201,8 +200,7 @@ size_t syn_j1939_encode_dm1(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *
         uint8_t oc  = dtc_list[i].occurrence_count & 0x7FU;
         uint8_t cm  = (uint8_t)(dtc_list[i].conversion_method & 0x01U);
 
-        buf[offset + 0] = (uint8_t)(spn & 0xFFU);
-        buf[offset + 1] = (uint8_t)((spn >> 8) & 0xFFU);
+        syn_poke_u16_le((uint16_t)spn, buf, offset);
         buf[offset + 2] = (uint8_t)(((spn >> 11) & 0xE0U) | fmi);
         buf[offset + 3] = (uint8_t)((cm << 7) | oc);
 
@@ -231,9 +229,9 @@ SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node,
     if (hdr.pgn == SYN_J1939_PGN_TP_CM && frame->dlc == 8) {
         uint8_t ctrl = frame->data[0];
         if (ctrl == SYN_J1939_TP_CTRL_BAM || ctrl == SYN_J1939_TP_CTRL_RTS) {
-            uint16_t total_bytes = (uint16_t)frame->data[1] | ((uint16_t)frame->data[2] << 8);
+            uint16_t total_bytes = syn_peek_u16_le(frame->data, 1);
             uint8_t total_packets = frame->data[3];
-            uint32_t pgn = (uint32_t)frame->data[5] | ((uint32_t)frame->data[6] << 8) | ((uint32_t)frame->data[7] << 16);
+            uint32_t pgn = (uint32_t)syn_peek_u16_le(frame->data, 5) | ((uint32_t)frame->data[7] << 16);
 
             if (total_bytes <= sizeof(node->tp_rx.data) && total_packets > 0) {
                 node->tp_rx.active = true;

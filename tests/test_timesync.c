@@ -205,6 +205,40 @@ static void test_timesync_to_epoch_ns_helper(void)
     TEST_ASSERT_EQUAL_UINT64(10001000000ULL, epoch_ns);
 }
 
+static void test_timesync_null_params(void)
+{
+    SYN_TimeSync tsync;
+    syn_timesync_init(&tsync);
+
+    SYN_HPTimestamp ts;
+    ts.msb_1 = 0; ts.lsb = 100; ts.msb_2 = 0;
+    SYN_UTCTimestamp utc;
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_timesync_bind_pps(NULL, &ts, 100));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_timesync_bind_pps(&tsync, NULL, 100));
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_timesync_resolve_utc(NULL, &ts, &utc));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_timesync_resolve_utc(&tsync, NULL, &utc));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_timesync_resolve_utc(&tsync, &ts, NULL));
+
+    TEST_ASSERT_EQUAL_UINT64(0, syn_timesync_to_epoch_ns(NULL, &ts));
+}
+
+static void test_timesync_is_pps_locked(void)
+{
+    TEST_ASSERT_FALSE(syn_timesync_is_pps_locked(NULL));
+
+    SYN_TimeSync tsync;
+    syn_timesync_init(&tsync);
+    TEST_ASSERT_FALSE(syn_timesync_is_pps_locked(&tsync));
+
+    SYN_HPTimestamp pps;
+    pps.msb_1 = 0; pps.lsb = 0; pps.msb_2 = 0;
+    syn_timesync_bind_pps(&tsync, &pps, 100);
+
+    TEST_ASSERT_TRUE(syn_timesync_is_pps_locked(&tsync));
+}
+
 /* ── Runner ────────────────────────────────────────────────────────────── */
 
 void setUp(void) {
@@ -224,5 +258,7 @@ int main(void)
     RUN_TEST(test_timesync_holdover_uncertainty_growth);
     RUN_TEST(test_timesync_holdover_expiration);
     RUN_TEST(test_timesync_to_epoch_ns_helper);
+    RUN_TEST(test_timesync_null_params);
+    RUN_TEST(test_timesync_is_pps_locked);
     return UNITY_END();
 }

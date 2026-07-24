@@ -290,10 +290,61 @@ static void test_isotp_network_layer_timeouts(void)
     TEST_ASSERT_EQUAL(SYN_ISOTP_RX_IDLE, link.rx_state); /* Aborted to IDLE */
 }
 
+static void test_isotp_full_duplex(void)
+{
+    SYN_ISOTP_Link node_a, node_b;
+    syn_isotp_init(&node_a, 0x7E8, 0x7E0, rx_buf_a, sizeof(rx_buf_a), tx_buf_a, sizeof(tx_buf_a));
+    syn_isotp_init(&node_b, 0x7E0, 0x7E8, rx_buf_b, sizeof(rx_buf_b), tx_buf_b, sizeof(tx_buf_b));
+
+    uint8_t payload_a_to_b[30];
+    uint8_t payload_b_to_a[40];
+
+    for (size_t i = 0; i < sizeof(payload_a_to_b); i++) payload_a_to_b[i] = (uint8_t)(0x10 + i);
+    for (size_t i = 0; i < sizeof(payload_b_to_a); i++) payload_b_to_a[i] = (uint8_t)(0x80 + i);
+
+    /* Initiate simultaneous bi-directional multi-frame transfers */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_isotp_send(&node_a, payload_a_to_b, sizeof(payload_a_to_b)));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_isotp_send(&node_b, payload_b_to_a, sizeof(payload_b_to_a)));
+
+    /* Interleave frames bi-directionally until both complete */
+    for (int step = 0; step < 50; step++) {
+        syn_isotp_step(&node_a, 5);
+        syn_isotp_step(&node_b, 5);
+
+        SYN_CAN_Frame frame_a, frame_b;
+        bool has_a = syn_isotp_get_tx_frame(&node_a, &frame_a);
+        bool has_b = syn_isotp_get_tx_frame(&node_b, &frame_b);
+
+        if (has_a) {
+            syn_isotp_process_rx_frame(&node_b, &frame_a);
+        }
+        if (has_b) {
+            syn_isotp_process_rx_frame(&node_a, &frame_b);
+        }
+
+        if (!has_a && !has_b && node_a.tx_state == SYN_ISOTP_TX_IDLE && node_b.tx_state == SYN_ISOTP_TX_IDLE) {
+            break;
+        }
+    }
+
+    /* Verify Node B received complete message from Node A */
+    uint8_t recv_b[64];
+    ssize_t len_b = syn_isotp_receive(&node_b, recv_b, sizeof(recv_b));
+    TEST_ASSERT_EQUAL(30, len_b);
+    TEST_ASSERT_EQUAL_MEMORY(payload_a_to_b, recv_b, 30);
+
+    /* Verify Node A received complete message from Node B */
+    uint8_t recv_a[64];
+    ssize_t len_a = syn_isotp_receive(&node_a, recv_a, sizeof(recv_a));
+    TEST_ASSERT_EQUAL(40, len_a);
+    TEST_ASSERT_EQUAL_MEMORY(payload_b_to_a, recv_a, 40);
+}
+
 void run_isotp_tests(void)
 {
     RUN_TEST(test_isotp_single_frame);
     RUN_TEST(test_isotp_multi_frame_flow);
+    RUN_TEST(test_isotp_full_duplex);
     RUN_TEST(test_isotp_errors_and_edge_cases);
     RUN_TEST(test_isotp_network_layer_timeouts);
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD

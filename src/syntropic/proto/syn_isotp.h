@@ -6,6 +6,10 @@
  * for multi-byte CAN payload transmission with Single Frame (SF),
  * First Frame (FF), Consecutive Frame (CF), and Flow Control (FC) support.
  *
+ * Fully supports ISO 15765-2:2016 Full-Duplex communication mode (concurrent,
+ * non-blocking, bi-directional multi-frame transmission and reception on a
+ * single link context).
+ *
  * Support for CAN FD (64-byte payload frames & ISO 15765-2:2016 extended length)
  * is opt-in via #define SYN_USE_CAN_FD 1.
  */

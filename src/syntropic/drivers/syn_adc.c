@@ -67,7 +67,7 @@ int32_t syn_adc_read(SYN_ADC *adc)
     /* Calibration: (filtered + offset) * scale >> shift */
     int32_t cal = ((int32_t)adc->filtered + adc->cfg.cal_offset);
     if (adc->cfg.cal_scale != 1 || adc->cfg.cal_scale_shift != 0) {
-        cal = (cal * (int32_t)adc->cfg.cal_scale) >> adc->cfg.cal_scale_shift;
+        cal = (int32_t)(((int64_t)cal * (int32_t)adc->cfg.cal_scale) >> adc->cfg.cal_scale_shift);
     }
     adc->calibrated = cal;
 
@@ -92,7 +92,7 @@ int32_t syn_adc_read_mv(SYN_ADC *adc)
 
     if (max_raw == 0) return 0;
 
-    return (adc->raw * (int32_t)ref_mv) / max_raw;
+    return (int32_t)(((int64_t)adc->raw * (int32_t)ref_mv) / max_raw);
 }
 
 void syn_adc_set_calibration(SYN_ADC *adc, int16_t offset,

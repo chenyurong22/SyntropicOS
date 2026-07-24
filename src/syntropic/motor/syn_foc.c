@@ -106,15 +106,12 @@ void syn_foc_svpwm(const SYN_FOC_AB *ab, q16_t v_bus,
      * Standard 7-segment SVPWM via inverse Clarke with center-aligned PWM.
      *
      * Step 1: Compute 3-phase reference voltages from (α, β).
-     *   va = α
-     *   vb = (-α + √3·β) / 2
-     *   vc = (-α - √3·β) / 2
      */
-    q16_t s3b = q16_mul(ab->beta, Q16_SQRT3);  /* √3·β */
-
-    q16_t va = ab->alpha;
-    q16_t vb = (-ab->alpha + s3b) / 2;
-    q16_t vc = (-ab->alpha - s3b) / 2;
+    SYN_FOC_ABC v_ref;
+    syn_foc_inv_clarke(ab, &v_ref);
+    q16_t va = v_ref.a;
+    q16_t vb = v_ref.b;
+    q16_t vc = v_ref.c;
 
     /*
      * Step 2: Find min and max for center-clamping.

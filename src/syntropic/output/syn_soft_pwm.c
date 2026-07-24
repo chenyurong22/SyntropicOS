@@ -46,7 +46,7 @@ void syn_soft_pwm_set_percent(SYN_SoftPWM *pwm, uint8_t percent)
     SYN_ASSERT(pwm != NULL);
 
     if (percent > 100) percent = 100;
-    uint16_t duty = (uint16_t)(((uint32_t)percent * pwm->resolution) / 100u);
+    uint16_t duty = (uint16_t)(((uint32_t)percent * pwm->resolution + 50u) / 100u);
     pwm->duty = duty;
 }
 

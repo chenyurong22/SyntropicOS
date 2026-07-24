@@ -37,7 +37,7 @@ void syn_menu_up(SYN_Menu *menu)
     if (menu->editing) {
         /* Increment value */
         const SYN_MenuItem *item = syn_menu_selected_item(menu);
-        if (item->action == SYN_MENU_ACTION_VALUE) {
+        if (item != NULL && item->action == SYN_MENU_ACTION_VALUE && item->u.value_cfg.value != NULL) {
             int32_t *val = item->u.value_cfg.value;
             *val += item->u.value_cfg.step;
             if (*val > item->u.value_cfg.max) *val = item->u.value_cfg.max;
@@ -61,7 +61,7 @@ void syn_menu_down(SYN_Menu *menu)
     if (menu->editing) {
         /* Decrement value */
         const SYN_MenuItem *item = syn_menu_selected_item(menu);
-        if (item->action == SYN_MENU_ACTION_VALUE) {
+        if (item != NULL && item->action == SYN_MENU_ACTION_VALUE && item->u.value_cfg.value != NULL) {
             int32_t *val = item->u.value_cfg.value;
             *val -= item->u.value_cfg.step;
             if (*val < item->u.value_cfg.min) *val = item->u.value_cfg.min;

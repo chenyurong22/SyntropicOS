@@ -163,31 +163,13 @@ size_t syn_ringbuf_read(SYN_RingBuf *rb, uint8_t *data, size_t len)
     SYN_ASSERT(rb != NULL);
     SYN_ASSERT(data != NULL || len == 0);
 
-    size_t avail = syn_ringbuf_count(rb);
-    if (len > avail) {
-        len = avail;
+    size_t peeked = syn_ringbuf_peek_n(rb, data, len);
+    if (peeked > 0) {
+        size_t tail = SYN_LOAD_ACQUIRE(&rb->tail);
+        size_t new_tail = tail + peeked;
+        SYN_STORE_RELEASE(&rb->tail, (new_tail >= rb->size) ? new_tail - rb->size : new_tail);
     }
-    if (len == 0) {
-        return 0;
-    }
-
-    size_t tail = SYN_LOAD_ACQUIRE(&rb->tail);
-
-    /* Bytes from tail to end of backing array */
-    size_t to_end = rb->size - tail;
-
-    if (len <= to_end) {
-        /* No wrap needed */
-        memcpy(data, &rb->buf[tail], len);
-    } else {
-        /* Two-part copy across the wrap boundary */
-        memcpy(data, &rb->buf[tail], to_end);
-        memcpy(data + to_end, &rb->buf[0], len - to_end);
-    }
-
-    size_t new_tail = tail + len;
-    SYN_STORE_RELEASE(&rb->tail, (new_tail >= rb->size) ? new_tail - rb->size : new_tail);
-    return len;
+    return peeked;
 }
 
 size_t syn_ringbuf_peek_n(const SYN_RingBuf *rb, uint8_t *data, size_t len)

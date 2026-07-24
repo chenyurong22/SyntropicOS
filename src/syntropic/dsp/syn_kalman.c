@@ -90,12 +90,11 @@ SYN_Status syn_kalman_update(SYN_Kalman *kf, const SYN_Matrix *z)
      * elements. For a 6-state 4-measurement filter this is 24 × 4 = 96 bytes.
      */
     q16_t k_buf[SYN_KALMAN_MAX_STATE * SYN_KALMAN_MAX_MEAS];
-    SYN_Matrix K_partial = { k_buf, ns, nm };
-    SYN_Matrix K         = { k_buf, ns, nm };
+    SYN_Matrix K = { k_buf, ns, nm };
 
-    syn_matrix_mul(kf->temp_nm, kf->temp_mm, &K_partial);   /* Hᵀ·S⁻¹ */
-    syn_matrix_mul(c->P, &K_partial, kf->temp_nm);          /* P·Hᵀ·S⁻¹ */
-    syn_matrix_copy(&K, kf->temp_nm);                        /* K final  */
+    syn_matrix_mul(kf->temp_nm, kf->temp_mm, &K);           /* Hᵀ·S⁻¹ */
+    syn_matrix_mul(c->P, &K, kf->temp_nm);                  /* P·Hᵀ·S⁻¹ */
+    syn_matrix_copy(&K, kf->temp_nm);                       /* K final  */
 
     /* ── State update: x̂ = x̂⁻ + K·y ──────────────────────────────────── */
     syn_matrix_mul(&K, kf->temp_m1, kf->temp_n1);   /* K·y */

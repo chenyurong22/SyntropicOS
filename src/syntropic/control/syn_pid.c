@@ -54,20 +54,21 @@ int32_t syn_pid_update(SYN_PID *pid, int32_t setpoint,
     int32_t error = setpoint - measured;
 
     /* ── Proportional ──────────────────────────────────────────────────── */
-    int32_t p_term = (pid->cfg.kp * error) / pid->cfg.scale;
+    int32_t p_term = (int32_t)(((int64_t)pid->cfg.kp * error) / pid->cfg.scale);
 
     /* ── Integral (with anti-windup) ───────────────────────────────────── */
-    pid->integral += error * (int32_t)dt_ms;
+    int64_t new_integral = pid->integral + (int64_t)error * (int32_t)dt_ms;
     if (pid->cfg.integral_max > 0) {
-        pid->integral = SYN_CLAMP(pid->integral,
-                              -pid->cfg.integral_max,
-                               pid->cfg.integral_max);
+        if (new_integral > pid->cfg.integral_max) {
+            new_integral = pid->cfg.integral_max;
+        } else if (new_integral < -pid->cfg.integral_max) {
+            new_integral = -pid->cfg.integral_max;
+        }
     }
+    pid->integral = new_integral;
 
-    /* Two-step division to avoid integer truncation.
-     * Old: (ki * integral) / (scale * 1000) — denominator too large.
-     * New: divide by 1000 first (time normalization), then by scale.   */
-    int32_t i_term = ((pid->cfg.ki * pid->integral) / 1000) / pid->cfg.scale;
+    /* Time normalization + scaling using 64-bit int arithmetic to prevent overflow */
+    int32_t i_term = (int32_t)((((int64_t)pid->cfg.ki * pid->integral) / 1000) / pid->cfg.scale);
 
     /* ── Derivative ────────────────────────────────────────────────────── */
     int32_t d_raw;
@@ -75,7 +76,7 @@ int32_t syn_pid_update(SYN_PID *pid, int32_t setpoint,
         d_raw = 0;
         pid->first = false;
     } else {
-        d_raw = ((error - pid->prev_error) * 1000) / (int32_t)dt_ms;
+        d_raw = (int32_t)(((int64_t)(error - pid->prev_error) * 1000) / (int32_t)dt_ms);
     }
     pid->prev_error = error;
 
@@ -86,7 +87,7 @@ int32_t syn_pid_update(SYN_PID *pid, int32_t setpoint,
         d_raw = pid->prev_d_filtered;
     }
 
-    int32_t d_term = (pid->cfg.kd * d_raw) / pid->cfg.scale;
+    int32_t d_term = (int32_t)(((int64_t)pid->cfg.kd * d_raw) / pid->cfg.scale);
 
     /* ── Sum and clamp ─────────────────────────────────────────────────── */
     int32_t output = p_term + i_term + d_term;

@@ -11,6 +11,7 @@
 
 #include "syn_websocket.h"
 #include "../util/syn_assert.h"
+#include "../util/syn_pack.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -51,10 +52,7 @@ static void sha1_transform(uint32_t state[5], const uint8_t buffer[64])
 {
     uint32_t w[80];
     for (int i = 0; i < 16; i++) {
-        w[i] = ((uint32_t)buffer[i*4] << 24) |
-               ((uint32_t)buffer[i*4+1] << 16) |
-               ((uint32_t)buffer[i*4+2] << 8) |
-               (uint32_t)buffer[i*4+3];
+        w[i] = syn_peek_u32(buffer, i * 4);
     }
     for (int i = 16; i < 80; i++) {
         w[i] = SHA1_ROL(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1);
@@ -273,8 +271,7 @@ SYN_Status syn_websocket_send(SYN_WebsocketSession *ws, uint8_t opcode,
         header[1] = (uint8_t)len; /* Mask = 0 */
     } else if (len <= 0xFFFF) {
         header[1] = 126;
-        header[2] = (uint8_t)(len >> 8);
-        header[3] = (uint8_t)(len & 0xFF);
+        syn_poke_u16((uint16_t)len, header, 2);
         header_len = 4;
     } else {
         /* Large payload (limit/not supported on simple stack) */

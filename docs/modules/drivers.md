@@ -38,6 +38,8 @@ Hardware abstraction drivers. Each is guarded by a `SYN_USE_*` config switch.
 |---|---|---|---|
 | SD Card | `drivers/syn_sd.h` | `SYN_USE_SD` | SPI-mode SD card block driver: init, sector read/write/sync. Supports SDSC, SDHC, and SDXC. |
 | RTC | `drivers/syn_rtc.h` | `SYN_USE_RTC` | Real-time clock driver: get/set datetime, Unix epoch conversion |
+| High-Precision Clock | `drivers/syn_hpclock.h` | `SYN_USE_HPCLOCK` | 64-bit system-clock-precision timestamp capture with deferred 3-read overflow resolution |
+| Time Sync | `drivers/syn_timesync.h` | `SYN_USE_TIMESYNC` | GPS PPS + UTC date/time discipline service with 4-tier quality tracking and quantified error bounds |
 
 ## Other
 

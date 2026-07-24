@@ -78,6 +78,7 @@ syn_stream_write(&log_stream, msg, msg_len);
 | Q-Math | `util/syn_qmath.h` | Q16.16 fixed-point math library — no floating point, no `libm.a`. Inline fast arithmetic (`mul`, `div`, `abs`, `lerp`, `clamp`, `floor`, `ceil`, `round`, `add_sat`, `sub_sat`, `mul_sat`) plus compiled transcendentals: sin, cos, tan, atan2, asin, acos, sqrt, hypot, exp, log, pow, Horner polynomial evaluation (`q16_poly_eval`), and zero-allocation string I/O (`q16_to_str` / `q16_from_str`). |
 | Matrix | `util/syn_matrix.h` | Fixed-point matrix algebra — compile-time arbitrary dimensions via `SYN_MAT_DECL(name, rows, cols)`. Matrix multiply (int64 accumulator), transpose, determinant, inverse (1×1, 2×2, 3×3, 4×4), submatrix block extraction/embedding (`get_block`/`set_block`), vector outer product, 2D/3D homogeneous transforms, vector dot/cross/normalize, QR decomposition (`syn_matrix_qr`), 2×2/3×3 Jacobi eigenvalue solvers (`syn_matrix_eigen_sym2`/`sym3`), and linear solvers: LU decomposition (`syn_matrix_solve_lu`), Cholesky decomposition (`syn_matrix_solve_cholesky`), and least-squares fitting (`syn_matrix_least_squares`). Zero heap — all storage is caller-owned. |
 | LUT | `util/syn_lut.h` | Interpolated lookup table with forward and reverse lookup |
+| Geodetic Math | `util/syn_geo.h` | `SYN_USE_GEO` — WGS84 Geodetic, ECEF, Local 3D ENU Cartesian transformations, Haversine, and NMEA GGA bridge (1 cm RTK precision). |
 
 ## Timing & Thresholds
 

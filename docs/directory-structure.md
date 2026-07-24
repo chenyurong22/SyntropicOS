@@ -24,6 +24,7 @@ SyntropicOS/                          ← this repo (add as submodule or Arduino
 │   │   │   ├── syn_port_exti.h
 │   │   │   ├── syn_port_can.h
 │   │   │   ├── syn_port_wdt.h
+│   │   │   ├── syn_port_hpclock.h
 │   │   │   └── syn_port_socket.h
 │   │   ├── port_stubs/            ← weak stubs (optional)
 │   │   ├── drivers/               ← GPIO, UART, ADC, EXTI, I2C/SPI device helpers

@@ -14,6 +14,7 @@
 
 #include "syn_sha256.h"
 #include "syn_assert.h"
+#include "syn_pack.h"
 
 #include <string.h>
 
@@ -137,10 +138,7 @@ static void sha256_transform(uint32_t state[8], const uint8_t block[64])
 
     /* Prepare message schedule */
     for (i = 0; i < 16; i++) {
-        W[i] = ((uint32_t)block[i * 4 + 0] << 24) |
-               ((uint32_t)block[i * 4 + 1] << 16) |
-               ((uint32_t)block[i * 4 + 2] <<  8) |
-               ((uint32_t)block[i * 4 + 3]);
+        W[i] = syn_peek_u32(block, i * 4);
     }
     for (i = 16; i < 64; i++) {
         W[i] = gamma1(W[i - 2]) + W[i - 7] + gamma0(W[i - 15]) + W[i - 16];
@@ -238,24 +236,15 @@ void syn_sha256_final(SYN_SHA256 *ctx, uint8_t hash[SYN_SHA256_DIGEST_SIZE])
     memset(ctx->buf + ctx->buf_len, 0, 56 - ctx->buf_len);
 
     /* Append 64-bit big-endian total length in bits */
-    ctx->buf[56] = (uint8_t)(ctx->total_len_hi >> 24);
-    ctx->buf[57] = (uint8_t)(ctx->total_len_hi >> 16);
-    ctx->buf[58] = (uint8_t)(ctx->total_len_hi >>  8);
-    ctx->buf[59] = (uint8_t)(ctx->total_len_hi);
-    ctx->buf[60] = (uint8_t)(ctx->total_len_lo >> 24);
-    ctx->buf[61] = (uint8_t)(ctx->total_len_lo >> 16);
-    ctx->buf[62] = (uint8_t)(ctx->total_len_lo >>  8);
-    ctx->buf[63] = (uint8_t)(ctx->total_len_lo);
+    syn_poke_u32(ctx->total_len_hi, ctx->buf, 56);
+    syn_poke_u32(ctx->total_len_lo, ctx->buf, 60);
 
     sha256_transform(ctx->state, ctx->buf);
 
     /* Produce big-endian digest */
     unsigned i;
     for (i = 0; i < 8; i++) {
-        hash[i * 4 + 0] = (uint8_t)(ctx->state[i] >> 24);
-        hash[i * 4 + 1] = (uint8_t)(ctx->state[i] >> 16);
-        hash[i * 4 + 2] = (uint8_t)(ctx->state[i] >>  8);
-        hash[i * 4 + 3] = (uint8_t)(ctx->state[i]);
+        syn_poke_u32(ctx->state[i], hash, i * 4);
     }
 }
 

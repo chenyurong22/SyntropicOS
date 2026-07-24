@@ -14,34 +14,19 @@
  */
 
 #include "syn_chacha20poly1305.h"
+#include "../util/syn_pack.h"
 #include <string.h>
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
-/**
- * @brief Load 32-bit little-endian word.
- * @param p Source bytes.
- * @return 32-bit value.
- */
 static inline uint32_t load32_le(const uint8_t *p)
 {
-    return (uint32_t)p[0]
-         | ((uint32_t)p[1] <<  8)
-         | ((uint32_t)p[2] << 16)
-         | ((uint32_t)p[3] << 24);
+    return syn_peek_u32_le(p, 0);
 }
 
-/**
- * @brief Store 32-bit little-endian word.
- * @param p Destination bytes.
- * @param v Value to store.
- */
 static inline void store32_le(uint8_t *p, uint32_t v)
 {
-    p[0] = (uint8_t)(v);
-    p[1] = (uint8_t)(v >>  8);
-    p[2] = (uint8_t)(v >> 16);
-    p[3] = (uint8_t)(v >> 24);
+    syn_poke_u32_le(v, p, 0);
 }
 
 /**

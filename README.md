@@ -124,9 +124,13 @@ SyntropicOS includes a comprehensive Q16.16 fixed-point math library — no floa
 SyntropicOS features a containerized multi-tier testing workflow:
 
 ```bash
+make format       # Check C99 code formatting via clang-format
+make lint         # AST structural quality linter via clang-tidy
+make misra        # MISRA C:2023 safety rule compliance scanner
 make test         # Run Unity unit test suite (1000+ tests passing 100%)
 make san          # AddressSanitizer & UBSan runtime memory safety audit
 make qemu         # QEMU Cortex-M4 bare-metal boot emulation
+make renode       # Renode STM32F4 board-level hardware emulation
 make fuzz         # LLVM libFuzzer protocol targets (COBS, Modbus, MQTT, HTTP, IR)
 make cov          # LCOV HTML code coverage reports
 make static       # Cppcheck & Clang scan-build static analysis

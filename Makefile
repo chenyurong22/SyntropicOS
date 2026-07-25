@@ -1,13 +1,22 @@
 # SyntropicOS Top-Level Convenience Makefile
 # Forwards targets to tools/containers/Makefile
 
-.PHONY: help test san qemu renode fuzz cov static dox integration container-build container-test container-san container-qemu container-renode container-fuzz container-cov container-static container-dox container-integration
+.PHONY: help test format lint misra san qemu renode fuzz cov static dox integration container-build container-test container-format container-lint container-misra container-san container-qemu container-renode container-fuzz container-cov container-static container-dox container-integration
 
 help:
 	@make -C tools/containers help
 
 test:
 	@make -C tools/containers test
+
+format:
+	@make -C tools/containers format
+
+lint:
+	@make -C tools/containers lint
+
+misra:
+	@make -C tools/containers misra
 
 san:
 	@make -C tools/containers san
@@ -38,6 +47,15 @@ container-build:
 
 container-test:
 	@make -C tools/containers container-test
+
+container-format:
+	@make -C tools/containers container-format
+
+container-lint:
+	@make -C tools/containers container-lint
+
+container-misra:
+	@make -C tools/containers container-misra
 
 container-san:
 	@make -C tools/containers container-san

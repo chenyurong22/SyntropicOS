@@ -1,0 +1,26 @@
+---
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  cert-*,
+  -cert-dcl03-c,
+  -cert-dcl16-c,
+  performance-*,
+  readability-*,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-function-size
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: 'src/syntropic/.*'
+
+CheckOptions:
+  - key:   readability-uppercase-literal-suffix.NewSuffixes
+    value: 'u;U;l;L;ll;LL;f;F'
+
+FormatStyle: 'file'
+...

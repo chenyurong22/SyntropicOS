@@ -4,21 +4,29 @@
 SHELL := /bin/bash
 ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
 
-.PHONY: help san qemu fuzz cov static dox integration container-build container-san container-qemu container-fuzz container-cov container-static container-dox container-integration
+.PHONY: help san qemu renode fuzz cov static dox integration format lint misra container-build container-san container-qemu container-renode container-fuzz container-cov container-static container-dox container-integration container-format container-lint container-misra
 
 help:
 	@echo "SyntropicOS Containerized Execution & Tooling Framework"
 	@echo "--------------------------------------------------------"
+	@echo "  make format                Check code formatting via clang-format"
+	@echo "  make lint                  Run AST code quality linter via clang-tidy"
+	@echo "  make misra                 Run MISRA C:2023 safety compliance scan"
 	@echo "  make san                   Run test suite under ASan + UBSan"
 	@echo "  make qemu                  Run QEMU ARM Cortex-M4 bare-metal emulation"
+	@echo "  make renode                Run Renode STM32F4 board hardware emulation"
 	@echo "  make fuzz                  Run libFuzzer protocol targets"
 	@echo "  make cov                   Generate test coverage analysis & HTML report"
 	@echo "  make static                Run Cppcheck & Clang scan-build static analysis"
-	@echo "  make dox                  Run Doxygen API documentation coverage check"
-	@echo "  make integration           Run 3rd-party container integration tests (Mosquitto/Chrony/Modbus)"
+	@echo "  make dox                   Run Doxygen API documentation coverage check"
+	@echo "  make integration           Run 3rd-party container integration tests"
 	@echo "  make container-build       Build testing container image via Podman/Docker"
+	@echo "  make container-format      Run clang-format formatting check in container"
+	@echo "  make container-lint        Run clang-tidy linter inside container"
+	@echo "  make container-misra       Run MISRA C:2023 compliance scan in container"
 	@echo "  make container-san         Execute sanitizer suite inside Podman container"
 	@echo "  make container-qemu        Execute QEMU ARM Cortex-M4 inside Podman container"
+	@echo "  make container-renode      Execute Renode hardware emulation inside container"
 	@echo "  make container-fuzz        Execute libFuzzer suite inside Podman container"
 	@echo "  make container-cov         Execute coverage analysis inside Podman container"
 	@echo "  make container-static      Execute static analysis inside Podman container"
@@ -27,6 +35,15 @@ help:
 
 test:
 	@make -f $(ROOT_DIR)/tests/Makefile.unity test
+
+format:
+	@bash $(ROOT_DIR)/tools/lint/run_format.sh
+
+lint:
+	@bash $(ROOT_DIR)/tools/lint/run_tidy.sh
+
+misra:
+	@bash $(ROOT_DIR)/tools/lint/run_misra.sh
 
 san:
 	@bash $(ROOT_DIR)/tools/containers/run_sanitizers.sh
@@ -55,6 +72,18 @@ integration:
 container-build:
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
 	$$CONTAINER_ENGINE build -t syntropicos-test -f $(ROOT_DIR)/tools/containers/Containerfile $(ROOT_DIR)
+
+container-format: container-build
+	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
+	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers format
+
+container-lint: container-build
+	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
+	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers lint
+
+container-misra: container-build
+	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
+	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers misra
 
 container-san: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \

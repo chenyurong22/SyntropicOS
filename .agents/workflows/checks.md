@@ -4,13 +4,20 @@ description: Automated Quality & Testing Checks Workflow
 
 # SyntropicOS Comprehensive Checks Workflow
 
-Follow this sequence to verify software correctness, memory safety, static analysis, coverage, and documentation.
+Follow this sequence to verify software formatting, MISRA C safety compliance, memory safety, static analysis, coverage, and documentation.
+
+## Step 0: Code Formatting, Linting & MISRA C:2023 Compliance
+Run code polish, AST linting, and MISRA C:2023 compliance checkers:
+- **Code Formatting**: `make format` (or `make container-format`)
+- **AST Structural Linter**: `make lint` (or `make container-lint`)
+- **MISRA C:2023 Compliance Scan**: `make misra` (or `make container-misra`)
 
 ## Step 1: Unit Testing & Dynamic Sanitizers
 Run host and containerized test suites:
 - **Unit Test Suite**: `make test` (or `make container-test`)
 - **Containerized Sanitizer Audit**: `make san` (or `make container-san`)
 - **QEMU Bare-Metal Emulation**: `make qemu` (or `make container-qemu`)
+- **Renode STM32F4 Board Emulation**: `make renode` (or `make container-renode`)
 - **Protocol libFuzzer Targets**: `make fuzz` (or `make container-fuzz`)
 
 ## Step 2: 3rd-Party Production Container Integration Suite

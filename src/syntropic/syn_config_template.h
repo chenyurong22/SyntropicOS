@@ -101,6 +101,7 @@
 /* ── Communication / Protocols ──────────────────────────────────────────── */
 
 #define SYN_USE_COBS 1      /**< COBS packet framing                 */
+#define SYN_USE_ETHERCAT 1  /**< EtherCAT bare-metal protocol stack  */
 #define SYN_USE_LIN 1       /**< LIN bus 2.1/2.2a & ISO 17987 stack  */
 #define SYN_USE_DALI 1      /**< DALI / IEC 62386 lighting stack    */
 #define SYN_USE_SMBUS 1     /**< SMBus 1.1/2.0/3.0 protocol engine   */

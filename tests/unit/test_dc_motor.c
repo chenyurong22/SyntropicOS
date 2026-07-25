@@ -294,6 +294,29 @@ static void test_dc_motor_clamp_negative(void)
 
 /* ── Test runner ─────────────────────────────────────────────────────── */
 
+static void test_dc_motor_duty_max_and_adapter(void)
+{
+    SYN_DCMotor motor;
+    syn_dc_motor_init(&motor, 1, 2, SYN_DC_MODE_PWM_DIR);
+    syn_dc_motor_set_duty_max(&motor, 500);
+    TEST_ASSERT_EQUAL_INT(500, motor.duty_max);
+
+    /* Test SYN_MotorOutput adapter */
+    SYN_MotorOutput adapter = syn_dc_motor_output(&motor);
+    TEST_ASSERT_NOT_NULL(adapter.set_output);
+    TEST_ASSERT_NOT_NULL(adapter.coast);
+    TEST_ASSERT_NOT_NULL(adapter.brake);
+
+    adapter.set_output(adapter.ctx, 250);
+    TEST_ASSERT_EQUAL_INT(250, syn_dc_motor_get_speed(&motor));
+
+    adapter.coast(adapter.ctx);
+    TEST_ASSERT_EQUAL_INT(0, syn_dc_motor_get_speed(&motor));
+
+    adapter.brake(adapter.ctx);
+    TEST_ASSERT_EQUAL(SYN_GPIO_HIGH, mock_gpio_states[1]);
+}
+
 void run_dc_motor_tests(void)
 {
     RUN_TEST(test_dc_motor);
@@ -308,4 +331,5 @@ void run_dc_motor_tests(void)
     RUN_TEST(test_dc_motor_update_at_target);
     RUN_TEST(test_dc_motor_ramp_downward);
     RUN_TEST(test_dc_motor_clamp_negative);
+    RUN_TEST(test_dc_motor_duty_max_and_adapter);
 }

@@ -1003,10 +1003,14 @@ static void test_matrix_extra_coverage(void)
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_inv(&M1, &Inv1));
     TEST_ASSERT_INT_WITHIN(Q16_TOL, Q16_FROM_FRAC(1, 5), inv1[0]);
 
-    /* Trace */
+    /* Trace & Scale */
     q16_t d2[4] = {Q16_FROM_INT(3), Q16_ONE, Q16_FROM_INT(2), Q16_FROM_INT(4)};
+    q16_t scaled[4] = {0};
     SYN_MAT_INIT(M2, d2, 2, 2);
+    SYN_MAT_INIT(ScaledM2, scaled, 2, 2);
     TEST_ASSERT_EQUAL(Q16_FROM_INT(7), syn_matrix_trace(&M2));
+    syn_matrix_scale(&M2, Q16_FROM_INT(2), &ScaledM2);
+    TEST_ASSERT_EQUAL(Q16_FROM_INT(6), scaled[0]);
 
     /* Vector norm test */
     TEST_ASSERT_TRUE(syn_vec_norm(d2, 4) > 0);
@@ -1021,6 +1025,12 @@ static void test_matrix_extra_coverage(void)
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_inv(&M4, &Inv4));
     TEST_ASSERT_INT_WITHIN(Q16_TOL, Q16_ONE, inv4[0]);
     TEST_ASSERT_INT_WITHIN(Q16_TOL, Q16_FROM_FRAC(1, 4), inv4[15]);
+
+    /* Test syn_matrix_inv_lu explicitly */
+    q16_t inv4_lu[16] = {0};
+    SYN_MAT_INIT(Inv4_LU, inv4_lu, 4, 4);
+    TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_inv_lu(&M4, &Inv4_LU));
+    TEST_ASSERT_INT_WITHIN(Q16_TOL, Q16_ONE, inv4_lu[0]);
 }
 
 void run_matrix_tests(void)

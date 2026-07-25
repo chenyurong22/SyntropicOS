@@ -620,6 +620,13 @@ static void test_wg_established_transport_and_keepalive(void)
     st = syn_wg_send(&s_wg, NULL, 0);
     TEST_ASSERT_EQUAL(SYN_OK, st);
 
+    /* Trigger periodic keepalive check in task */
+    s_wg.config.keepalive_interval_s = 10;
+    s_wg.last_sent_ms = 100;
+    s_wg.session.established_ms = 10000;
+    mock_tick_ms = 25000;
+    syn_wg_task(&pt, &task);
+
     /* 6. Session expiry / rekey in task */
     s_wg.session.established_ms = 100;
     mock_tick_ms = 200000; /* > SYN_WG_REKEY_AFTER_TIME (120s) */

@@ -1,0 +1,18 @@
+# 3rd-Party EtherCAT Container Service
+# Uses pysoem (official Python bindings for SOEM - Simple Open EtherCAT Master)
+FROM docker.io/library/debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install pysoem --break-system-packages
+
+WORKDIR /app
+COPY pysoem_daemon.py /app/pysoem_daemon.py
+
+EXPOSE 10884
+
+CMD ["python3", "/app/pysoem_daemon.py"]

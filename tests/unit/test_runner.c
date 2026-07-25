@@ -88,6 +88,7 @@ void run_modbus_master_tests(void);
 void run_canopen_tests(void);
 void run_cia402_tests(void);
 void run_lss_tests(void);
+void run_ethercat_tests(void);
 void run_cia401_tests(void);
 void run_canopen_mgr_tests(void);
 void run_dmx512_tests(void);
@@ -217,6 +218,7 @@ int main(void)
     run_modbus_master_tests();
     run_canopen_tests();
     run_cia402_tests();
+    run_ethercat_tests();
     run_lss_tests();
     run_cia401_tests();
     run_canopen_mgr_tests();

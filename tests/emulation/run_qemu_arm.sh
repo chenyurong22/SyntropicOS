@@ -12,8 +12,8 @@ echo "=== Cross-compiling SyntropicOS for ARM Cortex-M4 (bare-metal) ==="
 # Gather source C files, excluding port_stubs, syn_wg.c, syn_hpclock.c, syn_timesync.c
 SRC_FILES=$(find src/syntropic -name "*.c" ! -path "*/port_stubs/*" ! -name "syn_wg.c" ! -name "syn_hpclock.c" ! -name "syn_timesync.c")
 
-# Gather test files, excluding host-only Linux socket tests and standalone main binaries
-TEST_FILES=$(find tests/unit -name "test_*.c" ! -name "test_geo.c" ! -name "test_hpclock.c" ! -name "test_timesync.c")
+# Gather test files, excluding host-only Linux socket tests, standalone main binaries, and test_runner
+TEST_FILES=$(find tests/unit -name "test_*.c" ! -name "test_runner.c" ! -name "test_geo.c" ! -name "test_hpclock.c" ! -name "test_timesync.c")
 
 arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -std=c99 -pedantic -Wall -Wextra \
     -O2 -fno-unwind-tables -fno-asynchronous-unwind-tables -I. -Isrc -Itests/unit -Itests/unit/mocks \
@@ -25,6 +25,7 @@ arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -std=c99 -pedantic -Wall -Wextra \
     ${SRC_FILES} \
     tests/unit/unity/unity.c \
     tests/unit/mocks/mock_port.c \
+    tests/unit/test_runner.c \
     ${TEST_FILES} \
     -o test_cortexm4.elf -lm
 

@@ -88,10 +88,40 @@ void test_quaternion_slerp(void)
     ASSERT_Q16_NEAR(Q16_PI / 4, yaw, Q16_TOL * 5);
 }
 
+void test_quaternion_matrix_and_inverse(void)
+{
+    SYN_Quaternion q;
+    syn_quat_from_euler(&q, 0, 0, Q16_PI_2);
+
+    /* Test conjugate & inverse */
+    SYN_Quaternion q_conj, q_inv;
+    syn_quat_conjugate(&q, &q_conj);
+    SYN_Status st = syn_quat_inverse(&q, &q_inv);
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+    ASSERT_Q16_NEAR(q_conj.w, q_inv.w, Q16_TOL);
+    ASSERT_Q16_NEAR(q_conj.x, q_inv.x, Q16_TOL);
+
+    /* Test inverse of zero norm */
+    SYN_Quaternion q_zero = {0, 0, 0, 0};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_quat_inverse(&q_zero, &q_inv));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_quat_normalize(&q_zero));
+
+    /* Test to_mat3x3 */
+    q16_t mat_buf[9];
+    SYN_MAT_INIT(mat, mat_buf, 3, 3);
+    syn_quat_to_mat3x3(&q, &mat);
+    /* For 90 deg yaw rotation: R[0][0] approx 0, R[0][1] approx -1, R[1][0] approx 1, R[1][1]
+     * approx 0 */
+    ASSERT_Q16_NEAR(0, SYN_MAT_AT(&mat, 0, 0), Q16_TOL * 20);
+    ASSERT_Q16_NEAR(-Q16_ONE, SYN_MAT_AT(&mat, 0, 1), Q16_TOL * 20);
+    ASSERT_Q16_NEAR(Q16_ONE, SYN_MAT_AT(&mat, 1, 0), Q16_TOL * 20);
+}
+
 void run_quaternion_tests(void)
 {
     RUN_TEST(test_quaternion_identity_and_init);
     RUN_TEST(test_quaternion_mul_and_rotate);
     RUN_TEST(test_quaternion_euler_roundtrip);
     RUN_TEST(test_quaternion_slerp);
+    RUN_TEST(test_quaternion_matrix_and_inverse);
 }

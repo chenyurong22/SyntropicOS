@@ -61,7 +61,8 @@ void test_random_fallback(void)
 {
     uint8_t buf[16];
 
-    /* Test the fallback logic directly */
+    /* Test the port fallback logic directly */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_port_random_fill(buf, sizeof(buf)));
     TEST_ASSERT_EQUAL(SYN_OK, syn_random_fallback_fill(buf, sizeof(buf)));
 
     /* Verify it actually did something */

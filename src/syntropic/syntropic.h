@@ -347,6 +347,10 @@ extern "C" {
 #include "proto/syn_isotp.h"
 #endif
 
+#if !defined(SYN_USE_ETHERCAT) || SYN_USE_ETHERCAT
+#include "proto/syn_ethercat.h"
+#endif
+
 /* ── Storage ────────────────────────────────────────────────────────────── */
 
 #if !defined(SYN_USE_PARAM) || SYN_USE_PARAM

@@ -101,6 +101,21 @@ services:
       syn_net:
         ipv4_address: 172.28.0.90
 
+  # 9. EtherCAT Industrial Daemon
+  ethercat:
+    build:
+      context: ./services/ethercat
+      dockerfile: Containerfile
+    container_name: syntropicos-ethercat
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    ports:
+      - "10884:10884"
+    networks:
+      syn_net:
+        ipv4_address: 172.28.0.100
+
 networks:
   syn_net:
     driver: bridge

@@ -47,6 +47,20 @@ void test_vector_stats(void)
     /* RMS of [2, 4, 6, 8, 10]: sqrt((4+16+36+64+100)/5) = sqrt(220/5) = sqrt(44) ≈ 6.633 */
     q16_t rms = syn_vec_rms(v, 5);
     ASSERT_Q16_NEAR(Q16_FROM_FRAC(6633, 1000), rms, Q16_TOL * 10);
+
+    /* Variance of [2, 4, 6, 8, 10]: mean=6, diffs=[-4,-2,0,2,4], diffs^2=[16,4,0,4,16], sum=40,
+     * mean=8 */
+    q16_t var = syn_vec_variance(v, 5);
+    ASSERT_Q16_NEAR(Q16_FROM_INT(8), var, Q16_TOL * 10);
+
+    /* Clamp test */
+    q16_t v_unclamped[4] = {Q16_FROM_INT(-10), Q16_FROM_INT(5), Q16_FROM_INT(15), Q16_FROM_INT(25)};
+    q16_t v_clamped[4];
+    syn_vec_clamp(v_unclamped, Q16_FROM_INT(0), Q16_FROM_INT(20), v_clamped, 4);
+    TEST_ASSERT_EQUAL_INT32(Q16_FROM_INT(0), v_clamped[0]);
+    TEST_ASSERT_EQUAL_INT32(Q16_FROM_INT(5), v_clamped[1]);
+    TEST_ASSERT_EQUAL_INT32(Q16_FROM_INT(15), v_clamped[2]);
+    TEST_ASSERT_EQUAL_INT32(Q16_FROM_INT(20), v_clamped[3]);
 }
 
 void run_vector_tests(void)

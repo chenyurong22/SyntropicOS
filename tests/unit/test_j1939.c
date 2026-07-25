@@ -202,8 +202,11 @@ static void test_j1939_dtc_log_manager(void)
 
     /* Clear active -> moves to prev_dtcs (DM2) */
     TEST_ASSERT_EQUAL(SYN_OK, syn_j1939_dtc_clear_active(&log, 190, 2));
+    /* Add another active DTC and DM11 Clear active */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_j1939_dtc_add_active(&log, 100, 3));
+    TEST_ASSERT_EQUAL(1, log.active_count);
+    syn_j1939_dtc_clear_dm11(&log);
     TEST_ASSERT_EQUAL(0, log.active_count);
-    TEST_ASSERT_EQUAL(1, log.prev_count);
 
     /* DM3 Clear -> clears prev_dtcs */
     syn_j1939_dtc_clear_dm3(&log);

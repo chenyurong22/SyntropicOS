@@ -358,3 +358,92 @@ SYN_ModbusMaster_State syn_modbus_master_process(SYN_ModbusMaster *m, uint32_t c
 
     return m->state;
 }
+
+void syn_modbus_master_queue_init(SYN_ModbusMasterQueue *q, uint8_t max_retries)
+{
+    if (q == NULL) {
+        return;
+    }
+    (void)memset(q, 0, sizeof(*q));
+    q->max_retries = max_retries;
+}
+
+SYN_Status syn_modbus_master_queue_push(SYN_ModbusMasterQueue *q, const SYN_ModbusMasterQuery *query)
+{
+    if (q == NULL || query == NULL) {
+        return SYN_INVALID_PARAM;
+    }
+
+    if (q->count >= SYN_MODBUS_QUEUE_SIZE) {
+        return SYN_ERROR; /* Queue full */
+    }
+
+    q->queries[q->tail] = *query;
+    q->tail = (uint8_t)((q->tail + 1U) % SYN_MODBUS_QUEUE_SIZE);
+    q->count++;
+
+    return SYN_OK;
+}
+
+SYN_Status syn_modbus_master_queue_step(SYN_ModbusMaster *m, SYN_ModbusMasterQueue *q, uint32_t now_ms)
+{
+    if (m == NULL || q == NULL) {
+        return SYN_INVALID_PARAM;
+    }
+
+    SYN_ModbusMaster_State state = syn_modbus_master_process(m, now_ms);
+
+    if (state == SYN_MB_MASTER_STATE_IDLE && q->count > 0) {
+        SYN_ModbusMasterQuery *qry = &q->queries[q->head];
+        SYN_Status st = SYN_ERROR;
+
+        switch (qry->func_code) {
+        case SYN_MB_FC_READ_HOLDING:
+            st = syn_modbus_master_read_holding(m, qry->slave_addr, qry->start_addr, qry->count);
+            break;
+        case SYN_MB_FC_READ_INPUT:
+            st = syn_modbus_master_read_input(m, qry->slave_addr, qry->start_addr, qry->count);
+            break;
+        case SYN_MB_FC_WRITE_SINGLE:
+            st = syn_modbus_master_write_single(m, qry->slave_addr, qry->start_addr, qry->write_value);
+            break;
+        case SYN_MB_FC_READ_COILS:
+            st = syn_modbus_master_read_coils(m, qry->slave_addr, qry->start_addr, qry->count);
+            break;
+        case SYN_MB_FC_READ_DISCRETE_INPUTS:
+            st = syn_modbus_master_read_discrete_inputs(m, qry->slave_addr, qry->start_addr, qry->count);
+            break;
+        default:
+            break;
+        }
+
+        if (st == SYN_OK) {
+            syn_modbus_master_process(m, now_ms); /* transition state to WAITING_RESPONSE */
+        }
+    } else if (state == SYN_MB_MASTER_STATE_COMPLETE && q->count > 0) {
+        SYN_ModbusMasterQuery *qry = &q->queries[q->head];
+        if (qry->callback != NULL) {
+            qry->callback(qry->slave_addr, qry->func_code, m->read_data, m->read_count, SYN_OK, qry->user_ctx);
+        }
+        q->head = (uint8_t)((q->head + 1U) % SYN_MODBUS_QUEUE_SIZE);
+        q->count--;
+        q->retry_count = 0;
+        m->state = SYN_MB_MASTER_STATE_IDLE;
+    } else if ((state == SYN_MB_MASTER_STATE_TIMEOUT || state == SYN_MB_MASTER_STATE_ERROR) && q->count > 0) {
+        SYN_ModbusMasterQuery *qry = &q->queries[q->head];
+        if (q->retry_count < q->max_retries) {
+            q->retry_count++;
+            m->state = SYN_MB_MASTER_STATE_IDLE; /* Retry query */
+        } else {
+            if (qry->callback != NULL) {
+                qry->callback(qry->slave_addr, qry->func_code, NULL, 0, SYN_ERROR, qry->user_ctx);
+            }
+            q->head = (uint8_t)((q->head + 1U) % SYN_MODBUS_QUEUE_SIZE);
+            q->count--;
+            q->retry_count = 0;
+            m->state = SYN_MB_MASTER_STATE_IDLE;
+        }
+    }
+
+    return SYN_OK;
+}

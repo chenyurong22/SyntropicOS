@@ -192,6 +192,59 @@ void syn_modbus_master_feed(SYN_ModbusMaster *m, uint8_t byte);
  */
 SYN_ModbusMaster_State syn_modbus_master_process(SYN_ModbusMaster *m, uint32_t current_tick_ms);
 
+/* ── Modbus Master Polling & Transaction Queue ──────────────────────────── */
+
+typedef void (*SYN_ModbusMasterCallback)(uint8_t slave_addr, uint8_t func_code,
+                                          const uint16_t *data, uint16_t count,
+                                          SYN_Status status, void *user_ctx);
+
+typedef struct {
+    uint8_t slave_addr;
+    uint8_t func_code;
+    uint16_t start_addr;
+    uint16_t count;
+    uint16_t write_value;
+    SYN_ModbusMasterCallback callback;
+    void *user_ctx;
+} SYN_ModbusMasterQuery;
+
+#ifndef SYN_MODBUS_QUEUE_SIZE
+#define SYN_MODBUS_QUEUE_SIZE 16
+#endif
+
+typedef struct {
+    SYN_ModbusMasterQuery queries[SYN_MODBUS_QUEUE_SIZE];
+    uint8_t head;
+    uint8_t tail;
+    uint8_t count;
+    uint8_t max_retries;
+    uint8_t retry_count;
+} SYN_ModbusMasterQueue;
+
+/**
+ * @brief Initialize a Modbus Master transaction queue.
+ * @param q Pointer to queue handle.
+ * @param max_retries Number of retry attempts on timeout (e.g. 2).
+ */
+void syn_modbus_master_queue_init(SYN_ModbusMasterQueue *q, uint8_t max_retries);
+
+/**
+ * @brief Push a query request into the transaction queue.
+ * @param q Pointer to queue.
+ * @param query Pointer to query parameters.
+ * @return SYN_OK on success, SYN_ERROR if queue is full.
+ */
+SYN_Status syn_modbus_master_queue_push(SYN_ModbusMasterQueue *q, const SYN_ModbusMasterQuery *query);
+
+/**
+ * @brief Process queue advancement and dispatch active queries to Master.
+ * @param m Master handle.
+ * @param q Queue handle.
+ * @param now_ms Current system tick in milliseconds.
+ * @return SYN_OK on normal operation.
+ */
+SYN_Status syn_modbus_master_queue_step(SYN_ModbusMaster *m, SYN_ModbusMasterQueue *q, uint32_t now_ms);
+
 #ifdef __cplusplus
 }
 #endif

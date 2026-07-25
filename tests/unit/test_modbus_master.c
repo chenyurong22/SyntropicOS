@@ -304,6 +304,66 @@ static void test_modbus_master_new_queries(void)
     TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_COMPLETE, syn_modbus_master_process(&master, 10));
 }
 
+static bool s_cb_called = false;
+static uint16_t s_cb_val = 0;
+
+static void test_cb(uint8_t slave_addr, uint8_t func_code, const uint16_t *data, uint16_t count, SYN_Status status, void *user_ctx)
+{
+    (void)slave_addr;
+    (void)func_code;
+    (void)user_ctx;
+    if (status == SYN_OK && count > 0) {
+        s_cb_called = true;
+        s_cb_val = data[0];
+    }
+}
+
+static void test_modbus_master_queue(void)
+{
+    SYN_ModbusMaster master;
+    syn_modbus_master_init(&master, 500);
+
+    SYN_ModbusMasterQueue q;
+    syn_modbus_master_queue_init(&q, 2);
+
+    SYN_ModbusMasterQuery qry = {
+        .slave_addr = 1,
+        .func_code = SYN_MB_FC_READ_HOLDING,
+        .start_addr = 10,
+        .count = 1,
+        .callback = test_cb,
+        .user_ctx = NULL,
+    };
+
+    s_cb_called = false;
+    s_cb_val = 0;
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_modbus_master_queue_push(&q, &qry));
+    TEST_ASSERT_EQUAL(1, q.count);
+
+    /* Step queue to dispatch query */
+    syn_modbus_master_queue_step(&master, &q, 0);
+    TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_WAITING_RESPONSE, master.state);
+
+    /* Feed valid Modbus response */
+    uint8_t resp[7] = {1, 0x03, 2, 0x12, 0x34, 0, 0};
+    uint16_t crc = syn_crc16_modbus(resp, 5);
+    resp[5] = (uint8_t)(crc & 0xFF);
+    resp[6] = (uint8_t)(crc >> 8);
+
+    for (int i = 0; i < 7; i++) {
+        syn_modbus_master_feed(&master, resp[i]);
+    }
+
+    /* Step queue to process response and fire callback */
+    syn_modbus_master_queue_step(&master, &q, 10);
+
+    TEST_ASSERT_TRUE(s_cb_called);
+    TEST_ASSERT_EQUAL_HEX16(0x1234, s_cb_val);
+    TEST_ASSERT_EQUAL(0, q.count);
+    TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_IDLE, master.state);
+}
+
 void run_modbus_master_tests(void)
 {
     RUN_TEST(test_modbus_master_read_holding);
@@ -312,4 +372,5 @@ void run_modbus_master_tests(void)
     RUN_TEST(test_modbus_master_timeout_and_exceptions);
     RUN_TEST(test_modbus_master_process_edge_cases);
     RUN_TEST(test_modbus_master_new_queries);
+    RUN_TEST(test_modbus_master_queue);
 }

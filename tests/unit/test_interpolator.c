@@ -118,6 +118,21 @@ void test_interpolator_additional_coverage(void)
     TEST_ASSERT_FALSE(syn_interpolator_eval_at_time(&interp, 0.0f, &pos, &vel));
 }
 
+static void test_scurve3d(void)
+{
+    SYN_SCurve3D sc3d;
+    syn_scurve3d_plan(&sc3d, 0, 0, 0, 300, 400, 0, 100, 50, 10);
+    TEST_ASSERT_EQUAL(500, sc3d.total_dist);
+
+    int32_t x = 0, y = 0, z = 0;
+    while (syn_scurve3d_update(&sc3d, &x, &y, &z)) {
+        TEST_ASSERT_TRUE(x >= 0 && x <= 300);
+        TEST_ASSERT_TRUE(y >= 0 && y <= 400);
+    }
+    TEST_ASSERT_EQUAL(300, x);
+    TEST_ASSERT_EQUAL(400, y);
+}
+
 void run_interpolator_tests(void)
 {
     RUN_TEST(test_interpolator_linear_planning);
@@ -125,4 +140,5 @@ void run_interpolator_tests(void)
     RUN_TEST(test_interpolator_eval_time);
     RUN_TEST(test_interpolator_edge_cases);
     RUN_TEST(test_interpolator_additional_coverage);
+    RUN_TEST(test_scurve3d);
 }

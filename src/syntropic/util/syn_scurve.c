@@ -168,4 +168,51 @@ int32_t syn_scurve_update(SYN_SCurve *sc)
     return sc->p;
 }
 
+void syn_scurve3d_plan(SYN_SCurve3D *sc3d, int32_t start_x, int32_t start_y, int32_t start_z,
+                       int32_t target_x, int32_t target_y, int32_t target_z,
+                       int32_t v_max, int32_t a_max, int32_t j_max)
+{
+    SYN_ASSERT(sc3d != NULL);
+    sc3d->start_x = start_x;
+    sc3d->start_y = start_y;
+    sc3d->start_z = start_z;
+    sc3d->delta_x = target_x - start_x;
+    sc3d->delta_y = target_y - start_y;
+    sc3d->delta_z = target_z - start_z;
+
+    uint32_t dx2 = (uint32_t)(sc3d->delta_x * sc3d->delta_x);
+    uint32_t dy2 = (uint32_t)(sc3d->delta_y * sc3d->delta_y);
+    uint32_t dz2 = (uint32_t)(sc3d->delta_z * sc3d->delta_z);
+    sc3d->total_dist = syn_isqrt32(dx2 + dy2 + dz2);
+
+    syn_scurve_init(&sc3d->sc_master, 0);
+    syn_scurve_set_constraints(&sc3d->sc_master, v_max, a_max, j_max);
+    syn_scurve_set_target(&sc3d->sc_master, (int32_t)sc3d->total_dist);
+}
+
+bool syn_scurve3d_update(SYN_SCurve3D *sc3d, int32_t *out_x, int32_t *out_y, int32_t *out_z)
+{
+    SYN_ASSERT(sc3d != NULL && out_x != NULL && out_y != NULL && out_z != NULL);
+    if (sc3d->sc_master.done) {
+        *out_x = sc3d->start_x + sc3d->delta_x;
+        *out_y = sc3d->start_y + sc3d->delta_y;
+        *out_z = sc3d->start_z + sc3d->delta_z;
+        return false;
+    }
+
+    int32_t master_p = syn_scurve_update(&sc3d->sc_master);
+    if (sc3d->total_dist > 0) {
+        int64_t ratio_q16 = ((int64_t)master_p << Q16_SHIFT) / sc3d->total_dist;
+        *out_x = sc3d->start_x + (int32_t)(((int64_t)sc3d->delta_x * ratio_q16) >> Q16_SHIFT);
+        *out_y = sc3d->start_y + (int32_t)(((int64_t)sc3d->delta_y * ratio_q16) >> Q16_SHIFT);
+        *out_z = sc3d->start_z + (int32_t)(((int64_t)sc3d->delta_z * ratio_q16) >> Q16_SHIFT);
+    } else {
+        *out_x = sc3d->start_x;
+        *out_y = sc3d->start_y;
+        *out_z = sc3d->start_z;
+    }
+
+    return !sc3d->sc_master.done;
+}
+
 #endif /* SYN_USE_SCURVE */

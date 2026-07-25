@@ -116,6 +116,41 @@ void syn_scurve_set_target(SYN_SCurve *sc, int32_t target);
  */
 int32_t syn_scurve_update(SYN_SCurve *sc);
 
+/** @brief Synchronized 3D S-Curve trajectory generator. */
+typedef struct {
+    SYN_SCurve sc_master; /**< Master vector motion profile */
+    int32_t start_x, start_y, start_z;
+    int32_t delta_x, delta_y, delta_z;
+    uint32_t total_dist;
+} SYN_SCurve3D;
+
+/**
+ * @brief Initialize and plan a synchronized 3D vector move.
+ * @param sc3d     3D profile pointer.
+ * @param start_x  Starting X coordinate.
+ * @param start_y  Starting Y coordinate.
+ * @param start_z  Starting Z coordinate.
+ * @param target_x Target X coordinate.
+ * @param target_y Target Y coordinate.
+ * @param target_z Target Z coordinate.
+ * @param v_max    Vector max velocity.
+ * @param a_max    Vector max acceleration.
+ * @param j_max    Vector max jerk.
+ */
+void syn_scurve3d_plan(SYN_SCurve3D *sc3d, int32_t start_x, int32_t start_y, int32_t start_z,
+                       int32_t target_x, int32_t target_y, int32_t target_z,
+                       int32_t v_max, int32_t a_max, int32_t j_max);
+
+/**
+ * @brief Step 3D synchronized S-Curve profile by one tick.
+ * @param sc3d    3D profile pointer.
+ * @param out_x   Out: Current X coordinate.
+ * @param out_y   Out: Current Y coordinate.
+ * @param out_z   Out: Current Z coordinate.
+ * @return true if move active, false if completed.
+ */
+bool syn_scurve3d_update(SYN_SCurve3D *sc3d, int32_t *out_x, int32_t *out_y, int32_t *out_z);
+
 #ifdef __cplusplus
 }
 #endif

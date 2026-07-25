@@ -693,6 +693,36 @@ static void test_wg_handshake_timeout(void)
     TEST_ASSERT_EQUAL(SYN_WG_DISCONNECTED, s_wg.state);
 }
 
+static void test_wg_disconnect_and_stats(void)
+{
+    SYN_WG wg;
+    uint8_t rx_buf[1600], tx_buf[1600];
+    SYN_SNTP sntp;
+
+    SYN_WgConfig cfg = {
+        .endpoint = {.ip = {192, 168, 1, 1}, .port = 51820},
+        .keepalive_interval_s = 25,
+    };
+
+    syn_wg_init(&wg, &cfg, &sntp, rx_buf, sizeof(rx_buf), tx_buf, sizeof(tx_buf));
+
+    SYN_WgStats stats;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_wg_get_stats(&wg, &stats));
+    TEST_ASSERT_FALSE(stats.is_established);
+
+    wg.state = SYN_WG_ESTABLISHED;
+    wg.session.established_ms = 1000;
+    wg.session.send_counter = 10;
+    wg.session.recv_counter = 8;
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_wg_get_stats(&wg, &stats));
+    TEST_ASSERT_TRUE(stats.is_established);
+    TEST_ASSERT_TRUE(stats.tx_bytes > 0);
+
+    syn_wg_disconnect(&wg);
+    TEST_ASSERT_EQUAL(SYN_WG_DISCONNECTED, wg.state);
+}
+
 void run_wg_tests(void)
 {
     /* Handshake internals */
@@ -731,4 +761,5 @@ void run_wg_tests(void)
     RUN_TEST(test_wg_cookie_packet_handling);
     RUN_TEST(test_wg_rekey_after_time);
     RUN_TEST(test_wg_handshake_timeout);
+    RUN_TEST(test_wg_disconnect_and_stats);
 }

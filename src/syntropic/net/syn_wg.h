@@ -227,6 +227,28 @@ static inline bool syn_wg_is_established(const SYN_WG *wg)
     return wg->state == SYN_WG_ESTABLISHED;
 }
 
+/** @brief WireGuard tunnel statistics structure. */
+typedef struct {
+    uint64_t tx_bytes;          /**< Total encrypted bytes transmitted */
+    uint64_t rx_bytes;          /**< Total encrypted bytes received */
+    uint32_t handshake_age_sec; /**< Seconds since last successful handshake */
+    bool is_established;        /**< Tunnel connection status */
+} SYN_WgStats;
+
+/**
+ * @brief Disconnect the WireGuard tunnel and close socket.
+ * @param wg Client context.
+ */
+void syn_wg_disconnect(SYN_WG *wg);
+
+/**
+ * @brief Retrieve WireGuard tunnel metrics and statistics.
+ * @param wg    Client context.
+ * @param stats [out] Output statistics structure.
+ * @return SYN_OK on success.
+ */
+SYN_Status syn_wg_get_stats(const SYN_WG *wg, SYN_WgStats *stats);
+
 #ifdef __cplusplus
 }
 #endif

@@ -771,4 +771,36 @@ SYN_PT_Status syn_wg_task(SYN_PT *pt, SYN_Task *task)
     PT_END(pt);
 }
 
+void syn_wg_disconnect(SYN_WG *wg)
+{
+    if (wg == NULL)
+        return;
+
+    if (wg->udp_sock != SYN_SOCKET_INVALID) {
+        syn_port_sock_close(wg->udp_sock);
+        wg->udp_sock = SYN_SOCKET_INVALID;
+    }
+
+    wg->state = SYN_WG_DISCONNECTED;
+    memset(&wg->session, 0, sizeof(wg->session));
+}
+
+SYN_Status syn_wg_get_stats(const SYN_WG *wg, SYN_WgStats *stats)
+{
+    if (wg == NULL || stats == NULL)
+        return SYN_INVALID_PARAM;
+
+    memset(stats, 0, sizeof(*stats));
+    stats->is_established = (wg->state == SYN_WG_ESTABLISHED);
+
+    if (stats->is_established) {
+        uint32_t now = syn_port_get_tick_ms();
+        stats->handshake_age_sec = (now - wg->session.established_ms) / 1000;
+        stats->tx_bytes = (uint64_t)wg->session.send_counter * (SYN_WG_MTU + SYN_WG_TRANSPORT_OVERHEAD);
+        stats->rx_bytes = (uint64_t)wg->session.recv_counter * (SYN_WG_MTU + SYN_WG_TRANSPORT_OVERHEAD);
+    }
+
+    return SYN_OK;
+}
+
 #endif /* SYN_USE_WG */

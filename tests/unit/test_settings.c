@@ -235,6 +235,23 @@ static void test_settings_export_and_import(void)
     TEST_ASSERT_EQUAL_INT32(1234, settings2.velocity);
 }
 
+static void test_settings_dual_bank(void)
+{
+    TestSettings settings;
+    SYN_DualBankSettings db;
+
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_settings_dual_bank_init(&db, FLASH_BASE, FLASH_BASE + 2048, 2,
+                                            &settings, sizeof(settings), &defaults));
+
+    TEST_ASSERT_EQUAL_INT(0, db.active_bank);
+
+    /* Modify settings */
+    settings.velocity = 888;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_dual_bank_save(&db));
+    TEST_ASSERT_EQUAL_INT(1, db.active_bank);
+}
+
 void run_settings_tests(void)
 {
     RUN_TEST(test_settings_init_blank_flash);
@@ -246,4 +263,5 @@ void run_settings_tests(void)
     RUN_TEST(test_settings_reload_discards_changes);
     RUN_TEST(test_settings_checksum_changes_on_save);
     RUN_TEST(test_settings_export_and_import);
+    RUN_TEST(test_settings_dual_bank);
 }

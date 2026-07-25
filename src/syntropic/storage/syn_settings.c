@@ -132,4 +132,59 @@ SYN_Status syn_settings_import(SYN_Settings *s, const void *buf, size_t len, boo
     return SYN_OK;
 }
 
+/* ── Dual-Bank Transactional Settings Implementation ─────────────────────── */
+
+SYN_Status syn_settings_dual_bank_init(SYN_DualBankSettings *db, uint32_t flash_base_a,
+                                       uint32_t flash_base_b, uint8_t sector_count,
+                                       void *data, uint16_t data_size, const void *defaults)
+{
+    SYN_ASSERT(db != NULL);
+    SYN_ASSERT(data != NULL);
+    SYN_ASSERT(defaults != NULL);
+    SYN_ASSERT(data_size > 0);
+
+    memset(db, 0, sizeof(*db));
+
+    SYN_Status st_a = syn_settings_init(&db->bank_a, flash_base_a, sector_count, data, data_size, defaults);
+    SYN_Status st_b = syn_settings_init(&db->bank_b, flash_base_b, sector_count, data, data_size, defaults);
+
+    if (st_a == SYN_OK) {
+        db->active_bank = 0;
+        db->active_crc32 = syn_crc32((const uint8_t *)data, data_size);
+    } else if (st_b == SYN_OK) {
+        db->active_bank = 1;
+        db->active_crc32 = syn_crc32((const uint8_t *)data, data_size);
+    } else {
+        memcpy(data, defaults, data_size);
+        syn_settings_save(&db->bank_a);
+        db->active_bank = 0;
+        db->active_crc32 = syn_crc32((const uint8_t *)data, data_size);
+    }
+
+    return SYN_OK;
+}
+
+SYN_Status syn_settings_dual_bank_save(SYN_DualBankSettings *db)
+{
+    SYN_ASSERT(db != NULL);
+
+    SYN_Settings *active = (db->active_bank == 0) ? &db->bank_a : &db->bank_b;
+    SYN_Settings *inactive = (db->active_bank == 0) ? &db->bank_b : &db->bank_a;
+
+    uint32_t current_crc = syn_crc32((const uint8_t *)active->data, active->data_size);
+    if (current_crc == db->active_crc32) {
+        return SYN_OK; /* Unchanged */
+    }
+
+    /* Write to inactive bank */
+    SYN_Status st = syn_settings_save(inactive);
+    if (st == SYN_OK) {
+        /* Switch active bank */
+        db->active_bank = (db->active_bank == 0) ? 1 : 0;
+        db->active_crc32 = current_crc;
+    }
+
+    return st;
+}
+
 #endif /* SYN_USE_SETTINGS */

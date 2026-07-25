@@ -183,6 +183,40 @@ int syn_settings_export(const SYN_Settings *s, void *buf, size_t len);
  */
 SYN_Status syn_settings_import(SYN_Settings *s, const void *buf, size_t len, bool save);
 
+/* ── Dual-Bank Transactional Settings ───────────────────────────────────── */
+
+/**
+ * @brief Dual-bank settings container for atomic power-loss safe writes.
+ */
+typedef struct {
+    SYN_Settings bank_a;   /**< Primary flash bank A   */
+    SYN_Settings bank_b;   /**< Secondary flash bank B */
+    uint8_t active_bank;   /**< 0 = Bank A, 1 = Bank B */
+    uint32_t active_crc32; /**< CRC32 of active bank   */
+} SYN_DualBankSettings;
+
+/**
+ * @brief Initialize dual-bank transactional settings manager.
+ * @param db           Dual-bank settings instance.
+ * @param flash_base_a Base flash address for Bank A.
+ * @param flash_base_b Base flash address for Bank B.
+ * @param sector_count Sectors per bank.
+ * @param data         Pointer to RAM settings struct.
+ * @param data_size    Size of settings struct in bytes.
+ * @param defaults     Pointer to default values in ROM.
+ * @return SYN_OK on success.
+ */
+SYN_Status syn_settings_dual_bank_init(SYN_DualBankSettings *db, uint32_t flash_base_a,
+                                       uint32_t flash_base_b, uint8_t sector_count,
+                                       void *data, uint16_t data_size, const void *defaults);
+
+/**
+ * @brief Atomically save settings to inactive bank and switch active bank upon CRC32 verification.
+ * @param db  Dual-bank settings instance.
+ * @return SYN_OK on success.
+ */
+SYN_Status syn_settings_dual_bank_save(SYN_DualBankSettings *db);
+
 #ifdef __cplusplus
 }
 #endif

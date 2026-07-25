@@ -26,6 +26,8 @@ Thumbs.db
 
 # Gemini agent data
 .gemini/
+reply.md
+REPLY.md
 .agents/
 build/
 site/

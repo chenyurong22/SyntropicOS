@@ -97,6 +97,21 @@ typedef struct {
     SYN_CANOpenPDOMap tpdo[4]; /**< Transmit PDO Mappings 1..4 */
 } SYN_CANOpenNodeConfig;
 
+typedef enum {
+    SYN_CANOPEN_SDO_IDLE = 0,
+    SYN_CANOPEN_SDO_SEG_DOWNLOAD,
+    SYN_CANOPEN_SDO_SEG_UPLOAD,
+} SYN_CANOpenSDOState;
+
+typedef struct {
+    SYN_CANOpenSDOState state;
+    uint16_t index;
+    uint8_t subindex;
+    uint8_t toggle;
+    size_t total_bytes;
+    size_t transferred_bytes;
+} SYN_CANOpenSDOSession;
+
 /**
  * @brief CANopen Node State Handle.
  */
@@ -107,6 +122,7 @@ typedef struct {
     SYN_CANOpenNodeConfig cfg;          /**< Node configuration copy */
     const SYN_CANOpenODEntry *od_table; /**< Pointer to Object Dictionary */
     size_t od_count;                    /**< Number of OD entries */
+    SYN_CANOpenSDOSession sdo_session;  /**< Active SDO session */
     uint32_t tx_cob_id;                 /**< Pending transmit COB-ID */
     uint8_t tx_data[8];                 /**< Pending transmit payload */
     uint8_t tx_len;                     /**< Pending transmit length */

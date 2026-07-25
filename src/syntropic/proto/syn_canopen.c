@@ -203,12 +203,6 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
 
         /* SDO Download (Write Request) */
         if ((cmd & 0xE0U) == 0x20U) {
-            size_t write_len = 4;
-            if ((cmd & 0x02U) != 0) { /* Expedited download */
-                uint8_t n = (cmd >> 2) & 0x03U;
-                write_len = (size_t)(4 - n);
-            }
-
             const SYN_CANOpenODEntry *entry = canopen_find_od(node, index, subindex);
             if (entry == NULL) {
                 const SYN_CANOpenODEntry *entry_idx = NULL;
@@ -226,12 +220,56 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
                 }
             } else if (entry->access == SYN_CANOPEN_ACCESS_RO) {
                 canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_READ_ONLY);
-            } else if (write_len != entry->size) {
-                canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
-            } else {
-                (void)syn_canopen_od_write(node, index, subindex, &data[4], write_len);
+            } else if ((cmd & 0x02U) != 0) { /* Expedited download */
+                uint8_t n = (cmd >> 2) & 0x03U;
+                size_t write_len = (size_t)(4 - n);
+                if (write_len != entry->size) {
+                    canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
+                } else {
+                    (void)syn_canopen_od_write(node, index, subindex, &data[4], write_len);
+                    uint8_t resp[8] = {0x60U, data[1], data[2], data[3], 0, 0, 0, 0};
+                    canopen_queue_tx(node, 0x580U + node->node_id, resp, 8);
+                }
+            } else { /* Segmented download initiate */
+                node->sdo_session.state = SYN_CANOPEN_SDO_SEG_DOWNLOAD;
+                node->sdo_session.index = index;
+                node->sdo_session.subindex = subindex;
+                node->sdo_session.toggle = 0;
+                node->sdo_session.transferred_bytes = 0;
+                node->sdo_session.total_bytes = (size_t)(data[4] | (data[5] << 8) | (data[6] << 16) | (data[7] << 24));
                 uint8_t resp[8] = {0x60U, data[1], data[2], data[3], 0, 0, 0, 0};
                 canopen_queue_tx(node, 0x580U + node->node_id, resp, 8);
+            }
+            return SYN_OK;
+        }
+
+        /* SDO Download Segment Request */
+        if ((cmd & 0xE0U) == 0x00U && node->sdo_session.state == SYN_CANOPEN_SDO_SEG_DOWNLOAD) {
+            uint8_t t = (cmd >> 4) & 0x01U;
+            if (t != node->sdo_session.toggle) {
+                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex, SYN_CANOPEN_SDO_ABORT_TOGGLE_BIT);
+                node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
+                return SYN_OK;
+            }
+
+            const SYN_CANOpenODEntry *entry = canopen_find_od(node, node->sdo_session.index, node->sdo_session.subindex);
+            uint8_t n = (cmd >> 1) & 0x07U;
+            size_t seg_len = 7U - n;
+
+            if (entry != NULL && (node->sdo_session.transferred_bytes + seg_len) <= entry->size) {
+                (void)memcpy((uint8_t *)entry->data_ptr + node->sdo_session.transferred_bytes, &data[1], seg_len);
+                node->sdo_session.transferred_bytes += seg_len;
+
+                uint8_t resp[8] = {(uint8_t)((t << 4) | 0x20U), 0, 0, 0, 0, 0, 0, 0};
+                canopen_queue_tx(node, 0x580U + node->node_id, resp, 8);
+                node->sdo_session.toggle ^= 1U;
+
+                if ((cmd & 0x01U) != 0) { /* Last segment */
+                    node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
+                }
+            } else {
+                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex, SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
+                node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
             }
             return SYN_OK;
         }
@@ -255,7 +293,7 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
                 }
             } else if (entry->access == SYN_CANOPEN_ACCESS_WO) {
                 canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_WRITE_ONLY);
-            } else {
+            } else if (entry->size <= 4) {
                 uint8_t read_buf[4] = {0};
                 size_t read_len = 0;
                 if (syn_canopen_od_read(node, index, subindex, read_buf, sizeof(read_buf),
@@ -276,6 +314,54 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
                     canopen_send_sdo_abort(node, index, subindex,
                                            SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
                 }
+            } else { /* Segmented upload initiate */
+                node->sdo_session.state = SYN_CANOPEN_SDO_SEG_UPLOAD;
+                node->sdo_session.index = index;
+                node->sdo_session.subindex = subindex;
+                node->sdo_session.toggle = 0;
+                node->sdo_session.total_bytes = entry->size;
+                node->sdo_session.transferred_bytes = 0;
+
+                uint8_t resp[8] = {0x41U, data[1], data[2], data[3],
+                                   (uint8_t)(entry->size & 0xFFU),
+                                   (uint8_t)((entry->size >> 8) & 0xFFU),
+                                   (uint8_t)((entry->size >> 16) & 0xFFU),
+                                   (uint8_t)((entry->size >> 24) & 0xFFU)};
+                canopen_queue_tx(node, 0x580U + node->node_id, resp, 8);
+            }
+            return SYN_OK;
+        }
+
+        /* SDO Upload Segment Request */
+        if ((cmd & 0xE0U) == 0x60U && node->sdo_session.state == SYN_CANOPEN_SDO_SEG_UPLOAD) {
+            uint8_t t = (cmd >> 4) & 0x01U;
+            if (t != node->sdo_session.toggle) {
+                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex, SYN_CANOPEN_SDO_ABORT_TOGGLE_BIT);
+                node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
+                return SYN_OK;
+            }
+
+            const SYN_CANOpenODEntry *entry = canopen_find_od(node, node->sdo_session.index, node->sdo_session.subindex);
+            if (entry != NULL) {
+                size_t rem = entry->size - node->sdo_session.transferred_bytes;
+                size_t seg_len = (rem > 7U) ? 7U : rem;
+                uint8_t n = (uint8_t)(7U - seg_len);
+                uint8_t c = (rem <= 7U) ? 1U : 0U;
+
+                uint8_t resp[8] = {0};
+                resp[0] = (uint8_t)((t << 4) | (n << 1) | c);
+                (void)memcpy(&resp[1], (const uint8_t *)entry->data_ptr + node->sdo_session.transferred_bytes, seg_len);
+
+                canopen_queue_tx(node, 0x580U + node->node_id, resp, 8);
+                node->sdo_session.transferred_bytes += seg_len;
+                node->sdo_session.toggle ^= 1U;
+
+                if (c != 0) {
+                    node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
+                }
+            } else {
+                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex, SYN_CANOPEN_SDO_ABORT_NOT_EXIST);
+                node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
             }
             return SYN_OK;
         }

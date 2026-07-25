@@ -198,12 +198,11 @@ static void test_canopen_sdo_abort_codes(void)
     TEST_ASSERT_EQUAL(0x06010001UL, (uint32_t)tx_buf[4] | ((uint32_t)tx_buf[5] << 8) |
                                         ((uint32_t)tx_buf[6] << 16) | ((uint32_t)tx_buf[7] << 24));
 
-    /* 8. SDO Read from 8-byte entry 0x2003:0x00 (read_len > 4) */
+    /* 8. SDO Read from 8-byte entry 0x2003:0x00 initiates Segmented Upload */
     uint8_t sdo_r_large[8] = {0x40U, 0x03U, 0x20U, 0x00U, 0, 0, 0, 0};
     syn_canopen_process_rx(&node, 0x605U, sdo_r_large, 8);
     TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
-    TEST_ASSERT_EQUAL(0x06070010UL, (uint32_t)tx_buf[4] | ((uint32_t)tx_buf[5] << 8) |
-                                        ((uint32_t)tx_buf[6] << 16) | ((uint32_t)tx_buf[7] << 24));
+    TEST_ASSERT_EQUAL(0x41U, tx_buf[0]); /* 0x41 = Initiate Segmented Upload */
 
     /* 9. Unknown NMT cmd and unknown COB-ID */
     uint8_t unknown_nmt[2] = {0xFFU, 0x05U};
@@ -404,6 +403,44 @@ static void test_canopen_tpdo_trigger(void)
     TEST_ASSERT_EQUAL_UINT16(1200, (uint16_t)(tx_buf[0] | (tx_buf[1] << 8)));
 }
 
+static void test_canopen_sdo_segmented_transfer(void)
+{
+    SYN_CANOpenNode node;
+    SYN_CANOpenNodeConfig cfg = {.node_id = 5, .heartbeat_ms = 0};
+
+    syn_canopen_init(&node, &cfg, test_od, sizeof(test_od) / sizeof(test_od[0]));
+    uint32_t dummy_id;
+    uint8_t dummy_buf[8], dummy_len;
+    syn_canopen_get_tx(&node, &dummy_id, dummy_buf, &dummy_len);
+
+    /* 1. Test Segmented Upload of 0x2003:0x00 (8-byte od_large_val) */
+    uint8_t upload_init[8] = {0x40U, 0x03U, 0x20U, 0x00U, 0, 0, 0, 0};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, upload_init, 8));
+
+    uint32_t tx_id = 0;
+    uint8_t tx_buf[8] = {0}, tx_len = 0;
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x585U, tx_id);
+    TEST_ASSERT_EQUAL(0x41U, tx_buf[0]);
+    TEST_ASSERT_EQUAL(8, tx_buf[4]); /* Total size = 8 bytes */
+
+    /* Segment 0 Upload Request */
+    uint8_t seg0_req[8] = {0x60U, 0, 0, 0, 0, 0, 0, 0};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, seg0_req, 8));
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x585U, tx_id);
+    TEST_ASSERT_EQUAL(0x00U, tx_buf[0]); /* t=0, n=0 (7 bytes), c=0 */
+    TEST_ASSERT_EQUAL(0x88U, tx_buf[1]);
+
+    /* Segment 1 Upload Request (t=1) */
+    uint8_t seg1_req[8] = {0x70U, 0, 0, 0, 0, 0, 0, 0};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, seg1_req, 8));
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x585U, tx_id);
+    TEST_ASSERT_EQUAL(0x1DU, tx_buf[0]); /* t=1, n=6 (1 byte remaining), c=1 (last segment) */
+    TEST_ASSERT_EQUAL(0x11U, tx_buf[1]);
+}
+
 void run_canopen_tests(void)
 {
     RUN_TEST(test_canopen_init_and_bootup);
@@ -414,4 +451,5 @@ void run_canopen_tests(void)
     RUN_TEST(test_canopen_invalid_params);
     RUN_TEST(test_cia303_indicators);
     RUN_TEST(test_canopen_tpdo_trigger);
+    RUN_TEST(test_canopen_sdo_segmented_transfer);
 }

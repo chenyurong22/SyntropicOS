@@ -6,12 +6,15 @@ description: Automated Quality & Testing Checks Workflow
 
 Follow this sequence for maximum feedback speed, cache reuse, and fail-fast verification.
 
-## Step 0: Code Formatting, Static Analysis & MISRA Safety (Fail-Fast Static Pipeline)
-Run code polish, AST linting, MISRA C:2023 compliance, and static analysis *first* to catch errors before compiling binaries or running emulators:
+## Step 0: Code Formatting, Static Analysis, Footprint & MISRA Safety (Fail-Fast Static Pipeline)
+Run code polish, AST linting, MISRA C:2023 compliance, stack usage, memory size audit, and static analysis *first* to catch errors before compiling binaries or running emulators:
 - **Code Formatting**: `make format` (or `make container-format`)
 - **AST Structural Linter**: `make lint` (or `make container-lint`)
 - **MISRA C:2023 Compliance Scan**: `make misra` (or `make container-misra`) *(Uses `build/cppcheck` AST cache)*
 - **Clang `scan-build` Static Analyzer**: `make static` (or `make container-static`) *(Uses `build/cppcheck` AST cache)*
+- **Stack Usage Frame Audit**: `make stack` (or `make container-stack`)
+- **Binary Footprint Subsystem Audit**: `make size` (or `make container-size`)
+- **Cyclomatic Complexity Audit**: `make complexity` (or `make container-complexity`)
 
 ## Step 1: Unit Testing & Dynamic Sanitizer Audit
 Run fast unit tests and sanitizer builds to verify runtime memory safety:

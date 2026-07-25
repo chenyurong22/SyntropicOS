@@ -45,6 +45,15 @@ lint:
 misra:
 	@bash $(ROOT_DIR)/tools/lint/run_misra.sh
 
+stack:
+	@bash $(ROOT_DIR)/tools/stack/run_stack_analysis.sh
+
+size:
+	@bash $(ROOT_DIR)/tools/size/run_size_analysis.sh
+
+complexity:
+	@bash $(ROOT_DIR)/tools/complexity/run_complexity_analysis.sh
+
 san:
 	@bash $(ROOT_DIR)/tools/containers/run_sanitizers.sh
 
@@ -84,6 +93,18 @@ container-lint: container-build
 container-misra: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
 	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers misra
+
+container-stack: container-build
+	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
+	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers stack
+
+container-size: container-build
+	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
+	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers size
+
+container-complexity: container-build
+	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
+	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers complexity
 
 container-san: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \

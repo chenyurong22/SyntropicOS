@@ -323,8 +323,10 @@ int main(void)
     run_matrix_tests();
     void run_quaternion_tests(void);
     void run_vector_tests(void);
+    void run_transform_tests(void);
     run_quaternion_tests();
     run_vector_tests();
+    run_transform_tests();
 
     /* Kalman filter */
     run_kalman_tests();

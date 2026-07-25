@@ -74,9 +74,20 @@ void test_pmbus_encode_read_cmd(void)
     syn_pmbus_encode_read_cmd(NULL, 0x58, SYN_PMBUS_CMD_READ_VOUT, true);
 }
 
+void test_pmbus_status_word_decoding(void)
+{
+    /* Test PMBus status byte parsing (STATUS_BYTE bitmasks) */
+    uint8_t status_byte = SYN_PMBUS_STATUS_BYTE_OFF | SYN_PMBUS_STATUS_BYTE_VOUT_OV | SYN_PMBUS_STATUS_BYTE_IOUT_OC;
+    TEST_ASSERT_TRUE(status_byte & SYN_PMBUS_STATUS_BYTE_OFF);
+    TEST_ASSERT_TRUE(status_byte & SYN_PMBUS_STATUS_BYTE_VOUT_OV);
+    TEST_ASSERT_TRUE(status_byte & SYN_PMBUS_STATUS_BYTE_IOUT_OC);
+    TEST_ASSERT_FALSE(status_byte & SYN_PMBUS_STATUS_BYTE_BUSY);
+}
+
 void run_pmbus_tests(void)
 {
     RUN_TEST(test_pmbus_linear11_roundtrip);
     RUN_TEST(test_pmbus_linear16_roundtrip);
     RUN_TEST(test_pmbus_encode_read_cmd);
+    RUN_TEST(test_pmbus_status_word_decoding);
 }

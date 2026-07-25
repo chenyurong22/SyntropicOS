@@ -324,6 +324,31 @@ void test_smbus_invalid_params_and_overflow(void)
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_smbus_encode_packet(&pkt, buf, sizeof(buf), &out_len));
 }
 
+void test_smbus_alert_and_host_notify(void)
+{
+    /* Test Alert Response Address (0x0C) - Receive Byte protocol */
+    SYN_SMBUS_Packet alert_pkt;
+    alert_pkt.slave_addr = SYN_SMBUS_ADDR_ALERT_RESPONSE;
+    alert_pkt.proto = SYN_SMBUS_PROTO_RECEIVE_BYTE;
+    alert_pkt.pec_enabled = true;
+    alert_pkt.length = 0;
+
+    uint8_t buf[64];
+    size_t out_len = 0;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_encode_packet(&alert_pkt, buf, sizeof(buf), &out_len));
+    TEST_ASSERT_EQUAL_HEX8(0x19, buf[0]); /* (0x0C << 1) | 1 (Read bit) */
+
+    /* Simulate slave response with device address 0x5A + PEC */
+    uint8_t rx_alert[] = { (0x5A << 1), 0x00 }; /* Addr 0x5A, PEC */
+    uint8_t expected_pec = syn_smbus_calc_pec(0, rx_alert, 1);
+    rx_alert[1] = expected_pec;
+
+    SYN_SMBUS_Packet decoded;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&decoded, rx_alert, 2, SYN_SMBUS_PROTO_RECEIVE_BYTE, true));
+    TEST_ASSERT_EQUAL_HEX8(0x5A << 1, decoded.data[0]);
+    TEST_ASSERT_TRUE(decoded.pec_valid);
+}
+
 void run_smbus_tests(void)
 {
     RUN_TEST(test_smbus_pec_calculation);
@@ -333,4 +358,5 @@ void run_smbus_tests(void)
     RUN_TEST(test_smbus_quick_and_byte_protocols);
     RUN_TEST(test_smbus_decoding_variations);
     RUN_TEST(test_smbus_invalid_params_and_overflow);
+    RUN_TEST(test_smbus_alert_and_host_notify);
 }

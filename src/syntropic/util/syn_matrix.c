@@ -593,8 +593,6 @@ SYN_Status syn_vec_normalize(const q16_t *v, q16_t *out, uint8_t n)
 
 /* ── Linear Solvers ─────────────────────────────────────────────────────── */
 
-#define SYN_SOLVER_MAX_N 16
-
 SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x)
 {
     SYN_ASSERT(A != NULL && b != NULL && x != NULL);

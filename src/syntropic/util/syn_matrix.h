@@ -39,6 +39,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifndef SYN_SOLVER_MAX_N
+/** @brief Maximum matrix dimension N for general linear solvers (LU, Cholesky, LS) */
+#define SYN_SOLVER_MAX_N 8
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

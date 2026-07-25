@@ -44,10 +44,10 @@ extern "C" {
 
 /** @brief Single watchdog entry for task monitoring. */
 typedef struct {
-    const char  *name;          /**< Task name (for debug)                */
-    uint32_t     timeout_ms;    /**< Deadline in milliseconds             */
-    uint32_t     last_checkin;  /**< Tick of last check-in                */
-    bool         active;        /**< Is this entry in use?                */
+    const char *name;      /**< Task name (for debug)                */
+    uint32_t timeout_ms;   /**< Deadline in milliseconds             */
+    uint32_t last_checkin; /**< Tick of last check-in                */
+    bool active;           /**< Is this entry in use?                */
 } SYN_WDT_Entry;
 
 /* ── Callback ───────────────────────────────────────────────────────────── */
@@ -61,20 +61,19 @@ struct SYN_Watchdog;
  * @param entry The entry that timed out.
  * @param ctx   User context.
  */
-typedef void (*SYN_WDT_TimeoutCallback)(struct SYN_Watchdog *wdt,
-                                         const SYN_WDT_Entry *entry,
-                                         void *ctx);
+typedef void (*SYN_WDT_TimeoutCallback)(struct SYN_Watchdog *wdt, const SYN_WDT_Entry *entry,
+                                        void *ctx);
 
 /* ── Watchdog instance ──────────────────────────────────────────────────── */
 
 /** @brief Software watchdog — monitors task deadlines. */
 typedef struct SYN_Watchdog {
-    SYN_WDT_Entry          *entries;    /**< Array of task monitoring entries */
-    uint8_t                  capacity;   /**< Total slots allocated in entries array */
-    uint8_t                  count;      /**< Current number of registered tasks */
-    SYN_WDT_TimeoutCallback callback;   /**< Function called on timeout deadline miss */
-    void                    *ctx;        /**< Context pointer for the callback */
-    SYN_ErrLog             *errlog;     /**< If set, timeouts are logged */
+    SYN_WDT_Entry *entries;           /**< Array of task monitoring entries */
+    uint8_t capacity;                 /**< Total slots allocated in entries array */
+    uint8_t count;                    /**< Current number of registered tasks */
+    SYN_WDT_TimeoutCallback callback; /**< Function called on timeout deadline miss */
+    void *ctx;                        /**< Context pointer for the callback */
+    SYN_ErrLog *errlog;               /**< If set, timeouts are logged */
 } SYN_Watchdog;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -88,9 +87,8 @@ typedef struct SYN_Watchdog {
  * @param callback  Timeout handler.
  * @param ctx       Context for callback.
  */
-void syn_watchdog_init(SYN_Watchdog *wdt,
-                        SYN_WDT_Entry *entries, uint8_t capacity,
-                        SYN_WDT_TimeoutCallback callback, void *ctx);
+void syn_watchdog_init(SYN_Watchdog *wdt, SYN_WDT_Entry *entries, uint8_t capacity,
+                       SYN_WDT_TimeoutCallback callback, void *ctx);
 
 /**
  * @brief Register a task for monitoring.
@@ -100,8 +98,7 @@ void syn_watchdog_init(SYN_Watchdog *wdt,
  * @param timeout_ms  Maximum allowed time between check-ins.
  * @return Task ID (index) for use with syn_watchdog_checkin(), or -1 if full.
  */
-int8_t syn_watchdog_register(SYN_Watchdog *wdt, const char *name,
-                              uint32_t timeout_ms);
+int8_t syn_watchdog_register(SYN_Watchdog *wdt, const char *name, uint32_t timeout_ms);
 
 /**
  * @brief Check in a task (reset its timeout).

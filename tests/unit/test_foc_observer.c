@@ -3,22 +3,20 @@
  * @brief Unity unit tests for Sensorless FOC Rotor Position & Speed Observer.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/motor/syn_foc_observer.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_foc_observer_init(void)
 {
     SYN_FOCObserver obs;
-    SYN_FOCObserverConfig cfg = {
-        .R = Q16_HALF,                       /* 0.5 Ohm */
-        .L = Q16_FROM_FLOAT(0.001),          /* 1 mH */
-        .G = Q16_FROM_INT(50),               /* Observer gain */
-        .dt = Q16_FROM_FLOAT(0.0001),        /* 100 us (10 kHz) */
-        .Kp_pll = Q16_FROM_INT(100),
-        .Ki_pll = Q16_FROM_INT(1000)
-    };
+    SYN_FOCObserverConfig cfg = {.R = Q16_HALF,                /* 0.5 Ohm */
+                                 .L = Q16_FROM_FLOAT(0.001),   /* 1 mH */
+                                 .G = Q16_FROM_INT(50),        /* Observer gain */
+                                 .dt = Q16_FROM_FLOAT(0.0001), /* 100 us (10 kHz) */
+                                 .Kp_pll = Q16_FROM_INT(100),
+                                 .Ki_pll = Q16_FROM_INT(1000)};
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_foc_observer_init(&obs, &cfg));
     TEST_ASSERT_EQUAL(0, syn_foc_observer_get_angle(&obs));
@@ -28,14 +26,12 @@ static void test_foc_observer_init(void)
 static void test_foc_observer_tracking(void)
 {
     SYN_FOCObserver obs;
-    SYN_FOCObserverConfig cfg = {
-        .R = Q16_HALF,
-        .L = Q16_FROM_FLOAT(0.001),
-        .G = Q16_FROM_INT(10),
-        .dt = Q16_FROM_FLOAT(0.0001), /* 10 kHz */
-        .Kp_pll = Q16_FROM_INT(150),
-        .Ki_pll = Q16_FROM_INT(6000)
-    };
+    SYN_FOCObserverConfig cfg = {.R = Q16_HALF,
+                                 .L = Q16_FROM_FLOAT(0.001),
+                                 .G = Q16_FROM_INT(10),
+                                 .dt = Q16_FROM_FLOAT(0.0001), /* 10 kHz */
+                                 .Kp_pll = Q16_FROM_INT(150),
+                                 .Ki_pll = Q16_FROM_INT(6000)};
 
     syn_foc_observer_init(&obs, &cfg);
 
@@ -46,28 +42,29 @@ static void test_foc_observer_tracking(void)
 
     q16_t actual_theta = 0;
     q16_t I_alpha = 0;
-    q16_t I_beta  = 0;
+    q16_t I_beta = 0;
 
     /* Run 6000 steps (0.6 s) of simulated motor rotation */
     for (int step = 0; step < 6000; step++) {
         actual_theta += q16_mul(target_omega, dt);
-        while (actual_theta >= Q16_2_PI) actual_theta -= Q16_2_PI;
+        while (actual_theta >= Q16_2_PI)
+            actual_theta -= Q16_2_PI;
 
         /* Simulated Back-EMF: E_alpha = -Ke*omega*sin(theta), E_beta = Ke*omega*cos(theta) */
         q16_t E_mag = q16_mul(Ke, target_omega);
         q16_t E_alpha = -q16_mul(E_mag, q16_sin(actual_theta));
-        q16_t E_beta  =  q16_mul(E_mag, q16_cos(actual_theta));
+        q16_t E_beta = q16_mul(E_mag, q16_cos(actual_theta));
 
         /* Applied voltage V = 0 (un-driven back-EMF current generator) */
         q16_t V_alpha = 0;
-        q16_t V_beta  = 0;
+        q16_t V_beta = 0;
 
         /* Update phase current simulation: dI/dt = (V - R*I - E) / L */
         q16_t dI_a = q16_div(V_alpha - q16_mul(cfg.R, I_alpha) - E_alpha, cfg.L);
-        q16_t dI_b = q16_div(V_beta  - q16_mul(cfg.R, I_beta)  - E_beta,  cfg.L);
+        q16_t dI_b = q16_div(V_beta - q16_mul(cfg.R, I_beta) - E_beta, cfg.L);
 
         I_alpha += q16_mul(dI_a, dt);
-        I_beta  += q16_mul(dI_b, dt);
+        I_beta += q16_mul(dI_b, dt);
 
         syn_foc_observer_update(&obs, V_alpha, V_beta, I_alpha, I_beta);
     }
@@ -80,21 +77,20 @@ static void test_foc_observer_tracking(void)
 
     /* Angle tracking error should be small (within observer phase lag tolerance) */
     q16_t angle_err = q16_abs(est_angle - actual_theta);
-    if (angle_err > Q16_PI) angle_err = Q16_2_PI - angle_err;
+    if (angle_err > Q16_PI)
+        angle_err = Q16_2_PI - angle_err;
     TEST_ASSERT_TRUE(angle_err < Q16_FROM_FLOAT(0.50));
 }
 
 static void test_foc_observer_reset_and_invalid(void)
 {
     SYN_FOCObserver obs;
-    SYN_FOCObserverConfig cfg = {
-        .R = Q16_HALF,
-        .L = Q16_FROM_FLOAT(0.001),
-        .G = Q16_FROM_INT(50),
-        .dt = Q16_FROM_FLOAT(0.0001),
-        .Kp_pll = Q16_FROM_INT(100),
-        .Ki_pll = Q16_FROM_INT(1000)
-    };
+    SYN_FOCObserverConfig cfg = {.R = Q16_HALF,
+                                 .L = Q16_FROM_FLOAT(0.001),
+                                 .G = Q16_FROM_INT(50),
+                                 .dt = Q16_FROM_FLOAT(0.0001),
+                                 .Kp_pll = Q16_FROM_INT(100),
+                                 .Ki_pll = Q16_FROM_INT(1000)};
 
     syn_foc_observer_init(&obs, &cfg);
     syn_foc_observer_update(&obs, Q16_ONE, Q16_ONE, Q16_HALF, Q16_HALF);
@@ -119,14 +115,12 @@ static void test_foc_observer_reset_and_invalid(void)
 static void test_foc_observer_reverse(void)
 {
     SYN_FOCObserver obs;
-    SYN_FOCObserverConfig cfg = {
-        .R = Q16_HALF,
-        .L = Q16_FROM_FLOAT(0.001),
-        .G = Q16_FROM_INT(10),
-        .dt = Q16_FROM_FLOAT(0.0001),
-        .Kp_pll = Q16_FROM_INT(150),
-        .Ki_pll = Q16_FROM_INT(6000)
-    };
+    SYN_FOCObserverConfig cfg = {.R = Q16_HALF,
+                                 .L = Q16_FROM_FLOAT(0.001),
+                                 .G = Q16_FROM_INT(10),
+                                 .dt = Q16_FROM_FLOAT(0.0001),
+                                 .Kp_pll = Q16_FROM_INT(150),
+                                 .Ki_pll = Q16_FROM_INT(6000)};
 
     syn_foc_observer_init(&obs, &cfg);
 
@@ -136,24 +130,25 @@ static void test_foc_observer_reverse(void)
 
     q16_t actual_theta = 0;
     q16_t I_alpha = 0;
-    q16_t I_beta  = 0;
+    q16_t I_beta = 0;
 
     for (int step = 0; step < 6000; step++) {
         actual_theta += q16_mul(target_omega, dt);
-        while (actual_theta < 0) actual_theta += Q16_2_PI;
+        while (actual_theta < 0)
+            actual_theta += Q16_2_PI;
 
         q16_t E_mag = q16_mul(Ke, q16_abs(target_omega));
         q16_t E_alpha = -q16_mul(E_mag, q16_sin(actual_theta));
-        q16_t E_beta  =  q16_mul(E_mag, q16_cos(actual_theta));
+        q16_t E_beta = q16_mul(E_mag, q16_cos(actual_theta));
 
         q16_t V_alpha = 0;
-        q16_t V_beta  = 0;
+        q16_t V_beta = 0;
 
         q16_t dI_a = q16_div(V_alpha - q16_mul(cfg.R, I_alpha) - E_alpha, cfg.L);
-        q16_t dI_b = q16_div(V_beta  - q16_mul(cfg.R, I_beta)  - E_beta,  cfg.L);
+        q16_t dI_b = q16_div(V_beta - q16_mul(cfg.R, I_beta) - E_beta, cfg.L);
 
         I_alpha += q16_mul(dI_a, dt);
-        I_beta  += q16_mul(dI_b, dt);
+        I_beta += q16_mul(dI_b, dt);
 
         syn_foc_observer_update(&obs, V_alpha, V_beta, I_alpha, I_beta);
     }

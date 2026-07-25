@@ -28,14 +28,14 @@
 #define SYN_CHACHA20POLY1305_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_CHACHA20POLY1305) || SYN_USE_CHACHA20POLY1305
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,11 +56,8 @@ extern "C" {
  * @param len      Data length in bytes.
  * @param out      Output buffer (may alias in).
  */
-void syn_chacha20_xor(const uint8_t key[32],
-                      const uint8_t nonce[12],
-                      uint32_t counter,
-                      const uint8_t *in, size_t len,
-                      uint8_t *out);
+void syn_chacha20_xor(const uint8_t key[32], const uint8_t nonce[12], uint32_t counter,
+                      const uint8_t *in, size_t len, uint8_t *out);
 
 /**
  * @brief Generate ChaCha20 keystream block (no XOR).
@@ -72,9 +69,7 @@ void syn_chacha20_xor(const uint8_t key[32],
  * @param counter  Block counter.
  * @param out      Output buffer (exactly 64 bytes).
  */
-void syn_chacha20_block(const uint8_t key[32],
-                        const uint8_t nonce[12],
-                        uint32_t counter,
+void syn_chacha20_block(const uint8_t key[32], const uint8_t nonce[12], uint32_t counter,
                         uint8_t out[64]);
 
 /* ── ChaCha20-Poly1305 AEAD ─────────────────────────────────────────────── */
@@ -91,11 +86,8 @@ void syn_chacha20_block(const uint8_t key[32],
  * @param ciphertext  Output ciphertext (same length as plaintext).
  * @param tag         Output 128-bit authentication tag (16 bytes).
  */
-void syn_aead_encrypt(const uint8_t key[32],
-                      const uint8_t nonce[12],
-                      const uint8_t *aad, size_t aad_len,
-                      const uint8_t *plaintext, size_t pt_len,
-                      uint8_t *ciphertext,
+void syn_aead_encrypt(const uint8_t key[32], const uint8_t nonce[12], const uint8_t *aad,
+                      size_t aad_len, const uint8_t *plaintext, size_t pt_len, uint8_t *ciphertext,
                       uint8_t tag[16]);
 
 /**
@@ -111,12 +103,9 @@ void syn_aead_encrypt(const uint8_t key[32],
  * @param plaintext   Output plaintext (same length as ciphertext).
  * @return true if tag is valid and decryption succeeded.
  */
-bool syn_aead_decrypt(const uint8_t key[32],
-                      const uint8_t nonce[12],
-                      const uint8_t *aad, size_t aad_len,
-                      const uint8_t *ciphertext, size_t ct_len,
-                      const uint8_t tag[16],
-                      uint8_t *plaintext);
+bool syn_aead_decrypt(const uint8_t key[32], const uint8_t nonce[12], const uint8_t *aad,
+                      size_t aad_len, const uint8_t *ciphertext, size_t ct_len,
+                      const uint8_t tag[16], uint8_t *plaintext);
 
 #ifdef __cplusplus
 }

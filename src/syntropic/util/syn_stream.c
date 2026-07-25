@@ -4,6 +4,7 @@
  */
 
 #include "syn_stream.h"
+
 #include "syn_ringbuf.h"
 
 #include <string.h>
@@ -23,10 +24,11 @@ static size_t stream_find_delimiter(const SYN_Stream *s)
 
     for (size_t i = 0; i < count; i++) {
         if (rb->buf[idx] == s->delimiter) {
-            return i + 1;  /* 1-based position (byte count including delim) */
+            return i + 1; /* 1-based position (byte count including delim) */
         }
         idx++;
-        if (idx >= rb->size) idx = 0;
+        if (idx >= rb->size)
+            idx = 0;
     }
     return 0;
 }
@@ -38,7 +40,7 @@ void syn_stream_init(SYN_Stream *s, uint8_t *buf, size_t size)
     syn_ringbuf_init(&s->rb, buf, size);
     s->threshold = 0;
     s->delimiter = 0;
-    s->delim_en  = false;
+    s->delim_en = false;
 }
 
 void syn_stream_set_threshold(SYN_Stream *s, size_t n)
@@ -49,7 +51,7 @@ void syn_stream_set_threshold(SYN_Stream *s, size_t n)
 void syn_stream_set_delimiter(SYN_Stream *s, uint8_t delim)
 {
     s->delimiter = delim;
-    s->delim_en  = true;
+    s->delim_en = true;
 }
 
 void syn_stream_clear_delimiter(SYN_Stream *s)
@@ -107,7 +109,7 @@ size_t syn_stream_read_line(SYN_Stream *s, uint8_t *buf, size_t max_len)
     /* Find delimiter position */
     size_t delim_pos = stream_find_delimiter(s);
     if (delim_pos == 0) {
-        return 0;  /* No delimiter found — don't consume anything */
+        return 0; /* No delimiter found — don't consume anything */
     }
 
     /* Read up to delimiter (inclusive), capped by max_len */

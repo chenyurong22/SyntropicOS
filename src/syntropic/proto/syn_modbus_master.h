@@ -25,26 +25,26 @@ typedef enum {
 
 /** @brief Modbus Master instance configuration & transaction state. */
 typedef struct {
-    SYN_ModbusMaster_State state;               /**< Master transaction state           */
+    SYN_ModbusMaster_State state; /**< Master transaction state           */
 
-    uint8_t   buf[256];                          /**< Frame buffer                      */
-    uint16_t  rx_len;                            /**< Received response length           */
-    uint16_t  tx_len;                            /**< Transmitted request length         */
+    uint8_t buf[256]; /**< Frame buffer                      */
+    uint16_t rx_len;  /**< Received response length           */
+    uint16_t tx_len;  /**< Transmitted request length         */
 
-    uint8_t   slave_addr;                        /**< Target slave address (1–247)       */
-    uint8_t   func_code;                         /**< Active function code               */
-    uint16_t  start_addr;                        /**< Target register start address      */
-    uint16_t  count;                             /**< Register quantity / write value    */
+    uint8_t slave_addr;  /**< Target slave address (1–247)       */
+    uint8_t func_code;   /**< Active function code               */
+    uint16_t start_addr; /**< Target register start address      */
+    uint16_t count;      /**< Register quantity / write value    */
 
-    uint32_t  request_tick_ms;                   /**< Tick when request was dispatched   */
-    uint32_t  timeout_ms;                        /**< Response timeout limit in ms       */
-    uint32_t  last_byte_tick_ms;                 /**< Tick of last received RX byte      */
+    uint32_t request_tick_ms;   /**< Tick when request was dispatched   */
+    uint32_t timeout_ms;        /**< Response timeout limit in ms       */
+    uint32_t last_byte_tick_ms; /**< Tick of last received RX byte      */
 
-    uint8_t   response_fc;                       /**< Response function code             */
-    uint8_t   exception_code;                    /**< Exception code if error            */
+    uint8_t response_fc;    /**< Response function code             */
+    uint8_t exception_code; /**< Exception code if error            */
 
-    uint16_t  read_data[125];                    /**< Received read data buffer          */
-    uint16_t  read_count;                        /**< Number of registers read           */
+    uint16_t read_data[125]; /**< Received read data buffer          */
+    uint16_t read_count;     /**< Number of registers read           */
 } SYN_ModbusMaster;
 
 /**
@@ -63,7 +63,7 @@ void syn_modbus_master_init(SYN_ModbusMaster *m, uint32_t timeout_ms);
  * @return SYN_OK on success, SYN_BUSY if transaction in progress.
  */
 SYN_Status syn_modbus_master_read_holding(SYN_ModbusMaster *m, uint8_t slave_addr,
-                                           uint16_t start_addr, uint16_t count);
+                                          uint16_t start_addr, uint16_t count);
 
 /**
  * @brief Issue a Read Input Registers (FC 0x04) request.
@@ -74,7 +74,7 @@ SYN_Status syn_modbus_master_read_holding(SYN_ModbusMaster *m, uint8_t slave_add
  * @return SYN_OK on success, SYN_BUSY if transaction in progress.
  */
 SYN_Status syn_modbus_master_read_input(SYN_ModbusMaster *m, uint8_t slave_addr,
-                                         uint16_t start_addr, uint16_t count);
+                                        uint16_t start_addr, uint16_t count);
 
 /**
  * @brief Issue a Write Single Register (FC 0x06) request.
@@ -85,7 +85,7 @@ SYN_Status syn_modbus_master_read_input(SYN_ModbusMaster *m, uint8_t slave_addr,
  * @return SYN_OK on success, SYN_BUSY if transaction in progress.
  */
 SYN_Status syn_modbus_master_write_single(SYN_ModbusMaster *m, uint8_t slave_addr,
-                                           uint16_t reg_addr, uint16_t value);
+                                          uint16_t reg_addr, uint16_t value);
 
 /**
  * @brief Issue a Write Multiple Registers (FC 0x10) request.
@@ -109,7 +109,7 @@ SYN_Status syn_modbus_master_write_multiple(SYN_ModbusMaster *m, uint8_t slave_a
  * @return SYN_OK on success, SYN_BUSY if transaction in progress.
  */
 SYN_Status syn_modbus_master_read_coils(SYN_ModbusMaster *m, uint8_t slave_addr,
-                                         uint16_t start_addr, uint16_t count);
+                                        uint16_t start_addr, uint16_t count);
 
 /**
  * @brief Issue a Read Discrete Inputs (FC 0x02) request.
@@ -120,7 +120,7 @@ SYN_Status syn_modbus_master_read_coils(SYN_ModbusMaster *m, uint8_t slave_addr,
  * @return SYN_OK on success, SYN_BUSY if transaction in progress.
  */
 SYN_Status syn_modbus_master_read_discrete_inputs(SYN_ModbusMaster *m, uint8_t slave_addr,
-                                                   uint16_t start_addr, uint16_t count);
+                                                  uint16_t start_addr, uint16_t count);
 
 /**
  * @brief Issue a Write Single Coil (FC 0x05) request.
@@ -131,7 +131,7 @@ SYN_Status syn_modbus_master_read_discrete_inputs(SYN_ModbusMaster *m, uint8_t s
  * @return SYN_OK on success, SYN_BUSY if transaction in progress.
  */
 SYN_Status syn_modbus_master_write_single_coil(SYN_ModbusMaster *m, uint8_t slave_addr,
-                                                 uint16_t coil_addr, bool state);
+                                               uint16_t coil_addr, bool state);
 
 /**
  * @brief Issue a Write Multiple Coils (FC 0x0F) request.
@@ -143,8 +143,8 @@ SYN_Status syn_modbus_master_write_single_coil(SYN_ModbusMaster *m, uint8_t slav
  * @return SYN_OK on success, SYN_BUSY if transaction in progress.
  */
 SYN_Status syn_modbus_master_write_multiple_coils(SYN_ModbusMaster *m, uint8_t slave_addr,
-                                                   uint16_t start_addr, uint16_t count,
-                                                   const uint8_t *coil_bytes);
+                                                  uint16_t start_addr, uint16_t count,
+                                                  const uint8_t *coil_bytes);
 
 /**
  * @brief Issue a Mask Write Register (FC 0x16) request.
@@ -156,8 +156,8 @@ SYN_Status syn_modbus_master_write_multiple_coils(SYN_ModbusMaster *m, uint8_t s
  * @return SYN_OK on success, SYN_BUSY if transaction in progress.
  */
 SYN_Status syn_modbus_master_mask_write_register(SYN_ModbusMaster *m, uint8_t slave_addr,
-                                                  uint16_t reg_addr, uint16_t and_mask,
-                                                  uint16_t or_mask);
+                                                 uint16_t reg_addr, uint16_t and_mask,
+                                                 uint16_t or_mask);
 
 /**
  * @brief Issue a Read FIFO Queue (FC 0x18) request.
@@ -167,7 +167,7 @@ SYN_Status syn_modbus_master_mask_write_register(SYN_ModbusMaster *m, uint8_t sl
  * @return SYN_OK on success, SYN_BUSY if transaction in progress.
  */
 SYN_Status syn_modbus_master_read_fifo_queue(SYN_ModbusMaster *m, uint8_t slave_addr,
-                                              uint16_t fifo_addr);
+                                             uint16_t fifo_addr);
 
 /**
  * @brief Issue a Report Server ID (FC 0x11) request.

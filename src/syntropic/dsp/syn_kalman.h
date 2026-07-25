@@ -64,8 +64,8 @@
 #ifndef SYN_KALMAN_H
 #define SYN_KALMAN_H
 
-#include "../util/syn_matrix.h"
 #include "../common/syn_defs.h"
+#include "../util/syn_matrix.h"
 
 /**
  * @brief Maximum state dimension (default 6, override in syn_config.h).
@@ -73,14 +73,14 @@
  * Controls the stack size of internal Kalman gain buffer during update.
  */
 #ifndef SYN_KALMAN_MAX_STATE
-#define SYN_KALMAN_MAX_STATE  6
+#define SYN_KALMAN_MAX_STATE 6
 #endif
 
 /**
  * @brief Maximum measurement dimension (default 4, override in syn_config.h).
  */
 #ifndef SYN_KALMAN_MAX_MEAS
-#define SYN_KALMAN_MAX_MEAS   4
+#define SYN_KALMAN_MAX_MEAS 4
 #endif
 
 #ifdef __cplusplus
@@ -95,14 +95,14 @@ extern "C" {
  * in-place during predict/update.
  */
 typedef struct {
-    SYN_Matrix *x;    /**< State vector (n_state × 1)                  */
-    SYN_Matrix *P;    /**< Error covariance (n_state × n_state)        */
-    SYN_Matrix *F;    /**< State transition model (n_state × n_state)  */
-    SYN_Matrix *Q;    /**< Process noise covariance (n_state × n_state)*/
-    SYN_Matrix *H;    /**< Measurement model (n_meas × n_state)        */
-    SYN_Matrix *R;    /**< Measurement noise covariance (n_meas × n_meas) */
-    uint8_t n_state;  /**< State dimension                              */
-    uint8_t n_meas;   /**< Measurement dimension                        */
+    SYN_Matrix *x;   /**< State vector (n_state × 1)                  */
+    SYN_Matrix *P;   /**< Error covariance (n_state × n_state)        */
+    SYN_Matrix *F;   /**< State transition model (n_state × n_state)  */
+    SYN_Matrix *Q;   /**< Process noise covariance (n_state × n_state)*/
+    SYN_Matrix *H;   /**< Measurement model (n_meas × n_state)        */
+    SYN_Matrix *R;   /**< Measurement noise covariance (n_meas × n_meas) */
+    uint8_t n_state; /**< State dimension                              */
+    uint8_t n_meas;  /**< Measurement dimension                        */
 } SYN_Kalman_Config;
 
 /**
@@ -113,17 +113,17 @@ typedef struct {
  * syn_kalman_init via the work buffer.
  */
 typedef struct {
-    const SYN_Kalman_Config *cfg;   /**< Configuration (caller-owned)    */
+    const SYN_Kalman_Config *cfg; /**< Configuration (caller-owned)    */
 
     /* Scratch matrices — caller allocates, filter uses internally */
-    SYN_Matrix *temp_nn_1;  /**< Scratch n_state × n_state               */
-    SYN_Matrix *temp_nn_2;  /**< Scratch n_state × n_state               */
-    SYN_Matrix *temp_nm;    /**< Scratch n_state × n_meas                */
-    SYN_Matrix *temp_mn;    /**< Scratch n_meas  × n_state               */
-    SYN_Matrix *temp_mm;    /**< Scratch n_meas  × n_meas                */
-    SYN_Matrix *temp_mm_2;  /**< Scratch n_meas  × n_meas (for inverse)  */
-    SYN_Matrix *temp_n1;    /**< Scratch n_state × 1                     */
-    SYN_Matrix *temp_m1;    /**< Scratch n_meas  × 1 (innovation)        */
+    SYN_Matrix *temp_nn_1; /**< Scratch n_state × n_state               */
+    SYN_Matrix *temp_nn_2; /**< Scratch n_state × n_state               */
+    SYN_Matrix *temp_nm;   /**< Scratch n_state × n_meas                */
+    SYN_Matrix *temp_mn;   /**< Scratch n_meas  × n_state               */
+    SYN_Matrix *temp_mm;   /**< Scratch n_meas  × n_meas                */
+    SYN_Matrix *temp_mm_2; /**< Scratch n_meas  × n_meas (for inverse)  */
+    SYN_Matrix *temp_n1;   /**< Scratch n_state × 1                     */
+    SYN_Matrix *temp_m1;   /**< Scratch n_meas  × 1 (innovation)        */
 } SYN_Kalman;
 
 /**
@@ -135,15 +135,15 @@ typedef struct {
  * @param NS      State dimension.
  * @param NM      Measurement dimension.
  */
-#define SYN_KALMAN_SCRATCH_DECL(prefix, NS, NM)                 \
-    SYN_MAT_DECL(prefix##_nn1, NS, NS);                        \
-    SYN_MAT_DECL(prefix##_nn2, NS, NS);                        \
-    SYN_MAT_DECL(prefix##_nm,  NS, NM);                        \
-    SYN_MAT_DECL(prefix##_mn,  NM, NS);                        \
-    SYN_MAT_DECL(prefix##_mm,  NM, NM);                        \
-    SYN_MAT_DECL(prefix##_mm2, NM, NM);                        \
-    SYN_MAT_DECL(prefix##_n1,  NS, 1);                         \
-    SYN_MAT_DECL(prefix##_m1,  NM, 1)
+#define SYN_KALMAN_SCRATCH_DECL(prefix, NS, NM) \
+    SYN_MAT_DECL(prefix##_nn1, NS, NS);         \
+    SYN_MAT_DECL(prefix##_nn2, NS, NS);         \
+    SYN_MAT_DECL(prefix##_nm, NS, NM);          \
+    SYN_MAT_DECL(prefix##_mn, NM, NS);          \
+    SYN_MAT_DECL(prefix##_mm, NM, NM);          \
+    SYN_MAT_DECL(prefix##_mm2, NM, NM);         \
+    SYN_MAT_DECL(prefix##_n1, NS, 1);           \
+    SYN_MAT_DECL(prefix##_m1, NM, 1)
 
 /**
  * @brief Assign scratch matrices to the Kalman filter instance.
@@ -151,16 +151,16 @@ typedef struct {
  * @param kf      Kalman filter instance.
  * @param prefix  Name prefix used in SYN_KALMAN_SCRATCH_DECL.
  */
-#define SYN_KALMAN_SCRATCH_ASSIGN(kf, prefix)                   \
-    do {                                                         \
-        (kf)->temp_nn_1 = &prefix##_nn1;                        \
-        (kf)->temp_nn_2 = &prefix##_nn2;                        \
-        (kf)->temp_nm   = &prefix##_nm;                         \
-        (kf)->temp_mn   = &prefix##_mn;                         \
-        (kf)->temp_mm   = &prefix##_mm;                         \
-        (kf)->temp_mm_2 = &prefix##_mm2;                        \
-        (kf)->temp_n1   = &prefix##_n1;                         \
-        (kf)->temp_m1   = &prefix##_m1;                         \
+#define SYN_KALMAN_SCRATCH_ASSIGN(kf, prefix) \
+    do {                                      \
+        (kf)->temp_nn_1 = &prefix##_nn1;      \
+        (kf)->temp_nn_2 = &prefix##_nn2;      \
+        (kf)->temp_nm = &prefix##_nm;         \
+        (kf)->temp_mn = &prefix##_mn;         \
+        (kf)->temp_mm = &prefix##_mm;         \
+        (kf)->temp_mm_2 = &prefix##_mm2;      \
+        (kf)->temp_n1 = &prefix##_n1;         \
+        (kf)->temp_m1 = &prefix##_m1;         \
     } while (0)
 
 /* ── API ────────────────────────────────────────────────────────────────── */

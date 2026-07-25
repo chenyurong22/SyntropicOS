@@ -4,12 +4,14 @@
  */
 
 #include "syntropic/proto/syn_nmea.h"
-#include <stdint.h>
+
 #include <stddef.h>
+#include <stdint.h>
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    if (size == 0) return 0;
+    if (size == 0)
+        return 0;
 
     SYN_NMEA_Parser parser;
     syn_nmea_parser_init(&parser);

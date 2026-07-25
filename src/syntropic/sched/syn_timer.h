@@ -32,6 +32,7 @@
 #define SYN_TIMER_H
 
 #include "../common/syn_defs.h"
+
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -58,12 +59,12 @@ typedef void (*SYN_TimerCallback)(struct SYN_Timer *timer, void *user_data);
  * @brief Software timer descriptor.
  */
 typedef struct SYN_Timer {
-    uint32_t            period_ms;    /**< Timer period in milliseconds      */
-    uint32_t            target_tick;  /**< Next expiry tick                   */
-    SYN_TimerCallback  callback;     /**< Called on expiry (may be NULL)     */
-    void               *user_data;    /**< User context for callback          */
-    bool                periodic;     /**< true = auto-repeat, false = one-shot */
-    bool                active;       /**< Currently running?                 */
+    uint32_t period_ms;         /**< Timer period in milliseconds      */
+    uint32_t target_tick;       /**< Next expiry tick                   */
+    SYN_TimerCallback callback; /**< Called on expiry (may be NULL)     */
+    void *user_data;            /**< User context for callback          */
+    bool periodic;              /**< true = auto-repeat, false = one-shot */
+    bool active;                /**< Currently running?                 */
 } SYN_Timer;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -80,11 +81,8 @@ typedef struct SYN_Timer {
  * @param callback   Function called on expiry (may be NULL if using polling).
  * @param user_data  User context pointer passed to callback.
  */
-void syn_timer_init(SYN_Timer *timer,
-                     uint32_t period_ms,
-                     bool periodic,
-                     SYN_TimerCallback callback,
-                     void *user_data);
+void syn_timer_init(SYN_Timer *timer, uint32_t period_ms, bool periodic, SYN_TimerCallback callback,
+                    void *user_data);
 
 /**
  * @brief Start (or restart) the timer.

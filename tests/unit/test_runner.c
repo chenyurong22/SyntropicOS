@@ -6,15 +6,21 @@
  *   make test-unity
  */
 
-#include <stdio.h>
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
+#include "unity/unity.h"
+
+#include <stdio.h>
 
 /* ── Unity hooks ────────────────────────────────────────────────────────── */
 
-void setUp(void)    { mock_port_reset(); }
-void tearDown(void) { /* nothing */ }
+void setUp(void)
+{
+    mock_port_reset();
+}
+void tearDown(void)
+{ /* nothing */
+}
 
 /* ── Per-module test declarations ───────────────────────────────────────── */
 
@@ -277,7 +283,6 @@ int main(void)
     run_fft_tests();
     run_fault_tests();
     run_autotune_tests();
-
 
     /* OTA / Firmware Update */
     run_fwupdate_tests();

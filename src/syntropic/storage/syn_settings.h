@@ -46,8 +46,8 @@
 #include "../common/syn_defs.h"
 #include "../storage/syn_param.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,14 +67,14 @@ typedef void (*SYN_SettingsChangeCallback)(void *data, void *ctx);
 
 /** @brief Persistent settings instance — flash-backed with change detection. */
 typedef struct {
-    SYN_ParamStore    store;         /**< Backing wear-leveled flash store */
-    void              *data;         /**< Pointer to user's settings struct */
-    uint16_t           data_size;    /**< sizeof(settings struct)           */
-    const void        *defaults;     /**< Pointer to const default values   */
-    uint16_t           checksum;     /**< CRC-16 at last save/load          */
+    SYN_ParamStore store; /**< Backing wear-leveled flash store */
+    void *data;           /**< Pointer to user's settings struct */
+    uint16_t data_size;   /**< sizeof(settings struct)           */
+    const void *defaults; /**< Pointer to const default values   */
+    uint16_t checksum;    /**< CRC-16 at last save/load          */
 
-    SYN_SettingsChangeCallback on_change;    /**< Change callback           */
-    void                       *on_change_ctx; /**< Callback context        */
+    SYN_SettingsChangeCallback on_change; /**< Change callback           */
+    void *on_change_ctx;                  /**< Callback context        */
 } SYN_Settings;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -94,10 +94,8 @@ typedef struct {
  * @param defaults     Pointer to default values (const, typically in ROM).
  * @return SYN_OK on success.
  */
-SYN_Status syn_settings_init(SYN_Settings *s,
-                               uint32_t flash_base, uint8_t sector_count,
-                               void *data, uint16_t data_size,
-                               const void *defaults);
+SYN_Status syn_settings_init(SYN_Settings *s, uint32_t flash_base, uint8_t sector_count, void *data,
+                             uint16_t data_size, const void *defaults);
 
 /**
  * @brief Save current settings to flash.
@@ -156,8 +154,7 @@ SYN_Status syn_settings_reset(SYN_Settings *s);
  * @param cb   Callback function.
  * @param ctx  User context.
  */
-void syn_settings_on_change(SYN_Settings *s,
-                              SYN_SettingsChangeCallback cb, void *ctx);
+void syn_settings_on_change(SYN_Settings *s, SYN_SettingsChangeCallback cb, void *ctx);
 
 /**
  * @brief Reload settings from flash, discarding any unsaved changes.

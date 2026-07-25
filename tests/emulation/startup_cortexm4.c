@@ -13,8 +13,7 @@ void Reset_Handler(void);
 void Default_Handler(void);
 
 /* Vector Table for ARM Cortex-M4 */
-__attribute__ ((section(".isr_vector")))
-void (* const g_pfnVectors[])(void) = {
+__attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     (void (*)(void))((uint32_t)&_estack),
     Reset_Handler,
     Default_Handler, /* NMI */
@@ -26,7 +25,8 @@ void (* const g_pfnVectors[])(void) = {
 
 void Default_Handler(void)
 {
-    while (1);
+    while (1)
+        ;
 }
 
 void Reset_Handler(void)
@@ -37,5 +37,6 @@ void Reset_Handler(void)
     /* Call main */
     main();
 
-    while (1);
+    while (1)
+        ;
 }

@@ -3,10 +3,10 @@
  * @brief Unity tests for syn_protothread.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/sched/syn_sched.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int pt_basic_counter = 0;
 
@@ -28,7 +28,6 @@ static SYN_PT_Status pt_basic_func(SYN_PT *pt, SYN_Task *task)
 
 static void test_basic_protothread(void)
 {
-
     SYN_PT pt;
     PT_INIT(&pt);
     pt_basic_counter = 0;
@@ -62,7 +61,6 @@ static SYN_PT_Status pt_wait_func(SYN_PT *pt, SYN_Task *task)
 
 static void test_wait_until(void)
 {
-
     SYN_PT pt;
     PT_INIT(&pt);
     wait_condition = 0;
@@ -94,7 +92,6 @@ static SYN_PT_Status pt_delay_func(SYN_PT *pt, SYN_Task *task)
 
 static void test_delay_ms(void)
 {
-
     SYN_Task task;
     syn_task_create(&task, "delay_test", pt_delay_func, 0, NULL);
     delay_done = 0;
@@ -132,7 +129,6 @@ static SYN_PT_Status pt_sem_func(SYN_PT *pt, SYN_Task *task)
 
 static void test_semaphore(void)
 {
-
     SYN_PT pt;
     PT_INIT(&pt);
     PT_SEM_INIT(&test_sem, 0);
@@ -151,8 +147,8 @@ static void test_semaphore(void)
     TEST_ASSERT_EQUAL_INT(0, PT_SEM_COUNT(&test_sem));
 }
 
-#define EVT_A  SYN_BIT(0)
-#define EVT_B  SYN_BIT(1)
+#define EVT_A SYN_BIT(0)
+#define EVT_B SYN_BIT(1)
 
 static SYN_EventGroup test_events;
 static int events_received = 0;
@@ -170,7 +166,6 @@ static SYN_PT_Status pt_event_func(SYN_PT *pt, SYN_Task *task)
 
 static void test_event_flags(void)
 {
-
     SYN_PT pt;
     PT_INIT(&pt);
     syn_event_init(&test_events);
@@ -219,7 +214,6 @@ static SYN_PT_Status spawn_parent(SYN_PT *pt, SYN_Task *task)
 
 static void test_spawn(void)
 {
-
     SYN_PT pt;
     PT_INIT(&pt);
     PT_INIT(&child_pt);

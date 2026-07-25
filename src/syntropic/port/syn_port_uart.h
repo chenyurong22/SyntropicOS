@@ -42,10 +42,8 @@ SYN_Status syn_port_uart_deinit(SYN_UARTInstance instance);
  * @param timeout_ms Timeout in milliseconds (0 = no timeout).
  * @return SYN_OK on success, SYN_TIMEOUT if the timeout elapsed.
  */
-SYN_Status syn_port_uart_transmit(SYN_UARTInstance instance,
-                                    const uint8_t *data,
-                                    size_t len,
-                                    uint32_t timeout_ms);
+SYN_Status syn_port_uart_transmit(SYN_UARTInstance instance, const uint8_t *data, size_t len,
+                                  uint32_t timeout_ms);
 
 /**
  * @brief Receive bytes into a buffer (blocking).
@@ -57,11 +55,8 @@ SYN_Status syn_port_uart_transmit(SYN_UARTInstance instance,
  * @param timeout_ms Timeout in milliseconds (0 = no timeout).
  * @return SYN_OK on success, SYN_TIMEOUT if the timeout elapsed.
  */
-SYN_Status syn_port_uart_receive(SYN_UARTInstance instance,
-                                   uint8_t *data,
-                                   size_t len,
-                                   size_t *received,
-                                   uint32_t timeout_ms);
+SYN_Status syn_port_uart_receive(SYN_UARTInstance instance, uint8_t *data, size_t len,
+                                 size_t *received, uint32_t timeout_ms);
 
 /**
  * @brief Transmit a single byte (blocking).
@@ -70,8 +65,7 @@ SYN_Status syn_port_uart_receive(SYN_UARTInstance instance,
  * @param byte      Byte to transmit.
  * @return SYN_OK on success.
  */
-SYN_Status syn_port_uart_transmit_byte(SYN_UARTInstance instance,
-                                         uint8_t byte);
+SYN_Status syn_port_uart_transmit_byte(SYN_UARTInstance instance, uint8_t byte);
 
 /**
  * @brief Receive a single byte (blocking).
@@ -81,9 +75,8 @@ SYN_Status syn_port_uart_transmit_byte(SYN_UARTInstance instance,
  * @param timeout_ms Timeout in milliseconds (0 = no timeout).
  * @return SYN_OK if a byte was received, SYN_TIMEOUT otherwise.
  */
-SYN_Status syn_port_uart_receive_byte(SYN_UARTInstance instance,
-                                        uint8_t *byte,
-                                        uint32_t timeout_ms);
+SYN_Status syn_port_uart_receive_byte(SYN_UARTInstance instance, uint8_t *byte,
+                                      uint32_t timeout_ms);
 
 #ifdef __cplusplus
 }

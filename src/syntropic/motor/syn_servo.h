@@ -32,8 +32,8 @@
 
 #include "../port/syn_port_system.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,15 +44,15 @@ extern "C" {
 /** @brief Hobby servo instance — pulse range, position, smooth movement. */
 typedef struct {
     /* Configuration */
-    uint16_t  pulse_min;    /**< Minimum pulse width in µs (e.g., 1000)  */
-    uint16_t  pulse_max;    /**< Maximum pulse width in µs (e.g., 2000)  */
-    uint16_t  angle_range;  /**< Full range in degrees (e.g., 180)       */
+    uint16_t pulse_min;   /**< Minimum pulse width in µs (e.g., 1000)  */
+    uint16_t pulse_max;   /**< Maximum pulse width in µs (e.g., 2000)  */
+    uint16_t angle_range; /**< Full range in degrees (e.g., 180)       */
 
     /* State */
-    uint16_t  current_us;   /**< Current pulse width (µs)                */
-    uint16_t  target_us;    /**< Target pulse width (µs)                 */
-    int32_t   rate;         /**< Movement rate (µs per ms), 0 = instant  */
-    uint32_t  last_tick;    /**< Last update tick                        */
+    uint16_t current_us; /**< Current pulse width (µs)                */
+    uint16_t target_us;  /**< Target pulse width (µs)                 */
+    int32_t rate;        /**< Movement rate (µs per ms), 0 = instant  */
+    uint32_t last_tick;  /**< Last update tick                        */
 } SYN_Servo;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -65,8 +65,7 @@ typedef struct {
  * @param pulse_max   Maximum pulse width in µs (max angle position).
  * @param angle_range Full angular range in degrees.
  */
-void syn_servo_init(SYN_Servo *servo, uint16_t pulse_min,
-                     uint16_t pulse_max, uint16_t angle_range);
+void syn_servo_init(SYN_Servo *servo, uint16_t pulse_min, uint16_t pulse_max, uint16_t angle_range);
 
 /**
  * @brief Set servo position by angle (immediate).
@@ -120,9 +119,10 @@ static inline uint16_t syn_servo_get_pulse_us(const SYN_Servo *servo)
 static inline uint16_t syn_servo_get_angle(const SYN_Servo *servo)
 {
     uint32_t range_us = (uint32_t)(servo->pulse_max - servo->pulse_min);
-    if (range_us == 0) return 0;
-    return (uint16_t)(((uint32_t)(servo->current_us - servo->pulse_min) *
-                       servo->angle_range) / range_us);
+    if (range_us == 0)
+        return 0;
+    return (uint16_t)(((uint32_t)(servo->current_us - servo->pulse_min) * servo->angle_range) /
+                      range_us);
 }
 
 /**

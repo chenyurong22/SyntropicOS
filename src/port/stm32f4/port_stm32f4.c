@@ -21,41 +21,41 @@
 
 #if defined(STM32F407xx) && !defined(ARDUINO)
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-
-#include "syntropic/common/syn_defs.h"
 #include "syntropic/common/syn_compiler.h"
-#include "syntropic/port/syn_port_spi.h"
-#include "syntropic/port/syn_port_i2c.h"
+#include "syntropic/common/syn_defs.h"
 #include "syntropic/port/syn_port_adc.h"
-#include "syntropic/port/syn_port_exti.h"
 #include "syntropic/port/syn_port_can.h"
+#include "syntropic/port/syn_port_exti.h"
+#include "syntropic/port/syn_port_i2c.h"
+#include "syntropic/port/syn_port_spi.h"
 #include "syntropic/system/syn_sleep.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
 /* ═══════════════════════════════════════════════════════════════════════════
  *  Register Definitions
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-#define PERIPH_BASE       0x40000000UL
-#define APB1_BASE         PERIPH_BASE
-#define APB2_BASE         (PERIPH_BASE + 0x10000UL)
-#define AHB1_BASE         (PERIPH_BASE + 0x20000UL)
+#define PERIPH_BASE 0x40000000UL
+#define APB1_BASE PERIPH_BASE
+#define APB2_BASE (PERIPH_BASE + 0x10000UL)
+#define AHB1_BASE (PERIPH_BASE + 0x20000UL)
 
 /* ── RCC ────────────────────────────────────────────────────────────────── */
 
-#define RCC_BASE          (AHB1_BASE + 0x3800UL)
-#define RCC_AHB1ENR       (*(volatile uint32_t *)(RCC_BASE + 0x30))
-#define RCC_APB1ENR       (*(volatile uint32_t *)(RCC_BASE + 0x40))
-#define RCC_APB2ENR       (*(volatile uint32_t *)(RCC_BASE + 0x44))
+#define RCC_BASE (AHB1_BASE + 0x3800UL)
+#define RCC_AHB1ENR (*(volatile uint32_t *)(RCC_BASE + 0x30))
+#define RCC_APB1ENR (*(volatile uint32_t *)(RCC_BASE + 0x40))
+#define RCC_APB2ENR (*(volatile uint32_t *)(RCC_BASE + 0x44))
 
 /* ── SysTick ────────────────────────────────────────────────────────────── */
 
-#define SYSTICK_BASE      0xE000E010UL
-#define SYSTICK_CTRL      (*(volatile uint32_t *)(SYSTICK_BASE + 0x00))
-#define SYSTICK_LOAD      (*(volatile uint32_t *)(SYSTICK_BASE + 0x04))
-#define SYSTICK_VAL       (*(volatile uint32_t *)(SYSTICK_BASE + 0x08))
+#define SYSTICK_BASE 0xE000E010UL
+#define SYSTICK_CTRL (*(volatile uint32_t *)(SYSTICK_BASE + 0x00))
+#define SYSTICK_LOAD (*(volatile uint32_t *)(SYSTICK_BASE + 0x04))
+#define SYSTICK_VAL (*(volatile uint32_t *)(SYSTICK_BASE + 0x08))
 
 /* ── GPIO ───────────────────────────────────────────────────────────────── */
 
@@ -71,22 +71,21 @@ typedef struct {
     volatile uint32_t AFR[2];
 } GPIO_TypeDef;
 
-#define GPIOA  ((GPIO_TypeDef *)(AHB1_BASE + 0x0000))
-#define GPIOB  ((GPIO_TypeDef *)(AHB1_BASE + 0x0400))
-#define GPIOC  ((GPIO_TypeDef *)(AHB1_BASE + 0x0800))
-#define GPIOD  ((GPIO_TypeDef *)(AHB1_BASE + 0x0C00))
-#define GPIOE  ((GPIO_TypeDef *)(AHB1_BASE + 0x1000))
-#define GPIOF  ((GPIO_TypeDef *)(AHB1_BASE + 0x1400))
-#define GPIOG  ((GPIO_TypeDef *)(AHB1_BASE + 0x1800))
-#define GPIOH  ((GPIO_TypeDef *)(AHB1_BASE + 0x1C00))
-#define GPIOI  ((GPIO_TypeDef *)(AHB1_BASE + 0x2000))
+#define GPIOA ((GPIO_TypeDef *)(AHB1_BASE + 0x0000))
+#define GPIOB ((GPIO_TypeDef *)(AHB1_BASE + 0x0400))
+#define GPIOC ((GPIO_TypeDef *)(AHB1_BASE + 0x0800))
+#define GPIOD ((GPIO_TypeDef *)(AHB1_BASE + 0x0C00))
+#define GPIOE ((GPIO_TypeDef *)(AHB1_BASE + 0x1000))
+#define GPIOF ((GPIO_TypeDef *)(AHB1_BASE + 0x1400))
+#define GPIOG ((GPIO_TypeDef *)(AHB1_BASE + 0x1800))
+#define GPIOH ((GPIO_TypeDef *)(AHB1_BASE + 0x1C00))
+#define GPIOI ((GPIO_TypeDef *)(AHB1_BASE + 0x2000))
 
-static GPIO_TypeDef *const gpio_ports[] = {
-    GPIOA, GPIOB, GPIOC, GPIOD, GPIOE, GPIOF, GPIOG, GPIOH, GPIOI
-};
-#define NUM_GPIO_PORTS  (sizeof(gpio_ports) / sizeof(gpio_ports[0]))
-#define GPIO_PORT(pin)  gpio_ports[(pin) >> 4]
-#define GPIO_BIT(pin)   ((pin) & 0x0F)
+static GPIO_TypeDef *const gpio_ports[] = {GPIOA, GPIOB, GPIOC, GPIOD, GPIOE,
+                                           GPIOF, GPIOG, GPIOH, GPIOI};
+#define NUM_GPIO_PORTS (sizeof(gpio_ports) / sizeof(gpio_ports[0]))
+#define GPIO_PORT(pin) gpio_ports[(pin) >> 4]
+#define GPIO_BIT(pin) ((pin)&0x0F)
 
 /* ── USART ──────────────────────────────────────────────────────────────── */
 
@@ -100,22 +99,20 @@ typedef struct {
     volatile uint32_t GTPR;
 } USART_TypeDef;
 
-#define USART1  ((USART_TypeDef *)0x40011000)
-#define USART2  ((USART_TypeDef *)0x40004400)
-#define USART3  ((USART_TypeDef *)0x40004800)
-#define UART4   ((USART_TypeDef *)0x40004C00)
-#define UART5   ((USART_TypeDef *)0x40005000)
+#define USART1 ((USART_TypeDef *)0x40011000)
+#define USART2 ((USART_TypeDef *)0x40004400)
+#define USART3 ((USART_TypeDef *)0x40004800)
+#define UART4 ((USART_TypeDef *)0x40004C00)
+#define UART5 ((USART_TypeDef *)0x40005000)
 
-#define USART_SR_TXE   (1U << 7)
-#define USART_SR_RXNE  (1U << 5)
-#define USART_SR_TC    (1U << 6)
-#define USART_CR1_UE   (1U << 13)
-#define USART_CR1_TE   (1U << 3)
-#define USART_CR1_RE   (1U << 2)
+#define USART_SR_TXE (1U << 7)
+#define USART_SR_RXNE (1U << 5)
+#define USART_SR_TC (1U << 6)
+#define USART_CR1_UE (1U << 13)
+#define USART_CR1_TE (1U << 3)
+#define USART_CR1_RE (1U << 2)
 
-static USART_TypeDef *const usart_instances[] = {
-    USART1, USART2, USART3, UART4, UART5
-};
+static USART_TypeDef *const usart_instances[] = {USART1, USART2, USART3, UART4, UART5};
 
 /* ── SPI ────────────────────────────────────────────────────────────────── */
 
@@ -131,22 +128,22 @@ typedef struct {
     volatile uint32_t I2SPR;
 } SPI_TypeDef;
 
-#define SPI1  ((SPI_TypeDef *)0x40013000)
-#define SPI2  ((SPI_TypeDef *)0x40003800)
-#define SPI3  ((SPI_TypeDef *)0x40003C00)
+#define SPI1 ((SPI_TypeDef *)0x40013000)
+#define SPI2 ((SPI_TypeDef *)0x40003800)
+#define SPI3 ((SPI_TypeDef *)0x40003C00)
 
-#define SPI_CR1_SPE    (1U << 6)
-#define SPI_CR1_MSTR   (1U << 2)
-#define SPI_CR1_SSM    (1U << 9)
-#define SPI_CR1_SSI    (1U << 8)
-#define SPI_CR1_CPOL   (1U << 1)
-#define SPI_CR1_CPHA   (1U << 0)
+#define SPI_CR1_SPE (1U << 6)
+#define SPI_CR1_MSTR (1U << 2)
+#define SPI_CR1_SSM (1U << 9)
+#define SPI_CR1_SSI (1U << 8)
+#define SPI_CR1_CPOL (1U << 1)
+#define SPI_CR1_CPHA (1U << 0)
 #define SPI_CR1_LSBFIRST (1U << 7)
-#define SPI_SR_TXE     (1U << 1)
-#define SPI_SR_RXNE    (1U << 0)
-#define SPI_SR_BSY     (1U << 7)
+#define SPI_SR_TXE (1U << 1)
+#define SPI_SR_RXNE (1U << 0)
+#define SPI_SR_BSY (1U << 7)
 
-static SPI_TypeDef *const spi_instances[] = { SPI1, SPI2, SPI3 };
+static SPI_TypeDef *const spi_instances[] = {SPI1, SPI2, SPI3};
 
 /* ── I2C ────────────────────────────────────────────────────────────────── */
 
@@ -163,22 +160,22 @@ typedef struct {
     volatile uint32_t FLTR;
 } I2C_TypeDef;
 
-#define I2C1  ((I2C_TypeDef *)0x40005400)
-#define I2C2  ((I2C_TypeDef *)0x40005800)
-#define I2C3  ((I2C_TypeDef *)0x40005C00)
+#define I2C1 ((I2C_TypeDef *)0x40005400)
+#define I2C2 ((I2C_TypeDef *)0x40005800)
+#define I2C3 ((I2C_TypeDef *)0x40005C00)
 
-#define I2C_CR1_PE     (1U << 0)
-#define I2C_CR1_START  (1U << 8)
-#define I2C_CR1_STOP   (1U << 9)
-#define I2C_CR1_ACK    (1U << 10)
-#define I2C_SR1_SB     (1U << 0)
-#define I2C_SR1_ADDR   (1U << 1)
-#define I2C_SR1_BTF    (1U << 2)
-#define I2C_SR1_TXE    (1U << 7)
-#define I2C_SR1_RXNE   (1U << 6)
-#define I2C_SR1_AF     (1U << 10)
+#define I2C_CR1_PE (1U << 0)
+#define I2C_CR1_START (1U << 8)
+#define I2C_CR1_STOP (1U << 9)
+#define I2C_CR1_ACK (1U << 10)
+#define I2C_SR1_SB (1U << 0)
+#define I2C_SR1_ADDR (1U << 1)
+#define I2C_SR1_BTF (1U << 2)
+#define I2C_SR1_TXE (1U << 7)
+#define I2C_SR1_RXNE (1U << 6)
+#define I2C_SR1_AF (1U << 10)
 
-static I2C_TypeDef *const i2c_instances[] = { I2C1, I2C2, I2C3 };
+static I2C_TypeDef *const i2c_instances[] = {I2C1, I2C2, I2C3};
 
 /* ── Flash controller ───────────────────────────────────────────────────── */
 
@@ -191,15 +188,15 @@ typedef struct {
     volatile uint32_t OPTCR;
 } FLASH_TypeDef;
 
-#define FLASH           ((FLASH_TypeDef *)0x40023C00)
-#define FLASH_SR_BSY    (1U << 16)
-#define FLASH_CR_PG     (1U << 0)
-#define FLASH_CR_SER    (1U << 1)
-#define FLASH_CR_STRT   (1U << 16)
-#define FLASH_CR_LOCK   (1U << 31)
-#define FLASH_CR_PSIZE_BYTE  (0U << 8)
-#define FLASH_KEY1      0x45670123UL
-#define FLASH_KEY2      0xCDEF89ABUL
+#define FLASH ((FLASH_TypeDef *)0x40023C00)
+#define FLASH_SR_BSY (1U << 16)
+#define FLASH_CR_PG (1U << 0)
+#define FLASH_CR_SER (1U << 1)
+#define FLASH_CR_STRT (1U << 16)
+#define FLASH_CR_LOCK (1U << 31)
+#define FLASH_CR_PSIZE_BYTE (0U << 8)
+#define FLASH_KEY1 0x45670123UL
+#define FLASH_KEY2 0xCDEF89ABUL
 
 /* ── ADC ────────────────────────────────────────────────────────────────── */
 
@@ -226,10 +223,10 @@ typedef struct {
     volatile uint32_t DR;
 } ADC_TypeDef;
 
-#define ADC1  ((ADC_TypeDef *)0x40012000)
+#define ADC1 ((ADC_TypeDef *)0x40012000)
 
-#define ADC_SR_EOC     (1U << 1)
-#define ADC_CR2_ADON   (1U << 0)
+#define ADC_SR_EOC (1U << 1)
+#define ADC_CR2_ADON (1U << 0)
 #define ADC_CR2_SWSTART (1U << 30)
 
 /* ── EXTI ───────────────────────────────────────────────────────────────── */
@@ -243,11 +240,11 @@ typedef struct {
     volatile uint32_t PR;
 } EXTI_TypeDef;
 
-#define EXTI  ((EXTI_TypeDef *)0x40013C00)
+#define EXTI ((EXTI_TypeDef *)0x40013C00)
 
 /* SYSCFG for EXTI line mapping */
-#define SYSCFG_BASE     0x40013800UL
-#define SYSCFG_EXTICR   ((volatile uint32_t *)(SYSCFG_BASE + 0x08))
+#define SYSCFG_BASE 0x40013800UL
+#define SYSCFG_EXTICR ((volatile uint32_t *)(SYSCFG_BASE + 0x08))
 
 /* ── CAN ────────────────────────────────────────────────────────────────── */
 
@@ -295,25 +292,25 @@ typedef struct {
     uint32_t _reserved4;
     volatile uint32_t FA1R;
     uint32_t _reserved5[8];
-    volatile uint32_t FR1[28];   /* Filter bank i register 1 */
-    volatile uint32_t FR2[28];   /* Filter bank i register 2 */
+    volatile uint32_t FR1[28]; /* Filter bank i register 1 */
+    volatile uint32_t FR2[28]; /* Filter bank i register 2 */
 } CAN_TypeDef;
 
-#define CAN1_BASE  0x40006400UL
-#define CAN1  ((CAN_TypeDef *)CAN1_BASE)
+#define CAN1_BASE 0x40006400UL
+#define CAN1 ((CAN_TypeDef *)CAN1_BASE)
 
-#define CAN_MCR_INRQ   (1U << 0)
-#define CAN_MSR_INAK   (1U << 0)
-#define CAN_TSR_TME0   (1U << 26)
-#define CAN_TIR_TXRQ   (1U << 0)
-#define CAN_TIR_IDE    (1U << 2)
-#define CAN_RF0R_FMP0  (0x3U)
+#define CAN_MCR_INRQ (1U << 0)
+#define CAN_MSR_INAK (1U << 0)
+#define CAN_TSR_TME0 (1U << 26)
+#define CAN_TIR_TXRQ (1U << 0)
+#define CAN_TIR_IDE (1U << 2)
+#define CAN_RF0R_FMP0 (0x3U)
 #define CAN_RF0R_RFOM0 (1U << 5)
 
 /* ── System clock (assumed 16 MHz for Renode default) ───────────────────── */
-#define SYSTEM_CLOCK_HZ  16000000UL
-#define APB1_CLOCK_HZ    (SYSTEM_CLOCK_HZ / 1)
-#define APB2_CLOCK_HZ    (SYSTEM_CLOCK_HZ / 1)
+#define SYSTEM_CLOCK_HZ 16000000UL
+#define APB1_CLOCK_HZ (SYSTEM_CLOCK_HZ / 1)
+#define APB2_CLOCK_HZ (SYSTEM_CLOCK_HZ / 1)
 
 /* ═══════════════════════════════════════════════════════════════════════════
  *  System / Tick
@@ -362,7 +359,8 @@ SYN_Status syn_port_gpio_init(SYN_GPIO_Pin pin, SYN_GPIO_Mode mode)
 {
     uint8_t port_idx = pin >> 4;
     uint8_t bit = GPIO_BIT(pin);
-    if (port_idx >= NUM_GPIO_PORTS) return SYN_INVALID_PARAM;
+    if (port_idx >= NUM_GPIO_PORTS)
+        return SYN_INVALID_PARAM;
 
     GPIO_TypeDef *gpio = gpio_ports[port_idx];
 
@@ -375,17 +373,17 @@ SYN_Status syn_port_gpio_init(SYN_GPIO_Pin pin, SYN_GPIO_Mode mode)
 
     switch (mode) {
     case SYN_GPIO_OUTPUT:
-        gpio->MODER |= (1U << (bit * 2));  /* 01 = output */
+        gpio->MODER |= (1U << (bit * 2));   /* 01 = output */
         gpio->OSPEEDR |= (2U << (bit * 2)); /* High speed */
         break;
     case SYN_GPIO_INPUT:
         /* 00 = input, no pull */
         break;
     case SYN_GPIO_INPUT_PULLUP:
-        gpio->PUPDR |= (1U << (bit * 2));  /* 01 = pull-up */
+        gpio->PUPDR |= (1U << (bit * 2)); /* 01 = pull-up */
         break;
     case SYN_GPIO_INPUT_PULLDOWN:
-        gpio->PUPDR |= (2U << (bit * 2));  /* 10 = pull-down */
+        gpio->PUPDR |= (2U << (bit * 2)); /* 10 = pull-down */
         break;
     default:
         return SYN_INVALID_PARAM;
@@ -398,25 +396,27 @@ SYN_Status syn_port_gpio_deinit(SYN_GPIO_Pin pin)
 {
     uint8_t port_idx = pin >> 4;
     uint8_t bit = GPIO_BIT(pin);
-    if (port_idx >= NUM_GPIO_PORTS) return SYN_INVALID_PARAM;
+    if (port_idx >= NUM_GPIO_PORTS)
+        return SYN_INVALID_PARAM;
 
     GPIO_TypeDef *gpio = gpio_ports[port_idx];
-    gpio->MODER &= ~(3U << (bit * 2));  /* Reset to input */
-    gpio->PUPDR &= ~(3U << (bit * 2));  /* No pull */
+    gpio->MODER &= ~(3U << (bit * 2)); /* Reset to input */
+    gpio->PUPDR &= ~(3U << (bit * 2)); /* No pull */
     return SYN_OK;
 }
 
 SYN_Status syn_port_gpio_write(SYN_GPIO_Pin pin, SYN_GPIO_State state)
 {
     uint8_t port_idx = pin >> 4;
-    if (port_idx >= NUM_GPIO_PORTS) return SYN_INVALID_PARAM;
+    if (port_idx >= NUM_GPIO_PORTS)
+        return SYN_INVALID_PARAM;
     GPIO_TypeDef *gpio = gpio_ports[port_idx];
     uint8_t bit = GPIO_BIT(pin);
 
     if (state == SYN_GPIO_HIGH) {
-        gpio->BSRR = (1U << bit);         /* Set bit */
+        gpio->BSRR = (1U << bit); /* Set bit */
     } else {
-        gpio->BSRR = (1U << (bit + 16));  /* Reset bit */
+        gpio->BSRR = (1U << (bit + 16)); /* Reset bit */
     }
     return SYN_OK;
 }
@@ -424,7 +424,8 @@ SYN_Status syn_port_gpio_write(SYN_GPIO_Pin pin, SYN_GPIO_State state)
 SYN_GPIO_State syn_port_gpio_read(SYN_GPIO_Pin pin)
 {
     uint8_t port_idx = pin >> 4;
-    if (port_idx >= NUM_GPIO_PORTS) return SYN_GPIO_LOW;
+    if (port_idx >= NUM_GPIO_PORTS)
+        return SYN_GPIO_LOW;
     GPIO_TypeDef *gpio = gpio_ports[port_idx];
     uint8_t bit = GPIO_BIT(pin);
     return (gpio->IDR & (1U << bit)) ? SYN_GPIO_HIGH : SYN_GPIO_LOW;
@@ -433,7 +434,8 @@ SYN_GPIO_State syn_port_gpio_read(SYN_GPIO_Pin pin)
 SYN_Status syn_port_gpio_toggle(SYN_GPIO_Pin pin)
 {
     uint8_t port_idx = pin >> 4;
-    if (port_idx >= NUM_GPIO_PORTS) return SYN_INVALID_PARAM;
+    if (port_idx >= NUM_GPIO_PORTS)
+        return SYN_INVALID_PARAM;
     GPIO_TypeDef *gpio = gpio_ports[port_idx];
     uint8_t bit = GPIO_BIT(pin);
     gpio->ODR ^= (1U << bit);
@@ -446,12 +448,13 @@ SYN_Status syn_port_gpio_toggle(SYN_GPIO_Pin pin)
 
 SYN_Status syn_port_uart_init(SYN_UARTInstance inst, uint32_t baud)
 {
-    if (inst >= 5) return SYN_INVALID_PARAM;
+    if (inst >= 5)
+        return SYN_INVALID_PARAM;
     USART_TypeDef *uart = usart_instances[inst];
 
     /* Enable clock */
     if (inst == 0) {
-        RCC_APB2ENR |= (1U << 4);    /* USART1 on APB2 */
+        RCC_APB2ENR |= (1U << 4); /* USART1 on APB2 */
     } else {
         RCC_APB1ENR |= (1U << (16 + inst)); /* USART2..UART5 on APB1 */
     }
@@ -473,25 +476,30 @@ SYN_Status syn_port_uart_init(SYN_UARTInstance inst, uint32_t baud)
 
 SYN_Status syn_port_uart_deinit(SYN_UARTInstance inst)
 {
-    if (inst >= 5) return SYN_INVALID_PARAM;
+    if (inst >= 5)
+        return SYN_INVALID_PARAM;
     usart_instances[inst]->CR1 = 0;
     return SYN_OK;
 }
 
 SYN_Status syn_port_uart_transmit_byte(SYN_UARTInstance inst, uint8_t byte)
 {
-    if (inst >= 5) return SYN_INVALID_PARAM;
+    if (inst >= 5)
+        return SYN_INVALID_PARAM;
     USART_TypeDef *uart = usart_instances[inst];
     volatile uint32_t timeout = 100000;
-    while (!(uart->SR & USART_SR_TXE) && --timeout) { /* spin */ }
-    if (!timeout) return SYN_TIMEOUT;
+    while (!(uart->SR & USART_SR_TXE) && --timeout) { /* spin */
+    }
+    if (!timeout)
+        return SYN_TIMEOUT;
     uart->DR = byte;
     return SYN_OK;
 }
 
 SYN_Status syn_port_uart_receive_byte(SYN_UARTInstance inst, uint8_t *byte, uint32_t timeout_ms)
 {
-    if (inst >= 5) return SYN_INVALID_PARAM;
+    if (inst >= 5)
+        return SYN_INVALID_PARAM;
     USART_TypeDef *uart = usart_instances[inst];
 
     if (timeout_ms == 0) {
@@ -512,33 +520,42 @@ SYN_Status syn_port_uart_receive_byte(SYN_UARTInstance inst, uint8_t *byte, uint
     return SYN_OK;
 }
 
-SYN_Status syn_port_uart_transmit(SYN_UARTInstance inst, const uint8_t *data,
-                                     size_t len, uint32_t timeout_ms)
+SYN_Status syn_port_uart_transmit(SYN_UARTInstance inst, const uint8_t *data, size_t len,
+                                  uint32_t timeout_ms)
 {
     (void)timeout_ms;
     for (size_t i = 0; i < len; i++) {
         SYN_Status s = syn_port_uart_transmit_byte(inst, data[i]);
-        if (s != SYN_OK) return s;
+        if (s != SYN_OK)
+            return s;
     }
     /* Wait for last byte to finish transmitting */
     USART_TypeDef *uart = usart_instances[inst];
     volatile uint32_t timeout = 100000;
-    while (!(uart->SR & USART_SR_TC) && --timeout) { /* spin */ }
-    if (!timeout) return SYN_TIMEOUT;
+    while (!(uart->SR & USART_SR_TC) && --timeout) { /* spin */
+    }
+    if (!timeout)
+        return SYN_TIMEOUT;
     return SYN_OK;
 }
 
-SYN_Status syn_port_uart_receive(SYN_UARTInstance inst, uint8_t *data,
-                                    size_t len, size_t *received, uint32_t timeout_ms)
+SYN_Status syn_port_uart_receive(SYN_UARTInstance inst, uint8_t *data, size_t len, size_t *received,
+                                 uint32_t timeout_ms)
 {
     size_t count = 0;
     for (size_t i = 0; i < len; i++) {
         SYN_Status s = syn_port_uart_receive_byte(inst, &data[i], timeout_ms);
-        if (s == SYN_TIMEOUT) break;
-        if (s != SYN_OK) { if (received) *received = count; return s; }
+        if (s == SYN_TIMEOUT)
+            break;
+        if (s != SYN_OK) {
+            if (received)
+                *received = count;
+            return s;
+        }
         count++;
     }
-    if (received) *received = count;
+    if (received)
+        *received = count;
     return SYN_OK;
 }
 
@@ -548,12 +565,13 @@ SYN_Status syn_port_uart_receive(SYN_UARTInstance inst, uint8_t *data,
 
 SYN_Status syn_port_spi_init(const SYN_SPI_Config *cfg)
 {
-    if (!cfg || cfg->bus >= 3) return SYN_INVALID_PARAM;
+    if (!cfg || cfg->bus >= 3)
+        return SYN_INVALID_PARAM;
     SPI_TypeDef *spi = spi_instances[cfg->bus];
 
     /* Enable clock */
     if (cfg->bus == 0) {
-        RCC_APB2ENR |= (1U << 12);   /* SPI1 on APB2 */
+        RCC_APB2ENR |= (1U << 12); /* SPI1 on APB2 */
     } else {
         RCC_APB1ENR |= (1U << (13 + cfg->bus)); /* SPI2=bit14, SPI3=bit15 */
     }
@@ -585,47 +603,55 @@ SYN_Status syn_port_spi_init(const SYN_SPI_Config *cfg)
 
     spi->CR1 = cr1;
     spi->CR2 = 0;
-    spi->CR1 |= SPI_CR1_SPE;  /* Enable */
+    spi->CR1 |= SPI_CR1_SPE; /* Enable */
 
     return SYN_OK;
 }
 
 SYN_Status syn_port_spi_deinit(uint8_t bus)
 {
-    if (bus >= 3) return SYN_INVALID_PARAM;
+    if (bus >= 3)
+        return SYN_INVALID_PARAM;
     spi_instances[bus]->CR1 = 0;
     return SYN_OK;
 }
 
-SYN_Status syn_port_spi_transfer(uint8_t bus, const uint8_t *tx_buf,
-                                    uint8_t *rx_buf, size_t len)
+SYN_Status syn_port_spi_transfer(uint8_t bus, const uint8_t *tx_buf, uint8_t *rx_buf, size_t len)
 {
-    if (bus >= 3) return SYN_INVALID_PARAM;
+    if (bus >= 3)
+        return SYN_INVALID_PARAM;
     SPI_TypeDef *spi = spi_instances[bus];
 
     for (size_t i = 0; i < len; i++) {
         /* Wait for TX empty with timeout */
         volatile uint32_t timeout = 100000;
-        while (!(spi->SR & SPI_SR_TXE) && --timeout) { /* spin */ }
-        if (!timeout) return SYN_TIMEOUT;
+        while (!(spi->SR & SPI_SR_TXE) && --timeout) { /* spin */
+        }
+        if (!timeout)
+            return SYN_TIMEOUT;
 
         /* Send byte (or 0xFF if no TX buffer) */
         spi->DR = tx_buf ? tx_buf[i] : 0xFF;
 
         /* Wait for RX not empty with timeout */
         timeout = 100000;
-        while (!(spi->SR & SPI_SR_RXNE) && --timeout) { /* spin */ }
-        if (!timeout) return SYN_TIMEOUT;
+        while (!(spi->SR & SPI_SR_RXNE) && --timeout) { /* spin */
+        }
+        if (!timeout)
+            return SYN_TIMEOUT;
 
         /* Read received byte */
         uint8_t rx = (uint8_t)(spi->DR & 0xFF);
-        if (rx_buf) rx_buf[i] = rx;
+        if (rx_buf)
+            rx_buf[i] = rx;
     }
 
     /* Wait until not busy with timeout */
     volatile uint32_t timeout = 100000;
-    while ((spi->SR & SPI_SR_BSY) && --timeout) { /* spin */ }
-    if (!timeout) return SYN_TIMEOUT;
+    while ((spi->SR & SPI_SR_BSY) && --timeout) { /* spin */
+    }
+    if (!timeout)
+        return SYN_TIMEOUT;
 
     return SYN_OK;
 }
@@ -648,7 +674,8 @@ SYN_Status syn_port_spi_cs_deassert(uint8_t bus, SYN_GPIO_Pin cs_pin)
 
 SYN_Status syn_port_i2c_init(const SYN_I2C_Config *cfg)
 {
-    if (!cfg || cfg->bus >= 3) return SYN_INVALID_PARAM;
+    if (!cfg || cfg->bus >= 3)
+        return SYN_INVALID_PARAM;
     I2C_TypeDef *i2c = i2c_instances[cfg->bus];
 
     /* Enable clock (I2C1=bit21, I2C2=bit22, I2C3=bit23) */
@@ -681,7 +708,8 @@ SYN_Status syn_port_i2c_init(const SYN_I2C_Config *cfg)
 
 SYN_Status syn_port_i2c_deinit(uint8_t bus)
 {
-    if (bus >= 3) return SYN_INVALID_PARAM;
+    if (bus >= 3)
+        return SYN_INVALID_PARAM;
     i2c_instances[bus]->CR1 = 0;
     return SYN_OK;
 }
@@ -693,8 +721,10 @@ static SYN_Status i2c_start(I2C_TypeDef *i2c, uint8_t addr, bool read)
 
     /* Wait for SB (start bit generated) */
     uint32_t timeout = 100000;
-    while (!(i2c->SR1 & I2C_SR1_SB) && timeout--) { /* spin */ }
-    if (!timeout) return SYN_TIMEOUT;
+    while (!(i2c->SR1 & I2C_SR1_SB) && timeout--) { /* spin */
+    }
+    if (!timeout)
+        return SYN_TIMEOUT;
 
     /* Send address */
     i2c->DR = (addr << 1) | (read ? 1 : 0);
@@ -709,7 +739,8 @@ static SYN_Status i2c_start(I2C_TypeDef *i2c, uint8_t addr, bool read)
             return SYN_ERROR;
         }
     }
-    if (!timeout) return SYN_TIMEOUT;
+    if (!timeout)
+        return SYN_TIMEOUT;
 
     /* Clear ADDR by reading SR1 then SR2 */
     (void)i2c->SR1;
@@ -718,26 +749,30 @@ static SYN_Status i2c_start(I2C_TypeDef *i2c, uint8_t addr, bool read)
     return SYN_OK;
 }
 
-SYN_Status syn_port_i2c_write(uint8_t bus, uint8_t addr,
-                                 const uint8_t *data, size_t len)
+SYN_Status syn_port_i2c_write(uint8_t bus, uint8_t addr, const uint8_t *data, size_t len)
 {
-    if (bus >= 3) return SYN_INVALID_PARAM;
+    if (bus >= 3)
+        return SYN_INVALID_PARAM;
     I2C_TypeDef *i2c = i2c_instances[bus];
 
     SYN_Status s = i2c_start(i2c, addr, false);
-    if (s != SYN_OK) return s;
+    if (s != SYN_OK)
+        return s;
 
     for (size_t i = 0; i < len; i++) {
         /* Wait for TXE */
         uint32_t timeout = 100000;
-        while (!(i2c->SR1 & I2C_SR1_TXE) && timeout--) { /* spin */ }
-        if (!timeout) return SYN_TIMEOUT;
+        while (!(i2c->SR1 & I2C_SR1_TXE) && timeout--) { /* spin */
+        }
+        if (!timeout)
+            return SYN_TIMEOUT;
         i2c->DR = data[i];
     }
 
     /* Wait for BTF (byte transfer finished) */
     uint32_t timeout = 100000;
-    while (!(i2c->SR1 & I2C_SR1_BTF) && timeout--) { /* spin */ }
+    while (!(i2c->SR1 & I2C_SR1_BTF) && timeout--) { /* spin */
+    }
 
     /* Generate STOP */
     i2c->CR1 |= I2C_CR1_STOP;
@@ -745,10 +780,10 @@ SYN_Status syn_port_i2c_write(uint8_t bus, uint8_t addr,
     return SYN_OK;
 }
 
-SYN_Status syn_port_i2c_read(uint8_t bus, uint8_t addr,
-                                uint8_t *data, size_t len)
+SYN_Status syn_port_i2c_read(uint8_t bus, uint8_t addr, uint8_t *data, size_t len)
 {
-    if (bus >= 3 || len == 0) return SYN_INVALID_PARAM;
+    if (bus >= 3 || len == 0)
+        return SYN_INVALID_PARAM;
     I2C_TypeDef *i2c = i2c_instances[bus];
 
     /* Enable ACK for multi-byte reads */
@@ -757,7 +792,8 @@ SYN_Status syn_port_i2c_read(uint8_t bus, uint8_t addr,
     }
 
     SYN_Status s = i2c_start(i2c, addr, true);
-    if (s != SYN_OK) return s;
+    if (s != SYN_OK)
+        return s;
 
     for (size_t i = 0; i < len; i++) {
         if (i == len - 1) {
@@ -768,8 +804,10 @@ SYN_Status syn_port_i2c_read(uint8_t bus, uint8_t addr,
 
         /* Wait for RXNE */
         uint32_t timeout = 100000;
-        while (!(i2c->SR1 & I2C_SR1_RXNE) && timeout--) { /* spin */ }
-        if (!timeout) return SYN_TIMEOUT;
+        while (!(i2c->SR1 & I2C_SR1_RXNE) && timeout--) { /* spin */
+        }
+        if (!timeout)
+            return SYN_TIMEOUT;
 
         data[i] = (uint8_t)(i2c->DR & 0xFF);
     }
@@ -777,27 +815,31 @@ SYN_Status syn_port_i2c_read(uint8_t bus, uint8_t addr,
     return SYN_OK;
 }
 
-SYN_Status syn_port_i2c_write_read(uint8_t bus, uint8_t addr,
-                                      const uint8_t *tx_data, size_t tx_len,
-                                      uint8_t *rx_data, size_t rx_len)
+SYN_Status syn_port_i2c_write_read(uint8_t bus, uint8_t addr, const uint8_t *tx_data, size_t tx_len,
+                                   uint8_t *rx_data, size_t rx_len)
 {
-    if (bus >= 3) return SYN_INVALID_PARAM;
+    if (bus >= 3)
+        return SYN_INVALID_PARAM;
     I2C_TypeDef *i2c = i2c_instances[bus];
 
     /* Write phase (no STOP — repeated start) */
     SYN_Status s = i2c_start(i2c, addr, false);
-    if (s != SYN_OK) return s;
+    if (s != SYN_OK)
+        return s;
 
     for (size_t i = 0; i < tx_len; i++) {
         uint32_t timeout = 100000;
-        while (!(i2c->SR1 & I2C_SR1_TXE) && timeout--) { /* spin */ }
-        if (!timeout) return SYN_TIMEOUT;
+        while (!(i2c->SR1 & I2C_SR1_TXE) && timeout--) { /* spin */
+        }
+        if (!timeout)
+            return SYN_TIMEOUT;
         i2c->DR = tx_data[i];
     }
 
     /* Wait for BTF before repeated start */
     uint32_t timeout = 100000;
-    while (!(i2c->SR1 & I2C_SR1_BTF) && timeout--) { /* spin */ }
+    while (!(i2c->SR1 & I2C_SR1_BTF) && timeout--) { /* spin */
+    }
 
     /* Read phase (with STOP at end) */
     return syn_port_i2c_read(bus, addr, rx_data, rx_len);
@@ -823,28 +865,31 @@ static void flash_lock(void)
 static SYN_Status flash_wait_bsy(void)
 {
     volatile uint32_t timeout = 1000000;
-    while ((FLASH->SR & FLASH_SR_BSY) && --timeout) { /* spin */ }
+    while ((FLASH->SR & FLASH_SR_BSY) && --timeout) { /* spin */
+    }
     return (timeout > 0) ? SYN_OK : SYN_TIMEOUT;
 }
 
 /* STM32F4 sector map (first 5 sectors of bank 1) */
-static const struct { uint32_t addr; uint32_t size; } flash_sectors[] = {
-    { 0x08000000, 16 * 1024 },   /* Sector 0 */
-    { 0x08004000, 16 * 1024 },   /* Sector 1 */
-    { 0x08008000, 16 * 1024 },   /* Sector 2 */
-    { 0x0800C000, 16 * 1024 },   /* Sector 3 */
-    { 0x08010000, 64 * 1024 },   /* Sector 4 */
-    { 0x08020000, 128 * 1024 },  /* Sector 5 */
-    { 0x08040000, 128 * 1024 },  /* Sector 6 */
-    { 0x08060000, 128 * 1024 },  /* Sector 7 */
+static const struct {
+    uint32_t addr;
+    uint32_t size;
+} flash_sectors[] = {
+    {0x08000000, 16 * 1024},  /* Sector 0 */
+    {0x08004000, 16 * 1024},  /* Sector 1 */
+    {0x08008000, 16 * 1024},  /* Sector 2 */
+    {0x0800C000, 16 * 1024},  /* Sector 3 */
+    {0x08010000, 64 * 1024},  /* Sector 4 */
+    {0x08020000, 128 * 1024}, /* Sector 5 */
+    {0x08040000, 128 * 1024}, /* Sector 6 */
+    {0x08060000, 128 * 1024}, /* Sector 7 */
 };
 #define NUM_FLASH_SECTORS (sizeof(flash_sectors) / sizeof(flash_sectors[0]))
 
 static int flash_find_sector(uint32_t addr)
 {
     for (int i = 0; i < (int)NUM_FLASH_SECTORS; i++) {
-        if (addr >= flash_sectors[i].addr &&
-            addr < flash_sectors[i].addr + flash_sectors[i].size) {
+        if (addr >= flash_sectors[i].addr && addr < flash_sectors[i].addr + flash_sectors[i].size) {
             return i;
         }
     }
@@ -854,7 +899,8 @@ static int flash_find_sector(uint32_t addr)
 SYN_Status syn_port_flash_erase(uint32_t addr)
 {
     int sector = flash_find_sector(addr);
-    if (sector < 0) return SYN_INVALID_PARAM;
+    if (sector < 0)
+        return SYN_INVALID_PARAM;
 
     flash_unlock();
     SYN_Status s = flash_wait_bsy();
@@ -914,7 +960,8 @@ SYN_Status syn_port_flash_write(uint32_t addr, const void *buf, size_t len)
 uint32_t syn_port_flash_sector_size(uint32_t addr)
 {
     int sector = flash_find_sector(addr);
-    if (sector < 0) return 0;
+    if (sector < 0)
+        return 0;
     return flash_sectors[sector].size;
 }
 
@@ -931,7 +978,8 @@ SYN_Status syn_port_adc_init(uint8_t ch)
     /* Turn on ADC */
     ADC1->CR2 = ADC_CR2_ADON;
     /* Small settling delay */
-    for (volatile int i = 0; i < 1000; i++) {}
+    for (volatile int i = 0; i < 1000; i++) {
+    }
 
     return SYN_OK;
 }
@@ -940,7 +988,7 @@ uint16_t syn_port_adc_read(uint8_t ch)
 {
     /* Set channel in SQR3 (regular sequence, 1 conversion) */
     ADC1->SQR3 = ch & 0x1F;
-    ADC1->SQR1 = 0;  /* 1 conversion */
+    ADC1->SQR1 = 0; /* 1 conversion */
 
     /* Clear EOC */
     ADC1->SR &= ~ADC_SR_EOC;
@@ -950,7 +998,8 @@ uint16_t syn_port_adc_read(uint8_t ch)
 
     /* Wait for EOC with timeout to prevent hangs in simulation */
     volatile uint32_t timeout = 10000;
-    while (!(ADC1->SR & ADC_SR_EOC) && --timeout) { /* spin */ }
+    while (!(ADC1->SR & ADC_SR_EOC) && --timeout) { /* spin */
+    }
 
     return (uint16_t)(ADC1->DR & 0x0FFF);
 }
@@ -974,7 +1023,8 @@ SYN_Status syn_port_exti_configure(SYN_GPIO_Pin pin, SYN_EXTI_Edge edge)
     uint8_t port_idx = pin >> 4;
     uint8_t bit = GPIO_BIT(pin);
 
-    if (port_idx >= NUM_GPIO_PORTS || bit >= 16) return SYN_INVALID_PARAM;
+    if (port_idx >= NUM_GPIO_PORTS || bit >= 16)
+        return SYN_INVALID_PARAM;
 
     /* Enable SYSCFG clock */
     RCC_APB2ENR |= (1U << 14);
@@ -1015,7 +1065,7 @@ void syn_port_exti_disable(SYN_GPIO_Pin pin)
 void syn_port_exti_clear_pending(SYN_GPIO_Pin pin)
 {
     uint8_t bit = GPIO_BIT(pin);
-    EXTI->PR = (1U << bit);  /* Write 1 to clear */
+    EXTI->PR = (1U << bit); /* Write 1 to clear */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1032,33 +1082,37 @@ bool syn_port_can_init(uint8_t port, uint32_t bitrate)
     /* Enter init mode */
     CAN1->MCR |= CAN_MCR_INRQ;
     uint32_t timeout = 100000;
-    while (!(CAN1->MSR & CAN_MSR_INAK) && timeout--) { /* spin */ }
-    if (!timeout) return false;
+    while (!(CAN1->MSR & CAN_MSR_INAK) && timeout--) { /* spin */
+    }
+    if (!timeout)
+        return false;
 
     /* Set bit timing (rough: 16MHz / (1+BS1+BS2) / prescaler = bitrate)
      * For 500kbps at 16MHz: prescaler=2, BS1=13, BS2=2 => 16/(1+13+2)/2 = 500k */
     uint32_t prescaler = SYSTEM_CLOCK_HZ / (16 * bitrate);
-    if (prescaler < 1) prescaler = 1;
-    CAN1->BTR = ((2 - 1) << 20) |   /* SJW = 2 */
-                ((13 - 1) << 16) |   /* BS1 = 13 */
-                ((2 - 1) << 0);      /* Prescaler */
-    (void)prescaler;  /* Use computed prescaler in production */
+    if (prescaler < 1)
+        prescaler = 1;
+    CAN1->BTR = ((2 - 1) << 20) |  /* SJW = 2 */
+                ((13 - 1) << 16) | /* BS1 = 13 */
+                ((2 - 1) << 0);    /* Prescaler */
+    (void)prescaler;               /* Use computed prescaler in production */
 
     /* Leave init mode */
     CAN1->MCR &= ~CAN_MCR_INRQ;
     timeout = 100000;
-    while ((CAN1->MSR & CAN_MSR_INAK) && timeout--) { /* spin */ }
+    while ((CAN1->MSR & CAN_MSR_INAK) && timeout--) { /* spin */
+    }
 
     return true;
 }
 
-bool syn_port_can_send(uint8_t port, uint32_t id, bool ext,
-                         const uint8_t *data, uint8_t dlc)
+bool syn_port_can_send(uint8_t port, uint32_t id, bool ext, const uint8_t *data, uint8_t dlc)
 {
     (void)port;
 
     /* Wait for empty TX mailbox 0 */
-    if (!(CAN1->TSR & CAN_TSR_TME0)) return false;
+    if (!(CAN1->TSR & CAN_TSR_TME0))
+        return false;
 
     /* Set ID */
     if (ext) {
@@ -1087,13 +1141,13 @@ bool syn_port_can_send(uint8_t port, uint32_t id, bool ext,
     return true;
 }
 
-bool syn_port_can_receive(uint8_t port, uint32_t *id, bool *ext,
-                            uint8_t *data, uint8_t *dlc)
+bool syn_port_can_receive(uint8_t port, uint32_t *id, bool *ext, uint8_t *data, uint8_t *dlc)
 {
     (void)port;
 
     /* Check FIFO 0 for pending messages */
-    if ((CAN1->RF0R & CAN_RF0R_FMP0) == 0) return false;
+    if ((CAN1->RF0R & CAN_RF0R_FMP0) == 0)
+        return false;
 
     /* Read ID */
     if (CAN1->RI0R & CAN_TIR_IDE) {
@@ -1131,15 +1185,15 @@ void syn_port_can_set_filter(uint8_t port, uint32_t id, uint32_t mask)
     CAN1->FMR |= 1;
 
     /* Configure filter 0: mask mode, 32-bit scale */
-    CAN1->FA1R &= ~1U;    /* Deactivate filter 0 */
-    CAN1->FM1R &= ~1U;    /* Mask mode */
-    CAN1->FS1R |= 1U;     /* 32-bit scale */
-    CAN1->FFA1R &= ~1U;   /* Assign to FIFO 0 */
+    CAN1->FA1R &= ~1U;  /* Deactivate filter 0 */
+    CAN1->FM1R &= ~1U;  /* Mask mode */
+    CAN1->FS1R |= 1U;   /* 32-bit scale */
+    CAN1->FFA1R &= ~1U; /* Assign to FIFO 0 */
 
-    CAN1->FR1[0] = id << 21;    /* Filter ID */
-    CAN1->FR2[0] = mask << 21;  /* Filter mask */
+    CAN1->FR1[0] = id << 21;   /* Filter ID */
+    CAN1->FR2[0] = mask << 21; /* Filter mask */
 
-    CAN1->FA1R |= 1U;     /* Activate filter 0 */
+    CAN1->FA1R |= 1U; /* Activate filter 0 */
 
     /* Leave filter init mode */
     CAN1->FMR &= ~1U;
@@ -1164,7 +1218,9 @@ void syn_assert_failed(const char *file, int line)
     (void)file;
     (void)line;
     /* Hard fault loop — Renode will catch this */
-    for (;;) { __asm volatile("bkpt #0"); }
+    for (;;) {
+        __asm volatile("bkpt #0");
+    }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1203,20 +1259,20 @@ typedef struct {
     volatile uint32_t CCR4;
 } TIM_TypeDef;
 
-#define TIM2  ((TIM_TypeDef *)0x40000000)
+#define TIM2 ((TIM_TypeDef *)0x40000000)
 
-#define TIM_CR1_CEN    (1U << 0)
-#define TIM_CR1_ARPE   (1U << 7)
+#define TIM_CR1_CEN (1U << 0)
+#define TIM_CR1_ARPE (1U << 7)
 
 /* PWM mode 1: active when CNT < CCRx */
-#define TIM_CCMR_PWM1  0x68U   /* OC1M = 110, OC1PE = 1 */
+#define TIM_CCMR_PWM1 0x68U /* OC1M = 110, OC1PE = 1 */
 
 /* CCER: CCxE enables the output */
-#define TIM2_APB1ENR_BIT  (1U << 0)
+#define TIM2_APB1ENR_BIT (1U << 0)
 
 /* GPIO AF1 for PA0–PA3 = TIM2 CH1–CH4 */
-#define GPIO_MODER_AF    2U
-#define GPIO_AF1         1U
+#define GPIO_MODER_AF 2U
+#define GPIO_AF1 1U
 
 static uint32_t s_pwm_arr = 999U; /* default: 1 kHz at 16 MHz with PSC=15 */
 
@@ -1224,22 +1280,23 @@ static void pwm_gpio_init_pin(uint8_t bit)
 {
     /* PA[bit]: MODER = alternate function (10b) */
     GPIOA->MODER &= ~(3U << (bit * 2));
-    GPIOA->MODER |=  (GPIO_MODER_AF << (bit * 2));
+    GPIOA->MODER |= (GPIO_MODER_AF << (bit * 2));
 
     /* OSPEEDR: high speed */
     GPIOA->OSPEEDR |= (3U << (bit * 2));
 
     /* AFR[0] (AFRL, covers PA0–PA7): set AF1 for the pin */
     GPIOA->AFR[0] &= ~(0xFU << (bit * 4));
-    GPIOA->AFR[0] |=  (GPIO_AF1 << (bit * 4));
+    GPIOA->AFR[0] |= (GPIO_AF1 << (bit * 4));
 }
 
 SYN_Status syn_port_pwm_init(uint8_t channel, uint32_t freq_hz)
 {
-    if (channel > 3 || freq_hz == 0) return SYN_INVALID_PARAM;
+    if (channel > 3 || freq_hz == 0)
+        return SYN_INVALID_PARAM;
 
     /* Enable GPIOA and TIM2 clocks */
-    RCC_AHB1ENR |= (1U << 0);   /* GPIOAEN */
+    RCC_AHB1ENR |= (1U << 0); /* GPIOAEN */
     RCC_APB1ENR |= TIM2_APB1ENR_BIT;
 
     /* Configure the GPIO pin for this channel as TIM2 AF output */
@@ -1251,35 +1308,36 @@ SYN_Status syn_port_pwm_init(uint8_t channel, uint32_t freq_hz)
      * f_pwm = 16MHz / (PSC+1) / (ARR+1) = 1MHz / (ARR+1)
      */
     uint32_t arr = (SYSTEM_CLOCK_HZ / 16U / freq_hz);
-    if (arr == 0) arr = 1;
+    if (arr == 0)
+        arr = 1;
     s_pwm_arr = arr - 1U;
 
-    TIM2->PSC  = 15U;
-    TIM2->ARR  = s_pwm_arr;
+    TIM2->PSC = 15U;
+    TIM2->ARR = s_pwm_arr;
     TIM2->CR1 |= TIM_CR1_ARPE;
 
     /* Configure PWM mode 1 on the selected channel */
     switch (channel) {
-        case 0:
-            TIM2->CCMR1 = (TIM2->CCMR1 & ~0x00FFU) | ((uint32_t)TIM_CCMR_PWM1);
-            TIM2->CCR1   = 0;
-            TIM2->CCER  |= (1U << 0);   /* CC1E */
-            break;
-        case 1:
-            TIM2->CCMR1 = (TIM2->CCMR1 & ~0xFF00U) | ((uint32_t)TIM_CCMR_PWM1 << 8);
-            TIM2->CCR2   = 0;
-            TIM2->CCER  |= (1U << 4);   /* CC2E */
-            break;
-        case 2:
-            TIM2->CCMR2 = (TIM2->CCMR2 & ~0x00FFU) | ((uint32_t)TIM_CCMR_PWM1);
-            TIM2->CCR3   = 0;
-            TIM2->CCER  |= (1U << 8);   /* CC3E */
-            break;
-        case 3:
-            TIM2->CCMR2 = (TIM2->CCMR2 & ~0xFF00U) | ((uint32_t)TIM_CCMR_PWM1 << 8);
-            TIM2->CCR4   = 0;
-            TIM2->CCER  |= (1U << 12);  /* CC4E */
-            break;
+    case 0:
+        TIM2->CCMR1 = (TIM2->CCMR1 & ~0x00FFU) | ((uint32_t)TIM_CCMR_PWM1);
+        TIM2->CCR1 = 0;
+        TIM2->CCER |= (1U << 0); /* CC1E */
+        break;
+    case 1:
+        TIM2->CCMR1 = (TIM2->CCMR1 & ~0xFF00U) | ((uint32_t)TIM_CCMR_PWM1 << 8);
+        TIM2->CCR2 = 0;
+        TIM2->CCER |= (1U << 4); /* CC2E */
+        break;
+    case 2:
+        TIM2->CCMR2 = (TIM2->CCMR2 & ~0x00FFU) | ((uint32_t)TIM_CCMR_PWM1);
+        TIM2->CCR3 = 0;
+        TIM2->CCER |= (1U << 8); /* CC3E */
+        break;
+    case 3:
+        TIM2->CCMR2 = (TIM2->CCMR2 & ~0xFF00U) | ((uint32_t)TIM_CCMR_PWM1 << 8);
+        TIM2->CCR4 = 0;
+        TIM2->CCER |= (1U << 12); /* CC4E */
+        break;
     }
 
     /* Generate an update event to load the shadow registers */
@@ -1293,39 +1351,59 @@ SYN_Status syn_port_pwm_init(uint8_t channel, uint32_t freq_hz)
 
 void syn_port_pwm_set_duty(uint8_t channel, uint8_t duty_pct)
 {
-    if (channel > 3) return;
-    if (duty_pct > 100) duty_pct = 100;
+    if (channel > 3)
+        return;
+    if (duty_pct > 100)
+        duty_pct = 100;
 
     uint32_t ccr = ((uint32_t)duty_pct * (s_pwm_arr + 1U)) / 100U;
 
     switch (channel) {
-        case 0: TIM2->CCR1 = ccr; break;
-        case 1: TIM2->CCR2 = ccr; break;
-        case 2: TIM2->CCR3 = ccr; break;
-        case 3: TIM2->CCR4 = ccr; break;
+    case 0:
+        TIM2->CCR1 = ccr;
+        break;
+    case 1:
+        TIM2->CCR2 = ccr;
+        break;
+    case 2:
+        TIM2->CCR3 = ccr;
+        break;
+    case 3:
+        TIM2->CCR4 = ccr;
+        break;
     }
 }
 
 void syn_port_pwm_set_duty_raw(uint8_t channel, uint16_t duty_u16)
 {
-    if (channel > 3) return;
+    if (channel > 3)
+        return;
 
     /* Map 0–65535 to 0–ARR */
     uint32_t ccr = ((uint32_t)duty_u16 * (s_pwm_arr + 1U)) / 65536U;
 
     switch (channel) {
-        case 0: TIM2->CCR1 = ccr; break;
-        case 1: TIM2->CCR2 = ccr; break;
-        case 2: TIM2->CCR3 = ccr; break;
-        case 3: TIM2->CCR4 = ccr; break;
+    case 0:
+        TIM2->CCR1 = ccr;
+        break;
+    case 1:
+        TIM2->CCR2 = ccr;
+        break;
+    case 2:
+        TIM2->CCR3 = ccr;
+        break;
+    case 3:
+        TIM2->CCR4 = ccr;
+        break;
     }
 }
 
 void syn_port_pwm_enable(uint8_t channel, bool enable)
 {
-    if (channel > 3) return;
+    if (channel > 3)
+        return;
 
-    static const uint32_t ccer_bits[] = { 1U<<0, 1U<<4, 1U<<8, 1U<<12 };
+    static const uint32_t ccer_bits[] = {1U << 0, 1U << 4, 1U << 8, 1U << 12};
     if (enable) {
         TIM2->CCER |= ccer_bits[channel];
     } else {
@@ -1337,10 +1415,12 @@ void syn_port_pwm_set_freq(uint8_t channel, uint32_t freq_hz)
 {
     (void)channel; /* All channels share TIM2 — frequency change affects all */
 
-    if (freq_hz == 0) return;
+    if (freq_hz == 0)
+        return;
 
     uint32_t arr = (SYSTEM_CLOCK_HZ / 16U / freq_hz);
-    if (arr == 0) arr = 1;
+    if (arr == 0)
+        arr = 1;
     s_pwm_arr = arr - 1U;
 
     TIM2->ARR = s_pwm_arr;
@@ -1355,7 +1435,7 @@ void syn_port_system_init(void)
 {
     /* Configure SysTick for 1ms interrupt at 16MHz */
     SYSTICK_LOAD = (SYSTEM_CLOCK_HZ / 1000) - 1;
-    SYSTICK_VAL  = 0;
+    SYSTICK_VAL = 0;
     SYSTICK_CTRL = 0x07; /* Enable, interrupt, use processor clock */
 }
 
@@ -1377,12 +1457,13 @@ int _write(int file, char *ptr, int len)
 #include "syntropic/port/syn_port_serial.h"
 
 #ifndef SYN_SERIAL_UART_INSTANCE
-  #define SYN_SERIAL_UART_INSTANCE  1   /* USART2 on STM32F407 Discovery */
+#define SYN_SERIAL_UART_INSTANCE 1 /* USART2 on STM32F407 Discovery */
 #endif
 
 SYN_WEAK SYN_Status syn_port_serial_init(uint32_t baudrate)
 {
-    if (baudrate == 0) baudrate = 115200;
+    if (baudrate == 0)
+        baudrate = 115200;
     return syn_port_uart_init(SYN_SERIAL_UART_INSTANCE, baudrate);
 }
 
@@ -1396,8 +1477,10 @@ SYN_WEAK int syn_port_serial_read(uint8_t *buf, size_t max_len)
 {
     size_t received = 0;
     SYN_Status s = syn_port_uart_receive(SYN_SERIAL_UART_INSTANCE, buf, max_len, &received, 0);
-    if (s == SYN_TIMEOUT) return (int)received;
-    if (s != SYN_OK) return -1;
+    if (s == SYN_TIMEOUT)
+        return (int)received;
+    if (s != SYN_OK)
+        return -1;
     return (int)received;
 }
 

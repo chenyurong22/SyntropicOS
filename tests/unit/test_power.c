@@ -3,29 +3,42 @@
  * @brief Unity tests for syn_power — full coverage (adds errlog/brownout log).
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
-
-#include "syntropic/system/syn_power.h"
 #include "syntropic/system/syn_errlog.h"
+#include "syntropic/system/syn_power.h"
+#include "unity/unity.h"
 
 static int power_bo_count = 0;
 static int power_re_count = 0;
-static void pwr_bo_cb(SYN_Power *p, void *c) { (void)p; (void)c; power_bo_count++; }
-static void pwr_re_cb(SYN_Power *p, void *c) { (void)p; (void)c; power_re_count++; }
+static void pwr_bo_cb(SYN_Power *p, void *c)
+{
+    (void)p;
+    (void)c;
+    power_bo_count++;
+}
+static void pwr_re_cb(SYN_Power *p, void *c)
+{
+    (void)p;
+    (void)c;
+    power_re_count++;
+}
 
 static void test_power(void)
 {
     static SYN_ADC pwr_adc;
-    SYN_ADC_Config pwr_adc_cfg = { .channel = 0, .oversample = 1, .cal_scale = 1 };
+    SYN_ADC_Config pwr_adc_cfg = {.channel = 0, .oversample = 1, .cal_scale = 1};
     mock_adc_value = 4095; /* ~3300mV */
     syn_adc_init(&pwr_adc, &pwr_adc_cfg);
-    power_bo_count = 0; power_re_count = 0;
+    power_bo_count = 0;
+    power_re_count = 0;
     SYN_Power pwr;
     SYN_Power_Config pcfg = {
-        .adc = &pwr_adc, .brownout_mv = 3000, .restore_mv = 3200,
-        .on_brownout = pwr_bo_cb, .on_restore = pwr_re_cb,
+        .adc = &pwr_adc,
+        .brownout_mv = 3000,
+        .restore_mv = 3200,
+        .on_brownout = pwr_bo_cb,
+        .on_restore = pwr_re_cb,
     };
     syn_power_init(&pwr, &pcfg);
     syn_power_update(&pwr);
@@ -54,16 +67,20 @@ static void test_power(void)
 static void test_power_errlog(void)
 {
     static SYN_ADC pwr_adc;
-    SYN_ADC_Config pwr_adc_cfg = { .channel = 0, .oversample = 1, .cal_scale = 1 };
-    power_bo_count = 0; power_re_count = 0;
+    SYN_ADC_Config pwr_adc_cfg = {.channel = 0, .oversample = 1, .cal_scale = 1};
+    power_bo_count = 0;
+    power_re_count = 0;
 
     mock_adc_value = 4095; /* healthy voltage */
     syn_adc_init(&pwr_adc, &pwr_adc_cfg);
 
     SYN_Power pwr;
     SYN_Power_Config pcfg = {
-        .adc = &pwr_adc, .brownout_mv = 3000, .restore_mv = 3200,
-        .on_brownout = pwr_bo_cb, .on_restore = pwr_re_cb,
+        .adc = &pwr_adc,
+        .brownout_mv = 3000,
+        .restore_mv = 3200,
+        .on_brownout = pwr_bo_cb,
+        .on_restore = pwr_re_cb,
     };
     syn_power_init(&pwr, &pcfg);
 

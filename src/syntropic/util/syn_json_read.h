@@ -34,9 +34,9 @@
 #ifndef SYN_JSON_READ_H
 #define SYN_JSON_READ_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,36 +46,36 @@ extern "C" {
 
 /** @brief JSON value types. */
 typedef enum {
-    SYN_JSON_NONE    = 0,  /**< No type / uninitialized               */
-    SYN_JSON_STRING  = 1,  /**< String value                           */
-    SYN_JSON_NUMBER  = 2,  /**< Numeric value                          */
-    SYN_JSON_BOOL    = 3,  /**< Boolean (true/false)                   */
-    SYN_JSON_NULL    = 4,  /**< Null value                             */
-    SYN_JSON_OBJECT  = 5,  /**< Object (nested)                        */
-    SYN_JSON_ARRAY   = 6,  /**< Array                                  */
+    SYN_JSON_NONE = 0,   /**< No type / uninitialized               */
+    SYN_JSON_STRING = 1, /**< String value                           */
+    SYN_JSON_NUMBER = 2, /**< Numeric value                          */
+    SYN_JSON_BOOL = 3,   /**< Boolean (true/false)                   */
+    SYN_JSON_NULL = 4,   /**< Null value                             */
+    SYN_JSON_OBJECT = 5, /**< Object (nested)                        */
+    SYN_JSON_ARRAY = 6,  /**< Array                                  */
 } SYN_JsonType;
 
 /* ── Token ─────────────────────────────────────────────────────────────── */
 
 /** @brief Maximum number of parsed JSON tokens per document. */
-#define SYN_JSON_MAX_TOKENS  32
+#define SYN_JSON_MAX_TOKENS 32
 
 /** @brief Parsed JSON token — key + value + type. */
 typedef struct {
-    SYN_JsonType  type;      /**< Value type                            */
-    const char   *key;       /**< Key string (NULL for array elements)  */
-    const char   *value;     /**< Value string (for string/number)      */
-    int32_t       int_val;   /**< Parsed integer (for numbers)          */
-    uint8_t       depth;     /**< Nesting depth                         */
+    SYN_JsonType type; /**< Value type                            */
+    const char *key;   /**< Key string (NULL for array elements)  */
+    const char *value; /**< Value string (for string/number)      */
+    int32_t int_val;   /**< Parsed integer (for numbers)          */
+    uint8_t depth;     /**< Nesting depth                         */
 } SYN_JsonToken;
 
 /* ── Reader ────────────────────────────────────────────────────────────── */
 
 /** @brief JSON reader — token array + parse state. */
 typedef struct {
-    SYN_JsonToken  tokens[SYN_JSON_MAX_TOKENS]; /**< Parsed tokens      */
-    size_t         token_count; /**< Number of tokens parsed             */
-    bool           valid;      /**< Parse succeeded                     */
+    SYN_JsonToken tokens[SYN_JSON_MAX_TOKENS]; /**< Parsed tokens      */
+    size_t token_count;                        /**< Number of tokens parsed             */
+    bool valid;                                /**< Parse succeeded                     */
 } SYN_JsonReader;
 
 /* ── API ───────────────────────────────────────────────────────────────── */
@@ -113,8 +113,7 @@ const SYN_JsonToken *syn_json_find(const SYN_JsonReader *r, const char *key);
  * @param out_sz  Buffer capacity.
  * @return true if key found and value is a string.
  */
-bool syn_json_get_str(const SYN_JsonReader *r, const char *key,
-                       char *out, size_t out_sz);
+bool syn_json_get_str(const SYN_JsonReader *r, const char *key, char *out, size_t out_sz);
 
 /**
  * @brief Get an integer value by key.

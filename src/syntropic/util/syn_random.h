@@ -7,10 +7,11 @@
 #ifndef SYN_RANDOM_H
 #define SYN_RANDOM_H
 
-#include "../common/syn_defs.h"
 #include "../common/syn_compiler.h"
-#include <stdint.h>
+#include "../common/syn_defs.h"
+
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

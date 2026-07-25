@@ -33,11 +33,11 @@
 #ifndef SYN_MATRIX_H
 #define SYN_MATRIX_H
 
-#include "syn_qmath.h"
 #include "../common/syn_defs.h"
+#include "syn_qmath.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,36 +53,35 @@ extern "C" {
  * compiler to constant-fold loop bounds and unroll.
  */
 typedef struct {
-    q16_t   *data;    /**< Flat row-major storage (caller-owned)    */
-    uint8_t  rows;    /**< Number of rows                            */
-    uint8_t  cols;    /**< Number of columns                         */
+    q16_t *data;  /**< Flat row-major storage (caller-owned)    */
+    uint8_t rows; /**< Number of rows                            */
+    uint8_t cols; /**< Number of columns                         */
 } SYN_Matrix;
 
 /* ── Declaration macros ─────────────────────────────────────────────────── */
 
 /** @brief Declare a matrix with automatic (stack) storage. */
-#define SYN_MAT_DECL(name, R, C)                                \
-    q16_t name##_store[(R) * (C)];                              \
-    SYN_Matrix name = { name##_store, (R), (C) }
+#define SYN_MAT_DECL(name, R, C)   \
+    q16_t name##_store[(R) * (C)]; \
+    SYN_Matrix name = {name##_store, (R), (C)}
 
 /** @brief Declare a matrix with static storage (zero-initialized). */
-#define SYN_MAT_STATIC(name, R, C)                              \
-    static q16_t name##_store[(R) * (C)];                       \
-    static SYN_Matrix name = { name##_store, (R), (C) }
+#define SYN_MAT_STATIC(name, R, C)        \
+    static q16_t name##_store[(R) * (C)]; \
+    static SYN_Matrix name = {name##_store, (R), (C)}
 
 /** @brief Initialize a matrix view over existing storage. */
-#define SYN_MAT_INIT(name, storage, R, C)                       \
-    SYN_Matrix name = { (storage), (R), (C) }
+#define SYN_MAT_INIT(name, storage, R, C) SYN_Matrix name = {(storage), (R), (C)}
 
 /** @brief Element access (row, col) — evaluates to an lvalue. */
-#define SYN_MAT_AT(m, r, c)  ((m)->data[(r) * (m)->cols + (c)])
+#define SYN_MAT_AT(m, r, c) ((m)->data[(r) * (m)->cols + (c)])
 
 /** @brief Shorthand for 2×2. */
-#define SYN_MAT2_DECL(name)  SYN_MAT_DECL(name, 2, 2)
+#define SYN_MAT2_DECL(name) SYN_MAT_DECL(name, 2, 2)
 /** @brief Shorthand for 3×3. */
-#define SYN_MAT3_DECL(name)  SYN_MAT_DECL(name, 3, 3)
+#define SYN_MAT3_DECL(name) SYN_MAT_DECL(name, 3, 3)
 /** @brief Shorthand for 4×4. */
-#define SYN_MAT4_DECL(name)  SYN_MAT_DECL(name, 4, 4)
+#define SYN_MAT4_DECL(name) SYN_MAT_DECL(name, 4, 4)
 
 /* ── Core operations ────────────────────────────────────────────────────── */
 
@@ -151,8 +150,7 @@ void syn_matrix_mul(const SYN_Matrix *a, const SYN_Matrix *b, SYN_Matrix *out);
  * @param v_out   Output vector (R elements). Must not alias v_in.
  * @param n_in    Length of input vector (must equal m->cols).
  */
-void syn_matrix_mul_vec(const SYN_Matrix *m, const q16_t *v_in,
-                        q16_t *v_out, uint8_t n_in);
+void syn_matrix_mul_vec(const SYN_Matrix *m, const q16_t *v_in, q16_t *v_out, uint8_t n_in);
 
 /* ── Transpose, trace ───────────────────────────────────────────────────── */
 
@@ -361,7 +359,8 @@ SYN_Status syn_matrix_set_block(SYN_Matrix *dst, uint8_t r0, uint8_t c0, const S
  * @param out   Output matrix (R×C).
  * @return SYN_OK on success, SYN_INVALID_PARAM if NULL or invalid dimensions.
  */
-SYN_Status syn_matrix_outer_product(const q16_t *u, uint8_t rows, const q16_t *v, uint8_t cols, SYN_Matrix *out);
+SYN_Status syn_matrix_outer_product(const q16_t *u, uint8_t rows, const q16_t *v, uint8_t cols,
+                                    SYN_Matrix *out);
 
 /**
  * @brief QR Decomposition: A = Q · R via Modified Gram-Schmidt process.

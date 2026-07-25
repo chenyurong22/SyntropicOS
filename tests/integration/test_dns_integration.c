@@ -1,25 +1,34 @@
+#include "mock_port.h"
+#include "syntropic/net/syn_dns.h"
+#include "unity/unity.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "syntropic/net/syn_dns.h"
-#include "mock_port.h"
-#include "unity/unity.h"
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_dns_resolver_e2e(void)
 {
     const char *host = getenv("DNS_HOST");
-    if (!host) host = "127.0.0.1";
+    if (!host)
+        host = "127.0.0.1";
     uint16_t port = (strcmp(host, "127.0.0.1") == 0) ? 10053 : 53;
 
     printf("[Integration Test] Querying CoreDNS UDP Server at %s:%d...\n", host, port);
 
     SYN_SockAddr server = {0};
     server.port = port;
-    server.ip[0] = 127; server.ip[1] = 0; server.ip[2] = 0; server.ip[3] = 1;
+    server.ip[0] = 127;
+    server.ip[1] = 0;
+    server.ip[2] = 0;
+    server.ip[3] = 1;
 
     SYN_SockAddr resolved_addr = {0};
     SYN_DnsResolver dns;

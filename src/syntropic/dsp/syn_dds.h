@@ -12,9 +12,10 @@
 
 #include "../common/syn_defs.h"
 #include "../util/syn_qmath.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,24 +23,24 @@ extern "C" {
 
 /** @brief DDS Waveform Types */
 typedef enum {
-    SYN_DDS_SINE     = 0, /**< Sine wave (via Taylor/Polynomial approximation) */
+    SYN_DDS_SINE = 0,     /**< Sine wave (via Taylor/Polynomial approximation) */
     SYN_DDS_TRIANGLE = 1, /**< Symmetric Triangle wave                        */
     SYN_DDS_SAWTOOTH = 2, /**< Ramp / Sawtooth wave                            */
-    SYN_DDS_SQUARE   = 3, /**< Square / PWM wave                               */
-    SYN_DDS_NOISE    = 4  /**< Pseudorandom White Noise                        */
+    SYN_DDS_SQUARE = 3,   /**< Square / PWM wave                               */
+    SYN_DDS_NOISE = 4     /**< Pseudorandom White Noise                        */
 } SYN_DDS_Waveform;
 
 /**
  * @brief DDS Generator State Instance.
  */
 typedef struct {
-    SYN_DDS_Waveform type;         /**< Waveform type                          */
-    uint32_t         phase;        /**< 32-bit Phase accumulator (0 to 2^32-1)  */
-    uint32_t         phase_step;   /**< Phase increment per sample step        */
-    q16_t            amplitude;    /**< Q16.16 Peak Amplitude (e.g. 1.0)       */
-    q16_t            offset;       /**< Q16.16 DC Offset                       */
-    uint16_t         duty_q16;     /**< PWM Duty cycle (0 to 65536 for 0-100%) */
-    uint32_t         rand_state;   /**< PRNG state for noise generator         */
+    SYN_DDS_Waveform type; /**< Waveform type                          */
+    uint32_t phase;        /**< 32-bit Phase accumulator (0 to 2^32-1)  */
+    uint32_t phase_step;   /**< Phase increment per sample step        */
+    q16_t amplitude;       /**< Q16.16 Peak Amplitude (e.g. 1.0)       */
+    q16_t offset;          /**< Q16.16 DC Offset                       */
+    uint16_t duty_q16;     /**< PWM Duty cycle (0 to 65536 for 0-100%) */
+    uint32_t rand_state;   /**< PRNG state for noise generator         */
 } SYN_DDS;
 
 /**
@@ -50,7 +51,8 @@ typedef struct {
  * @param sample_rate_hz Sample rate in Hz.
  * @return SYN_OK on success, or SYN_INVALID_PARAM.
  */
-SYN_Status syn_dds_init(SYN_DDS *dds, SYN_DDS_Waveform type, uint32_t freq_hz, uint32_t sample_rate_hz);
+SYN_Status syn_dds_init(SYN_DDS *dds, SYN_DDS_Waveform type, uint32_t freq_hz,
+                        uint32_t sample_rate_hz);
 
 /**
  * @brief Set the output frequency of the DDS generator.
@@ -103,7 +105,8 @@ SYN_Status syn_dds_fill_q16(SYN_DDS *dds, q16_t *buf, size_t count);
  * @param dac_span Maximum peak-to-peak DAC range (e.g. 2047).
  * @return SYN_OK on success.
  */
-SYN_Status syn_dds_fill_u16(SYN_DDS *dds, uint16_t *buf, size_t count, uint16_t dac_center, uint16_t dac_span);
+SYN_Status syn_dds_fill_u16(SYN_DDS *dds, uint16_t *buf, size_t count, uint16_t dac_center,
+                            uint16_t dac_span);
 
 #ifdef __cplusplus
 }

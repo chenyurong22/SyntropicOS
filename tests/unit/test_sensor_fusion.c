@@ -3,10 +3,10 @@
  * @brief Unity tests for 6-DOF IMU Sensor Fusion & AHRS Mahony Filter.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/sensor/syn_sensor_fusion.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 #define FUSION_TOL Q16_FROM_FLOAT(0.05)
 
@@ -51,8 +51,8 @@ static void test_sensor_fusion_pitch_tilt(void)
     syn_sensor_fusion_init(&f, Q16_FROM_FLOAT(5.0), Q16_FROM_FLOAT(0.01), Q16_FROM_FLOAT(0.01));
 
     /* 30 degree pitch tilt: sin(30°)=0.5, cos(30°)=0.866 */
-    q16_t ax = Q16_HALF;                      /* sin(30 deg) */
-    q16_t az = Q16_FROM_FLOAT(0.866025);       /* cos(30 deg) */
+    q16_t ax = Q16_HALF;                 /* sin(30 deg) */
+    q16_t az = Q16_FROM_FLOAT(0.866025); /* cos(30 deg) */
 
     for (int i = 0; i < 100; i++) {
         syn_sensor_fusion_update(&f, 0, 0, 0, ax, 0, az);
@@ -71,7 +71,8 @@ static void test_sensor_fusion_gyro_integration(void)
     SYN_SensorFusion f;
     syn_sensor_fusion_init(&f, Q16_FROM_FLOAT(0.0), Q16_FROM_FLOAT(0.0), Q16_FROM_FLOAT(0.01));
 
-    /* Pure roll gyro rotation: gx = 0.5 rad/s for 100 steps @ 100Hz = 1 sec -> 0.5 rad total roll */
+    /* Pure roll gyro rotation: gx = 0.5 rad/s for 100 steps @ 100Hz = 1 sec -> 0.5 rad total roll
+     */
     q16_t gx = Q16_HALF;
 
     for (int i = 0; i < 100; i++) {
@@ -103,7 +104,8 @@ static void test_sensor_fusion_quaternion_norm(void)
     TEST_ASSERT_EQUAL(SYN_OK, syn_sensor_fusion_get_quaternion(&f, &q));
 
     /* Unit norm check: w^2 + x^2 + y^2 + z^2 == 1.0 */
-    int64_t norm_sq = ((int64_t)q.w * q.w) + ((int64_t)q.x * q.x) + ((int64_t)q.y * q.y) + ((int64_t)q.z * q.z);
+    int64_t norm_sq =
+        ((int64_t)q.w * q.w) + ((int64_t)q.x * q.x) + ((int64_t)q.y * q.y) + ((int64_t)q.z * q.z);
     norm_sq >>= Q16_SHIFT;
 
     TEST_ASSERT_INT_WITHIN(Q16_FROM_FLOAT(0.01), Q16_ONE, (q16_t)norm_sq);

@@ -30,9 +30,9 @@ typedef struct {
 
 /** @brief Mahony 6-DOF IMU Sensor Fusion state structure. */
 typedef struct {
-    q16_t Kp;         /**< Proportional feedback gain           */
-    q16_t Ki;         /**< Integral error feedback gain        */
-    q16_t dt;         /**< Sampling period in seconds (Q16.16) */
+    q16_t Kp; /**< Proportional feedback gain           */
+    q16_t Ki; /**< Integral error feedback gain        */
+    q16_t dt; /**< Sampling period in seconds (Q16.16) */
 
     SYN_Quaternion q; /**< Current estimated quaternion orientation */
     q16_t e_int[3];   /**< Integral error vector accumulator    */
@@ -59,8 +59,8 @@ void syn_sensor_fusion_init(SYN_SensorFusion *f, q16_t Kp, q16_t Ki, q16_t dt);
  * @param az  Accelerometer Z acceleration in g or m/s² (Q16.16).
  * @return SYN_OK on success, SYN_INVALID_PARAM if NULL.
  */
-SYN_Status syn_sensor_fusion_update(SYN_SensorFusion *f, q16_t gx, q16_t gy, q16_t gz,
-                                     q16_t ax, q16_t ay, q16_t az);
+SYN_Status syn_sensor_fusion_update(SYN_SensorFusion *f, q16_t gx, q16_t gy, q16_t gz, q16_t ax,
+                                    q16_t ay, q16_t az);
 
 /**
  * @brief Retrieve current quaternion orientation estimate.

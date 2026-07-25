@@ -11,8 +11,12 @@ if ! command -v cppcheck >/dev/null 2>&1; then
     exit 0
 fi
 
-# Enable Cppcheck with MISRA addon and C99 standard rules
-cppcheck --std=c99 \
+JOBS=$(nproc 2>/dev/null || echo 4)
+mkdir -p build/cppcheck
+
+# Enable Cppcheck with MISRA addon, parallel worker threads, build cache, and C99 standard rules
+cppcheck --std=c99 -j "${JOBS}" \
+    --cppcheck-build-dir=build/cppcheck \
     --enable=warning,style,performance,portability \
     --addon=misra \
     --inline-suppr \

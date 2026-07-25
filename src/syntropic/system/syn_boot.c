@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_BOOT) || SYN_USE_BOOT
@@ -9,23 +9,22 @@
  * @brief Boot manager implementation.
  */
 
-#include "syn_boot.h"
-#include "../util/syn_assert.h"
 #include "../system/syn_errlog.h"
+#include "../util/syn_assert.h"
+#include "syn_boot.h"
 
 #include <string.h>
 
-#define SYN_BOOT_ERR_CRASH_LOOP  0x0300  /**< Repeated crash detected.  */
-#define SYN_BOOT_ERR_SAFE_MODE   0x0301  /**< Entered safe mode.        */
+#define SYN_BOOT_ERR_CRASH_LOOP 0x0300 /**< Repeated crash detected.  */
+#define SYN_BOOT_ERR_SAFE_MODE 0x0301  /**< Entered safe mode.        */
 
-SYN_Status syn_boot_init(SYN_Boot *boot, SYN_ParamStore *store,
-                           uint16_t safe_threshold)
+SYN_Status syn_boot_init(SYN_Boot *boot, SYN_ParamStore *store, uint16_t safe_threshold)
 {
     SYN_ASSERT(boot != NULL);
     SYN_ASSERT(store != NULL);
 
     memset(boot, 0, sizeof(*boot));
-    boot->store          = store;
+    boot->store = store;
     boot->safe_threshold = safe_threshold;
 
     /* Try to load existing boot data */
@@ -34,10 +33,10 @@ SYN_Status syn_boot_init(SYN_Boot *boot, SYN_ParamStore *store,
     if (st != SYN_OK) {
         /* First boot ever — initialize defaults */
         memset(&boot->data, 0, sizeof(boot->data));
-        boot->data.boot_count  = 1;
-        boot->data.fail_count  = 0;
+        boot->data.boot_count = 1;
+        boot->data.fail_count = 0;
         boot->data.was_healthy = 0;
-        boot->data.last_reset  = SYN_RESET_UNKNOWN;
+        boot->data.last_reset = SYN_RESET_UNKNOWN;
 
         syn_param_save(store, &boot->data);
         boot->initialized = true;
@@ -65,7 +64,7 @@ SYN_Status syn_boot_init(SYN_Boot *boot, SYN_ParamStore *store,
     /* Save updated boot data */
     syn_param_save(store, &boot->data);
     boot->initialized = true;
-    boot->errlog      = NULL;
+    boot->errlog = NULL;
 
     /* Log crash-loop and safe-mode events if errlog is later attached.
      * Since errlog is typically initialized after boot, users should
@@ -80,7 +79,7 @@ SYN_Status syn_boot_mark_healthy(SYN_Boot *boot)
     SYN_ASSERT(boot->initialized);
 
     boot->data.was_healthy = 1;
-    boot->data.fail_count  = 0;
+    boot->data.fail_count = 0;
 
     return syn_param_save(boot->store, &boot->data);
 }
@@ -96,8 +95,8 @@ SYN_Status syn_boot_clear_safe_mode(SYN_Boot *boot)
     SYN_ASSERT(boot != NULL);
     SYN_ASSERT(boot->initialized);
 
-    boot->safe_mode        = false;
-    boot->data.fail_count  = 0;
+    boot->safe_mode = false;
+    boot->data.fail_count = 0;
     boot->data.was_healthy = 1;
 
     return syn_param_save(boot->store, &boot->data);
@@ -112,20 +111,19 @@ void syn_boot_set_errlog(SYN_Boot *boot, SYN_ErrLog *errlog)
 void syn_boot_log_events(SYN_Boot *boot)
 {
     SYN_ASSERT(boot != NULL);
-    if (boot->errlog == NULL) return;
+    if (boot->errlog == NULL)
+        return;
 
     /* Log crash-loop if previous boot wasn't healthy */
     if (boot->data.fail_count > 0) {
-        syn_errlog_record(boot->errlog, SYN_BOOT_ERR_CRASH_LOOP,
-                           SYN_ERR_WARNING,
-                           (uint32_t)boot->data.fail_count);
+        syn_errlog_record(boot->errlog, SYN_BOOT_ERR_CRASH_LOOP, SYN_ERR_WARNING,
+                          (uint32_t)boot->data.fail_count);
     }
 
     /* Log safe mode entry */
     if (boot->safe_mode) {
-        syn_errlog_record(boot->errlog, SYN_BOOT_ERR_SAFE_MODE,
-                           SYN_ERR_FATAL,
-                           (uint32_t)boot->data.boot_count);
+        syn_errlog_record(boot->errlog, SYN_BOOT_ERR_SAFE_MODE, SYN_ERR_FATAL,
+                          (uint32_t)boot->data.boot_count);
     }
 }
 

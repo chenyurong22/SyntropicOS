@@ -31,9 +31,10 @@
  *   CSD CRC           : 0xFF 0xFF
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/drivers/syn_sd.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 /* ── Canned SDHC init response ──────────────────────────────────────────── */
@@ -41,23 +42,41 @@
 /* C_SIZE = (0x00<<16)|(0x3B<<8)|0x7F = 15231
  * sector_count = (15231+1)*1024 = 15,597,568 */
 static const uint8_t sdhc_init_rx[] = {
-    /* CMD0 R1 poll        */ 0xFF, 0x01,
+    /* CMD0 R1 poll        */ 0xFF,
+    0x01,
     /* CMD8 R1             */ 0x01,
-    /* CMD8 R7             */ 0x00, 0x00, 0x01, 0xAA,
+    /* CMD8 R7             */ 0x00,
+    0x00,
+    0x01,
+    0xAA,
     /* CMD55 R1            */ 0x01,
     /* ACMD41 R1           */ 0x00,
     /* CMD58 R1            */ 0x00,
-    /* CMD58 OCR (CCS=1)   */ 0xC0, 0xFF, 0x80, 0x00,
+    /* CMD58 OCR (CCS=1)   */ 0xC0,
+    0xFF,
+    0x80,
+    0x00,
     /* CMD9 R1             */ 0x00,
     /* CMD9 data token     */ 0xFE,
     /* CSD v2 — 16 bytes   */
-    0x40, 0x0E, 0x00, 0x32, 0x5B, 0x59,
-    0x00,                   /* csd[6]  */
-    0x00,                   /* csd[7]  C_SIZE[21:16]=0  */
-    0x3B,                   /* csd[8]  C_SIZE[15:8]=0x3B */
-    0x7F,                   /* csd[9]  C_SIZE[7:0]=0x7F  */
-    0x32, 0x5A, 0x83, 0xC8, 0x96, 0x40,
-    /* CSD CRC             */ 0xFF, 0xFF,
+    0x40,
+    0x0E,
+    0x00,
+    0x32,
+    0x5B,
+    0x59,
+    0x00, /* csd[6]  */
+    0x00, /* csd[7]  C_SIZE[21:16]=0  */
+    0x3B, /* csd[8]  C_SIZE[15:8]=0x3B */
+    0x7F, /* csd[9]  C_SIZE[7:0]=0x7F  */
+    0x32,
+    0x5A,
+    0x83,
+    0xC8,
+    0x96,
+    0x40,
+    /* CSD CRC             */ 0xFF,
+    0xFF,
 };
 
 /* ── Canned SDSC init response ──────────────────────────────────────────── */
@@ -66,7 +85,8 @@ static const uint8_t sdhc_init_rx[] = {
  * block_factor = 1<<(9-9)=1, mult=1<<(7+2)=512
  * sector_count = (3+1)*512*1 = 2048 */
 static const uint8_t sdsc_init_rx[] = {
-    /* CMD0 R1 poll        */ 0xFF, 0x01,
+    /* CMD0 R1 poll        */ 0xFF,
+    0x01,
     /* CMD8 R1 (illegal)   */ 0x05,
     /* CMD55 R1            */ 0x01,
     /* ACMD41 R1           */ 0x00,
@@ -77,10 +97,24 @@ static const uint8_t sdsc_init_rx[] = {
      * csd[5]=0x59 -> READ_BL_LEN=9
      * csd[6]=0x80, csd[7]=0x00, csd[8]=0xC0 -> C_SIZE=3
      * csd[9]=0x03, csd[10]=0x80               -> C_SIZE_MULT=7  */
-    0x00, 0x26, 0x00, 0x5A, 0x5B, 0x59,
-    0x80, 0x00, 0xC0, 0x03,
-    0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
-    /* CSD CRC             */ 0xFF, 0xFF,
+    0x00,
+    0x26,
+    0x00,
+    0x5A,
+    0x5B,
+    0x59,
+    0x80,
+    0x00,
+    0xC0,
+    0x03,
+    0x80,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    /* CSD CRC             */ 0xFF,
+    0xFF,
 };
 
 /* ── test 1: SDHC card initializes correctly ────────────────────────────── */
@@ -126,21 +160,21 @@ static void test_sd_read_sector(void)
 {
     /* Bypass init: configure struct directly as SDHC */
     SYN_SD sd;
-    sd.spi_bus      = 0;
-    sd.cs_pin       = (SYN_GPIO_Pin)0;
-    sd.type         = SYN_SD_SDHC;
+    sd.spi_bus = 0;
+    sd.cs_pin = (SYN_GPIO_Pin)0;
+    sd.type = SYN_SD_SDHC;
     sd.sector_count = 16384;
-    sd.initialized  = true;
+    sd.initialized = true;
 
     /* Read rx: R1=0x00, data_token=0xFE, 512 data bytes, 2 CRC bytes */
     uint8_t read_rx[516];
-    read_rx[0] = 0x00u;  /* R1: ready */
-    read_rx[1] = 0xFEu;  /* data token */
+    read_rx[0] = 0x00u; /* R1: ready */
+    read_rx[1] = 0xFEu; /* data token */
     uint16_t k;
     for (k = 0; k < 512; k++) {
-        read_rx[2 + k] = (uint8_t)(k & 0xFFu);  /* known pattern */
+        read_rx[2 + k] = (uint8_t)(k & 0xFFu); /* known pattern */
     }
-    read_rx[514] = 0xFFu;  /* CRC */
+    read_rx[514] = 0xFFu; /* CRC */
     read_rx[515] = 0xFFu;
 
     mock_spi_set_response(read_rx, sizeof(read_rx));
@@ -160,20 +194,20 @@ static void test_sd_read_sector(void)
 static void test_sd_write_sector(void)
 {
     SYN_SD sd;
-    sd.spi_bus      = 0;
-    sd.cs_pin       = (SYN_GPIO_Pin)0;
-    sd.type         = SYN_SD_SDHC;
+    sd.spi_bus = 0;
+    sd.cs_pin = (SYN_GPIO_Pin)0;
+    sd.type = SYN_SD_SDHC;
     sd.sector_count = 16384;
-    sd.initialized  = true;
+    sd.initialized = true;
 
     /* Write rx: R1=0x00, token_echo, CRC_echo x2, data_accepted, not_busy */
     static const uint8_t write_rx[] = {
-        0x00u,  /* R1 for CMD24: ready                   */
-        0xFFu,  /* echo of data token (discarded)         */
-        0xFFu,  /* echo of dummy CRC byte 1 (discarded)  */
-        0xFFu,  /* echo of dummy CRC byte 2 (discarded)  */
-        0xE5u,  /* data response: 0xE5 & 0x1F = 0x05 (accepted) */
-        0xFFu,  /* busy wait: not busy                   */
+        0x00u, /* R1 for CMD24: ready                   */
+        0xFFu, /* echo of data token (discarded)         */
+        0xFFu, /* echo of dummy CRC byte 1 (discarded)  */
+        0xFFu, /* echo of dummy CRC byte 2 (discarded)  */
+        0xE5u, /* data response: 0xE5 & 0x1F = 0x05 (accepted) */
+        0xFFu, /* busy wait: not busy                   */
     };
     mock_spi_set_response(write_rx, sizeof(write_rx));
 
@@ -208,20 +242,20 @@ static void test_sd_write_sector(void)
 static void test_sd_sync(void)
 {
     SYN_SD sd;
-    sd.spi_bus      = 0;
-    sd.cs_pin       = (SYN_GPIO_Pin)0;
-    sd.type         = SYN_SD_SDHC;
+    sd.spi_bus = 0;
+    sd.cs_pin = (SYN_GPIO_Pin)0;
+    sd.type = SYN_SD_SDHC;
     sd.sector_count = 16384;
-    sd.initialized  = true;
+    sd.initialized = true;
 
     /* CMD13 returns R1=0x00, R2=0x00 -> no error */
-    static const uint8_t sync_rx[] = { 0x00u, 0x00u };
+    static const uint8_t sync_rx[] = {0x00u, 0x00u};
     mock_spi_set_response(sync_rx, sizeof(sync_rx));
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_sd_sync(&sd));
 
     /* CMD13 returns R1=0x00, R2=0x04 -> card error -> SYN_ERROR */
-    static const uint8_t sync_rx_err[] = { 0x00u, 0x04u };
+    static const uint8_t sync_rx_err[] = {0x00u, 0x04u};
     mock_spi_set_response(sync_rx_err, sizeof(sync_rx_err));
 
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_sd_sync(&sd));
@@ -232,7 +266,7 @@ static void test_sd_init_cmd0_fail(void)
 {
     SYN_SD sd;
     /* CMD0 R1 poll returns error byte (not 0x01) */
-    uint8_t rx[] = { 0xFF, 0x04 }; /* 0x04 = some error bit */
+    uint8_t rx[] = {0xFF, 0x04}; /* 0x04 = some error bit */
     mock_spi_set_response(rx, sizeof(rx));
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_sd_init(&sd, 0, (SYN_GPIO_Pin)0));
 }
@@ -242,10 +276,14 @@ static void test_sd_init_cmd8_voltage_mismatch(void)
 {
     SYN_SD sd;
     uint8_t rx[] = {
-        /* CMD0 R1 poll */ 0xFF, 0x01,
+        /* CMD0 R1 poll */ 0xFF,
+        0x01,
         /* CMD8 R1      */ 0x01,
         /* CMD8 R7 payload — wrong echo byte (0xBB != 0xAA) */
-        0x00, 0x00, 0x01, 0xBB,
+        0x00,
+        0x00,
+        0x01,
+        0xBB,
     };
     mock_spi_set_response(rx, sizeof(rx));
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_sd_init(&sd, 0, (SYN_GPIO_Pin)0));
@@ -256,9 +294,13 @@ static void test_sd_init_cmd55_error(void)
 {
     SYN_SD sd;
     uint8_t rx[] = {
-        /* CMD0 R1 poll */ 0xFF, 0x01,
+        /* CMD0 R1 poll */ 0xFF,
+        0x01,
         /* CMD8 R1      */ 0x01,
-        /* CMD8 R7      */ 0x00, 0x00, 0x01, 0xAA,
+        /* CMD8 R7      */ 0x00,
+        0x00,
+        0x01,
+        0xAA,
         /* CMD55 R1: error bits set (not just IDLE) */
         0x04,
     };
@@ -278,7 +320,7 @@ static void test_sd_read_sector_bad_token(void)
 
     /* CMD17 R1 = 0x00 (OK), but data token never arrives (all 0xFF) */
     uint8_t rx[520];
-    rx[0] = 0x00u; /* R1 ready */
+    rx[0] = 0x00u;                        /* R1 ready */
     memset(&rx[1], 0xFF, sizeof(rx) - 1); /* no data token */
     mock_spi_set_response(rx, sizeof(rx));
     uint8_t buf[512];
@@ -295,7 +337,7 @@ static void test_sd_read_cmd17_fail(void)
     sd.initialized = true;
 
     /* CMD17 R1 = 0x04 (error) */
-    uint8_t rx[] = { 0x04 };
+    uint8_t rx[] = {0x04};
     mock_spi_set_response(rx, sizeof(rx));
     uint8_t buf[512];
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_sd_read(&sd, 0, buf));
@@ -312,7 +354,7 @@ static void test_sd_write_cmd24_fail(void)
     sd.initialized = true;
 
     /* CMD24 R1 = 0x04 (error) */
-    uint8_t rx[] = { 0x04 };
+    uint8_t rx[] = {0x04};
     mock_spi_set_response(rx, sizeof(rx));
     uint8_t buf[512];
     memset(buf, 0xAA, sizeof(buf));
@@ -331,10 +373,10 @@ static void test_sd_write_data_rejected(void)
 
     /* CMD24 R1 = 0x00 (OK), then data response = 0x0B (rejected, not 0x05) */
     uint8_t rx[520];
-    rx[0] = 0x00;  /* R1 ready */
+    rx[0] = 0x00; /* R1 ready */
     /* After CMD24, card receives 512 data bytes + 2 CRC → then data response.
      * Mock doesn't consume TX bytes, so data response is at rx[1] in our mock */
-    rx[1] = 0x0B;  /* data response: rejected (not 0x05) */
+    rx[1] = 0x0B; /* data response: rejected (not 0x05) */
     mock_spi_set_response(rx, 2);
     uint8_t buf[512];
     memset(buf, 0xAA, sizeof(buf));
@@ -352,11 +394,11 @@ static void test_sd_wait_ready_timeout(void)
 
     /* Provide write responses */
     uint8_t write_rx[] = {
-        0xFF, /* Poll for CMD24 */
-        0x00, /* CMD24 R1 */
-        0xFF, /* Token start dummy read */
+        0xFF,       /* Poll for CMD24 */
+        0x00,       /* CMD24 R1 */
+        0xFF,       /* Token start dummy read */
         0xFF, 0xFF, /* CRC dummy bytes */
-        0x05, /* Data response (accepted) */
+        0x05,       /* Data response (accepted) */
     };
     mock_spi_set_response(write_rx, sizeof(write_rx));
 
@@ -372,12 +414,12 @@ static void test_sd_read_csd_fails(void)
 {
     SYN_SD sd;
     uint8_t rx[] = {
-        0x01, /* CMD0 */
+        0x01,                         /* CMD0 */
         0x01, 0x00, 0x00, 0x01, 0xAA, /* CMD8 */
-        0x01, /* CMD55 */
-        0x00, /* ACMD41 */
+        0x01,                         /* CMD55 */
+        0x00,                         /* ACMD41 */
         0x00, 0xC0, 0xFF, 0x80, 0x00, /* CMD58 */
-        0x05  /* CMD9 error R1 */
+        0x05                          /* CMD9 error R1 */
     };
     mock_spi_set_response(rx, sizeof(rx));
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_sd_init(&sd, 0, (SYN_GPIO_Pin)0));
@@ -387,12 +429,12 @@ static void test_sd_read_csd_token_timeout(void)
 {
     SYN_SD sd;
     uint8_t rx[] = {
-        0x01, /* CMD0 */
+        0x01,                         /* CMD0 */
         0x01, 0x00, 0x00, 0x01, 0xAA, /* CMD8 */
-        0x01, /* CMD55 */
-        0x00, /* ACMD41 */
+        0x01,                         /* CMD55 */
+        0x00,                         /* ACMD41 */
         0x00, 0xC0, 0xFF, 0x80, 0x00, /* CMD58 */
-        0x00  /* CMD9 OK, but no 0xFE token follows (mock spi buffer exhausts, returns 0xFF) */
+        0x00 /* CMD9 OK, but no 0xFE token follows (mock spi buffer exhausts, returns 0xFF) */
     };
     mock_spi_set_response(rx, sizeof(rx));
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_sd_init(&sd, 0, (SYN_GPIO_Pin)0));
@@ -413,7 +455,7 @@ static void test_sd_init_acmd41_timeout(void)
 {
     SYN_SD sd;
     uint8_t rx[] = {
-        0x01, /* CMD0 */
+        0x01,                         /* CMD0 */
         0x01, 0x00, 0x00, 0x01, 0xAA, /* CMD8 */
     };
     mock_spi_set_response(rx, sizeof(rx));
@@ -427,11 +469,11 @@ static void test_sd_init_cmd58_fail(void)
 {
     SYN_SD sd;
     uint8_t rx[] = {
-        0x01, /* CMD0 */
+        0x01,                         /* CMD0 */
         0x01, 0x00, 0x00, 0x01, 0xAA, /* CMD8 */
-        0x01, /* CMD55 */
-        0x00, /* ACMD41 */
-        0x01  /* CMD58 returns not ready */
+        0x01,                         /* CMD55 */
+        0x00,                         /* ACMD41 */
+        0x01                          /* CMD58 returns not ready */
     };
     mock_spi_set_response(rx, sizeof(rx));
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_sd_init(&sd, 0, (SYN_GPIO_Pin)0));
@@ -450,7 +492,6 @@ static void test_sd_init_cmd16_fail(void)
     mock_spi_set_response(rx, sizeof(rx));
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_sd_init(&sd, 0, (SYN_GPIO_Pin)0));
 }
-
 
 static void test_sd_spi_init_fail(void)
 {

@@ -3,9 +3,9 @@
  * @brief Unity tests for syn_ringbuf — full coverage.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/util/syn_ringbuf.h"
+#include "unity/unity.h"
 
 static void test_ringbuf_init_empty(void)
 {
@@ -380,4 +380,3 @@ void run_ringbuf_tests(void)
     /* Barrier validation */
     RUN_TEST(test_ringbuf_barriers_invoked);
 }
-

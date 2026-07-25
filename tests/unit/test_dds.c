@@ -3,8 +3,9 @@
  * @brief Unit test suite for Direct Digital Synthesis (DDS) Waveform Synthesizer (syn_dds).
  */
 
-#include "unity/unity.h"
 #include "syntropic/dsp/syn_dds.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 void test_dds_sine_wave(void)
@@ -17,7 +18,8 @@ void test_dds_sine_wave(void)
     TEST_ASSERT_INT_WITHIN(Q16_FROM_FRAC(1, 10), 0, sample0);
 
     /* Generate quarter period (~90 deg peak -> ~1.0) */
-    for (int i = 0; i < 2; i++) syn_dds_step(&dds);
+    for (int i = 0; i < 2; i++)
+        syn_dds_step(&dds);
     q16_t sample_peak = syn_dds_step(&dds);
     TEST_ASSERT_TRUE(sample_peak > Q16_FROM_FRAC(7, 10));
 }

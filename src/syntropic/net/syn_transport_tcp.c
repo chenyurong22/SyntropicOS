@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_TRANSPORT_TCP) || SYN_USE_TRANSPORT_TCP
@@ -9,8 +9,9 @@
  * @brief Bridge for syn_transport over a TCP socket.
  */
 
-#include "syn_transport_tcp.h"
 #include "../util/syn_assert.h"
+#include "syn_transport_tcp.h"
+
 #include <string.h>
 
 /**
@@ -26,7 +27,8 @@ static bool tcp_send(const uint8_t *data, size_t len, void *ctx)
     SYN_ASSERT(tcp != NULL);
     SYN_ASSERT(len <= (size_t)0xFFFF);
 
-    if (tcp->sock == SYN_SOCKET_INVALID) return false;
+    if (tcp->sock == SYN_SOCKET_INVALID)
+        return false;
 
     uint8_t len_hdr[2];
     len_hdr[0] = (uint8_t)(len >> 8);
@@ -60,21 +62,23 @@ static bool tcp_recv(uint8_t *data, size_t max_len, size_t *out_len, void *ctx)
     SYN_ASSERT(data != NULL);
     SYN_ASSERT(out_len != NULL);
 
-    if (tcp->sock == SYN_SOCKET_INVALID) return false;
+    if (tcp->sock == SYN_SOCKET_INVALID)
+        return false;
 
     /* Poll in a loop until we either run out of available data on socket or finish a packet */
     for (;;) {
         if (tcp->state == 0) {
             uint8_t b;
             int n = syn_port_sock_recv(tcp->sock, &b, 1, 0); /* non-blocking */
-            if (n <= 0) return false; /* no data, timeout, or closed */
+            if (n <= 0)
+                return false; /* no data, timeout, or closed */
             tcp->payload_len = (uint16_t)((uint16_t)b << 8);
             tcp->state = 1;
-        }
-        else if (tcp->state == 1) {
+        } else if (tcp->state == 1) {
             uint8_t b;
             int n = syn_port_sock_recv(tcp->sock, &b, 1, 0);
-            if (n <= 0) return false;
+            if (n <= 0)
+                return false;
             tcp->payload_len |= b;
             tcp->bytes_read = 0;
             tcp->state = 2;
@@ -84,8 +88,7 @@ static bool tcp_recv(uint8_t *data, size_t max_len, size_t *out_len, void *ctx)
                 tcp->state = 0;
                 return false;
             }
-        }
-        else if (tcp->state == 2) {
+        } else if (tcp->state == 2) {
             uint16_t remaining = tcp->payload_len - tcp->bytes_read;
             if (remaining == 0) {
                 /* Empty packet */
@@ -95,7 +98,8 @@ static bool tcp_recv(uint8_t *data, size_t max_len, size_t *out_len, void *ctx)
             }
 
             int n = syn_port_sock_recv(tcp->sock, tcp->rx_buf + tcp->bytes_read, remaining, 0);
-            if (n <= 0) return false;
+            if (n <= 0)
+                return false;
 
             tcp->bytes_read += (uint16_t)n;
             if (tcp->bytes_read == tcp->payload_len) {
@@ -125,7 +129,7 @@ void syn_transport_tcp_init(SYN_Transport *t, SYN_TransportTcp *tcp, SYN_Socket 
 
     t->send = tcp_send;
     t->recv = tcp_recv;
-    t->ctx  = tcp;
+    t->ctx = tcp;
 }
 
 #endif /* SYN_USE_TRANSPORT_TCP */

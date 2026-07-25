@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_IR) || SYN_USE_IR
@@ -9,205 +9,181 @@
  * @brief Infrared (IR) Remote Control Protocol Engine implementation.
  */
 
-#include "syn_ir.h"
 #include "../util/syn_assert.h"
+#include "syn_ir.h"
+
 #include <string.h>
 
 /* ── Protocol Descriptors ────────────────────────────────────────────────── */
 
 typedef struct {
-    SYN_IR_Protocol     proto;
-    const char         *name;
-    uint8_t             carrier_khz;
+    SYN_IR_Protocol proto;
+    const char *name;
+    uint8_t carrier_khz;
     SYN_IR_EncodingType encoding;
-    uint16_t            leader_mark_us;
-    uint16_t            leader_space_us;
-    uint16_t            bit_mark_us;    /* PDM mark duration or PWM '0' mark */
-    uint16_t            zero_space_us;  /* PDM '0' space or PWM fixed space */
-    uint16_t            one_space_us;   /* PDM '1' space */
-    uint16_t            one_mark_us;    /* PWM '1' mark */
-    uint16_t            half_bit_us;    /* Manchester half-bit duration */
-    uint8_t             total_bits;
-    uint8_t             addr_bits;
-    uint8_t             cmd_bits;
-    uint16_t            repeat_space_us;
-    uint16_t            tolerance_us;
+    uint16_t leader_mark_us;
+    uint16_t leader_space_us;
+    uint16_t bit_mark_us;   /* PDM mark duration or PWM '0' mark */
+    uint16_t zero_space_us; /* PDM '0' space or PWM fixed space */
+    uint16_t one_space_us;  /* PDM '1' space */
+    uint16_t one_mark_us;   /* PWM '1' mark */
+    uint16_t half_bit_us;   /* Manchester half-bit duration */
+    uint8_t total_bits;
+    uint8_t addr_bits;
+    uint8_t cmd_bits;
+    uint16_t repeat_space_us;
+    uint16_t tolerance_us;
 } SYN_IR_ProtoDesc;
 
 static const SYN_IR_ProtoDesc proto_table[SYN_IR_PROTO_COUNT] = {
-    [SYN_IR_PROTO_UNKNOWN] = {
-        .proto = SYN_IR_PROTO_UNKNOWN,
-        .name = "Unknown"
-    },
-    [SYN_IR_PROTO_NEC] = {
-        .proto = SYN_IR_PROTO_NEC,
-        .name = "NEC",
-        .carrier_khz = 38,
-        .encoding = SYN_IR_ENC_PDM,
-        .leader_mark_us = 9000,
-        .leader_space_us = 4500,
-        .bit_mark_us = 560,
-        .zero_space_us = 560,
-        .one_space_us = 1690,
-        .total_bits = 32,
-        .addr_bits = 8,
-        .cmd_bits = 8,
-        .repeat_space_us = 2250,
-        .tolerance_us = 200
-    },
-    [SYN_IR_PROTO_NEC_EXTENDED] = {
-        .proto = SYN_IR_PROTO_NEC_EXTENDED,
-        .name = "NEC-Extended",
-        .carrier_khz = 38,
-        .encoding = SYN_IR_ENC_PDM,
-        .leader_mark_us = 9000,
-        .leader_space_us = 4500,
-        .bit_mark_us = 560,
-        .zero_space_us = 560,
-        .one_space_us = 1690,
-        .total_bits = 32,
-        .addr_bits = 16,
-        .cmd_bits = 8,
-        .repeat_space_us = 2250,
-        .tolerance_us = 200
-    },
-    [SYN_IR_PROTO_SONY_12] = {
-        .proto = SYN_IR_PROTO_SONY_12,
-        .name = "Sony-12",
-        .carrier_khz = 40,
-        .encoding = SYN_IR_ENC_PWM,
-        .leader_mark_us = 2400,
-        .leader_space_us = 600,
-        .bit_mark_us = 600,      /* '0' mark */
-        .one_mark_us = 1200,     /* '1' mark */
-        .zero_space_us = 600,    /* fixed space */
-        .total_bits = 12,
-        .addr_bits = 5,
-        .cmd_bits = 7,
-        .tolerance_us = 150
-    },
-    [SYN_IR_PROTO_SONY_15] = {
-        .proto = SYN_IR_PROTO_SONY_15,
-        .name = "Sony-15",
-        .carrier_khz = 40,
-        .encoding = SYN_IR_ENC_PWM,
-        .leader_mark_us = 2400,
-        .leader_space_us = 600,
-        .bit_mark_us = 600,
-        .one_mark_us = 1200,
-        .zero_space_us = 600,
-        .total_bits = 15,
-        .addr_bits = 8,
-        .cmd_bits = 7,
-        .tolerance_us = 150
-    },
-    [SYN_IR_PROTO_SONY_20] = {
-        .proto = SYN_IR_PROTO_SONY_20,
-        .name = "Sony-20",
-        .carrier_khz = 40,
-        .encoding = SYN_IR_ENC_PWM,
-        .leader_mark_us = 2400,
-        .leader_space_us = 600,
-        .bit_mark_us = 600,
-        .one_mark_us = 1200,
-        .zero_space_us = 600,
-        .total_bits = 20,
-        .addr_bits = 5,
-        .cmd_bits = 7,
-        .tolerance_us = 150
-    },
-    [SYN_IR_PROTO_RC5] = {
-        .proto = SYN_IR_PROTO_RC5,
-        .name = "Philips-RC5",
-        .carrier_khz = 36,
-        .encoding = SYN_IR_ENC_MANCHESTER,
-        .half_bit_us = 889,
-        .total_bits = 14,
-        .addr_bits = 5,
-        .cmd_bits = 6,
-        .tolerance_us = 200
-    },
-    [SYN_IR_PROTO_RC6] = {
-        .proto = SYN_IR_PROTO_RC6,
-        .name = "Philips-RC6",
-        .carrier_khz = 36,
-        .encoding = SYN_IR_ENC_MANCHESTER,
-        .leader_mark_us = 2666,
-        .leader_space_us = 889,
-        .half_bit_us = 444,
-        .total_bits = 21,
-        .addr_bits = 8,
-        .cmd_bits = 8,
-        .tolerance_us = 150
-    },
-    [SYN_IR_PROTO_SAMSUNG] = {
-        .proto = SYN_IR_PROTO_SAMSUNG,
-        .name = "Samsung",
-        .carrier_khz = 38,
-        .encoding = SYN_IR_ENC_PDM,
-        .leader_mark_us = 4500,
-        .leader_space_us = 4500,
-        .bit_mark_us = 590,
-        .zero_space_us = 590,
-        .one_space_us = 1690,
-        .total_bits = 32,
-        .addr_bits = 16,
-        .cmd_bits = 8,
-        .tolerance_us = 200
-    },
-    [SYN_IR_PROTO_KASEIKYO] = {
-        .proto = SYN_IR_PROTO_KASEIKYO,
-        .name = "Kaseikyo/Panasonic",
-        .carrier_khz = 37,
-        .encoding = SYN_IR_ENC_PDM,
-        .leader_mark_us = 3456,
-        .leader_space_us = 1728,
-        .bit_mark_us = 432,
-        .zero_space_us = 432,
-        .one_space_us = 1296,
-        .total_bits = 48,
-        .addr_bits = 16,
-        .cmd_bits = 16,
-        .tolerance_us = 150
-    },
-    [SYN_IR_PROTO_DENON] = {
-        .proto = SYN_IR_PROTO_DENON,
-        .name = "Denon/Sharp",
-        .carrier_khz = 38,
-        .encoding = SYN_IR_ENC_PDM,
-        .leader_mark_us = 0,
-        .leader_space_us = 0,
-        .bit_mark_us = 310,
-        .zero_space_us = 780,
-        .one_space_us = 1780,
-        .total_bits = 15,
-        .addr_bits = 5,
-        .cmd_bits = 8,
-        .tolerance_us = 150
-    },
-    [SYN_IR_PROTO_APPLE] = {
-        .proto = SYN_IR_PROTO_APPLE,
-        .name = "Apple",
-        .carrier_khz = 38,
-        .encoding = SYN_IR_ENC_PDM,
-        .leader_mark_us = 9000,
-        .leader_space_us = 4500,
-        .bit_mark_us = 560,
-        .zero_space_us = 560,
-        .one_space_us = 1690,
-        .total_bits = 32,
-        .addr_bits = 16,
-        .cmd_bits = 8,
-        .repeat_space_us = 2250,
-        .tolerance_us = 200
-    }
-};
+    [SYN_IR_PROTO_UNKNOWN] = {.proto = SYN_IR_PROTO_UNKNOWN, .name = "Unknown"},
+    [SYN_IR_PROTO_NEC] = {.proto = SYN_IR_PROTO_NEC,
+                          .name = "NEC",
+                          .carrier_khz = 38,
+                          .encoding = SYN_IR_ENC_PDM,
+                          .leader_mark_us = 9000,
+                          .leader_space_us = 4500,
+                          .bit_mark_us = 560,
+                          .zero_space_us = 560,
+                          .one_space_us = 1690,
+                          .total_bits = 32,
+                          .addr_bits = 8,
+                          .cmd_bits = 8,
+                          .repeat_space_us = 2250,
+                          .tolerance_us = 200},
+    [SYN_IR_PROTO_NEC_EXTENDED] = {.proto = SYN_IR_PROTO_NEC_EXTENDED,
+                                   .name = "NEC-Extended",
+                                   .carrier_khz = 38,
+                                   .encoding = SYN_IR_ENC_PDM,
+                                   .leader_mark_us = 9000,
+                                   .leader_space_us = 4500,
+                                   .bit_mark_us = 560,
+                                   .zero_space_us = 560,
+                                   .one_space_us = 1690,
+                                   .total_bits = 32,
+                                   .addr_bits = 16,
+                                   .cmd_bits = 8,
+                                   .repeat_space_us = 2250,
+                                   .tolerance_us = 200},
+    [SYN_IR_PROTO_SONY_12] = {.proto = SYN_IR_PROTO_SONY_12,
+                              .name = "Sony-12",
+                              .carrier_khz = 40,
+                              .encoding = SYN_IR_ENC_PWM,
+                              .leader_mark_us = 2400,
+                              .leader_space_us = 600,
+                              .bit_mark_us = 600,   /* '0' mark */
+                              .one_mark_us = 1200,  /* '1' mark */
+                              .zero_space_us = 600, /* fixed space */
+                              .total_bits = 12,
+                              .addr_bits = 5,
+                              .cmd_bits = 7,
+                              .tolerance_us = 150},
+    [SYN_IR_PROTO_SONY_15] = {.proto = SYN_IR_PROTO_SONY_15,
+                              .name = "Sony-15",
+                              .carrier_khz = 40,
+                              .encoding = SYN_IR_ENC_PWM,
+                              .leader_mark_us = 2400,
+                              .leader_space_us = 600,
+                              .bit_mark_us = 600,
+                              .one_mark_us = 1200,
+                              .zero_space_us = 600,
+                              .total_bits = 15,
+                              .addr_bits = 8,
+                              .cmd_bits = 7,
+                              .tolerance_us = 150},
+    [SYN_IR_PROTO_SONY_20] = {.proto = SYN_IR_PROTO_SONY_20,
+                              .name = "Sony-20",
+                              .carrier_khz = 40,
+                              .encoding = SYN_IR_ENC_PWM,
+                              .leader_mark_us = 2400,
+                              .leader_space_us = 600,
+                              .bit_mark_us = 600,
+                              .one_mark_us = 1200,
+                              .zero_space_us = 600,
+                              .total_bits = 20,
+                              .addr_bits = 5,
+                              .cmd_bits = 7,
+                              .tolerance_us = 150},
+    [SYN_IR_PROTO_RC5] = {.proto = SYN_IR_PROTO_RC5,
+                          .name = "Philips-RC5",
+                          .carrier_khz = 36,
+                          .encoding = SYN_IR_ENC_MANCHESTER,
+                          .half_bit_us = 889,
+                          .total_bits = 14,
+                          .addr_bits = 5,
+                          .cmd_bits = 6,
+                          .tolerance_us = 200},
+    [SYN_IR_PROTO_RC6] = {.proto = SYN_IR_PROTO_RC6,
+                          .name = "Philips-RC6",
+                          .carrier_khz = 36,
+                          .encoding = SYN_IR_ENC_MANCHESTER,
+                          .leader_mark_us = 2666,
+                          .leader_space_us = 889,
+                          .half_bit_us = 444,
+                          .total_bits = 21,
+                          .addr_bits = 8,
+                          .cmd_bits = 8,
+                          .tolerance_us = 150},
+    [SYN_IR_PROTO_SAMSUNG] = {.proto = SYN_IR_PROTO_SAMSUNG,
+                              .name = "Samsung",
+                              .carrier_khz = 38,
+                              .encoding = SYN_IR_ENC_PDM,
+                              .leader_mark_us = 4500,
+                              .leader_space_us = 4500,
+                              .bit_mark_us = 590,
+                              .zero_space_us = 590,
+                              .one_space_us = 1690,
+                              .total_bits = 32,
+                              .addr_bits = 16,
+                              .cmd_bits = 8,
+                              .tolerance_us = 200},
+    [SYN_IR_PROTO_KASEIKYO] = {.proto = SYN_IR_PROTO_KASEIKYO,
+                               .name = "Kaseikyo/Panasonic",
+                               .carrier_khz = 37,
+                               .encoding = SYN_IR_ENC_PDM,
+                               .leader_mark_us = 3456,
+                               .leader_space_us = 1728,
+                               .bit_mark_us = 432,
+                               .zero_space_us = 432,
+                               .one_space_us = 1296,
+                               .total_bits = 48,
+                               .addr_bits = 16,
+                               .cmd_bits = 16,
+                               .tolerance_us = 150},
+    [SYN_IR_PROTO_DENON] = {.proto = SYN_IR_PROTO_DENON,
+                            .name = "Denon/Sharp",
+                            .carrier_khz = 38,
+                            .encoding = SYN_IR_ENC_PDM,
+                            .leader_mark_us = 0,
+                            .leader_space_us = 0,
+                            .bit_mark_us = 310,
+                            .zero_space_us = 780,
+                            .one_space_us = 1780,
+                            .total_bits = 15,
+                            .addr_bits = 5,
+                            .cmd_bits = 8,
+                            .tolerance_us = 150},
+    [SYN_IR_PROTO_APPLE] = {.proto = SYN_IR_PROTO_APPLE,
+                            .name = "Apple",
+                            .carrier_khz = 38,
+                            .encoding = SYN_IR_ENC_PDM,
+                            .leader_mark_us = 9000,
+                            .leader_space_us = 4500,
+                            .bit_mark_us = 560,
+                            .zero_space_us = 560,
+                            .one_space_us = 1690,
+                            .total_bits = 32,
+                            .addr_bits = 16,
+                            .cmd_bits = 8,
+                            .repeat_space_us = 2250,
+                            .tolerance_us = 200}};
 
 /* ── Helper Functions ────────────────────────────────────────────────────── */
 
 static bool timing_match(uint16_t actual, uint16_t expected, uint16_t tolerance)
 {
-    if (expected == 0) return false;
+    if (expected == 0)
+        return false;
     uint16_t diff = (actual > expected) ? (actual - expected) : (expected - actual);
     return (diff <= tolerance);
 }
@@ -255,112 +231,113 @@ static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
     uint64_t bits = decoder->bits;
 
     switch (proto) {
-        case SYN_IR_PROTO_NEC:
-        case SYN_IR_PROTO_NEC_EXTENDED:
-        case SYN_IR_PROTO_APPLE: {
-            uint8_t addr     = (uint8_t)(bits & 0xFFU);
-            uint8_t addr_inv = (uint8_t)((bits >> 8) & 0xFFU);
-            uint8_t cmd      = (uint8_t)((bits >> 16) & 0xFFU);
-            uint8_t cmd_inv  = (uint8_t)((bits >> 24) & 0xFFU);
+    case SYN_IR_PROTO_NEC:
+    case SYN_IR_PROTO_NEC_EXTENDED:
+    case SYN_IR_PROTO_APPLE: {
+        uint8_t addr = (uint8_t)(bits & 0xFFU);
+        uint8_t addr_inv = (uint8_t)((bits >> 8) & 0xFFU);
+        uint8_t cmd = (uint8_t)((bits >> 16) & 0xFFU);
+        uint8_t cmd_inv = (uint8_t)((bits >> 24) & 0xFFU);
 
-            if ((bits & 0xFFFFU) == 0xEE87U) {
-                frame_out->protocol = SYN_IR_PROTO_APPLE;
+        if ((bits & 0xFFFFU) == 0xEE87U) {
+            frame_out->protocol = SYN_IR_PROTO_APPLE;
+            frame_out->address = (uint16_t)(bits & 0xFFFFU);
+            frame_out->command = cmd;
+        } else if ((cmd ^ cmd_inv) == 0xFFU) {
+            if ((addr ^ addr_inv) == 0xFFU) {
+                frame_out->protocol = SYN_IR_PROTO_NEC;
+                frame_out->address = addr;
+            } else {
+                frame_out->protocol = SYN_IR_PROTO_NEC_EXTENDED;
                 frame_out->address = (uint16_t)(bits & 0xFFFFU);
-                frame_out->command = cmd;
-            } else if ((cmd ^ cmd_inv) == 0xFFU) {
-                if ((addr ^ addr_inv) == 0xFFU) {
-                    frame_out->protocol = SYN_IR_PROTO_NEC;
-                    frame_out->address = addr;
-                } else {
-                    frame_out->protocol = SYN_IR_PROTO_NEC_EXTENDED;
-                    frame_out->address = (uint16_t)(bits & 0xFFFFU);
-                }
-                frame_out->command = cmd;
-            } else {
-                return false;
             }
-            break;
-        }
-
-        case SYN_IR_PROTO_SONY_12:
-        case SYN_IR_PROTO_SONY_15:
-        case SYN_IR_PROTO_SONY_20: {
-            if (decoder->bit_idx == 12) {
-                frame_out->protocol = SYN_IR_PROTO_SONY_12;
-                frame_out->command = (uint32_t)(bits & 0x7FU);
-                frame_out->address = (uint32_t)((bits >> 7) & 0x1FU);
-            } else if (decoder->bit_idx == 15) {
-                frame_out->protocol = SYN_IR_PROTO_SONY_15;
-                frame_out->command = (uint32_t)(bits & 0x7FU);
-                frame_out->address = (uint32_t)((bits >> 7) & 0xFFU);
-            } else if (decoder->bit_idx == 20) {
-                frame_out->protocol = SYN_IR_PROTO_SONY_20;
-                frame_out->command = (uint32_t)(bits & 0x7FU);
-                frame_out->address = (uint32_t)((bits >> 7) & 0x1FU) | (((uint32_t)((bits >> 12) & 0xFFU)) << 5);
-            } else {
-                return false;
-            }
-            break;
-        }
-
-        case SYN_IR_PROTO_RC5: {
-            /* 14 bits: S1(1), S2(1), Toggle(1), Address(5), Command(6) */
-            uint8_t toggle  = (uint8_t)((bits >> 11) & 0x01U);
-            uint8_t address = (uint8_t)((bits >> 6) & 0x1FU);
-            uint8_t command = (uint8_t)(bits & 0x3FU);
-
-            if (toggle) {
-                frame_out->flags |= SYN_IR_FLAG_TOGGLE;
-            }
-            frame_out->address = address;
-            frame_out->command = command;
-            break;
-        }
-
-        case SYN_IR_PROTO_RC6: {
-            /* 21 bits: S(1), Mode(3), Toggle(1), Address(8), Command(8) */
-            uint8_t toggle  = (uint8_t)((bits >> 16) & 0x01U);
-            uint8_t address = (uint8_t)((bits >> 8) & 0xFFU);
-            uint8_t command = (uint8_t)(bits & 0xFFU);
-
-            if (toggle) {
-                frame_out->flags |= SYN_IR_FLAG_TOGGLE;
-            }
-            frame_out->address = address;
-            frame_out->command = command;
-            break;
-        }
-
-        case SYN_IR_PROTO_SAMSUNG: {
-            uint16_t addr    = (uint16_t)(bits & 0xFFFFU);
-            uint8_t  cmd     = (uint8_t)((bits >> 16) & 0xFFU);
-            uint8_t  cmd_inv = (uint8_t)((bits >> 24) & 0xFFU);
-
-            if ((cmd ^ cmd_inv) != 0xFFU) {
-                return false;
-            }
-            frame_out->address = addr;
             frame_out->command = cmd;
-            break;
-        }
-
-        case SYN_IR_PROTO_KASEIKYO: {
-            uint16_t addr = (uint16_t)(bits & 0xFFFFU);
-            uint32_t cmd  = (uint32_t)((bits >> 16) & 0xFFFFFFFFULL);
-            frame_out->address = addr;
-            frame_out->command = cmd;
-            break;
-        }
-
-        case SYN_IR_PROTO_DENON: {
-            /* 15 bits: 5-bit address, 8-bit command, 2-bit checksum */
-            frame_out->address = (uint32_t)((bits >> 10) & 0x1FU);
-            frame_out->command = (uint32_t)((bits >> 2) & 0xFFU);
-            break;
-        }
-
-        default:
+        } else {
             return false;
+        }
+        break;
+    }
+
+    case SYN_IR_PROTO_SONY_12:
+    case SYN_IR_PROTO_SONY_15:
+    case SYN_IR_PROTO_SONY_20: {
+        if (decoder->bit_idx == 12) {
+            frame_out->protocol = SYN_IR_PROTO_SONY_12;
+            frame_out->command = (uint32_t)(bits & 0x7FU);
+            frame_out->address = (uint32_t)((bits >> 7) & 0x1FU);
+        } else if (decoder->bit_idx == 15) {
+            frame_out->protocol = SYN_IR_PROTO_SONY_15;
+            frame_out->command = (uint32_t)(bits & 0x7FU);
+            frame_out->address = (uint32_t)((bits >> 7) & 0xFFU);
+        } else if (decoder->bit_idx == 20) {
+            frame_out->protocol = SYN_IR_PROTO_SONY_20;
+            frame_out->command = (uint32_t)(bits & 0x7FU);
+            frame_out->address =
+                (uint32_t)((bits >> 7) & 0x1FU) | (((uint32_t)((bits >> 12) & 0xFFU)) << 5);
+        } else {
+            return false;
+        }
+        break;
+    }
+
+    case SYN_IR_PROTO_RC5: {
+        /* 14 bits: S1(1), S2(1), Toggle(1), Address(5), Command(6) */
+        uint8_t toggle = (uint8_t)((bits >> 11) & 0x01U);
+        uint8_t address = (uint8_t)((bits >> 6) & 0x1FU);
+        uint8_t command = (uint8_t)(bits & 0x3FU);
+
+        if (toggle) {
+            frame_out->flags |= SYN_IR_FLAG_TOGGLE;
+        }
+        frame_out->address = address;
+        frame_out->command = command;
+        break;
+    }
+
+    case SYN_IR_PROTO_RC6: {
+        /* 21 bits: S(1), Mode(3), Toggle(1), Address(8), Command(8) */
+        uint8_t toggle = (uint8_t)((bits >> 16) & 0x01U);
+        uint8_t address = (uint8_t)((bits >> 8) & 0xFFU);
+        uint8_t command = (uint8_t)(bits & 0xFFU);
+
+        if (toggle) {
+            frame_out->flags |= SYN_IR_FLAG_TOGGLE;
+        }
+        frame_out->address = address;
+        frame_out->command = command;
+        break;
+    }
+
+    case SYN_IR_PROTO_SAMSUNG: {
+        uint16_t addr = (uint16_t)(bits & 0xFFFFU);
+        uint8_t cmd = (uint8_t)((bits >> 16) & 0xFFU);
+        uint8_t cmd_inv = (uint8_t)((bits >> 24) & 0xFFU);
+
+        if ((cmd ^ cmd_inv) != 0xFFU) {
+            return false;
+        }
+        frame_out->address = addr;
+        frame_out->command = cmd;
+        break;
+    }
+
+    case SYN_IR_PROTO_KASEIKYO: {
+        uint16_t addr = (uint16_t)(bits & 0xFFFFU);
+        uint32_t cmd = (uint32_t)((bits >> 16) & 0xFFFFFFFFULL);
+        frame_out->address = addr;
+        frame_out->command = cmd;
+        break;
+    }
+
+    case SYN_IR_PROTO_DENON: {
+        /* 15 bits: 5-bit address, 8-bit command, 2-bit checksum */
+        frame_out->address = (uint32_t)((bits >> 10) & 0x1FU);
+        frame_out->command = (uint32_t)((bits >> 2) & 0xFFU);
+        break;
+    }
+
+    default:
+        return false;
     }
 
     return true;
@@ -368,10 +345,8 @@ static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
 
 /* ── Decoder FSM ─────────────────────────────────────────────────────────── */
 
-bool syn_ir_decode_pulse(SYN_IR_Decoder *decoder,
-                        uint16_t duration_us,
-                        bool is_mark,
-                        SYN_IR_Frame *frame_out)
+bool syn_ir_decode_pulse(SYN_IR_Decoder *decoder, uint16_t duration_us, bool is_mark,
+                         SYN_IR_Frame *frame_out)
 {
     if (decoder == NULL || frame_out == NULL) {
         return false;
@@ -423,7 +398,8 @@ bool syn_ir_decode_pulse(SYN_IR_Decoder *decoder,
         /* Check leader pulses against protocol table */
         for (int p = 1; p < SYN_IR_PROTO_COUNT; p++) {
             /* Skip duplicate variants in leader lookup */
-            if (p == SYN_IR_PROTO_SONY_12 || p == SYN_IR_PROTO_SONY_15 || p == SYN_IR_PROTO_NEC_EXTENDED) {
+            if (p == SYN_IR_PROTO_SONY_12 || p == SYN_IR_PROTO_SONY_15 ||
+                p == SYN_IR_PROTO_NEC_EXTENDED) {
                 continue;
             }
 
@@ -534,8 +510,8 @@ bool syn_ir_decode_pulse(SYN_IR_Decoder *decoder,
             decoder->bits |= (((uint64_t)bit_val) << decoder->bit_idx);
             decoder->bit_idx++;
 
-            if (decoder->bit_idx >= decoder->expected_bits ||
-                decoder->bit_idx == 12 || decoder->bit_idx == 15) {
+            if (decoder->bit_idx >= decoder->expected_bits || decoder->bit_idx == 12 ||
+                decoder->bit_idx == 15) {
                 if (unpack_frame(decoder, frame_out)) {
                     decoder->last_frame = *frame_out;
                     decoder->have_last = true;
@@ -572,10 +548,8 @@ bool syn_ir_decode_timeout(SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
 
 /* ── Encoder ─────────────────────────────────────────────────────────────── */
 
-SYN_Status syn_ir_encode_frame(const SYN_IR_Frame *frame,
-                              SYN_IR_Pulse *pulse_buf,
-                              size_t buf_len,
-                              size_t *count_out)
+SYN_Status syn_ir_encode_frame(const SYN_IR_Frame *frame, SYN_IR_Pulse *pulse_buf, size_t buf_len,
+                               size_t *count_out)
 {
     if (frame == NULL || pulse_buf == NULL || count_out == NULL) {
         return SYN_INVALID_PARAM;
@@ -592,7 +566,7 @@ SYN_Status syn_ir_encode_frame(const SYN_IR_Frame *frame,
         required_pulses += 2; /* Leader mark + space */
     }
     required_pulses += ((size_t)desc->total_bits) * 2; /* Data mark + space */
-    required_pulses += 1; /* Trailer stop bit mark */
+    required_pulses += 1;                              /* Trailer stop bit mark */
 
     if (buf_len < required_pulses) {
         return SYN_ERROR;
@@ -602,89 +576,84 @@ SYN_Status syn_ir_encode_frame(const SYN_IR_Frame *frame,
 
     /* Leader Pulse */
     if (desc->leader_mark_us > 0) {
-        pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = desc->leader_mark_us, .is_mark = true };
-        pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = desc->leader_space_us, .is_mark = false };
+        pulse_buf[idx++] = (SYN_IR_Pulse){.duration_us = desc->leader_mark_us, .is_mark = true};
+        pulse_buf[idx++] = (SYN_IR_Pulse){.duration_us = desc->leader_space_us, .is_mark = false};
     }
 
     /* Build raw bit stream integer depending on protocol */
     uint64_t raw_bits = 0;
 
     switch (frame->protocol) {
-        case SYN_IR_PROTO_NEC: {
-            uint8_t addr = (uint8_t)(frame->address & 0xFFU);
-            uint8_t cmd  = (uint8_t)(frame->command & 0xFFU);
-            raw_bits = ((uint64_t)addr) |
-                       (((uint64_t)(~addr & 0xFFU)) << 8) |
-                       (((uint64_t)cmd) << 16) |
-                       (((uint64_t)(~cmd & 0xFFU)) << 24);
-            break;
-        }
+    case SYN_IR_PROTO_NEC: {
+        uint8_t addr = (uint8_t)(frame->address & 0xFFU);
+        uint8_t cmd = (uint8_t)(frame->command & 0xFFU);
+        raw_bits = ((uint64_t)addr) | (((uint64_t)(~addr & 0xFFU)) << 8) | (((uint64_t)cmd) << 16) |
+                   (((uint64_t)(~cmd & 0xFFU)) << 24);
+        break;
+    }
 
-        case SYN_IR_PROTO_NEC_EXTENDED: {
-            uint16_t addr = (uint16_t)(frame->address & 0xFFFFU);
-            uint8_t  cmd  = (uint8_t)(frame->command & 0xFFU);
-            raw_bits = ((uint64_t)addr) |
-                       (((uint64_t)cmd) << 16) |
-                       (((uint64_t)(~cmd & 0xFFU)) << 24);
-            break;
-        }
+    case SYN_IR_PROTO_NEC_EXTENDED: {
+        uint16_t addr = (uint16_t)(frame->address & 0xFFFFU);
+        uint8_t cmd = (uint8_t)(frame->command & 0xFFU);
+        raw_bits = ((uint64_t)addr) | (((uint64_t)cmd) << 16) | (((uint64_t)(~cmd & 0xFFU)) << 24);
+        break;
+    }
 
-        case SYN_IR_PROTO_APPLE: {
-            uint16_t addr = (uint16_t)(frame->address & 0xFFFFU);
-            uint8_t  cmd  = (uint8_t)(frame->command & 0xFFU);
-            raw_bits = ((uint64_t)addr) | (((uint64_t)cmd) << 16) | (((uint64_t)cmd) << 24);
-            break;
-        }
+    case SYN_IR_PROTO_APPLE: {
+        uint16_t addr = (uint16_t)(frame->address & 0xFFFFU);
+        uint8_t cmd = (uint8_t)(frame->command & 0xFFU);
+        raw_bits = ((uint64_t)addr) | (((uint64_t)cmd) << 16) | (((uint64_t)cmd) << 24);
+        break;
+    }
 
-        case SYN_IR_PROTO_SONY_12:
-            raw_bits = (frame->command & 0x7FU) | ((frame->address & 0x1FU) << 7);
-            break;
+    case SYN_IR_PROTO_SONY_12:
+        raw_bits = (frame->command & 0x7FU) | ((frame->address & 0x1FU) << 7);
+        break;
 
-        case SYN_IR_PROTO_SONY_15:
-            raw_bits = (frame->command & 0x7FU) | ((frame->address & 0xFFU) << 7);
-            break;
+    case SYN_IR_PROTO_SONY_15:
+        raw_bits = (frame->command & 0x7FU) | ((frame->address & 0xFFU) << 7);
+        break;
 
-        case SYN_IR_PROTO_SONY_20:
-            raw_bits = (frame->command & 0x7FU) | ((frame->address & 0x1FU) << 7) | (((frame->address >> 5) & 0xFFU) << 12);
-            break;
+    case SYN_IR_PROTO_SONY_20:
+        raw_bits = (frame->command & 0x7FU) | ((frame->address & 0x1FU) << 7) |
+                   (((frame->address >> 5) & 0xFFU) << 12);
+        break;
 
-        case SYN_IR_PROTO_RC5: {
-            uint8_t toggle = (frame->flags & SYN_IR_FLAG_TOGGLE) ? 1 : 0;
-            /* 14 bits MSB to LSB: S1(1), S2(1), Toggle(1), Address(5), Command(6) */
-            raw_bits = (1ULL << 13) | (1ULL << 12) | (((uint64_t)toggle) << 11) |
-                       (((uint64_t)(frame->address & 0x1FU)) << 6) |
-                       ((uint64_t)(frame->command & 0x3FU));
-            break;
-        }
+    case SYN_IR_PROTO_RC5: {
+        uint8_t toggle = (frame->flags & SYN_IR_FLAG_TOGGLE) ? 1 : 0;
+        /* 14 bits MSB to LSB: S1(1), S2(1), Toggle(1), Address(5), Command(6) */
+        raw_bits = (1ULL << 13) | (1ULL << 12) | (((uint64_t)toggle) << 11) |
+                   (((uint64_t)(frame->address & 0x1FU)) << 6) |
+                   ((uint64_t)(frame->command & 0x3FU));
+        break;
+    }
 
-        case SYN_IR_PROTO_RC6: {
-            uint8_t toggle = (frame->flags & SYN_IR_FLAG_TOGGLE) ? 1 : 0;
-            /* 21 bits MSB to LSB: Start(1), Mode(3), Toggle(1), Address(8), Command(8) */
-            raw_bits = (1ULL << 20) | (((uint64_t)toggle) << 16) |
-                       (((uint64_t)(frame->address & 0xFFU)) << 8) |
-                       ((uint64_t)(frame->command & 0xFFU));
-            break;
-        }
+    case SYN_IR_PROTO_RC6: {
+        uint8_t toggle = (frame->flags & SYN_IR_FLAG_TOGGLE) ? 1 : 0;
+        /* 21 bits MSB to LSB: Start(1), Mode(3), Toggle(1), Address(8), Command(8) */
+        raw_bits = (1ULL << 20) | (((uint64_t)toggle) << 16) |
+                   (((uint64_t)(frame->address & 0xFFU)) << 8) |
+                   ((uint64_t)(frame->command & 0xFFU));
+        break;
+    }
 
-        case SYN_IR_PROTO_SAMSUNG: {
-            uint16_t addr = (uint16_t)(frame->address & 0xFFFFU);
-            uint8_t  cmd  = (uint8_t)(frame->command & 0xFFU);
-            raw_bits = ((uint64_t)addr) |
-                       (((uint64_t)cmd) << 16) |
-                       (((uint64_t)(~cmd & 0xFFU)) << 24);
-            break;
-        }
+    case SYN_IR_PROTO_SAMSUNG: {
+        uint16_t addr = (uint16_t)(frame->address & 0xFFFFU);
+        uint8_t cmd = (uint8_t)(frame->command & 0xFFU);
+        raw_bits = ((uint64_t)addr) | (((uint64_t)cmd) << 16) | (((uint64_t)(~cmd & 0xFFU)) << 24);
+        break;
+    }
 
-        case SYN_IR_PROTO_KASEIKYO:
-            raw_bits = (frame->address & 0xFFFFU) | (((uint64_t)frame->command) << 16);
-            break;
+    case SYN_IR_PROTO_KASEIKYO:
+        raw_bits = (frame->address & 0xFFFFU) | (((uint64_t)frame->command) << 16);
+        break;
 
-        case SYN_IR_PROTO_DENON:
-            raw_bits = ((frame->address & 0x1FU) << 10) | ((frame->command & 0xFFU) << 2);
-            break;
+    case SYN_IR_PROTO_DENON:
+        raw_bits = ((frame->address & 0x1FU) << 10) | ((frame->command & 0xFFU) << 2);
+        break;
 
-        default:
-            return SYN_INVALID_PARAM;
+    default:
+        return SYN_INVALID_PARAM;
     }
 
     /* Encode Data Bits */
@@ -696,11 +665,11 @@ SYN_Status syn_ir_encode_frame(const SYN_IR_Frame *frame,
             }
             uint16_t half = desc->half_bit_us;
             if (bit_val == 1) {
-                pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = half, .is_mark = false };
-                pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = half, .is_mark = true };
+                pulse_buf[idx++] = (SYN_IR_Pulse){.duration_us = half, .is_mark = false};
+                pulse_buf[idx++] = (SYN_IR_Pulse){.duration_us = half, .is_mark = true};
             } else {
-                pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = half, .is_mark = true };
-                pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = half, .is_mark = false };
+                pulse_buf[idx++] = (SYN_IR_Pulse){.duration_us = half, .is_mark = true};
+                pulse_buf[idx++] = (SYN_IR_Pulse){.duration_us = half, .is_mark = false};
             }
         }
     } else {
@@ -709,18 +678,21 @@ SYN_Status syn_ir_encode_frame(const SYN_IR_Frame *frame,
 
             if (desc->encoding == SYN_IR_ENC_PDM || desc->encoding == SYN_IR_ENC_PPM) {
                 uint16_t space = (bit_val == 1) ? desc->one_space_us : desc->zero_space_us;
-                pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = desc->bit_mark_us, .is_mark = true };
-                pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = space, .is_mark = false };
+                pulse_buf[idx++] =
+                    (SYN_IR_Pulse){.duration_us = desc->bit_mark_us, .is_mark = true};
+                pulse_buf[idx++] = (SYN_IR_Pulse){.duration_us = space, .is_mark = false};
             } else if (desc->encoding == SYN_IR_ENC_PWM) {
                 uint16_t mark = (bit_val == 1) ? desc->one_mark_us : desc->bit_mark_us;
-                pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = mark, .is_mark = true };
-                pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = desc->zero_space_us, .is_mark = false };
+                pulse_buf[idx++] = (SYN_IR_Pulse){.duration_us = mark, .is_mark = true};
+                pulse_buf[idx++] =
+                    (SYN_IR_Pulse){.duration_us = desc->zero_space_us, .is_mark = false};
             }
         }
     }
 
     /* Trailer Stop Bit Mark */
-    pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = desc->bit_mark_us > 0 ? desc->bit_mark_us : 500, .is_mark = true };
+    pulse_buf[idx++] = (SYN_IR_Pulse){
+        .duration_us = desc->bit_mark_us > 0 ? desc->bit_mark_us : 500, .is_mark = true};
 
     *count_out = idx;
     return SYN_OK;

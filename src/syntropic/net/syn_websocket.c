@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_WEBSOCKET) || SYN_USE_WEBSOCKET
@@ -9,11 +9,12 @@
  * @brief WebSocket protocol implementation.
  */
 
-#include "syn_websocket.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
-#include <string.h>
+#include "syn_websocket.h"
+
 #include <stdio.h>
+#include <string.h>
 
 /* ── SHA-1 ──────────────────────────────────────────────────────────────── */
 
@@ -21,9 +22,9 @@
  * @brief SHA-1 hashing algorithm context.
  */
 typedef struct {
-    uint32_t state[5];               /**< Internal state registers */
-    uint32_t count[2];               /**< Number of bits processed */
-    uint8_t  buffer[64];             /**< Input buffer staging area */
+    uint32_t state[5];  /**< Internal state registers */
+    uint32_t count[2];  /**< Number of bits processed */
+    uint8_t buffer[64]; /**< Input buffer staging area */
 } SYN_SHA1_Ctx;
 
 /** @brief SHA-1 rotate-left helper. */
@@ -55,7 +56,7 @@ static void sha1_transform(uint32_t state[5], const uint8_t buffer[64])
         w[i] = syn_peek_u32(buffer, i * 4);
     }
     for (int i = 16; i < 80; i++) {
-        w[i] = SHA1_ROL(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1);
+        w[i] = SHA1_ROL(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
     }
 
     uint32_t a = state[0];
@@ -104,7 +105,8 @@ static void sha1_update(SYN_SHA1_Ctx *ctx, const uint8_t *data, uint32_t len)
 {
     uint32_t i, j;
     j = (ctx->count[0] >> 3) & 63;
-    if ((ctx->count[0] += len << 3) < (len << 3)) ctx->count[1]++;
+    if ((ctx->count[0] += len << 3) < (len << 3))
+        ctx->count[1]++;
     ctx->count[1] += (len >> 29);
     if ((j + len) > 63) {
         memcpy(&ctx->buffer[j], data, (i = 64 - j));
@@ -126,7 +128,7 @@ static void sha1_final(SYN_SHA1_Ctx *ctx, uint8_t digest[20])
 {
     uint8_t finalcount[8];
     for (int i = 0; i < 8; i++) {
-        finalcount[i] = (uint8_t)((ctx->count[(i >= 4 ? 0 : 1)] >> ((3 - (i & 3)) * 8) ) & 255);
+        finalcount[i] = (uint8_t)((ctx->count[(i >= 4 ? 0 : 1)] >> ((3 - (i & 3)) * 8)) & 255);
     }
     uint8_t c = 0200;
     sha1_update(ctx, &c, 1);
@@ -136,7 +138,7 @@ static void sha1_final(SYN_SHA1_Ctx *ctx, uint8_t digest[20])
     }
     sha1_update(ctx, finalcount, 8);
     for (int i = 0; i < 20; i++) {
-        digest[i] = (uint8_t)((ctx->state[i>>2] >> ((3 - (i & 3)) * 8) ) & 255);
+        digest[i] = (uint8_t)((ctx->state[i >> 2] >> ((3 - (i & 3)) * 8)) & 255);
     }
 }
 
@@ -180,10 +182,9 @@ static inline bool prefix_icase(const char *str, const char *prefix)
     return syn_str_prefix_icase(str, prefix);
 }
 
-SYN_Status syn_websocket_upgrade(const SYN_HttpdRequest *req, SYN_HttpdResponse *resp,
-                                 SYN_WebsocketSession *ws,
-                                 void (*on_message)(const uint8_t *payload, size_t len, uint8_t opcode, void *ctx),
-                                 void *ctx)
+SYN_Status syn_websocket_upgrade(
+    const SYN_HttpdRequest *req, SYN_HttpdResponse *resp, SYN_WebsocketSession *ws,
+    void (*on_message)(const uint8_t *payload, size_t len, uint8_t opcode, void *ctx), void *ctx)
 {
     SYN_ASSERT(req != NULL);
     SYN_ASSERT(resp != NULL);
@@ -192,17 +193,19 @@ SYN_Status syn_websocket_upgrade(const SYN_HttpdRequest *req, SYN_HttpdResponse 
     /* Search for Sec-WebSocket-Key inside request headers */
     const char *headers = req->headers;
     const char *key_hdr = NULL;
-    
+
     /* Safely look through headers */
     const char *cur = headers;
     while (*cur) {
         if (prefix_icase(cur, "sec-websocket-key:")) {
             key_hdr = cur + 18;
-            while (*key_hdr == ' ') key_hdr++;
+            while (*key_hdr == ' ')
+                key_hdr++;
             break;
         }
         cur = strchr(cur, '\n');
-        if (!cur) break;
+        if (!cur)
+            break;
         cur++;
     }
 
@@ -239,7 +242,8 @@ SYN_Status syn_websocket_upgrade(const SYN_HttpdRequest *req, SYN_HttpdResponse 
                         "HTTP/1.1 101 Switching Protocols\r\n"
                         "Upgrade: websocket\r\n"
                         "Connection: Upgrade\r\n"
-                        "Sec-WebSocket-Accept: %s\r\n\r\n", accept_key);
+                        "Sec-WebSocket-Accept: %s\r\n\r\n",
+                        accept_key);
     if (rlen > 0) {
         syn_port_sock_send_all(resp->sock, resp_buf, (size_t)rlen);
     }
@@ -257,11 +261,12 @@ SYN_Status syn_websocket_upgrade(const SYN_HttpdRequest *req, SYN_HttpdResponse 
     return SYN_OK;
 }
 
-SYN_Status syn_websocket_send(SYN_WebsocketSession *ws, uint8_t opcode,
-                              const void *data, size_t len)
+SYN_Status syn_websocket_send(SYN_WebsocketSession *ws, uint8_t opcode, const void *data,
+                              size_t len)
 {
     SYN_ASSERT(ws != NULL);
-    if (ws->state != SYN_WS_STATE_CONNECTED) return SYN_ERROR;
+    if (ws->state != SYN_WS_STATE_CONNECTED)
+        return SYN_ERROR;
 
     uint8_t header[10];
     header[0] = 0x80 | (opcode & 0x0F); /* FIN = 1 */
@@ -363,11 +368,16 @@ SYN_PT_Status syn_websocket_task(SYN_PT *pt, SYN_Task *task)
                                 break;
                             } else if (ws->opcode == 0x09) {
                                 /* PING, reply with PONG */
-                                syn_websocket_send(ws, 0x0A, ws->rx_buf, ws->payload_len < sizeof(ws->rx_buf) ? ws->payload_len : sizeof(ws->rx_buf));
+                                syn_websocket_send(ws, 0x0A, ws->rx_buf,
+                                                   ws->payload_len < sizeof(ws->rx_buf)
+                                                       ? ws->payload_len
+                                                       : sizeof(ws->rx_buf));
                             } else if (ws->opcode == 0x01 || ws->opcode == 0x02) {
                                 /* Text/Binary message */
                                 if (ws->on_message != NULL) {
-                                    size_t act_len = ws->payload_len < sizeof(ws->rx_buf) ? ws->payload_len : sizeof(ws->rx_buf);
+                                    size_t act_len = ws->payload_len < sizeof(ws->rx_buf)
+                                                         ? ws->payload_len
+                                                         : sizeof(ws->rx_buf);
                                     ws->on_message(ws->rx_buf, act_len, ws->opcode, ws->ctx);
                                 }
                             }

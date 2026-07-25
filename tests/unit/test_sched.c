@@ -3,11 +3,11 @@
  * @brief Unity tests for syn_sched.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/sched/syn_sched.h"
+#include "syntropic/syntropic.h"
 #include "syntropic/util/syn_event.h"
+#include "unity/unity.h"
 
 static int sched_order[10];
 static int sched_order_idx = 0;
@@ -38,7 +38,6 @@ static SYN_PT_Status sched_task_b(SYN_PT *pt, SYN_Task *task)
 
 static void test_scheduler(void)
 {
-
     SYN_Task tasks[2];
     SYN_Sched sched;
 
@@ -89,7 +88,6 @@ static SYN_PT_Status suspend_task_func(SYN_PT *pt, SYN_Task *task)
 
 static void test_suspend_resume(void)
 {
-
     SYN_Task tasks[1];
     SYN_Sched sched;
     suspend_counter = 0;
@@ -175,7 +173,8 @@ static jmp_buf g_sched_jmp;
 
 static SYN_PT_Status task_longjmp(SYN_PT *pt, SYN_Task *task)
 {
-    (void)pt; (void)task;
+    (void)pt;
+    (void)task;
     longjmp(g_sched_jmp, 1);
     return PT_ENDED;
 }
@@ -200,7 +199,8 @@ static void test_sched_run_forever(void)
 static int run_log[32];
 static int run_log_idx;
 
-static void log_reset(void) {
+static void log_reset(void)
+{
     run_log_idx = 0;
     memset(run_log, 0, sizeof(run_log));
 }
@@ -272,7 +272,7 @@ static void test_defer_rr_fairness(void)
     SYN_Sched sched;
     static int id_a = 1, id_b1 = 2, id_b2 = 3;
 
-    syn_task_create(&tasks[0], "a",  defer_task, 0, &id_a);
+    syn_task_create(&tasks[0], "a", defer_task, 0, &id_a);
     syn_task_create(&tasks[1], "b1", yield_task, 1, &id_b1);
     syn_task_create(&tasks[2], "b2", yield_task, 1, &id_b2);
     syn_sched_init(&sched, tasks, 3);
@@ -282,14 +282,14 @@ static void test_defer_rr_fairness(void)
     }
 
     /* A, B1, A, B2, A, B1, A, B2 */
-    TEST_ASSERT_EQUAL_INT(1, run_log[0]);  /* A */
-    TEST_ASSERT_EQUAL_INT(2, run_log[1]);  /* B1 */
-    TEST_ASSERT_EQUAL_INT(1, run_log[2]);  /* A */
-    TEST_ASSERT_EQUAL_INT(3, run_log[3]);  /* B2 */
-    TEST_ASSERT_EQUAL_INT(1, run_log[4]);  /* A */
-    TEST_ASSERT_EQUAL_INT(2, run_log[5]);  /* B1 */
-    TEST_ASSERT_EQUAL_INT(1, run_log[6]);  /* A */
-    TEST_ASSERT_EQUAL_INT(3, run_log[7]);  /* B2 */
+    TEST_ASSERT_EQUAL_INT(1, run_log[0]); /* A */
+    TEST_ASSERT_EQUAL_INT(2, run_log[1]); /* B1 */
+    TEST_ASSERT_EQUAL_INT(1, run_log[2]); /* A */
+    TEST_ASSERT_EQUAL_INT(3, run_log[3]); /* B2 */
+    TEST_ASSERT_EQUAL_INT(1, run_log[4]); /* A */
+    TEST_ASSERT_EQUAL_INT(2, run_log[5]); /* B1 */
+    TEST_ASSERT_EQUAL_INT(1, run_log[6]); /* A */
+    TEST_ASSERT_EQUAL_INT(3, run_log[7]); /* B2 */
 }
 
 /**
@@ -362,7 +362,7 @@ static void test_defer_rr_three_lower(void)
     SYN_Sched sched;
     static int id_a = 1, id_b1 = 2, id_b2 = 3, id_b3 = 4;
 
-    syn_task_create(&tasks[0], "a",  defer_task, 0, &id_a);
+    syn_task_create(&tasks[0], "a", defer_task, 0, &id_a);
     syn_task_create(&tasks[1], "b1", yield_task, 1, &id_b1);
     syn_task_create(&tasks[2], "b2", yield_task, 1, &id_b2);
     syn_task_create(&tasks[3], "b3", yield_task, 1, &id_b3);
@@ -373,14 +373,14 @@ static void test_defer_rr_three_lower(void)
     }
 
     /* A, B1, A, B2, A, B3, A, B1 */
-    TEST_ASSERT_EQUAL_INT(1, run_log[0]);  /* A */
-    TEST_ASSERT_EQUAL_INT(2, run_log[1]);  /* B1 */
-    TEST_ASSERT_EQUAL_INT(1, run_log[2]);  /* A */
-    TEST_ASSERT_EQUAL_INT(3, run_log[3]);  /* B2 */
-    TEST_ASSERT_EQUAL_INT(1, run_log[4]);  /* A */
-    TEST_ASSERT_EQUAL_INT(4, run_log[5]);  /* B3 */
-    TEST_ASSERT_EQUAL_INT(1, run_log[6]);  /* A */
-    TEST_ASSERT_EQUAL_INT(2, run_log[7]);  /* B1 */
+    TEST_ASSERT_EQUAL_INT(1, run_log[0]); /* A */
+    TEST_ASSERT_EQUAL_INT(2, run_log[1]); /* B1 */
+    TEST_ASSERT_EQUAL_INT(1, run_log[2]); /* A */
+    TEST_ASSERT_EQUAL_INT(3, run_log[3]); /* B2 */
+    TEST_ASSERT_EQUAL_INT(1, run_log[4]); /* A */
+    TEST_ASSERT_EQUAL_INT(4, run_log[5]); /* B3 */
+    TEST_ASSERT_EQUAL_INT(1, run_log[6]); /* A */
+    TEST_ASSERT_EQUAL_INT(2, run_log[7]); /* B1 */
 }
 
 /**
@@ -403,7 +403,7 @@ static void test_defer_state_lifecycle(void)
     log_reset();
     syn_sched_run(&sched);
     TEST_ASSERT_EQUAL_UINT8(SYN_TASK_DEFERRED, tasks[0].state);
-    TEST_ASSERT_EQUAL_UINT8(SYN_TASK_READY,    tasks[1].state);
+    TEST_ASSERT_EQUAL_UINT8(SYN_TASK_READY, tasks[1].state);
 
     /* Pass 2: A skipped (DEFERRED), B runs, A cleared to READY */
     syn_sched_run(&sched);
@@ -447,8 +447,8 @@ static void test_defer_then_suspend(void)
 
 /* ── PT_BLOCK_EVENT tests ────────────────────────────────────────────────── */
 
-#define EVT_DATA  SYN_BIT(0)
-#define EVT_DONE  SYN_BIT(1)
+#define EVT_DATA SYN_BIT(0)
+#define EVT_DONE SYN_BIT(1)
 
 static int block_counter;
 
@@ -527,8 +527,8 @@ static void test_block_event_skips_scan(void)
 
     /* Pass 2: high-pri blocked, low-pri runs */
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(2, run_log[0]);  /* Low-pri ran */
-    TEST_ASSERT_EQUAL_INT(0, block_counter);  /* High-pri didn't */
+    TEST_ASSERT_EQUAL_INT(2, run_log[0]);    /* Low-pri ran */
+    TEST_ASSERT_EQUAL_INT(0, block_counter); /* High-pri didn't */
 }
 
 /**
@@ -593,7 +593,7 @@ static void test_block_event_priority(void)
     syn_event_set(&evt, EVT_DATA);
     log_reset();
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(1, block_counter);  /* High-pri ran */
+    TEST_ASSERT_EQUAL_INT(1, block_counter); /* High-pri ran */
 }
 
 /**
@@ -616,21 +616,21 @@ static void test_block_event_multiple_tasks(void)
     block_counter = 0;
 
     /* Both tasks run once, then block */
-    syn_sched_run(&sched);  /* Task A blocks */
-    syn_sched_run(&sched);  /* Task B blocks */
+    syn_sched_run(&sched); /* Task A blocks */
+    syn_sched_run(&sched); /* Task B blocks */
     TEST_ASSERT_EQUAL_UINT8(SYN_TASK_BLOCKED, tasks[0].state);
     TEST_ASSERT_EQUAL_UINT8(SYN_TASK_BLOCKED, tasks[1].state);
 
     /* Only fire event A */
     syn_event_set(&evt_a, EVT_DATA);
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(1, block_counter);  /* Only A woke */
-    TEST_ASSERT_EQUAL_UINT8(SYN_TASK_BLOCKED, tasks[1].state);  /* B still blocked */
+    TEST_ASSERT_EQUAL_INT(1, block_counter);                   /* Only A woke */
+    TEST_ASSERT_EQUAL_UINT8(SYN_TASK_BLOCKED, tasks[1].state); /* B still blocked */
 
     /* Fire event B */
     syn_event_set(&evt_b, EVT_DATA);
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(2, block_counter);  /* Now B woke too */
+    TEST_ASSERT_EQUAL_INT(2, block_counter); /* Now B woke too */
 }
 
 /**
@@ -679,7 +679,7 @@ static SYN_PT_Status wait_task(SYN_PT *pt, SYN_Task *task)
     for (;;) {
         PT_WAIT_UNTIL(pt, wait_cond_a);
         run_log[run_log_idx++] = id;
-        wait_cond_a = false;  /* consume the event */
+        wait_cond_a = false; /* consume the event */
         PT_YIELD(pt);
     }
     PT_END(pt);
@@ -699,7 +699,7 @@ static void test_waiting_doesnt_starve(void)
     SYN_Sched sched;
     static int id_a = 1, id_b = 2;
 
-    syn_task_create(&tasks[0], "w", wait_task,  0, &id_a);
+    syn_task_create(&tasks[0], "w", wait_task, 0, &id_a);
     syn_task_create(&tasks[1], "b", yield_task, 1, &id_b);
     syn_sched_init(&sched, tasks, 2);
 
@@ -707,18 +707,18 @@ static void test_waiting_doesnt_starve(void)
      * Scheduler retries → B runs. */
     syn_sched_run(&sched);
     TEST_ASSERT_EQUAL_INT(1, run_log_idx);
-    TEST_ASSERT_EQUAL_INT(2, run_log[0]);  /* B ran, not A */
+    TEST_ASSERT_EQUAL_INT(2, run_log[0]); /* B ran, not A */
 
     /* Tick 2: same pattern — B keeps running */
     syn_sched_run(&sched);
     TEST_ASSERT_EQUAL_INT(2, run_log_idx);
-    TEST_ASSERT_EQUAL_INT(2, run_log[1]);  /* B again */
+    TEST_ASSERT_EQUAL_INT(2, run_log[1]); /* B again */
 
     /* Tick 3: condition becomes true — A runs */
     wait_cond_a = true;
     syn_sched_run(&sched);
     TEST_ASSERT_EQUAL_INT(3, run_log_idx);
-    TEST_ASSERT_EQUAL_INT(1, run_log[2]);  /* A ran */
+    TEST_ASSERT_EQUAL_INT(1, run_log[2]); /* A ran */
 }
 
 /**
@@ -737,28 +737,28 @@ static void test_waiting_with_defer_no_inversion(void)
     static int id_a = 1, id_b = 2, id_c = 3;
 
     syn_task_create(&tasks[0], "a", defer_task, 0, &id_a);
-    syn_task_create(&tasks[1], "w", wait_task,  1, &id_b);
+    syn_task_create(&tasks[1], "w", wait_task, 1, &id_b);
     syn_task_create(&tasks[2], "c", yield_task, 2, &id_c);
     syn_sched_init(&sched, tasks, 3);
 
     /* Tick 1: A runs, defers */
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(1, run_log[0]);  /* A */
+    TEST_ASSERT_EQUAL_INT(1, run_log[0]); /* A */
     TEST_ASSERT_EQUAL_UINT8(SYN_TASK_DEFERRED, tasks[0].state);
 
-    /* Tick 2: A deferred → skipped. B waits → WAITING. C runs. 
+    /* Tick 2: A deferred → skipped. B waits → WAITING. C runs.
      * A cleared to READY at end of tick. */
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(3, run_log[1]);  /* C */
+    TEST_ASSERT_EQUAL_INT(3, run_log[1]); /* C */
     TEST_ASSERT_EQUAL_UINT8(SYN_TASK_READY, tasks[0].state);
 
     /* Tick 3: A is back — runs and defers again */
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(1, run_log[2]);  /* A */
+    TEST_ASSERT_EQUAL_INT(1, run_log[2]); /* A */
 
     /* Tick 4: A deferred, B waits, C runs */
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(3, run_log[3]);  /* C */
+    TEST_ASSERT_EQUAL_INT(3, run_log[3]); /* C */
 }
 
 /**
@@ -824,20 +824,20 @@ static void test_waiting_same_priority_fairness(void)
     SYN_Sched sched;
     static int id_a = 1, id_b = 2;
 
-    syn_task_create(&tasks[0], "w", wait_task,  0, &id_a);
+    syn_task_create(&tasks[0], "w", wait_task, 0, &id_a);
     syn_task_create(&tasks[1], "b", yield_task, 0, &id_b);
     syn_sched_init(&sched, tasks, 2);
 
     /* While A waits, B should run every tick */
     syn_sched_run(&sched);
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(2, run_log[0]);  /* B */
-    TEST_ASSERT_EQUAL_INT(2, run_log[1]);  /* B */
+    TEST_ASSERT_EQUAL_INT(2, run_log[0]); /* B */
+    TEST_ASSERT_EQUAL_INT(2, run_log[1]); /* B */
 
     /* Condition true: A runs (RR should give it a turn) */
     wait_cond_a = true;
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(1, run_log[2]);  /* A */
+    TEST_ASSERT_EQUAL_INT(1, run_log[2]); /* A */
 }
 
 /**
@@ -856,7 +856,7 @@ static void test_waiting_delayed_no_inversion(void)
     static int id_a = 1, id_b = 2, id_c = 3;
 
     syn_task_create(&tasks[0], "a", yield_task, 0, &id_a);
-    syn_task_create(&tasks[1], "w", wait_task,  1, &id_b);
+    syn_task_create(&tasks[1], "w", wait_task, 1, &id_b);
     syn_task_create(&tasks[2], "c", yield_task, 2, &id_c);
     syn_sched_init(&sched, tasks, 3);
 
@@ -865,14 +865,14 @@ static void test_waiting_delayed_no_inversion(void)
 
     /* Tick: A delayed, B waits, C runs */
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(3, run_log[0]);  /* C, not B */
+    TEST_ASSERT_EQUAL_INT(3, run_log[0]); /* C, not B */
 
     /* Advance past A's delay */
     mock_tick_advance(150);
 
     /* Tick: A is ready (pri 0) → runs first */
     syn_sched_run(&sched);
-    TEST_ASSERT_EQUAL_INT(1, run_log[1]);  /* A */
+    TEST_ASSERT_EQUAL_INT(1, run_log[1]); /* A */
 }
 
 void run_sched_tests(void)
@@ -903,4 +903,3 @@ void run_sched_tests(void)
     RUN_TEST(test_waiting_same_priority_fairness);
     RUN_TEST(test_waiting_delayed_no_inversion);
 }
-

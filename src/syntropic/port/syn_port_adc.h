@@ -8,6 +8,7 @@
 #define SYN_PORT_ADC_H
 
 #include "../common/syn_defs.h"
+
 #include <stdint.h>
 
 #ifdef __cplusplus

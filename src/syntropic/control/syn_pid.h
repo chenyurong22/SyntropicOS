@@ -54,8 +54,8 @@
 #ifndef SYN_PID_H
 #define SYN_PID_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,16 +65,16 @@ extern "C" {
 
 /** @brief PID controller configuration. */
 typedef struct {
-    int32_t  kp;              /**< Proportional gain (÷ scale)            */
-    int32_t  ki;              /**< Integral gain     (÷ scale × 1000)     */
-    int32_t  kd;              /**< Derivative gain   (÷ scale)            */
-    int32_t  scale;           /**< Gain divisor (e.g., 256 for 8-bit)     */
+    int32_t kp;    /**< Proportional gain (÷ scale)            */
+    int32_t ki;    /**< Integral gain     (÷ scale × 1000)     */
+    int32_t kd;    /**< Derivative gain   (÷ scale)            */
+    int32_t scale; /**< Gain divisor (e.g., 256 for 8-bit)     */
 
-    int32_t  out_min;         /**< Minimum output value                   */
-    int32_t  out_max;         /**< Maximum output value                   */
-    int32_t  integral_max;    /**< Max integral accumulator (0 = auto)    */
+    int32_t out_min;      /**< Minimum output value                   */
+    int32_t out_max;      /**< Maximum output value                   */
+    int32_t integral_max; /**< Max integral accumulator (0 = auto)    */
 
-    uint8_t  d_filter_alpha;  /**< EMA alpha for D-term (0=off, 255=no filter) */
+    uint8_t d_filter_alpha; /**< EMA alpha for D-term (0=off, 255=no filter) */
 } SYN_PID_Config;
 
 /**
@@ -101,26 +101,26 @@ typedef struct {
  * @endcode
  */
 #define SYN_PID_GAINS(kp_f, ki_f, kd_f, scale_val, omin, omax) \
-    ((SYN_PID_Config){                                          \
-        .kp    = (int32_t)((kp_f) * (scale_val)),               \
-        .ki    = (int32_t)((ki_f) * (scale_val) * 1000),        \
-        .kd    = (int32_t)((kd_f) * (scale_val)),               \
-        .scale = (scale_val),                                   \
-        .out_min = (omin),                                      \
-        .out_max = (omax),                                      \
+    ((SYN_PID_Config){                                         \
+        .kp = (int32_t)((kp_f) * (scale_val)),                 \
+        .ki = (int32_t)((ki_f) * (scale_val)*1000),            \
+        .kd = (int32_t)((kd_f) * (scale_val)),                 \
+        .scale = (scale_val),                                  \
+        .out_min = (omin),                                     \
+        .out_max = (omax),                                     \
     })
 
 /* ── PID instance ───────────────────────────────────────────────────────── */
 
 /** @brief PID controller instance — config + accumulated state. */
 typedef struct {
-    SYN_PID_Config cfg;       /**< Configuration snapshot                 */
+    SYN_PID_Config cfg; /**< Configuration snapshot                 */
 
-    int32_t  integral;        /**< Accumulated integral                   */
-    int32_t  prev_error;      /**< Previous error for derivative          */
-    int32_t  prev_d_filtered; /**< Filtered derivative (Q0)               */
-    int32_t  output;          /**< Last computed output                   */
-    bool     first;           /**< True before first update               */
+    int32_t integral;        /**< Accumulated integral                   */
+    int32_t prev_error;      /**< Previous error for derivative          */
+    int32_t prev_d_filtered; /**< Filtered derivative (Q0)               */
+    int32_t output;          /**< Last computed output                   */
+    bool first;              /**< True before first update               */
 } SYN_PID;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -146,8 +146,7 @@ void syn_pid_init(SYN_PID *pid, const SYN_PID_Config *cfg);
  *                  (0 is treated as 1 to avoid division by zero.)
  * @return Clamped output value.
  */
-int32_t syn_pid_update(SYN_PID *pid, int32_t setpoint,
-                        int32_t measured, uint32_t dt_ms);
+int32_t syn_pid_update(SYN_PID *pid, int32_t setpoint, int32_t measured, uint32_t dt_ms);
 
 /**
  * @brief Reset integral and derivative state.

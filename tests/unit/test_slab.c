@@ -3,23 +3,23 @@
  * @brief Unit test suite for Multi-Class Slab Allocator (syn_slab).
  */
 
-#include "unity/unity.h"
 #include "syntropic/util/syn_slab.h"
+#include "unity/unity.h"
 
 void test_slab_alloc_free_stats(void)
 {
     uint8_t backing[1024];
     SYN_SlabAllocator slab;
 
-    size_t sizes[]  = {16, 64, 256};
-    size_t counts[] = {8,  4,  2};
+    size_t sizes[] = {16, 64, 256};
+    size_t counts[] = {8, 4, 2};
 
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_slab_init(&slab, backing, sizeof(backing), sizes, counts, 3));
 
     void *p16_a = syn_slab_alloc(&slab, 10);
     void *p16_b = syn_slab_alloc(&slab, 16);
-    void *p64   = syn_slab_alloc(&slab, 50);
-    void *p256  = syn_slab_alloc(&slab, 200);
+    void *p64 = syn_slab_alloc(&slab, 50);
+    void *p256 = syn_slab_alloc(&slab, 200);
 
     TEST_ASSERT_NOT_NULL(p16_a);
     TEST_ASSERT_NOT_NULL(p16_b);
@@ -42,7 +42,8 @@ void test_slab_alloc_free_stats(void)
     uint8_t dummy = 0;
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_slab_free(&slab, &dummy));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_slab_free(&slab, NULL));
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_slab_init(NULL, backing, sizeof(backing), sizes, counts, 3));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_slab_init(NULL, backing, sizeof(backing), sizes, counts, 3));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_slab_get_stats(NULL, &stats));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_slab_get_stats(&slab, NULL));
 }
@@ -57,12 +58,14 @@ void test_slab_edge_cases_and_exhaustion(void)
 
     /* Insufficient backing memory */
     size_t big_counts[] = {100};
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_slab_init(&slab, backing, sizeof(backing), sizes, big_counts, 1));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_slab_init(&slab, backing, sizeof(backing), sizes, big_counts, 1));
 
     /* Exceed max classes */
     size_t many_sizes[10] = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160};
     size_t many_counts[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_slab_init(&slab, backing, sizeof(backing), many_sizes, many_counts, 10));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_slab_init(&slab, backing, sizeof(backing),
+                                                           many_sizes, many_counts, 10));
 
     /* Valid init with 2 blocks of 16B */
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_slab_init(&slab, backing, sizeof(backing), sizes, counts, 1));

@@ -4,8 +4,10 @@
  */
 
 #include "syn_dma.h"
-#include "../util/syn_assert.h"
+
 #include "../common/syn_compiler.h"
+#include "../util/syn_assert.h"
+
 #include <string.h>
 
 SYN_Status syn_dma_init(SYN_DMA *dma, const SYN_DMA_Config *cfg)
@@ -14,8 +16,7 @@ SYN_Status syn_dma_init(SYN_DMA *dma, const SYN_DMA_Config *cfg)
         return SYN_INVALID_PARAM;
     }
 
-    if (cfg->data_size != SYN_DMA_SIZE_8BIT &&
-        cfg->data_size != SYN_DMA_SIZE_16BIT &&
+    if (cfg->data_size != SYN_DMA_SIZE_8BIT && cfg->data_size != SYN_DMA_SIZE_16BIT &&
         cfg->data_size != SYN_DMA_SIZE_32BIT) {
         return SYN_INVALID_PARAM;
     }
@@ -53,21 +54,19 @@ SYN_Status syn_dma_start(SYN_DMA *dma, const void *src, void *dst, size_t count)
     syn_port_cache_invalidate(dst, total_bytes);
 
     /* Prepare port transfer request */
-    SYN_PortDmaTransfer xfer = {
-        .channel_id = dma->cfg.channel_id,
-        .dir        = dma->cfg.dir,
-        .data_size  = dma->cfg.data_size,
-        .src_inc    = dma->cfg.src_inc,
-        .dst_inc    = dma->cfg.dst_inc,
-        .src        = src,
-        .dst        = dst,
-        .count      = count
-    };
+    SYN_PortDmaTransfer xfer = {.channel_id = dma->cfg.channel_id,
+                                .dir = dma->cfg.dir,
+                                .data_size = dma->cfg.data_size,
+                                .src_inc = dma->cfg.src_inc,
+                                .dst_inc = dma->cfg.dst_inc,
+                                .src = src,
+                                .dst = dst,
+                                .count = count};
 
     dma->current_src = src;
     dma->current_dst = dst;
     dma->current_len = total_bytes;
-    dma->state       = SYN_DMA_STATE_BUSY;
+    dma->state = SYN_DMA_STATE_BUSY;
 
     /* Compiler memory barrier before hardware trigger */
     SYN_COMPILER_BARRIER();
@@ -84,7 +83,8 @@ SYN_Status syn_dma_start(SYN_DMA *dma, const void *src, void *dst, size_t count)
 
 SYN_Status syn_dma_stop(SYN_DMA *dma)
 {
-    if (!dma) return SYN_INVALID_PARAM;
+    if (!dma)
+        return SYN_INVALID_PARAM;
 
     syn_port_dma_stop(dma->cfg.channel_id);
     dma->state = SYN_DMA_STATE_IDLE;
@@ -93,13 +93,15 @@ SYN_Status syn_dma_stop(SYN_DMA *dma)
 
 SYN_DMA_State syn_dma_get_state(const SYN_DMA *dma)
 {
-    if (!dma) return SYN_DMA_STATE_ERROR;
+    if (!dma)
+        return SYN_DMA_STATE_ERROR;
     return dma->state;
 }
 
 void syn_dma_isr_handler(SYN_DMA *dma, SYN_DMA_Event event)
 {
-    if (!dma) return;
+    if (!dma)
+        return;
 
     if (event & SYN_DMA_EVENT_ERROR) {
         syn_port_dma_stop(dma->cfg.channel_id);

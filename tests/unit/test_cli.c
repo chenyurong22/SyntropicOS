@@ -3,13 +3,13 @@
  * @brief Unity tests for syn_cli — full coverage.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/cli/syn_cli.h"
-#include "syntropic/system/syn_errlog.h"
 #include "syntropic/sched/syn_sched.h"
 #include "syntropic/sched/syn_task.h"
+#include "syntropic/syntropic.h"
+#include "syntropic/system/syn_errlog.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
@@ -18,8 +18,8 @@
  * by mock_port.c into mock_serial_tx_buf. These macros alias the mock
  * state so existing test assertions continue to work unchanged. */
 
-#define cli_output_buf  ((char *)mock_serial_tx_buf)
-#define cli_output_pos  mock_serial_tx_len
+#define cli_output_buf ((char *)mock_serial_tx_buf)
+#define cli_output_pos mock_serial_tx_len
 
 static void clear_output(void)
 {
@@ -46,21 +46,23 @@ static int cmd_led(int argc, char *argv[])
 
 static int cmd_status(int argc, char *argv[])
 {
-    (void)argc; (void)argv;
+    (void)argc;
+    (void)argv;
     return 0;
 }
 
 static int cmd_fail(int argc, char *argv[])
 {
-    (void)argc; (void)argv;
+    (void)argc;
+    (void)argv;
     return -1; /* Non-zero return triggers error output */
 }
 
 static const SYN_CLI_Command test_commands[] = {
-    { "led",    "led <on|off>  - Control LED",  cmd_led    },
-    { "status", "status        - Show status",  cmd_status },
-    { "fail",   "fail          - Returns error", cmd_fail  },
-    { "longnm", NULL,                            cmd_status }, /* no help */
+    {"led", "led <on|off>  - Control LED", cmd_led},
+    {"status", "status        - Show status", cmd_status},
+    {"fail", "fail          - Returns error", cmd_fail},
+    {"longnm", NULL, cmd_status}, /* no help */
 };
 
 /* ── Test: basic command dispatch and help ─────────────────────────────── */
@@ -156,11 +158,13 @@ static void test_cli_process_char_echo(void)
     led_handler_arg1[0] = '\0';
     {
         const char bs_del = '\b'; /* 0x08 backspace */
-        const char *bs1 = "lex"; /* type 3 chars */
-        for (const char *p = bs1; *p; p++) syn_cli_process_char(&cli, *p);
+        const char *bs1 = "lex";  /* type 3 chars */
+        for (const char *p = bs1; *p; p++)
+            syn_cli_process_char(&cli, *p);
         syn_cli_process_char(&cli, bs_del); /* erase 'x' → "le" */
-        const char *bs2 = "d off\r"; /* → "led off" */
-        for (const char *p = bs2; *p; p++) syn_cli_process_char(&cli, *p);
+        const char *bs2 = "d off\r";        /* → "led off" */
+        for (const char *p = bs2; *p; p++)
+            syn_cli_process_char(&cli, *p);
     }
     TEST_ASSERT_EQUAL_INT(1, led_handler_called);
     TEST_ASSERT_EQUAL_STRING("off", led_handler_arg1);
@@ -193,10 +197,10 @@ static void test_cli_process_char_no_echo(void)
     syn_cli_process_char(&cli, 'e');
     syn_cli_process_char(&cli, 'd');
     syn_cli_process_char(&cli, '\b'); /* backspace — erase 'd' → "le" */
-    syn_cli_process_char(&cli, 'd'); /* re-type → "led" */
+    syn_cli_process_char(&cli, 'd');  /* re-type → "led" */
 
     led_handler_called = 0;
-    syn_cli_process_char(&cli, '\n'); /* \n also triggers execute */
+    syn_cli_process_char(&cli, '\n');             /* \n also triggers execute */
     TEST_ASSERT_EQUAL_INT(1, led_handler_called); /* "led" command with argc=1 */
 
     /* Ctrl-C with no-echo */
@@ -247,7 +251,7 @@ static void test_cli_escape_sequences(void)
     /* With empty history, should just return */
     syn_cli_process_char(&cli, 0x1B); /* ESC */
     syn_cli_process_char(&cli, '[');  /* bracket */
-    syn_cli_process_char(&cli, 'A'); /* Up arrow */
+    syn_cli_process_char(&cli, 'A');  /* Up arrow */
     /* No crash = pass */
 
     /* ESC [ B = Down Arrow → ignored (other arrow) */
@@ -262,7 +266,8 @@ static void test_cli_escape_sequences(void)
     /* After escape reset, normal char 'led\r' should work */
     led_handler_called = 0;
     const char *cmd = "led\r";
-    while (*cmd) syn_cli_process_char(&cli, *cmd++);
+    while (*cmd)
+        syn_cli_process_char(&cli, *cmd++);
     TEST_ASSERT_EQUAL_INT(1, led_handler_called);
 }
 
@@ -306,7 +311,8 @@ static void test_cli_ignore_control_chars(void)
     /* After ignoring them, normal command should still work */
     led_handler_called = 0;
     const char *cmd = "led\r";
-    while (*cmd) syn_cli_process_char(&cli, *cmd++);
+    while (*cmd)
+        syn_cli_process_char(&cli, *cmd++);
     TEST_ASSERT_EQUAL_INT(1, led_handler_called);
 }
 
@@ -467,8 +473,8 @@ static void test_cli_builtin_errors_with_entries(void)
     SYN_ErrLog elog;
     syn_errlog_init(&elog, entries, 4, 1);
     syn_errlog_record(&elog, 0x0042, SYN_ERR_WARNING, 100);
-    syn_errlog_record(&elog, 0xDEAD, SYN_ERR_ERROR,   200);
-    syn_errlog_record(&elog, 0xBEEF, SYN_ERR_FATAL,   300);
+    syn_errlog_record(&elog, 0xDEAD, SYN_ERR_ERROR, 200);
+    syn_errlog_record(&elog, 0xBEEF, SYN_ERR_FATAL, 300);
     syn_cli_set_errlog(&elog);
 
     clear_output();
@@ -497,7 +503,8 @@ static void test_cli_builtin_tasks_no_sched(void)
 
 static SYN_PT_Status dummy_task_fn(SYN_PT *pt, struct SYN_Task *task)
 {
-    (void)pt; (void)task;
+    (void)pt;
+    (void)task;
     return PT_ENDED;
 }
 
@@ -509,9 +516,9 @@ static void test_cli_builtin_tasks_with_sched(void)
     SYN_Task tasks[3];
     SYN_Sched sched;
 
-    syn_task_create(&tasks[0], "blink",  dummy_task_fn, 0, NULL);
+    syn_task_create(&tasks[0], "blink", dummy_task_fn, 0, NULL);
     syn_task_create(&tasks[1], "serial", dummy_task_fn, 1, NULL);
-    syn_task_create(&tasks[2], NULL,     dummy_task_fn, 2, NULL); /* unnamed */
+    syn_task_create(&tasks[2], NULL, dummy_task_fn, 2, NULL); /* unnamed */
     tasks[2].state = SYN_TASK_SUSPENDED;
 
     syn_sched_init(&sched, tasks, 3);
@@ -589,7 +596,7 @@ static void test_cli_help_padding(void)
     SYN_CLI cli;
     /* Use a command with a short name to exercise the padding loop */
     static const SYN_CLI_Command cmds[] = {
-        { "go", "go - short name", cmd_status },
+        {"go", "go - short name", cmd_status},
     };
     syn_cli_init(&cli, cmds, 1, "> ");
 
@@ -604,7 +611,7 @@ static void test_cli_help_padding(void)
 static void test_cli_null_handler(void)
 {
     static const SYN_CLI_Command cmds[] = {
-        { "noop", "noop - does nothing", NULL },
+        {"noop", "noop - does nothing", NULL},
     };
     SYN_CLI cli;
     syn_cli_init(&cli, cmds, 1, "> ");

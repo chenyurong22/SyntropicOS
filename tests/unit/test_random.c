@@ -3,9 +3,10 @@
  * @brief Unity tests for syn_random utility.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/util/syn_random.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 void test_random_fill_edge_cases(void)
@@ -27,12 +28,12 @@ void test_random_fill(void)
 {
     uint8_t buf1[16];
     uint8_t buf2[16];
-    
+
     /* Fill two buffers and ensure they are different (statistical probability
      * of being identical is near zero with 128 bits of entropy) */
     TEST_ASSERT_EQUAL(SYN_OK, syn_random_fill(buf1, sizeof(buf1)));
     TEST_ASSERT_EQUAL(SYN_OK, syn_random_fill(buf2, sizeof(buf2)));
-    
+
     TEST_ASSERT_NOT_EQUAL(0, memcmp(buf1, buf2, 16));
 }
 
@@ -40,7 +41,7 @@ void test_random_u32(void)
 {
     uint32_t v1 = syn_random_u32();
     uint32_t v2 = syn_random_u32();
-    
+
     TEST_ASSERT_NOT_EQUAL(v1, v2);
 }
 
@@ -59,10 +60,10 @@ void test_random_range(void)
 void test_random_fallback(void)
 {
     uint8_t buf[16];
-    
+
     /* Test the fallback logic directly */
     TEST_ASSERT_EQUAL(SYN_OK, syn_random_fallback_fill(buf, sizeof(buf)));
-    
+
     /* Verify it actually did something */
     uint8_t zero[16] = {0};
     TEST_ASSERT_NOT_EQUAL(0, memcmp(buf, zero, 16));

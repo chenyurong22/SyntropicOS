@@ -3,13 +3,18 @@
  * @brief Unity tests for syn_can.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/drivers/syn_can.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int can_rx_n = 0;
-static void can_rxcb(const SYN_CAN_Frame *f, void *c) { (void)f; (void)c; can_rx_n++; }
+static void can_rxcb(const SYN_CAN_Frame *f, void *c)
+{
+    (void)f;
+    (void)c;
+    can_rx_n++;
+}
 
 static void test_can(void)
 {
@@ -17,7 +22,7 @@ static void test_can(void)
     TEST_ASSERT_EQUAL(SYN_OK, syn_can_init(&can, 0, 500000));
 
     mock_can_tx_ok = true;
-    SYN_CAN_Frame tx = { .id = 0x100, .dlc = 2, .data = {0} };
+    SYN_CAN_Frame tx = {.id = 0x100, .dlc = 2, .data = {0}};
     tx.data[0] = 0x42;
     TEST_ASSERT_TRUE(syn_can_send(&can, &tx));
     TEST_ASSERT_EQUAL_INT(1, can.tx_count);

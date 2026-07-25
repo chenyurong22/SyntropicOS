@@ -3,9 +3,9 @@
  * @brief Unity tests for syn_hwwdt (Hardware Watchdog Timer driver).
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/system/syn_hwwdt.h"
+#include "unity/unity.h"
 
 static void test_hwwdt_init_ok(void)
 {

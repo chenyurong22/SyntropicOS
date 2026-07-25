@@ -21,21 +21,21 @@ extern "C" {
  */
 typedef struct {
     /* Inputs */
-    const SYN_SockAddr *dns_server;      /**< DNS server (e.g. 8.8.8.8) */
-    const char         *hostname;        /**< Hostname to resolve       */
-    SYN_SockAddr       *addr_out;        /**< Resolved output address   */
-    uint32_t            timeout_ms;      /**< Resolution timeout        */
+    const SYN_SockAddr *dns_server; /**< DNS server (e.g. 8.8.8.8) */
+    const char *hostname;           /**< Hostname to resolve       */
+    SYN_SockAddr *addr_out;         /**< Resolved output address   */
+    uint32_t timeout_ms;            /**< Resolution timeout        */
 
     /* Output status */
-    SYN_Status          status;          /**< Final status of query     */
+    SYN_Status status; /**< Final status of query     */
 
     /* Internal State */
-    SYN_Socket          sock;            /**< UDP socket                */
-    SYN_SockAddr        server_addr;     /**< Server address            */
-    uint32_t            start_ms;        /**< Start timestamp           */
-    size_t              query_len;       /**< Sent query length         */
-    uint16_t            txid;            /**< Generated transaction ID  */
-    uint8_t             buf[256];        /**< Message buffer            */
+    SYN_Socket sock;          /**< UDP socket                */
+    SYN_SockAddr server_addr; /**< Server address            */
+    uint32_t start_ms;        /**< Start timestamp           */
+    size_t query_len;         /**< Sent query length         */
+    uint16_t txid;            /**< Generated transaction ID  */
+    uint8_t buf[256];         /**< Message buffer            */
 } SYN_DnsResolver;
 
 /**
@@ -53,9 +53,9 @@ SYN_PT_Status syn_dns_resolve_task(SYN_PT *pt, SYN_Task *task);
 
 /** @brief mDNS responder instance. */
 typedef struct {
-    const char *hostname;   /**< Responds to hostname.local              */
-    uint8_t     ip[4];      /**< IPv4 address to respond with            */
-    SYN_Socket  sock;       /**< UDP socket for mDNS                     */
+    const char *hostname; /**< Responds to hostname.local              */
+    uint8_t ip[4];        /**< IPv4 address to respond with            */
+    SYN_Socket sock;      /**< UDP socket for mDNS                     */
 } SYN_Mdns;
 
 /**

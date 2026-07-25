@@ -6,9 +6,10 @@
  * reset to defaults, callback, reload, and no-op save optimization.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/storage/syn_settings.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 /* ── Test data ─────────────────────────────────────────────────────────── */
@@ -17,26 +18,26 @@ typedef struct {
     int32_t velocity;
     int32_t accel;
     uint8_t mode;
-    uint8_t _pad[3];  /* Align to 4 bytes */
+    uint8_t _pad[3]; /* Align to 4 bytes */
 } TestSettings;
 
-static const TestSettings defaults = { .velocity = 500, .accel = 200, .mode = 1 };
+static const TestSettings defaults = {.velocity = 500, .accel = 200, .mode = 1};
 
 /* Flash layout: use base address 0, 4 sectors */
-#define FLASH_BASE    0
-#define SECTOR_COUNT  4
+#define FLASH_BASE 0
+#define SECTOR_COUNT 4
 
 /* ── Callback tracking ─────────────────────────────────────────────────── */
 
-static int      change_cb_count;
-static void    *change_cb_data;
-static void    *change_cb_ctx;
+static int change_cb_count;
+static void *change_cb_data;
+static void *change_cb_ctx;
 
 static void on_change(void *data, void *ctx)
 {
     change_cb_count++;
     change_cb_data = data;
-    change_cb_ctx  = ctx;
+    change_cb_ctx = ctx;
 }
 
 /* ── Tests ──────────────────────────────────────────────────────────────── */
@@ -47,8 +48,8 @@ static void test_settings_init_blank_flash(void)
     TestSettings settings;
     SYN_Settings store;
 
-    SYN_Status st = syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT,
-                                       &settings, sizeof(settings), &defaults);
+    SYN_Status st =
+        syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
     TEST_ASSERT_EQUAL(SYN_OK, st);
 
     /* Should have loaded defaults */
@@ -62,8 +63,7 @@ static void test_settings_save_and_reload(void)
     TestSettings settings;
     SYN_Settings store;
 
-    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT,
-                      &settings, sizeof(settings), &defaults);
+    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
 
     /* Modify and save */
     settings.velocity = 800;
@@ -74,11 +74,11 @@ static void test_settings_save_and_reload(void)
     TestSettings settings2;
     SYN_Settings store2;
 
-    st = syn_settings_init(&store2, FLASH_BASE, SECTOR_COUNT,
-                           &settings2, sizeof(settings2), &defaults);
+    st = syn_settings_init(&store2, FLASH_BASE, SECTOR_COUNT, &settings2, sizeof(settings2),
+                           &defaults);
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL_INT32(800, settings2.velocity);
-    TEST_ASSERT_EQUAL_INT32(200, settings2.accel);  /* unchanged */
+    TEST_ASSERT_EQUAL_INT32(200, settings2.accel); /* unchanged */
 }
 
 static void test_settings_change_detection(void)
@@ -86,8 +86,7 @@ static void test_settings_change_detection(void)
     TestSettings settings;
     SYN_Settings store;
 
-    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT,
-                      &settings, sizeof(settings), &defaults);
+    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
 
     /* Immediately after init, no changes */
     TEST_ASSERT_FALSE(syn_settings_changed(&store));
@@ -106,8 +105,7 @@ static void test_settings_save_noop_if_unchanged(void)
     TestSettings settings;
     SYN_Settings store;
 
-    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT,
-                      &settings, sizeof(settings), &defaults);
+    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
 
     uint16_t crc_before = syn_settings_checksum(&store);
 
@@ -124,8 +122,7 @@ static void test_settings_reset_to_defaults(void)
     TestSettings settings;
     SYN_Settings store;
 
-    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT,
-                      &settings, sizeof(settings), &defaults);
+    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
 
     /* Modify */
     settings.velocity = 9999;
@@ -145,8 +142,7 @@ static void test_settings_reset_to_defaults(void)
     /* Reload from flash to verify persisted */
     TestSettings settings2;
     SYN_Settings store2;
-    syn_settings_init(&store2, FLASH_BASE, SECTOR_COUNT,
-                      &settings2, sizeof(settings2), &defaults);
+    syn_settings_init(&store2, FLASH_BASE, SECTOR_COUNT, &settings2, sizeof(settings2), &defaults);
     TEST_ASSERT_EQUAL_INT32(500, settings2.velocity);
 }
 
@@ -155,12 +151,11 @@ static void test_settings_change_callback(void)
     TestSettings settings;
     SYN_Settings store;
 
-    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT,
-                      &settings, sizeof(settings), &defaults);
+    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
 
     change_cb_count = 0;
-    change_cb_data  = NULL;
-    change_cb_ctx   = NULL;
+    change_cb_data = NULL;
+    change_cb_ctx = NULL;
 
     int ctx_value = 42;
     syn_settings_on_change(&store, on_change, &ctx_value);
@@ -182,8 +177,7 @@ static void test_settings_reload_discards_changes(void)
     TestSettings settings;
     SYN_Settings store;
 
-    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT,
-                      &settings, sizeof(settings), &defaults);
+    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
 
     /* Save known state */
     settings.velocity = 600;
@@ -205,8 +199,7 @@ static void test_settings_checksum_changes_on_save(void)
     TestSettings settings;
     SYN_Settings store;
 
-    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT,
-                      &settings, sizeof(settings), &defaults);
+    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
 
     uint16_t crc1 = syn_settings_checksum(&store);
 

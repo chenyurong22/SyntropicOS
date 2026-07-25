@@ -5,17 +5,18 @@
  * Tests reset, accumulation, report generation, and edge cases.
  */
 
-#include "unity/unity.h"
 #include "syntropic/control/syn_control_stats.h"
-#include <string.h>
+#include "unity/unity.h"
+
 #include <math.h>
+#include <string.h>
 
 /* ── Tests ──────────────────────────────────────────────────────────────── */
 
 static void test_control_stats_reset(void)
 {
     SYN_ControlStats stats;
-    memset(&stats, 0xFF, sizeof(stats));  /* Dirty fill */
+    memset(&stats, 0xFF, sizeof(stats)); /* Dirty fill */
 
     syn_control_stats_reset(&stats);
 
@@ -95,9 +96,9 @@ static void test_control_stats_jitter(void)
 
     /* Output sequence: 0, 10, 5, 15 */
     syn_control_stats_update(&stats, 0, 0);
-    syn_control_stats_update(&stats, 0, 10);   /* delta = 10 */
-    syn_control_stats_update(&stats, 0, 5);    /* delta = 5 */
-    syn_control_stats_update(&stats, 0, 15);   /* delta = 10 */
+    syn_control_stats_update(&stats, 0, 10); /* delta = 10 */
+    syn_control_stats_update(&stats, 0, 5);  /* delta = 5 */
+    syn_control_stats_update(&stats, 0, 15); /* delta = 10 */
 
     /* sum_abs_delta = 10 + 5 + 10 = 25, samples = 4 → jitter = 25/4 = 6 */
     syn_control_stats_report(&stats, &report);

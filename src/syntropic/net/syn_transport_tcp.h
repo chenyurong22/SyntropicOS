@@ -19,11 +19,11 @@ extern "C" {
  * @brief TCP bridge transport layer context.
  */
 typedef struct {
-    SYN_Socket sock;                 /**< Embedded network TCP socket handle */
-    uint8_t    state;                /**< Parser state: 0=len MSB, 1=len LSB, 2=payload */
-    uint16_t   payload_len;          /**< Expected size of the incoming frame payload */
-    uint16_t   bytes_read;           /**< Bytes of current payload read so far */
-    uint8_t    rx_buf[128];          /**< Buffer for staging incoming packet payloads */
+    SYN_Socket sock;      /**< Embedded network TCP socket handle */
+    uint8_t state;        /**< Parser state: 0=len MSB, 1=len LSB, 2=payload */
+    uint16_t payload_len; /**< Expected size of the incoming frame payload */
+    uint16_t bytes_read;  /**< Bytes of current payload read so far */
+    uint8_t rx_buf[128];  /**< Buffer for staging incoming packet payloads */
 } SYN_TransportTcp;
 
 /**

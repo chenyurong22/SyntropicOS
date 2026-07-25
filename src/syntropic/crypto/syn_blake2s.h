@@ -34,13 +34,13 @@
 #define SYN_BLAKE2S_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_BLAKE2S) || SYN_USE_BLAKE2S
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #ifdef __cplusplus
@@ -49,9 +49,9 @@ extern "C" {
 
 /* ── Constants ──────────────────────────────────────────────────────────── */
 
-#define SYN_BLAKE2S_BLOCK_SIZE   64  /**< Input block size (bytes)       */
-#define SYN_BLAKE2S_MAX_DIGEST   32  /**< Maximum digest size (bytes)    */
-#define SYN_BLAKE2S_MAX_KEY      32  /**< Maximum key size (bytes)       */
+#define SYN_BLAKE2S_BLOCK_SIZE 64 /**< Input block size (bytes)       */
+#define SYN_BLAKE2S_MAX_DIGEST 32 /**< Maximum digest size (bytes)    */
+#define SYN_BLAKE2S_MAX_KEY 32    /**< Maximum key size (bytes)       */
 
 /* ── Context ────────────────────────────────────────────────────────────── */
 
@@ -61,11 +61,11 @@ extern "C" {
  * Typical size: ~120 bytes on a 32-bit target.
  */
 typedef struct {
-    uint32_t h[8];                          /**< Running hash state          */
-    uint32_t t[2];                          /**< Byte counter (low, high)    */
-    uint8_t  buf[SYN_BLAKE2S_BLOCK_SIZE];   /**< Partial block buffer        */
-    uint8_t  buflen;                        /**< Bytes in buffer (0–64)      */
-    uint8_t  outlen;                        /**< Desired output length       */
+    uint32_t h[8];                       /**< Running hash state          */
+    uint32_t t[2];                       /**< Byte counter (low, high)    */
+    uint8_t buf[SYN_BLAKE2S_BLOCK_SIZE]; /**< Partial block buffer        */
+    uint8_t buflen;                      /**< Bytes in buffer (0–64)      */
+    uint8_t outlen;                      /**< Desired output length       */
 } SYN_BLAKE2s;
 
 /* ── Core API ───────────────────────────────────────────────────────────── */
@@ -86,9 +86,7 @@ void syn_blake2s_init(SYN_BLAKE2s *ctx, size_t outlen);
  * @param keylen  Key length (1–32).
  * @param outlen  Desired digest length (1–32).
  */
-void syn_blake2s_init_keyed(SYN_BLAKE2s *ctx,
-                            const void *key, size_t keylen,
-                            size_t outlen);
+void syn_blake2s_init_keyed(SYN_BLAKE2s *ctx, const void *key, size_t keylen, size_t outlen);
 
 /**
  * @brief Feed data into the hash.
@@ -119,8 +117,7 @@ void syn_blake2s_final(SYN_BLAKE2s *ctx, uint8_t *out);
  * @param out     Output buffer.
  * @param outlen  Desired digest length (1–32).
  */
-static inline void syn_blake2s(const void *data, size_t len,
-                               uint8_t *out, size_t outlen)
+static inline void syn_blake2s(const void *data, size_t len, uint8_t *out, size_t outlen)
 {
     SYN_BLAKE2s ctx;
     syn_blake2s_init(&ctx, outlen);
@@ -138,8 +135,7 @@ static inline void syn_blake2s(const void *data, size_t len,
  * @param out     Output buffer.
  * @param outlen  Desired MAC length (1–32).
  */
-static inline void syn_blake2s_mac(const void *key, size_t keylen,
-                                   const void *data, size_t len,
+static inline void syn_blake2s_mac(const void *key, size_t keylen, const void *data, size_t len,
                                    uint8_t *out, size_t outlen)
 {
     SYN_BLAKE2s ctx;
@@ -156,8 +152,8 @@ static inline void syn_blake2s_mac(const void *key, size_t keylen,
  * Used internally by HKDF for WireGuard key derivation.
  */
 typedef struct {
-    SYN_BLAKE2s inner;                            /**< Inner hash context    */
-    uint8_t     o_key_pad[SYN_BLAKE2S_BLOCK_SIZE]; /**< Outer key pad       */
+    SYN_BLAKE2s inner;                         /**< Inner hash context    */
+    uint8_t o_key_pad[SYN_BLAKE2S_BLOCK_SIZE]; /**< Outer key pad       */
 } SYN_HMAC_BLAKE2s;
 
 /**
@@ -167,8 +163,7 @@ typedef struct {
  * @param key     Secret key.
  * @param keylen  Key length in bytes.
  */
-static inline void syn_hmac_blake2s_init(SYN_HMAC_BLAKE2s *ctx,
-                                         const void *key, size_t keylen)
+static inline void syn_hmac_blake2s_init(SYN_HMAC_BLAKE2s *ctx, const void *key, size_t keylen)
 {
     uint8_t k_buf[SYN_BLAKE2S_BLOCK_SIZE];
     uint8_t i_key_pad[SYN_BLAKE2S_BLOCK_SIZE];
@@ -183,8 +178,8 @@ static inline void syn_hmac_blake2s_init(SYN_HMAC_BLAKE2s *ctx,
     }
 
     for (i = 0; i < SYN_BLAKE2S_BLOCK_SIZE; i++) {
-        i_key_pad[i]       = k_buf[i] ^ 0x36u;
-        ctx->o_key_pad[i]  = k_buf[i] ^ 0x5Cu;
+        i_key_pad[i] = k_buf[i] ^ 0x36u;
+        ctx->o_key_pad[i] = k_buf[i] ^ 0x5Cu;
     }
 
     syn_blake2s_init(&ctx->inner, SYN_BLAKE2S_MAX_DIGEST);
@@ -197,8 +192,7 @@ static inline void syn_hmac_blake2s_init(SYN_HMAC_BLAKE2s *ctx,
  * @param data  Message data.
  * @param len   Data length in bytes.
  */
-static inline void syn_hmac_blake2s_update(SYN_HMAC_BLAKE2s *ctx,
-                                           const void *data, size_t len)
+static inline void syn_hmac_blake2s_update(SYN_HMAC_BLAKE2s *ctx, const void *data, size_t len)
 {
     syn_blake2s_update(&ctx->inner, data, len);
 }
@@ -230,9 +224,8 @@ static inline void syn_hmac_blake2s_final(SYN_HMAC_BLAKE2s *ctx,
  * @param datalen Message length in bytes.
  * @param mac     Output buffer for the 32-byte MAC.
  */
-static inline void syn_hmac_blake2s(const void *key, size_t keylen,
-                                    const void *data, size_t datalen,
-                                    uint8_t mac[SYN_BLAKE2S_MAX_DIGEST])
+static inline void syn_hmac_blake2s(const void *key, size_t keylen, const void *data,
+                                    size_t datalen, uint8_t mac[SYN_BLAKE2S_MAX_DIGEST])
 {
     SYN_HMAC_BLAKE2s ctx;
     syn_hmac_blake2s_init(&ctx, key, keylen);

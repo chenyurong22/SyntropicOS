@@ -33,14 +33,15 @@
 #define SYN_PORT_I2C_ASYNC_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if defined(SYN_USE_I2C_ASYNC) && SYN_USE_I2C_ASYNC
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,14 +69,14 @@ typedef void (*SYN_I2C_Callback)(uint8_t bus, SYN_Status result, void *ctx);
  * zero for a pure read, or rx_data/rx_len to zero for a pure write.
  */
 typedef struct {
-    uint8_t          bus;        /**< I2C bus index                      */
-    uint8_t          addr;       /**< 7-bit device address               */
-    const uint8_t   *tx_data;    /**< Write buffer (NULL if read-only)   */
-    size_t           tx_len;     /**< Write length (0 for read-only)     */
-    uint8_t         *rx_data;    /**< Read buffer (NULL if write-only)   */
-    size_t           rx_len;     /**< Read length (0 for write-only)     */
-    SYN_I2C_Callback callback;   /**< Called on completion (ISR ctx)     */
-    void            *user_data;  /**< User context for callback          */
+    uint8_t bus;               /**< I2C bus index                      */
+    uint8_t addr;              /**< 7-bit device address               */
+    const uint8_t *tx_data;    /**< Write buffer (NULL if read-only)   */
+    size_t tx_len;             /**< Write length (0 for read-only)     */
+    uint8_t *rx_data;          /**< Read buffer (NULL if write-only)   */
+    size_t rx_len;             /**< Read length (0 for write-only)     */
+    SYN_I2C_Callback callback; /**< Called on completion (ISR ctx)     */
+    void *user_data;           /**< User context for callback          */
 } SYN_I2C_Xfer;
 
 /* ── Port functions (user implements) ──────────────────────────────────── */

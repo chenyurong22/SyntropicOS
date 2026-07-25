@@ -9,36 +9,37 @@
 
 #include "../common/syn_defs.h"
 #include "syn_errlog.h"
-#include <stdint.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define SYN_FAULT_SIGNATURE  0xFA17C0DE  /**< Magic value indicating a valid fault dump */
+#define SYN_FAULT_SIGNATURE 0xFA17C0DE /**< Magic value indicating a valid fault dump */
 
 /**
  * @brief Register context dumped on CPU hard faults (ARM Cortex-M style).
  */
 typedef struct {
-    uint32_t pc;    /**< Program counter at fault                     */
-    uint32_t lr;    /**< Link register (return address)               */
-    uint32_t sp;    /**< Stack pointer at fault                       */
-    uint32_t r0;    /**< General-purpose register R0                  */
-    uint32_t r1;    /**< General-purpose register R1                  */
-    uint32_t r2;    /**< General-purpose register R2                  */
-    uint32_t r3;    /**< General-purpose register R3                  */
-    uint32_t r12;   /**< General-purpose register R12                 */
-    uint32_t xpsr;  /**< Program status register                     */
+    uint32_t pc;   /**< Program counter at fault                     */
+    uint32_t lr;   /**< Link register (return address)               */
+    uint32_t sp;   /**< Stack pointer at fault                       */
+    uint32_t r0;   /**< General-purpose register R0                  */
+    uint32_t r1;   /**< General-purpose register R1                  */
+    uint32_t r2;   /**< General-purpose register R2                  */
+    uint32_t r3;   /**< General-purpose register R3                  */
+    uint32_t r12;  /**< General-purpose register R12                 */
+    uint32_t xpsr; /**< Program status register                     */
 } SYN_FaultContext;
 
 /**
  * @brief Fault dump stored in noinit RAM across resets.
  */
 typedef struct {
-    uint32_t         signature;  /**< Magic value (SYN_FAULT_SIGNATURE when valid) */
-    SYN_FaultContext context;    /**< Saved register context                       */
+    uint32_t signature;       /**< Magic value (SYN_FAULT_SIGNATURE when valid) */
+    SYN_FaultContext context; /**< Saved register context                       */
 } SYN_FaultDump;
 
 /**

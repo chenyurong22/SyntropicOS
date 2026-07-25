@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_DAC) || SYN_USE_DAC
@@ -9,8 +9,8 @@
  * @brief DAC driver implementation.
  */
 
-#include "syn_dac.h"
 #include "../util/syn_assert.h"
+#include "syn_dac.h"
 
 SYN_Status syn_dac_init(SYN_DAC *dac, uint8_t channel)
 {
@@ -29,7 +29,7 @@ SYN_Status syn_dac_write_mv(const SYN_DAC *dac, uint16_t mv)
 {
     SYN_ASSERT(dac != NULL);
     uint16_t ref_mv = syn_port_dac_reference_mv();
-    uint16_t max    = syn_dac_max_raw(dac);
+    uint16_t max = syn_dac_max_raw(dac);
     /* Clamp to reference */
     if (mv > ref_mv) {
         mv = ref_mv;

@@ -25,9 +25,9 @@
 #ifndef SYN_RINGBUF_H
 #define SYN_RINGBUF_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,10 +39,10 @@ extern "C" {
  * All fields are considered private. Use the API functions below.
  */
 typedef struct {
-    uint8_t *buf;       /**< Pointer to caller-provided backing array */
-    size_t   size;      /**< Total size of backing array in bytes */
-    volatile size_t head;  /**< Write index (producer advances this) */
-    volatile size_t tail;  /**< Read index (consumer advances this) */
+    uint8_t *buf;         /**< Pointer to caller-provided backing array */
+    size_t size;          /**< Total size of backing array in bytes */
+    volatile size_t head; /**< Write index (producer advances this) */
+    volatile size_t tail; /**< Read index (consumer advances this) */
 } SYN_RingBuf;
 
 /**

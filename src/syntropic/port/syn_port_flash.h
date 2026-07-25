@@ -11,8 +11,9 @@
 #define SYN_PORT_FLASH_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

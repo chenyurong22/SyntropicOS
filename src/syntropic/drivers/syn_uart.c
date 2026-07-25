@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_UART) || SYN_USE_UART
@@ -9,16 +9,14 @@
  * @brief UART driver implementation.
  */
 
-#include "syn_uart.h"
 #include "../util/syn_assert.h"
+#include "syn_uart.h"
 
 #include <string.h>
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
-SYN_Status syn_uart_init(SYN_UART *uart,
-                            SYN_UARTInstance instance,
-                            uint32_t baudrate)
+SYN_Status syn_uart_init(SYN_UART *uart, SYN_UARTInstance instance, uint32_t baudrate)
 {
     SYN_ASSERT(uart != NULL);
 
@@ -53,9 +51,7 @@ SYN_Status syn_uart_deinit(SYN_UART *uart)
     return status;
 }
 
-SYN_Status syn_uart_write_str(const SYN_UART *uart,
-                                const char *str,
-                                uint32_t timeout_ms)
+SYN_Status syn_uart_write_str(const SYN_UART *uart, const char *str, uint32_t timeout_ms)
 {
     SYN_ASSERT(uart != NULL);
     SYN_ASSERT(str != NULL);
@@ -66,16 +62,11 @@ SYN_Status syn_uart_write_str(const SYN_UART *uart,
         return SYN_OK;
     }
 
-    return syn_port_uart_transmit(uart->instance,
-                                   (const uint8_t *)str,
-                                   len,
-                                   timeout_ms);
+    return syn_port_uart_transmit(uart->instance, (const uint8_t *)str, len, timeout_ms);
 }
 
-SYN_Status syn_uart_write(const SYN_UART *uart,
-                             const uint8_t *data,
-                             size_t len,
-                             uint32_t timeout_ms)
+SYN_Status syn_uart_write(const SYN_UART *uart, const uint8_t *data, size_t len,
+                          uint32_t timeout_ms)
 {
     SYN_ASSERT(uart != NULL);
     SYN_ASSERT(data != NULL || len == 0);

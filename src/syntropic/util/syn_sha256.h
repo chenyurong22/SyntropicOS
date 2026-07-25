@@ -28,23 +28,23 @@
 #define SYN_SHA256_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SHA256) || SYN_USE_SHA256
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** @brief SHA-256 digest size in bytes. */
-#define SYN_SHA256_DIGEST_SIZE  32
+#define SYN_SHA256_DIGEST_SIZE 32
 
 /** @brief SHA-256 block size in bytes. */
-#define SYN_SHA256_BLOCK_SIZE   64
+#define SYN_SHA256_BLOCK_SIZE 64
 
 /* ── Context ────────────────────────────────────────────────────────────── */
 
@@ -54,11 +54,11 @@ extern "C" {
  * Typical size: 112 bytes (8×4 state + 64 buffer + 2×4 counters).
  */
 typedef struct {
-    uint32_t state[8];                      /**< Running hash state (H0–H7) */
-    uint8_t  buf[SYN_SHA256_BLOCK_SIZE];    /**< Partial block buffer       */
-    uint32_t buf_len;                       /**< Bytes in buffer (0–63)     */
-    uint32_t total_len_lo;                  /**< Total message length, low  */
-    uint32_t total_len_hi;                  /**< Total message length, high */
+    uint32_t state[8];                  /**< Running hash state (H0–H7) */
+    uint8_t buf[SYN_SHA256_BLOCK_SIZE]; /**< Partial block buffer       */
+    uint32_t buf_len;                   /**< Bytes in buffer (0–63)     */
+    uint32_t total_len_lo;              /**< Total message length, low  */
+    uint32_t total_len_hi;              /**< Total message length, high */
 } SYN_SHA256;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -96,8 +96,7 @@ void syn_sha256_final(SYN_SHA256 *ctx, uint8_t hash[SYN_SHA256_DIGEST_SIZE]);
  * @param len   Length in bytes.
  * @param hash  Output buffer (must be at least 32 bytes).
  */
-static inline void syn_sha256(const void *data, size_t len,
-                               uint8_t hash[SYN_SHA256_DIGEST_SIZE])
+static inline void syn_sha256(const void *data, size_t len, uint8_t hash[SYN_SHA256_DIGEST_SIZE])
 {
     SYN_SHA256 ctx;
     syn_sha256_init(&ctx);

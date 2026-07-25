@@ -27,7 +27,7 @@
 #define SYN_SPINLOCK_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if defined(SYN_USE_MULTICORE) && SYN_USE_MULTICORE
@@ -42,22 +42,22 @@ extern "C" {
 
 /** @brief Spinlock ID for shared UART peripheral access. */
 #ifndef SYN_SPINLOCK_UART
-  #define SYN_SPINLOCK_UART   0
+#define SYN_SPINLOCK_UART 0
 #endif
 
 /** @brief Spinlock ID for shared flash access. */
 #ifndef SYN_SPINLOCK_FLASH
-  #define SYN_SPINLOCK_FLASH  1
+#define SYN_SPINLOCK_FLASH 1
 #endif
 
 /** @brief Spinlock ID for application use. */
 #ifndef SYN_SPINLOCK_USER0
-  #define SYN_SPINLOCK_USER0  2
+#define SYN_SPINLOCK_USER0 2
 #endif
 
 /** @brief Spinlock ID for application use. */
 #ifndef SYN_SPINLOCK_USER1
-  #define SYN_SPINLOCK_USER1  3
+#define SYN_SPINLOCK_USER1 3
 #endif
 
 /* ── Scoped lock macro ─────────────────────────────────────────────────── */
@@ -77,9 +77,8 @@ extern "C" {
  *   }
  * @endcode
  */
-#define SYN_SPINLOCK_GUARD(id)                                     \
-    for (int _sl_once = (syn_port_spinlock_acquire(id), 0);        \
-         !_sl_once;                                                 \
+#define SYN_SPINLOCK_GUARD(id)                                         \
+    for (int _sl_once = (syn_port_spinlock_acquire(id), 0); !_sl_once; \
          _sl_once = 1, syn_port_spinlock_release(id))
 
 #ifdef __cplusplus

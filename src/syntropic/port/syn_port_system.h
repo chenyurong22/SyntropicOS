@@ -10,8 +10,8 @@
 #ifndef SYN_PORT_SYSTEM_H
 #define SYN_PORT_SYSTEM_H
 
-#include "../common/syn_defs.h"
 #include "../common/syn_compiler.h"
+#include "../common/syn_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

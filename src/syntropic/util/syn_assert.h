@@ -36,23 +36,28 @@ SYN_NORETURN void syn_assert_failed(const char *file, int line);
 #ifndef SYN_DISABLE_ASSERT
 
 #ifdef __CPPCHECK__
-  /* Tell cppcheck that assertion failures halt execution */
-  void abort(void);
-  #define SYN_ASSERT(expr) do { if (!(expr)) { abort(); } } while(0)
+/* Tell cppcheck that assertion failures halt execution */
+void abort(void);
+#define SYN_ASSERT(expr) \
+    do {                 \
+        if (!(expr)) {   \
+            abort();     \
+        }                \
+    } while (0)
 #else
-  /**
-   * @brief Assert that @p expr is true. If false, call syn_assert_failed().
-   */
-  #define SYN_ASSERT(expr)                                 \
-      do {                                                   \
-          if (!(expr)) {                                     \
-              syn_assert_failed(__FILE__, __LINE__);        \
-          }                                                  \
-      } while (0)
+/**
+ * @brief Assert that @p expr is true. If false, call syn_assert_failed().
+ */
+#define SYN_ASSERT(expr)                           \
+    do {                                           \
+        if (!(expr)) {                             \
+            syn_assert_failed(__FILE__, __LINE__); \
+        }                                          \
+    } while (0)
 #endif
 
 #else
-  #define SYN_ASSERT(expr)   ((void)0)
+#define SYN_ASSERT(expr) ((void)0)
 #endif
 
 #ifdef __cplusplus

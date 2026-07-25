@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_IMGUI) || SYN_USE_IMGUI
@@ -9,41 +9,38 @@
  * @brief Immediate Mode GUI (IMGUI) implementation.
  */
 
-#include "syn_imgui.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_fmt.h"
+#include "syn_imgui.h"
 
 #include <string.h>
 
 /* Forward declarations for functions defined later in this file */
-static void layout_resolve(SYN_IMGUI_Context *ctx,
-                            int16_t *x, int16_t *y,
-                            int16_t *w, int16_t *h,
-                            int16_t default_h);
+static void layout_resolve(SYN_IMGUI_Context *ctx, int16_t *x, int16_t *y, int16_t *w, int16_t *h,
+                           int16_t default_h);
 
 void syn_imgui_init(SYN_IMGUI_Context *ctx)
 {
     SYN_ASSERT(ctx != NULL);
     memset(ctx, 0, sizeof(*ctx));
     ctx->focused_id = 1;
-    ctx->style      = syn_imgui_default_style();
+    ctx->style = syn_imgui_default_style();
 }
 
-void syn_imgui_begin(SYN_IMGUI_Context *ctx, SYN_GfxContext gfx,
-                      bool select, bool back, int32_t enc_delta,
-                      bool touch_down, int16_t touch_x, int16_t touch_y)
+void syn_imgui_begin(SYN_IMGUI_Context *ctx, SYN_GfxContext gfx, bool select, bool back,
+                     int32_t enc_delta, bool touch_down, int16_t touch_x, int16_t touch_y)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(gfx != NULL);
 
-    ctx->gfx      = gfx;
-    ctx->btn_select  = select;
-    ctx->btn_back    = back;
-    ctx->enc_delta   = enc_delta;
-    ctx->touch_down  = touch_down;
-    ctx->touch_x     = touch_x;
-    ctx->touch_y     = touch_y;
-    ctx->next_id     = 0;
+    ctx->gfx = gfx;
+    ctx->btn_select = select;
+    ctx->btn_back = back;
+    ctx->enc_delta = enc_delta;
+    ctx->touch_down = touch_down;
+    ctx->touch_x = touch_x;
+    ctx->touch_y = touch_y;
+    ctx->next_id = 0;
 
     /* Focus navigation by encoder only if screen is NOT being touched and no slider is active */
     if (ctx->active_id == 0 && !touch_down) {
@@ -71,8 +68,8 @@ void syn_imgui_end(SYN_IMGUI_Context *ctx)
     SYN_ASSERT(ctx != NULL);
 
     /* Bug #2: validate stack balance (catch forgotten end calls) */
-    SYN_ASSERT(!ctx->layout.in_layout);  /* forgot layout_end? */
-    SYN_ASSERT(!ctx->scroll.in_scroll);  /* forgot scroll_end? */
+    SYN_ASSERT(!ctx->layout.in_layout);   /* forgot layout_end? */
+    SYN_ASSERT(!ctx->scroll.in_scroll);   /* forgot scroll_end? */
     SYN_ASSERT(ctx->disabled_depth == 0); /* forgot end_disabled? */
 
     ctx->last_max_id = ctx->next_id;
@@ -100,9 +97,8 @@ void syn_imgui_end(SYN_IMGUI_Context *ctx)
  */
 static bool is_hit_test(const SYN_IMGUI_Context *ctx, int16_t x, int16_t y, int16_t w, int16_t h)
 {
-    return (ctx->touch_down &&
-            ctx->touch_x >= x && ctx->touch_x < x + w &&
-            ctx->touch_y >= y && ctx->touch_y < y + h);
+    return (ctx->touch_down && ctx->touch_x >= x && ctx->touch_x < x + w && ctx->touch_y >= y &&
+            ctx->touch_y < y + h);
 }
 
 /**
@@ -116,8 +112,8 @@ static inline void track_focus(SYN_IMGUI_Context *ctx)
     }
 }
 
-bool syn_imgui_button(SYN_IMGUI_Context *ctx, const char *label,
-                       int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_button(SYN_IMGUI_Context *ctx, const char *label, int16_t x, int16_t y, int16_t w,
+                      int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(label != NULL);
@@ -160,8 +156,8 @@ bool syn_imgui_button(SYN_IMGUI_Context *ctx, const char *label,
     return ctx->disabled_depth == 0 && (touch_clicked || (is_focused && ctx->btn_select));
 }
 
-bool syn_imgui_checkbox(SYN_IMGUI_Context *ctx, const char *label,
-                         bool *checked, int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_checkbox(SYN_IMGUI_Context *ctx, const char *label, bool *checked, int16_t x,
+                        int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(label != NULL);
@@ -217,7 +213,7 @@ bool syn_imgui_checkbox(SYN_IMGUI_Context *ctx, const char *label,
 }
 
 void syn_imgui_progress_bar(SYN_IMGUI_Context *ctx, int32_t value, int32_t min, int32_t max,
-                             int16_t x, int16_t y, int16_t w, int16_t h)
+                            int16_t x, int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     uint16_t fg = ctx->disabled_depth > 0 ? ctx->style.disabled : ctx->style.fg;
@@ -225,8 +221,10 @@ void syn_imgui_progress_bar(SYN_IMGUI_Context *ctx, int32_t value, int32_t min, 
 
     if (max > min) {
         int32_t val = value;
-        if (val < min) val = min;
-        if (val > max) val = max;
+        if (val < min)
+            val = min;
+        if (val > max)
+            val = max;
 
         int32_t range = max - min;
         int32_t current = val - min;
@@ -237,9 +235,8 @@ void syn_imgui_progress_bar(SYN_IMGUI_Context *ctx, int32_t value, int32_t min, 
     }
 }
 
-bool syn_imgui_slider(SYN_IMGUI_Context *ctx, const char *label,
-                       int32_t *value, int32_t min, int32_t max,
-                       int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_slider(SYN_IMGUI_Context *ctx, const char *label, int32_t *value, int32_t min,
+                      int32_t max, int16_t x, int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(label != NULL);
@@ -262,8 +259,8 @@ bool syn_imgui_slider(SYN_IMGUI_Context *ctx, const char *label,
     }
 
     bool is_focused = (ctx->focused_id == ctx->next_id);
-    bool is_active  = (ctx->active_id == ctx->next_id);
-    bool changed    = false;
+    bool is_active = (ctx->active_id == ctx->next_id);
+    bool changed = false;
 
     int16_t bar_w = (int16_t)(w / 2 - 8);
     int16_t bar_x = (int16_t)(x + w / 2 + 4);
@@ -279,8 +276,10 @@ bool syn_imgui_slider(SYN_IMGUI_Context *ctx, const char *label,
         if (ctx->touch_x >= bar_x && ctx->touch_x <= bar_x + bar_w && max > min) {
             int16_t relative_x = ctx->touch_x - bar_x;
             int32_t new_val = min + (relative_x * (max - min)) / bar_w;
-            if (new_val < min) new_val = min;
-            if (new_val > max) new_val = max;
+            if (new_val < min)
+                new_val = min;
+            if (new_val > max)
+                new_val = max;
             if (new_val != *value) {
                 *value = new_val;
                 changed = true;
@@ -292,8 +291,10 @@ bool syn_imgui_slider(SYN_IMGUI_Context *ctx, const char *label,
         /* If we are actively editing, encoder delta adjusts values */
         if (ctx->disabled_depth == 0 && !touch_clicked && ctx->enc_delta != 0) {
             int32_t new_val = *value + ctx->enc_delta;
-            if (new_val < min) new_val = min;
-            if (new_val > max) new_val = max;
+            if (new_val < min)
+                new_val = min;
+            if (new_val > max)
+                new_val = max;
             if (new_val != *value) {
                 *value = new_val;
                 changed = true;
@@ -323,7 +324,6 @@ bool syn_imgui_slider(SYN_IMGUI_Context *ctx, const char *label,
     /* Draw progress bar inside using helper */
     syn_imgui_progress_bar(ctx, *value, min, max, bar_x, bar_y, bar_w, bar_h);
 
-
     /* Edit mode indicator around the bar */
     if (is_active) {
         syn_gfx_rect(ctx->gfx, bar_x - 2, bar_y - 2, bar_w + 4, bar_h + 4, fg);
@@ -332,9 +332,8 @@ bool syn_imgui_slider(SYN_IMGUI_Context *ctx, const char *label,
     return changed;
 }
 
-bool syn_imgui_radio(SYN_IMGUI_Context *ctx, const char *label,
-                      int32_t *selection, int32_t button_val,
-                      int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_radio(SYN_IMGUI_Context *ctx, const char *label, int32_t *selection,
+                     int32_t button_val, int16_t x, int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(label != NULL);
@@ -390,15 +389,15 @@ bool syn_imgui_radio(SYN_IMGUI_Context *ctx, const char *label,
     return changed;
 }
 
-bool syn_imgui_combo(SYN_IMGUI_Context *ctx, const char *label,
-                      const char **options, size_t count, int32_t *selected,
-                      int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_combo(SYN_IMGUI_Context *ctx, const char *label, const char **options, size_t count,
+                     int32_t *selected, int16_t x, int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(label != NULL);
     SYN_ASSERT(options != NULL);
     SYN_ASSERT(selected != NULL);
-    if (count == 0) return false;
+    if (count == 0)
+        return false;
 
     ctx->next_id++;
     track_focus(ctx);
@@ -414,10 +413,10 @@ bool syn_imgui_combo(SYN_IMGUI_Context *ctx, const char *label,
     }
 
     bool is_focused = (ctx->focused_id == ctx->next_id);
-    bool is_active  = (ctx->active_id == ctx->next_id);
-    bool changed    = false;
+    bool is_active = (ctx->active_id == ctx->next_id);
+    bool changed = false;
 
-    int16_t left_x  = (int16_t)(x + w / 2 + 2);
+    int16_t left_x = (int16_t)(x + w / 2 + 2);
     int16_t right_x = (int16_t)(x + w - 14);
 
     /* Handle direct touch button hits on arrows */
@@ -426,12 +425,14 @@ bool syn_imgui_combo(SYN_IMGUI_Context *ctx, const char *label,
         bool hit_right = (ctx->touch_x >= right_x && ctx->touch_x < right_x + 12);
         if (hit_left) {
             int32_t idx = *selected - 1;
-            if (idx < 0) idx = (int32_t)count - 1;
+            if (idx < 0)
+                idx = (int32_t)count - 1;
             *selected = idx;
             changed = true;
         } else if (hit_right) {
             int32_t idx = *selected + 1;
-            if (idx >= (int32_t)count) idx = 0;
+            if (idx >= (int32_t)count)
+                idx = 0;
             *selected = idx;
             changed = true;
         } else {
@@ -445,8 +446,10 @@ bool syn_imgui_combo(SYN_IMGUI_Context *ctx, const char *label,
         if (!touch_clicked && ctx->enc_delta != 0) {
             int32_t idx = *selected + ctx->enc_delta;
             /* Modulo wrapping for negative/positive index */
-            while (idx < 0) idx += (int32_t)count;
-            while (idx >= (int32_t)count) idx -= (int32_t)count;
+            while (idx < 0)
+                idx += (int32_t)count;
+            while (idx >= (int32_t)count)
+                idx -= (int32_t)count;
             if (idx != *selected) {
                 *selected = idx;
                 changed = true;
@@ -488,23 +491,23 @@ bool syn_imgui_combo(SYN_IMGUI_Context *ctx, const char *label,
 
     /* Draw active edit frame around option */
     if (is_active) {
-        syn_gfx_rect(ctx->gfx, left_x, (int16_t)(y + 1), (int16_t)(right_x - left_x + 12), (int16_t)(h - 2), fg);
+        syn_gfx_rect(ctx->gfx, left_x, (int16_t)(y + 1), (int16_t)(right_x - left_x + 12),
+                     (int16_t)(h - 2), fg);
     }
 
     return changed;
 }
 
-void syn_imgui_graph(SYN_IMGUI_Context *ctx, const char *title,
-                      const int32_t *data, size_t count,
-                      int32_t min_val, int32_t max_val,
-                      int16_t x, int16_t y, int16_t w, int16_t h)
+void syn_imgui_graph(SYN_IMGUI_Context *ctx, const char *title, const int32_t *data, size_t count,
+                     int32_t min_val, int32_t max_val, int16_t x, int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
 
     /* Resolve geometry from layout cursor; graph needs explicit w/h when used inline */
     layout_resolve(ctx, &x, &y, &w, &h, h > 0 ? h : (int16_t)32);
 
-    if (w <= 0 || h <= 0) return;
+    if (w <= 0 || h <= 0)
+        return;
 
     uint16_t fg = ctx->style.fg;
 
@@ -523,16 +526,19 @@ void syn_imgui_graph(SYN_IMGUI_Context *ctx, const char *title,
         plot_h -= 12;
     }
 
-    if (plot_h <= 0 || plot_w <= 0) return;
+    if (plot_h <= 0 || plot_w <= 0)
+        return;
 
     /* Draw midpoint horizontal reference grid line */
-    syn_gfx_line(ctx->gfx, plot_x, (int16_t)(plot_y + plot_h / 2),
-                     (int16_t)(plot_x + plot_w - 1), (int16_t)(plot_y + plot_h / 2), fg);
+    syn_gfx_line(ctx->gfx, plot_x, (int16_t)(plot_y + plot_h / 2), (int16_t)(plot_x + plot_w - 1),
+                 (int16_t)(plot_y + plot_h / 2), fg);
 
-    if (data == NULL || count == 0) return;
+    if (data == NULL || count == 0)
+        return;
 
     int32_t range = max_val - min_val;
-    if (range <= 0) range = 1;
+    if (range <= 0)
+        range = 1;
 
     int16_t prev_x = 0;
     int16_t prev_y = 0;
@@ -546,9 +552,12 @@ void syn_imgui_graph(SYN_IMGUI_Context *ctx, const char *title,
 
         /* Y position calculation */
         int32_t val = data[i];
-        if (val < min_val) val = min_val;
-        if (val > max_val) val = max_val;
-        int16_t y_pos = (int16_t)(plot_y + plot_h - 1 - (int16_t)(((val - min_val) * (plot_h - 1)) / range));
+        if (val < min_val)
+            val = min_val;
+        if (val > max_val)
+            val = max_val;
+        int16_t y_pos =
+            (int16_t)(plot_y + plot_h - 1 - (int16_t)(((val - min_val) * (plot_h - 1)) / range));
 
         if (i > 0) {
             syn_gfx_line(ctx->gfx, prev_x, prev_y, x_pos, y_pos, fg);
@@ -588,12 +597,12 @@ static void draw_semi_circle(SYN_GfxContext c, int16_t cx, int16_t cy, int16_t r
     }
 }
 
-void syn_imgui_gauge(SYN_IMGUI_Context *ctx, const char *label,
-                      int32_t value, int32_t min, int32_t max,
-                      int16_t cx, int16_t cy, int16_t radius)
+void syn_imgui_gauge(SYN_IMGUI_Context *ctx, const char *label, int32_t value, int32_t min,
+                     int32_t max, int16_t cx, int16_t cy, int16_t radius)
 {
     SYN_ASSERT(ctx != NULL);
-    if (radius <= 0) return;
+    if (radius <= 0)
+        return;
 
     /* Resolve geometry: gauge uses center+radius; synthesize a bounding box
      * for the layout cursor so it advances past the gauge's footprint. */
@@ -611,20 +620,22 @@ void syn_imgui_gauge(SYN_IMGUI_Context *ctx, const char *label,
     syn_gfx_line(ctx->gfx, cx - radius, cy, cx + radius, cy, fg);
 
     /* 9-point fixed-point sin/cos tables (0 to 180 degrees, scaled by 256) */
-    static const int16_t sin_tbl[9] = { 0, 98, 181, 236, 256, 236, 181, 98, 0 };
-    static const int16_t cos_tbl[9] = { 256, 236, 181, 98, 0, -98, -181, -236, -256 };
+    static const int16_t sin_tbl[9] = {0, 98, 181, 236, 256, 236, 181, 98, 0};
+    static const int16_t cos_tbl[9] = {256, 236, 181, 98, 0, -98, -181, -236, -256};
 
     /* Calculate value percentage (0 to 1000) */
     int32_t val = value;
-    if (val < min) val = min;
-    if (val > max) val = max;
+    if (val < min)
+        val = min;
+    if (val > max)
+        val = max;
 
     int32_t range = max - min;
     int32_t val_percent = (range > 0) ? ((val - min) * 1000) / range : 0;
 
     /* Map to table index and interpolation remainder */
     int32_t temp = (1000 - val_percent) * 8;
-    int32_t idx  = temp / 1000;
+    int32_t idx = temp / 1000;
 
     int32_t sin_val;
     int32_t cos_val;
@@ -637,7 +648,6 @@ void syn_imgui_gauge(SYN_IMGUI_Context *ctx, const char *label,
         sin_val = sin_tbl[idx] + (rem * (sin_tbl[idx + 1] - sin_tbl[idx])) / 1000;
         cos_val = cos_tbl[idx] + (rem * (cos_tbl[idx + 1] - cos_tbl[idx])) / 1000;
     }
-
 
     /* Draw needle */
     int16_t needle_len = radius - 4;
@@ -653,8 +663,8 @@ void syn_imgui_gauge(SYN_IMGUI_Context *ctx, const char *label,
     }
 }
 
-bool syn_imgui_dialog(SYN_IMGUI_Context *ctx, const char *message,
-                       bool *ok_clicked, int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_dialog(SYN_IMGUI_Context *ctx, const char *message, bool *ok_clicked, int16_t x,
+                      int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(message != NULL);
@@ -663,7 +673,7 @@ bool syn_imgui_dialog(SYN_IMGUI_Context *ctx, const char *message,
     /* Resolve geometry from layout cursor */
     layout_resolve(ctx, &x, &y, &w, &h, h > 0 ? h : (int16_t)40);
 
-    uint16_t ok_id     = ctx->next_id + 1;
+    uint16_t ok_id = ctx->next_id + 1;
     uint16_t cancel_id = ctx->next_id + 2;
     ctx->next_id += 2;
 
@@ -684,28 +694,28 @@ bool syn_imgui_dialog(SYN_IMGUI_Context *ctx, const char *message,
     }
 
     /* Modal layout coordinates */
-    int16_t btn_w  = 30;
-    int16_t btn_h  = 13;
-    int16_t ok_x   = (int16_t)(x + w / 4 - btn_w / 2);
+    int16_t btn_w = 30;
+    int16_t btn_h = 13;
+    int16_t ok_x = (int16_t)(x + w / 4 - btn_w / 2);
     int16_t canc_x = (int16_t)(x + (3 * w) / 4 - btn_w / 2);
-    int16_t btn_y  = (int16_t)(y + h - 18);
+    int16_t btn_y = (int16_t)(y + h - 18);
 
     /* Hit testing */
-    bool hit_ok   = is_hit_test(ctx, ok_x, btn_y, btn_w, btn_h);
+    bool hit_ok = is_hit_test(ctx, ok_x, btn_y, btn_w, btn_h);
     bool hit_canc = is_hit_test(ctx, canc_x, btn_y, btn_w, btn_h);
 
-    bool select_ok     = (ctx->focused_id == ok_id && ctx->btn_select);
+    bool select_ok = (ctx->focused_id == ok_id && ctx->btn_select);
     bool select_cancel = (ctx->focused_id == cancel_id && ctx->btn_select) || ctx->btn_back;
 
     bool dismissed = false;
 
     if (hit_ok || select_ok) {
         *ok_clicked = true;
-        dismissed   = true;
+        dismissed = true;
         ctx->focused_id = 1; /* Reset focus */
     } else if (hit_canc || select_cancel) {
         *ok_clicked = false;
-        dismissed   = true;
+        dismissed = true;
         ctx->focused_id = 1; /* Reset focus */
     }
 
@@ -726,7 +736,8 @@ bool syn_imgui_dialog(SYN_IMGUI_Context *ctx, const char *message,
     /* Render OK button */
     if (ctx->focused_id == ok_id) {
         syn_gfx_rect_round_fill(ctx->gfx, ok_x, btn_y, btn_w, btn_h, 3, fg);
-        syn_gfx_text(ctx->gfx, (int16_t)(ok_x + (btn_w - 11) / 2), (int16_t)(btn_y + 3), "OK", ctx->style.bg);
+        syn_gfx_text(ctx->gfx, (int16_t)(ok_x + (btn_w - 11) / 2), (int16_t)(btn_y + 3), "OK",
+                     ctx->style.bg);
     } else {
         syn_gfx_rect_round(ctx->gfx, ok_x, btn_y, btn_w, btn_h, 3, fg);
         syn_gfx_text(ctx->gfx, (int16_t)(ok_x + (btn_w - 11) / 2), (int16_t)(btn_y + 3), "OK", fg);
@@ -736,15 +747,16 @@ bool syn_imgui_dialog(SYN_IMGUI_Context *ctx, const char *message,
     int16_t cn_w = (int16_t)syn_gfx_text_width(ctx->gfx, "CANC");
     if (ctx->focused_id == cancel_id) {
         syn_gfx_rect_round_fill(ctx->gfx, canc_x, btn_y, btn_w, btn_h, 3, fg);
-        syn_gfx_text(ctx->gfx, (int16_t)(canc_x + (btn_w - cn_w) / 2), (int16_t)(btn_y + 3), "CANC", ctx->style.bg);
+        syn_gfx_text(ctx->gfx, (int16_t)(canc_x + (btn_w - cn_w) / 2), (int16_t)(btn_y + 3), "CANC",
+                     ctx->style.bg);
     } else {
         syn_gfx_rect_round(ctx->gfx, canc_x, btn_y, btn_w, btn_h, 3, fg);
-        syn_gfx_text(ctx->gfx, (int16_t)(canc_x + (btn_w - cn_w) / 2), (int16_t)(btn_y + 3), "CANC", fg);
+        syn_gfx_text(ctx->gfx, (int16_t)(canc_x + (btn_w - cn_w) / 2), (int16_t)(btn_y + 3), "CANC",
+                     fg);
     }
 
     return dismissed;
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Style
@@ -753,14 +765,14 @@ bool syn_imgui_dialog(SYN_IMGUI_Context *ctx, const char *message,
 SYN_IMGUI_Style syn_imgui_default_style(void)
 {
     SYN_IMGUI_Style s;
-    s.fg       = SYN_COLOR_WHITE;
-    s.bg       = SYN_COLOR_BLACK;
-    s.highlight= SYN_COLOR_WHITE;
-    s.fg_inv   = SYN_COLOR_BLACK;
-    s.accent   = SYN_COLOR_WHITE;
+    s.fg = SYN_COLOR_WHITE;
+    s.bg = SYN_COLOR_BLACK;
+    s.highlight = SYN_COLOR_WHITE;
+    s.fg_inv = SYN_COLOR_BLACK;
+    s.accent = SYN_COLOR_WHITE;
     s.disabled = 0x7BEFu; /* mid-grey in RGB565 */
-    s.padding  = 2;
-    s.spacing  = 3;
+    s.padding = 2;
+    s.spacing = 3;
     return s;
 }
 
@@ -775,19 +787,18 @@ void syn_imgui_set_style(SYN_IMGUI_Context *ctx, const SYN_IMGUI_Style *style)
  * Layout cursor
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_layout_begin(SYN_IMGUI_Context *ctx,
-                             int16_t x, int16_t y, int16_t w)
+void syn_imgui_layout_begin(SYN_IMGUI_Context *ctx, int16_t x, int16_t y, int16_t w)
 {
     SYN_ASSERT(ctx != NULL);
-    ctx->layout.in_layout  = true;
-    ctx->layout.cx         = x;
-    ctx->layout.cy         = y;
-    ctx->layout.origin_x   = x;
-    ctx->layout.width      = w;
-    ctx->layout.row_h      = 0;
-    ctx->layout.same_line  = false;
-    ctx->layout.row_x      = x;
-    ctx->layout.row_y      = y;
+    ctx->layout.in_layout = true;
+    ctx->layout.cx = x;
+    ctx->layout.cy = y;
+    ctx->layout.origin_x = x;
+    ctx->layout.width = w;
+    ctx->layout.row_h = 0;
+    ctx->layout.same_line = false;
+    ctx->layout.row_x = x;
+    ctx->layout.row_y = y;
     ctx->layout.prev_row_h = 0;
 }
 
@@ -800,7 +811,8 @@ void syn_imgui_layout_end(SYN_IMGUI_Context *ctx)
 void syn_imgui_same_line(SYN_IMGUI_Context *ctx)
 {
     SYN_ASSERT(ctx != NULL);
-    if (!ctx->layout.in_layout) return;
+    if (!ctx->layout.in_layout)
+        return;
     ctx->layout.cx = ctx->layout.row_x;
     ctx->layout.cy = ctx->layout.row_y;
     ctx->layout.row_h = ctx->layout.prev_row_h;
@@ -828,12 +840,11 @@ void syn_imgui_spacing(SYN_IMGUI_Context *ctx, int16_t pixels)
  * @param h          [in/out] Widget height.
  * @param default_h  Default height if not specified.
  */
-static void layout_resolve(SYN_IMGUI_Context *ctx,
-                            int16_t *x, int16_t *y,
-                            int16_t *w, int16_t *h,
-                            int16_t default_h)
+static void layout_resolve(SYN_IMGUI_Context *ctx, int16_t *x, int16_t *y, int16_t *w, int16_t *h,
+                           int16_t default_h)
 {
-    if (!ctx->layout.in_layout) return;
+    if (!ctx->layout.in_layout)
+        return;
 
     if (ctx->layout.same_line) {
         /* consumed by syn_imgui_same_line cursor restoration */
@@ -877,8 +888,7 @@ static void layout_resolve(SYN_IMGUI_Context *ctx,
  * Label
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_label(SYN_IMGUI_Context *ctx, const char *text,
-                      int16_t x, int16_t y)
+void syn_imgui_label(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(text != NULL);
@@ -897,8 +907,7 @@ void syn_imgui_label(SYN_IMGUI_Context *ctx, const char *text,
  * Separator
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_separator(SYN_IMGUI_Context *ctx,
-                          int16_t x, int16_t y, int16_t w)
+void syn_imgui_separator(SYN_IMGUI_Context *ctx, int16_t x, int16_t y, int16_t w)
 {
     SYN_ASSERT(ctx != NULL);
 
@@ -907,8 +916,13 @@ void syn_imgui_separator(SYN_IMGUI_Context *ctx,
     int16_t sw = w;
 
     if (ctx->layout.in_layout) {
-        if (sx == 0 && sy == 0) { sx = ctx->layout.cx; sy = ctx->layout.cy; }
-        if (sw == 0)             { sw = ctx->layout.width; }
+        if (sx == 0 && sy == 0) {
+            sx = ctx->layout.cx;
+            sy = ctx->layout.cy;
+        }
+        if (sw == 0) {
+            sw = ctx->layout.width;
+        }
         /* Advance cursor */
         ctx->layout.cy = (int16_t)(sy + 1 + ctx->style.spacing);
         ctx->layout.cx = ctx->layout.origin_x;
@@ -922,9 +936,8 @@ void syn_imgui_separator(SYN_IMGUI_Context *ctx,
  * Spinner
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-bool syn_imgui_spinner(SYN_IMGUI_Context *ctx, const char *label,
-                        int32_t *value, int32_t min, int32_t max, int32_t step,
-                        int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_spinner(SYN_IMGUI_Context *ctx, const char *label, int32_t *value, int32_t min,
+                       int32_t max, int32_t step, int16_t x, int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(label != NULL);
@@ -945,13 +958,15 @@ bool syn_imgui_spinner(SYN_IMGUI_Context *ctx, const char *label,
     }
 
     bool is_focused = (ctx->focused_id == ctx->next_id);
-    bool changed    = false;
+    bool changed = false;
 
     /* Encoder changes value when this widget is focused and not disabled */
     if (ctx->disabled_depth == 0 && is_focused && ctx->enc_delta != 0) {
         int32_t new_val = *value + ctx->enc_delta * step;
-        if (new_val > max) new_val = min;   /* wrap */
-        if (new_val < min) new_val = max;
+        if (new_val > max)
+            new_val = min; /* wrap */
+        if (new_val < min)
+            new_val = max;
         if (new_val != *value) {
             *value = new_val;
             changed = true;
@@ -967,7 +982,7 @@ bool syn_imgui_spinner(SYN_IMGUI_Context *ctx, const char *label,
 
     /* Label on the left */
     int16_t label_w = (int16_t)syn_gfx_text_width(ctx->gfx, label);
-    int16_t ty      = (int16_t)(y + (h - fh) / 2);
+    int16_t ty = (int16_t)(y + (h - fh) / 2);
     syn_gfx_text(ctx->gfx, x + ctx->style.padding, ty, label, ctx->style.fg);
 
     /* Value box on the right: "< 42 >" */
@@ -975,29 +990,37 @@ bool syn_imgui_spinner(SYN_IMGUI_Context *ctx, const char *label,
     {
         int32_t v = *value;
         uint8_t i = 0;
-        if (v < 0) { val_str[i++] = '-'; v = -v; }
+        if (v < 0) {
+            val_str[i++] = '-';
+            v = -v;
+        }
         char tmp[12];
         uint8_t j = 0;
-        do { tmp[j++] = (char)('0' + (v % 10)); v /= 10; } while (v > 0 && j < 11u);
-        while (j > 0u) { val_str[i++] = tmp[--j]; }
+        do {
+            tmp[j++] = (char)('0' + (v % 10));
+            v /= 10;
+        } while (v > 0 && j < 11u);
+        while (j > 0u) {
+            val_str[i++] = tmp[--j];
+        }
         val_str[i] = '\0';
     }
-    int16_t val_w   = (int16_t)syn_gfx_text_width(ctx->gfx, val_str);
-    int16_t arr_w   = (int16_t)syn_gfx_font_width(ctx->gfx);
-    int16_t box_w   = (int16_t)(arr_w + ctx->style.padding + val_w + ctx->style.padding + arr_w);
-    int16_t box_x   = (int16_t)(x + w - box_w - ctx->style.padding);
+    int16_t val_w = (int16_t)syn_gfx_text_width(ctx->gfx, val_str);
+    int16_t arr_w = (int16_t)syn_gfx_font_width(ctx->gfx);
+    int16_t box_w = (int16_t)(arr_w + ctx->style.padding + val_w + ctx->style.padding + arr_w);
+    int16_t box_x = (int16_t)(x + w - box_w - ctx->style.padding);
 
     (void)label_w; /* used for layout reference; value box is right-aligned */
 
     /* "<" arrow */
     syn_gfx_text(ctx->gfx, box_x, ty, "<", ctx->style.fg);
     /* value */
-    syn_gfx_text(ctx->gfx, (int16_t)(box_x + arr_w + ctx->style.padding), ty,
-                    val_str, ctx->style.fg);
+    syn_gfx_text(ctx->gfx, (int16_t)(box_x + arr_w + ctx->style.padding), ty, val_str,
+                 ctx->style.fg);
     /* ">" arrow */
     syn_gfx_text(ctx->gfx,
-                    (int16_t)(box_x + arr_w + ctx->style.padding + val_w + ctx->style.padding),
-                    ty, ">", ctx->style.fg);
+                 (int16_t)(box_x + arr_w + ctx->style.padding + val_w + ctx->style.padding), ty,
+                 ">", ctx->style.fg);
 
     return changed;
 }
@@ -1006,21 +1029,20 @@ bool syn_imgui_spinner(SYN_IMGUI_Context *ctx, const char *label,
  * Scroll Region
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_scroll_begin(SYN_IMGUI_Context *ctx,
-                             int16_t x, int16_t y, int16_t w, int16_t h,
-                             int16_t *scroll)
+void syn_imgui_scroll_begin(SYN_IMGUI_Context *ctx, int16_t x, int16_t y, int16_t w, int16_t h,
+                            int16_t *scroll)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(scroll != NULL);
 
-    ctx->scroll.in_scroll     = true;
-    ctx->scroll.vp_x          = x;
-    ctx->scroll.vp_y          = y;
-    ctx->scroll.vp_w          = w;
-    ctx->scroll.vp_h          = h;
-    ctx->scroll.scroll_p      = scroll;
-    ctx->scroll.focus_y       = 0;
-    ctx->scroll.focus_h       = 0;
+    ctx->scroll.in_scroll = true;
+    ctx->scroll.vp_x = x;
+    ctx->scroll.vp_y = y;
+    ctx->scroll.vp_w = w;
+    ctx->scroll.vp_h = h;
+    ctx->scroll.scroll_p = scroll;
+    ctx->scroll.focus_y = 0;
+    ctx->scroll.focus_h = 0;
 
     /* Set clip rect to viewport */
     syn_gfx_set_clip(ctx->gfx, x, y, w, h);
@@ -1037,9 +1059,9 @@ void syn_imgui_scroll_end(SYN_IMGUI_Context *ctx)
     SYN_ASSERT(ctx != NULL);
 
     int16_t content_h = (int16_t)(ctx->layout.cy - ctx->scroll.content_start);
-    int16_t vp_h      = ctx->scroll.vp_h;
+    int16_t vp_h = ctx->scroll.vp_h;
     int16_t max_scroll = (content_h > vp_h) ? (int16_t)(content_h - vp_h) : 0;
-    int16_t *sp        = ctx->scroll.scroll_p;
+    int16_t *sp = ctx->scroll.scroll_p;
 
     /* Auto-scroll to keep focused widget visible */
     if (ctx->scroll.focus_h > 0) {
@@ -1057,8 +1079,10 @@ void syn_imgui_scroll_end(SYN_IMGUI_Context *ctx)
     }
 
     /* Clamp scroll */
-    if (*sp < 0) *sp = 0;
-    if (*sp > max_scroll) *sp = max_scroll;
+    if (*sp < 0)
+        *sp = 0;
+    if (*sp > max_scroll)
+        *sp = max_scroll;
 
     syn_imgui_layout_end(ctx);
 
@@ -1070,9 +1094,10 @@ void syn_imgui_scroll_end(SYN_IMGUI_Context *ctx)
         int16_t bar_x = (int16_t)(ctx->scroll.vp_x + ctx->scroll.vp_w - 2);
         int16_t track_h = vp_h;
         int16_t thumb_h = (int16_t)((int32_t)vp_h * vp_h / content_h);
-        if (thumb_h < 3) thumb_h = 3;
-        int16_t thumb_y = (int16_t)(ctx->scroll.vp_y +
-                          (int32_t)*sp * (track_h - thumb_h) / max_scroll);
+        if (thumb_h < 3)
+            thumb_h = 3;
+        int16_t thumb_y =
+            (int16_t)(ctx->scroll.vp_y + (int32_t)*sp * (track_h - thumb_h) / max_scroll);
         syn_gfx_rect_fill(ctx->gfx, bar_x, thumb_y, 2, thumb_h, ctx->style.fg);
     }
 
@@ -1083,8 +1108,8 @@ void syn_imgui_scroll_end(SYN_IMGUI_Context *ctx)
  * Toggle Switch
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-bool syn_imgui_toggle(SYN_IMGUI_Context *ctx, const char *label,
-                       bool *state, int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_toggle(SYN_IMGUI_Context *ctx, const char *label, bool *state, int16_t x, int16_t y,
+                      int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(state != NULL);
@@ -1146,9 +1171,8 @@ bool syn_imgui_toggle(SYN_IMGUI_Context *ctx, const char *label,
 
     /* Draw knob (filled circle) */
     int16_t knob_r = 2;
-    int16_t knob_x = *state
-        ? (int16_t)(track_x + track_w - knob_r - 3)
-        : (int16_t)(track_x + knob_r + 3);
+    int16_t knob_x =
+        *state ? (int16_t)(track_x + track_w - knob_r - 3) : (int16_t)(track_x + knob_r + 3);
     int16_t knob_y = (int16_t)(track_y + track_h / 2);
 
     if (*state) {
@@ -1181,8 +1205,8 @@ void syn_imgui_end_disabled(SYN_IMGUI_Context *ctx)
  * Text Alignment Helpers
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_label_colored(SYN_IMGUI_Context *ctx, const char *text,
-                              uint16_t color, int16_t x, int16_t y)
+void syn_imgui_label_colored(SYN_IMGUI_Context *ctx, const char *text, uint16_t color, int16_t x,
+                             int16_t y)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(text != NULL);
@@ -1194,8 +1218,8 @@ void syn_imgui_label_colored(SYN_IMGUI_Context *ctx, const char *text,
     syn_gfx_text(ctx->gfx, lx, ly, text, color);
 }
 
-void syn_imgui_label_right(SYN_IMGUI_Context *ctx, const char *text,
-                            int16_t x, int16_t y, int16_t w)
+void syn_imgui_label_right(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y,
+                           int16_t w)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(text != NULL);
@@ -1208,8 +1232,8 @@ void syn_imgui_label_right(SYN_IMGUI_Context *ctx, const char *text,
     syn_gfx_text(ctx->gfx, (int16_t)(lx + lw - tw), ly, text, ctx->style.fg);
 }
 
-void syn_imgui_label_centered(SYN_IMGUI_Context *ctx, const char *text,
-                               int16_t x, int16_t y, int16_t w)
+void syn_imgui_label_centered(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y,
+                              int16_t w)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(text != NULL);
@@ -1226,8 +1250,8 @@ void syn_imgui_label_centered(SYN_IMGUI_Context *ctx, const char *text,
  * Group Box
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_group_begin(SYN_IMGUI_Context *ctx, const char *title,
-                            int16_t x, int16_t y, int16_t w, int16_t h)
+void syn_imgui_group_begin(SYN_IMGUI_Context *ctx, const char *title, int16_t x, int16_t y,
+                           int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
 
@@ -1249,10 +1273,8 @@ void syn_imgui_group_begin(SYN_IMGUI_Context *ctx, const char *title,
 
     /* Push a sub-layout inside the group box */
     int16_t inset = (int16_t)(ctx->style.padding + 2);
-    syn_imgui_layout_begin(ctx,
-                            (int16_t)(x + inset),
-                            (int16_t)(y + fh / 2 + ctx->style.spacing),
-                            (int16_t)(w - inset * 2));
+    syn_imgui_layout_begin(ctx, (int16_t)(x + inset), (int16_t)(y + fh / 2 + ctx->style.spacing),
+                           (int16_t)(w - inset * 2));
 }
 
 void syn_imgui_group_end(SYN_IMGUI_Context *ctx)
@@ -1265,8 +1287,7 @@ void syn_imgui_group_end(SYN_IMGUI_Context *ctx)
  * Tab Bar
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-bool syn_imgui_tabs(SYN_IMGUI_Context *ctx, const char **labels,
-                    size_t count, int32_t *active,
+bool syn_imgui_tabs(SYN_IMGUI_Context *ctx, const char **labels, size_t count, int32_t *active,
                     int16_t x, int16_t y, int16_t w)
 {
     SYN_ASSERT(ctx != NULL);
@@ -1297,8 +1318,10 @@ bool syn_imgui_tabs(SYN_IMGUI_Context *ctx, const char **labels,
     if (ctx->disabled_depth == 0 && is_focused && ctx->active_id == ctx->next_id) {
         if (ctx->enc_delta != 0) {
             int32_t new_val = *active + ctx->enc_delta;
-            if (new_val >= (int32_t)count) new_val = 0;
-            if (new_val < 0) new_val = (int32_t)count - 1;
+            if (new_val >= (int32_t)count)
+                new_val = 0;
+            if (new_val < 0)
+                new_val = (int32_t)count - 1;
             if (new_val != *active) {
                 *active = new_val;
                 changed = true;
@@ -1340,9 +1363,7 @@ bool syn_imgui_tabs(SYN_IMGUI_Context *ctx, const char **labels,
             syn_gfx_text(ctx->gfx, text_x, text_y, labels[i], fg);
         } else {
             /* Text too wide: use text_clipped to truncate within the tab */
-            syn_imgui_text_clipped(ctx, labels[i],
-                                   (int16_t)(tx + 1), text_y,
-                                   (int16_t)(tx + 1), ly,
+            syn_imgui_text_clipped(ctx, labels[i], (int16_t)(tx + 1), text_y, (int16_t)(tx + 1), ly,
                                    (int16_t)(tab_w - 2), lh);
         }
 
@@ -1373,10 +1394,9 @@ bool syn_imgui_tabs(SYN_IMGUI_Context *ctx, const char **labels,
  * Bar Chart
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_bar_chart(SYN_IMGUI_Context *ctx, const char *title,
-                          const int32_t *data, size_t count,
-                          int32_t min_val, int32_t max_val,
-                          int16_t x, int16_t y, int16_t w, int16_t h)
+void syn_imgui_bar_chart(SYN_IMGUI_Context *ctx, const char *title, const int32_t *data,
+                         size_t count, int32_t min_val, int32_t max_val, int16_t x, int16_t y,
+                         int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(data != NULL);
@@ -1400,22 +1420,28 @@ void syn_imgui_bar_chart(SYN_IMGUI_Context *ctx, const char *title,
     int16_t plot_x = (int16_t)(x + 2);
     int16_t plot_w = (int16_t)(w - 4);
 
-    if (count == 0 || plot_h <= 0 || plot_w <= 0) return;
+    if (count == 0 || plot_h <= 0 || plot_w <= 0)
+        return;
 
     int32_t range = max_val - min_val;
-    if (range <= 0) range = 1;
+    if (range <= 0)
+        range = 1;
 
     int16_t bar_w = (int16_t)(plot_w / (int16_t)count);
-    if (bar_w < 1) bar_w = 1;
+    if (bar_w < 1)
+        bar_w = 1;
     int16_t gap = (bar_w > 2) ? 1 : 0;
 
     for (size_t i = 0; i < count; i++) {
         int32_t val = data[i];
-        if (val < min_val) val = min_val;
-        if (val > max_val) val = max_val;
+        if (val < min_val)
+            val = min_val;
+        if (val > max_val)
+            val = max_val;
 
         int16_t bar_h = (int16_t)((int32_t)(val - min_val) * plot_h / range);
-        if (bar_h < 1 && val > min_val) bar_h = 1;
+        if (bar_h < 1 && val > min_val)
+            bar_h = 1;
 
         int16_t bx = (int16_t)(plot_x + (int16_t)i * bar_w + gap);
         int16_t by = (int16_t)(plot_y + plot_h - bar_h);
@@ -1428,9 +1454,8 @@ void syn_imgui_bar_chart(SYN_IMGUI_Context *ctx, const char *title,
  * Icon Button
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-bool syn_imgui_icon_button(SYN_IMGUI_Context *ctx,
-                            const uint8_t *icon, int16_t icon_w, int16_t icon_h,
-                            int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_icon_button(SYN_IMGUI_Context *ctx, const uint8_t *icon, int16_t icon_w,
+                           int16_t icon_h, int16_t x, int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(icon != NULL);
@@ -1476,8 +1501,7 @@ bool syn_imgui_icon_button(SYN_IMGUI_Context *ctx,
  * Status Bar
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_status_bar(SYN_IMGUI_Context *ctx, const char *text,
-                           int16_t x, int16_t y, int16_t w)
+void syn_imgui_status_bar(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y, int16_t w)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(text != NULL);
@@ -1497,8 +1521,7 @@ void syn_imgui_status_bar(SYN_IMGUI_Context *ctx, const char *text,
     syn_gfx_hline(ctx->gfx, x, y, w, fg);
 
     /* Text below the separator */
-    syn_gfx_text(ctx->gfx, (int16_t)(x + ctx->style.padding),
-                 (int16_t)(y + 2), text, fg);
+    syn_gfx_text(ctx->gfx, (int16_t)(x + ctx->style.padding), (int16_t)(y + 2), text, fg);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1506,15 +1529,15 @@ void syn_imgui_status_bar(SYN_IMGUI_Context *ctx, const char *text,
  * ─── Section Title ───────────────────────────────────────────────────────
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_separator_text(SYN_IMGUI_Context *ctx, const char *text,
-                                int16_t x, int16_t y, int16_t w)
+void syn_imgui_separator_text(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y,
+                              int16_t w)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(text != NULL);
 
     uint16_t fg = ctx->style.fg;
-    uint8_t  fh = syn_gfx_text_height(ctx->gfx);
-    int16_t  h  = (int16_t)(fh + 2); /* height of this row */
+    uint8_t fh = syn_gfx_text_height(ctx->gfx);
+    int16_t h = (int16_t)(fh + 2); /* height of this row */
 
     /* Participate in the layout: resolve (x,y,w) from cursor, advance it */
     int16_t lh = 0;
@@ -1524,8 +1547,8 @@ void syn_imgui_separator_text(SYN_IMGUI_Context *ctx, const char *text,
     }
 
     int16_t text_w = (int16_t)syn_gfx_text_width(ctx->gfx, text);
-    int16_t mid_y  = (int16_t)(y + fh / 2);
-    int16_t gap    = 4; /* pixels between line end and text */
+    int16_t mid_y = (int16_t)(y + fh / 2);
+    int16_t gap = 4; /* pixels between line end and text */
 
     /* Left line segment */
     syn_gfx_hline(ctx->gfx, x, mid_y, gap, fg);
@@ -1536,10 +1559,9 @@ void syn_imgui_separator_text(SYN_IMGUI_Context *ctx, const char *text,
 
     /* Right line segment */
     int16_t right_start = (int16_t)(text_x + text_w + gap);
-    int16_t right_end   = (int16_t)(x + w);
+    int16_t right_end = (int16_t)(x + w);
     if (right_end > right_start) {
-        syn_gfx_hline(ctx->gfx, right_start, mid_y,
-                       (int16_t)(right_end - right_start), fg);
+        syn_gfx_hline(ctx->gfx, right_start, mid_y, (int16_t)(right_end - right_start), fg);
     }
 }
 
@@ -1548,9 +1570,8 @@ void syn_imgui_separator_text(SYN_IMGUI_Context *ctx, const char *text,
  *                   nk_checkbox_flags_label)
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-bool syn_imgui_checkbox_flags(SYN_IMGUI_Context *ctx, const char *label,
-                                uint32_t *flags, uint32_t mask,
-                                int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_checkbox_flags(SYN_IMGUI_Context *ctx, const char *label, uint32_t *flags,
+                              uint32_t mask, int16_t x, int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(label != NULL);
@@ -1573,8 +1594,8 @@ bool syn_imgui_checkbox_flags(SYN_IMGUI_Context *ctx, const char *label,
  * Draws "label: value" as a non-interactive text pair.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_value_int(SYN_IMGUI_Context *ctx, const char *label,
-                           int32_t value, int16_t x, int16_t y)
+void syn_imgui_value_int(SYN_IMGUI_Context *ctx, const char *label, int32_t value, int16_t x,
+                         int16_t y)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(label != NULL);
@@ -1596,11 +1617,19 @@ void syn_imgui_value_int(SYN_IMGUI_Context *ctx, const char *label,
     char buf[16];
     int32_t v = value;
     uint8_t i = 0;
-    if (v < 0) { buf[i++] = '-'; v = -v; }
+    if (v < 0) {
+        buf[i++] = '-';
+        v = -v;
+    }
     char tmp[12];
     uint8_t j = 0;
-    do { tmp[j++] = (char)('0' + (v % 10)); v /= 10; } while (v > 0 && j < 11u);
-    while (j > 0u) { buf[i++] = tmp[--j]; }
+    do {
+        tmp[j++] = (char)('0' + (v % 10));
+        v /= 10;
+    } while (v > 0 && j < 11u);
+    while (j > 0u) {
+        buf[i++] = tmp[--j];
+    }
     buf[i] = '\0';
 
     /* Draw ": value" */
@@ -1618,10 +1647,8 @@ void syn_imgui_value_int(SYN_IMGUI_Context *ctx, const char *label,
  * value < min     → indeterminate mode (bouncing bar)
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_progress_bar_ex(SYN_IMGUI_Context *ctx, int32_t value,
-                                 int32_t min, int32_t max,
-                                 const char *overlay,
-                                 int16_t x, int16_t y, int16_t w, int16_t h)
+void syn_imgui_progress_bar_ex(SYN_IMGUI_Context *ctx, int32_t value, int32_t min, int32_t max,
+                               const char *overlay, int16_t x, int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
 
@@ -1642,7 +1669,8 @@ void syn_imgui_progress_bar_ex(SYN_IMGUI_Context *ctx, int32_t value,
             /* Bouncing 20% wide bar based on low bits of value */
             int32_t phase = (value < 0 ? -value : value) % (inner_w * 2);
             int16_t bar_w = (int16_t)(inner_w / 5);
-            if (bar_w < 2) bar_w = 2;
+            if (bar_w < 2)
+                bar_w = 2;
             int16_t bar_x;
             if (phase < inner_w) {
                 bar_x = (int16_t)(x + 2 + phase);
@@ -1650,22 +1678,24 @@ void syn_imgui_progress_bar_ex(SYN_IMGUI_Context *ctx, int32_t value,
                 bar_x = (int16_t)(x + 2 + (inner_w * 2 - phase));
             }
             /* Clamp to bounds */
-            if (bar_x + bar_w > x + w - 2) bar_w = (int16_t)(x + w - 2 - bar_x);
+            if (bar_x + bar_w > x + w - 2)
+                bar_w = (int16_t)(x + w - 2 - bar_x);
             if (bar_w > 0) {
-                syn_gfx_rect_fill(ctx->gfx, bar_x, (int16_t)(y + 2),
-                                   bar_w, (int16_t)(h - 4), fg);
+                syn_gfx_rect_fill(ctx->gfx, bar_x, (int16_t)(y + 2), bar_w, (int16_t)(h - 4), fg);
             }
         } else {
             /* Normal fill */
             int32_t val = value;
-            if (val < min) val = min;
-            if (val > max) val = max;
+            if (val < min)
+                val = min;
+            if (val > max)
+                val = max;
             int32_t range = max - min;
             int32_t current = val - min;
             int16_t fill_w = (int16_t)((current * inner_w) / range);
             if (fill_w > 0) {
-                syn_gfx_rect_fill(ctx->gfx, (int16_t)(x + 2), (int16_t)(y + 2),
-                                   fill_w, (int16_t)(h - 4), fg);
+                syn_gfx_rect_fill(ctx->gfx, (int16_t)(x + 2), (int16_t)(y + 2), fill_w,
+                                  (int16_t)(h - 4), fg);
             }
         }
     }
@@ -1699,9 +1729,8 @@ void syn_imgui_progress_bar_ex(SYN_IMGUI_Context *ctx, int32_t value,
  * Full-width clickable row — no border, only a highlight fill when focused.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-bool syn_imgui_selectable(SYN_IMGUI_Context *ctx, const char *label,
-                            bool *selected,
-                            int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_selectable(SYN_IMGUI_Context *ctx, const char *label, bool *selected, int16_t x,
+                          int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(label != NULL);
@@ -1735,16 +1764,16 @@ bool syn_imgui_selectable(SYN_IMGUI_Context *ctx, const char *label,
     /* Draw filled background when selected or focused */
     if (*selected) {
         syn_gfx_rect_fill(ctx->gfx, x, y, w, h, fg);
-        syn_gfx_text(ctx->gfx, (int16_t)(x + ctx->style.padding),
-                     (int16_t)(y + (h - fh) / 2), label, ctx->style.bg);
+        syn_gfx_text(ctx->gfx, (int16_t)(x + ctx->style.padding), (int16_t)(y + (h - fh) / 2),
+                     label, ctx->style.bg);
     } else if (is_focused && ctx->disabled_depth == 0) {
         /* Dotted/outline highlight for focus without selection */
         syn_gfx_rect(ctx->gfx, x, y, w, h, fg);
-        syn_gfx_text(ctx->gfx, (int16_t)(x + ctx->style.padding),
-                     (int16_t)(y + (h - fh) / 2), label, fg);
+        syn_gfx_text(ctx->gfx, (int16_t)(x + ctx->style.padding), (int16_t)(y + (h - fh) / 2),
+                     label, fg);
     } else {
-        syn_gfx_text(ctx->gfx, (int16_t)(x + ctx->style.padding),
-                     (int16_t)(y + (h - fh) / 2), label, fg);
+        syn_gfx_text(ctx->gfx, (int16_t)(x + ctx->style.padding), (int16_t)(y + (h - fh) / 2),
+                     label, fg);
     }
 
     return clicked;
@@ -1758,9 +1787,8 @@ bool syn_imgui_selectable(SYN_IMGUI_Context *ctx, const char *label,
  *   if (*expanded) { ... widgets ... }
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-bool syn_imgui_collapsing_header(SYN_IMGUI_Context *ctx, const char *label,
-                                   bool *expanded,
-                                   int16_t x, int16_t y, int16_t w, int16_t h)
+bool syn_imgui_collapsing_header(SYN_IMGUI_Context *ctx, const char *label, bool *expanded,
+                                 int16_t x, int16_t y, int16_t w, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(label != NULL);
@@ -1815,8 +1843,8 @@ bool syn_imgui_collapsing_header(SYN_IMGUI_Context *ctx, const char *label,
  * Renders multi-line word-wrapped text within width.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_text_wrapped(SYN_IMGUI_Context *ctx, const char *text,
-                              int16_t x, int16_t y, int16_t w)
+void syn_imgui_text_wrapped(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y,
+                            int16_t w)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(text != NULL);
@@ -1835,13 +1863,15 @@ void syn_imgui_text_wrapped(SYN_IMGUI_Context *ctx, const char *text,
     int16_t cx = x;
     int16_t cy = y;
 
-    if (fw == 0 || w <= 0) return;
+    if (fw == 0 || w <= 0)
+        return;
 
     const char *p = text;
     while (*p) {
         /* Find end of next word */
         const char *word_start = p;
-        while (*p && *p != ' ' && *p != '\n') p++;
+        while (*p && *p != ' ' && *p != '\n')
+            p++;
         int16_t word_len = (int16_t)(p - word_start);
         int16_t word_w = (int16_t)(word_len * fw);
 
@@ -1853,7 +1883,7 @@ void syn_imgui_text_wrapped(SYN_IMGUI_Context *ctx, const char *text,
 
         /* Render character by character */
         for (const char *c = word_start; c < word_start + word_len; c++) {
-            const char ch[2] = { *c, '\0' };
+            const char ch[2] = {*c, '\0'};
             syn_gfx_text(ctx->gfx, cx, cy, ch, fg);
             cx = (int16_t)(cx + fw);
         }
@@ -1878,8 +1908,7 @@ void syn_imgui_text_wrapped(SYN_IMGUI_Context *ctx, const char *text,
  * Positive width = fixed pixels.  Negative width = fill remainder.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_layout_row(SYN_IMGUI_Context *ctx, int items,
-                            const int16_t *widths, int16_t height)
+void syn_imgui_layout_row(SYN_IMGUI_Context *ctx, int items, const int16_t *widths, int16_t height)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(ctx->layout.in_layout);
@@ -1898,7 +1927,8 @@ void syn_imgui_layout_row(SYN_IMGUI_Context *ctx, int items,
     ctx->layout.row_height = height;
     if (widths != NULL && items > 0) {
         int max = items;
-        if (max > SYN_IMGUI_MAX_ROW_COLS) max = SYN_IMGUI_MAX_ROW_COLS;
+        if (max > SYN_IMGUI_MAX_ROW_COLS)
+            max = SYN_IMGUI_MAX_ROW_COLS;
         for (int i = 0; i < max; i++) {
             ctx->layout.row_widths[i] = widths[i];
         }
@@ -1912,17 +1942,18 @@ void syn_imgui_layout_row(SYN_IMGUI_Context *ctx, int items,
  * Widgets should still increment next_id for focus tracking.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-bool syn_imgui_widget_visible(const SYN_IMGUI_Context *ctx,
-                                int16_t y, int16_t h)
+bool syn_imgui_widget_visible(const SYN_IMGUI_Context *ctx, int16_t y, int16_t h)
 {
     SYN_ASSERT(ctx != NULL);
-    if (!ctx->scroll.in_scroll) return true; /* no scroll = always visible */
+    if (!ctx->scroll.in_scroll)
+        return true; /* no scroll = always visible */
 
     int16_t vp_top = ctx->scroll.vp_y;
     int16_t vp_bot = (int16_t)(ctx->scroll.vp_y + ctx->scroll.vp_h);
 
     /* Fully below viewport or fully above */
-    if (y >= vp_bot || y + h <= vp_top) return false;
+    if (y >= vp_bot || y + h <= vp_top)
+        return false;
     return true;
 }
 
@@ -1933,10 +1964,8 @@ bool syn_imgui_widget_visible(const SYN_IMGUI_Context *ctx,
  * clip rect mechanism.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_text_clipped(SYN_IMGUI_Context *ctx, const char *text,
-                              int16_t x, int16_t y,
-                              int16_t clip_x, int16_t clip_y,
-                              int16_t clip_w, int16_t clip_h)
+void syn_imgui_text_clipped(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y,
+                            int16_t clip_x, int16_t clip_y, int16_t clip_w, int16_t clip_h)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(text != NULL);
@@ -1980,10 +2009,8 @@ void syn_imgui_text_clipped(SYN_IMGUI_Context *ctx, const char *text,
  * cycles worth.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text,
-                              int16_t *offset,
-                              int16_t x, int16_t y, int16_t w,
-                              int16_t speed)
+void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text, int16_t *offset, int16_t x,
+                            int16_t y, int16_t w, int16_t speed)
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(text != NULL);
@@ -1992,7 +2019,8 @@ void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text,
     uint16_t fg = ctx->disabled_depth > 0 ? ctx->style.disabled : ctx->style.fg;
     int16_t text_w = (int16_t)syn_gfx_text_width(ctx->gfx, text);
 
-    if (speed <= 0) speed = 1;
+    if (speed <= 0)
+        speed = 1;
 
     /* Resolve geometry from layout cursor before any drawing */
     uint8_t fh_mq = syn_gfx_text_height(ctx->gfx);
@@ -2015,15 +2043,18 @@ void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text,
 
     /* Pause duration at each end (in calls).  ~30 calls at speed=1 */
     int16_t pause = (int16_t)(30 / speed);
-    if (pause < 4) pause = 4;
+    if (pause < 4)
+        pause = 4;
 
     /* Total cycle: pause + scroll_right + pause + scroll_left */
     int16_t total_cycle = (int16_t)(pause + overflow + pause + overflow);
 
     /* Normalize offset into cycle */
     int16_t pos = *offset;
-    if (pos < 0) pos = 0;
-    if (pos >= total_cycle) pos = 0;
+    if (pos < 0)
+        pos = 0;
+    if (pos >= total_cycle)
+        pos = 0;
 
     /* Determine text_x shift */
     int16_t shift;
@@ -2059,7 +2090,8 @@ void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text,
 
     /* Advance offset */
     *offset = (int16_t)(pos + speed);
-    if (*offset >= total_cycle) *offset = 0;
+    if (*offset >= total_cycle)
+        *offset = 0;
 }
 
 #endif /* SYN_USE_IMGUI */

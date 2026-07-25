@@ -6,10 +6,10 @@
  * HMAC-SHA256 test vectors from RFC 4231.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/util/syn_sha256.h"
 #include "syntropic/util/syn_hmac.h"
+#include "syntropic/util/syn_sha256.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
@@ -185,7 +185,8 @@ static void test_hmac_case4(void)
 {
     uint8_t key[25];
     unsigned i;
-    for (i = 0; i < 25; i++) key[i] = (uint8_t)(i + 1);
+    for (i = 0; i < 25; i++)
+        key[i] = (uint8_t)(i + 1);
     uint8_t data[50];
     memset(data, 0xcd, 50);
 
@@ -250,7 +251,8 @@ static void test_sha256_buffer_fill_boundary(void)
     /* Use a known 64-byte message */
     uint8_t msg[64];
     size_t i;
-    for (i = 0; i < 64; i++) msg[i] = (uint8_t)i;
+    for (i = 0; i < 64; i++)
+        msg[i] = (uint8_t)i;
 
     /* One-shot reference */
     uint8_t ref[32];
@@ -259,8 +261,8 @@ static void test_sha256_buffer_fill_boundary(void)
     /* Streaming: 1 byte (partial buffer), then 63 bytes (fills to 64) */
     SYN_SHA256 ctx;
     syn_sha256_init(&ctx);
-    syn_sha256_update(&ctx, msg, 1);       /* buf_len = 1 */
-    syn_sha256_update(&ctx, msg + 1, 63);  /* fills to 64 → transform */
+    syn_sha256_update(&ctx, msg, 1);      /* buf_len = 1 */
+    syn_sha256_update(&ctx, msg + 1, 63); /* fills to 64 → transform */
     uint8_t hash[32];
     syn_sha256_final(&ctx, hash);
 
@@ -280,7 +282,7 @@ static void test_sha256_length_overflow_carry(void)
     /* Manually set total_len_lo near the overflow point.
      * total_len_lo is in bits, so set it to (UINT32_MAX - 7),
      * meaning we need > 1 byte (8 bits) to overflow. */
-    ctx.total_len_lo = 0xFFFFFFF8u;  /* UINT32_MAX - 7 */
+    ctx.total_len_lo = 0xFFFFFFF8u; /* UINT32_MAX - 7 */
     ctx.total_len_hi = 0;
 
     /* Feed 1 byte = 8 bits → total_len_lo wraps to 0, carry fires */

@@ -4,8 +4,10 @@
  */
 
 #include "syn_j1939.h"
+
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
+
 #include <string.h>
 
 uint32_t syn_j1939_calc_pgn(uint8_t dp, uint8_t pf, uint8_t ps)
@@ -38,20 +40,21 @@ uint32_t syn_j1939_id_pack(uint8_t priority, uint32_t pgn, uint8_t sa, uint8_t d
 
 SYN_Status syn_j1939_id_unpack(uint32_t can_id, SYN_J1939_Header *header)
 {
-    if (!header) return SYN_INVALID_PARAM;
+    if (!header)
+        return SYN_INVALID_PARAM;
 
     header->priority = (uint8_t)((can_id >> 26) & 0x07U);
-    header->dp       = (uint8_t)((can_id >> 24) & 0x01U);
-    header->pf       = (uint8_t)((can_id >> 16) & 0xFFU);
-    header->ps       = (uint8_t)((can_id >> 8) & 0xFFU);
-    header->sa       = (uint8_t)(can_id & 0xFFU);
-    header->is_pdu1  = (header->pf < 240U);
+    header->dp = (uint8_t)((can_id >> 24) & 0x01U);
+    header->pf = (uint8_t)((can_id >> 16) & 0xFFU);
+    header->ps = (uint8_t)((can_id >> 8) & 0xFFU);
+    header->sa = (uint8_t)(can_id & 0xFFU);
+    header->is_pdu1 = (header->pf < 240U);
 
     if (header->is_pdu1) {
-        header->da  = header->ps;
+        header->da = header->ps;
         header->pgn = syn_j1939_calc_pgn(header->dp, header->pf, 0);
     } else {
-        header->da  = SYN_J1939_ADDR_GLOBAL;
+        header->da = SYN_J1939_ADDR_GLOBAL;
         header->pgn = syn_j1939_calc_pgn(header->dp, header->pf, header->ps);
     }
 
@@ -60,7 +63,8 @@ SYN_Status syn_j1939_id_unpack(uint32_t can_id, SYN_J1939_Header *header)
 
 void syn_j1939_name_encode(const SYN_J1939_Name *name, uint8_t buf[8])
 {
-    if (!name || !buf) return;
+    if (!name || !buf)
+        return;
     memset(buf, 0, 8);
 
     uint64_t n = 0;
@@ -80,26 +84,28 @@ void syn_j1939_name_encode(const SYN_J1939_Name *name, uint8_t buf[8])
 
 void syn_j1939_name_decode(const uint8_t buf[8], SYN_J1939_Name *name)
 {
-    if (!name || !buf) return;
+    if (!name || !buf)
+        return;
     memset(name, 0, sizeof(*name));
 
     size_t pos = 0;
     uint64_t n = syn_unpack_u64_le(buf, &pos);
 
-    name->identity_number    = (uint32_t)(n & 0x1FFFFFU);
-    name->manufacturer_code  = (uint16_t)((n >> 21) & 0x7FFU);
-    name->ecu_instance       = (uint8_t)((n >> 32) & 0x07U);
-    name->function_instance  = (uint8_t)((n >> 35) & 0x1FU);
-    name->function           = (uint8_t)((n >> 40) & 0xFFU);
-    name->vehicle_system     = (uint8_t)((n >> 49) & 0x7FU);
-    name->vehicle_system_inst= (uint8_t)((n >> 56) & 0x0FU);
-    name->industry_group     = (uint8_t)((n >> 60) & 0x07U);
+    name->identity_number = (uint32_t)(n & 0x1FFFFFU);
+    name->manufacturer_code = (uint16_t)((n >> 21) & 0x7FFU);
+    name->ecu_instance = (uint8_t)((n >> 32) & 0x07U);
+    name->function_instance = (uint8_t)((n >> 35) & 0x1FU);
+    name->function = (uint8_t)((n >> 40) & 0xFFU);
+    name->vehicle_system = (uint8_t)((n >> 49) & 0x7FU);
+    name->vehicle_system_inst = (uint8_t)((n >> 56) & 0x0FU);
+    name->industry_group = (uint8_t)((n >> 60) & 0x07U);
     name->arbitrary_addr_cap = ((n >> 63) & 0x01U) != 0;
 }
 
 SYN_Status syn_j1939_node_init(SYN_J1939_Node *node, uint8_t sa, const SYN_J1939_Name *name)
 {
-    if (!node) return SYN_INVALID_PARAM;
+    if (!node)
+        return SYN_INVALID_PARAM;
 
     memset(node, 0, sizeof(*node));
     node->sa = sa;
@@ -113,9 +119,10 @@ SYN_Status syn_j1939_node_init(SYN_J1939_Node *node, uint8_t sa, const SYN_J1939
 
 SYN_Status syn_j1939_build_address_claim(const SYN_J1939_Node *node, SYN_CAN_Frame *frame)
 {
-    if (!node || !frame) return SYN_INVALID_PARAM;
+    if (!node || !frame)
+        return SYN_INVALID_PARAM;
 
-    frame->id  = syn_j1939_id_pack(6, SYN_J1939_PGN_ADDR_CLAIM, node->sa, SYN_J1939_ADDR_GLOBAL);
+    frame->id = syn_j1939_id_pack(6, SYN_J1939_PGN_ADDR_CLAIM, node->sa, SYN_J1939_ADDR_GLOBAL);
     frame->dlc = 8;
     frame->extended = true;
     syn_j1939_name_encode(&node->name, frame->data);
@@ -123,11 +130,13 @@ SYN_Status syn_j1939_build_address_claim(const SYN_J1939_Node *node, SYN_CAN_Fra
     return SYN_OK;
 }
 
-SYN_Status syn_j1939_build_request(uint8_t sa, uint8_t da, uint32_t requested_pgn, SYN_CAN_Frame *frame)
+SYN_Status syn_j1939_build_request(uint8_t sa, uint8_t da, uint32_t requested_pgn,
+                                   SYN_CAN_Frame *frame)
 {
-    if (!frame) return SYN_INVALID_PARAM;
+    if (!frame)
+        return SYN_INVALID_PARAM;
 
-    frame->id  = syn_j1939_id_pack(6, SYN_J1939_PGN_REQUEST, sa, da);
+    frame->id = syn_j1939_id_pack(6, SYN_J1939_PGN_REQUEST, sa, da);
     frame->dlc = 3;
     frame->extended = true;
 
@@ -138,11 +147,13 @@ SYN_Status syn_j1939_build_request(uint8_t sa, uint8_t da, uint32_t requested_pg
     return SYN_OK;
 }
 
-SYN_Status syn_j1939_build_tp_bam(uint8_t sa, uint32_t pgn, uint16_t total_bytes, SYN_CAN_Frame *frame)
+SYN_Status syn_j1939_build_tp_bam(uint8_t sa, uint32_t pgn, uint16_t total_bytes,
+                                  SYN_CAN_Frame *frame)
 {
-    if (!frame || total_bytes < 9 || total_bytes > 1785) return SYN_INVALID_PARAM;
+    if (!frame || total_bytes < 9 || total_bytes > 1785)
+        return SYN_INVALID_PARAM;
 
-    frame->id  = syn_j1939_id_pack(6, SYN_J1939_PGN_TP_CM, sa, SYN_J1939_ADDR_GLOBAL);
+    frame->id = syn_j1939_id_pack(6, SYN_J1939_PGN_TP_CM, sa, SYN_J1939_ADDR_GLOBAL);
     frame->dlc = 8;
     frame->extended = true;
 
@@ -159,13 +170,14 @@ SYN_Status syn_j1939_build_tp_bam(uint8_t sa, uint32_t pgn, uint16_t total_bytes
     return SYN_OK;
 }
 
-SYN_Status syn_j1939_build_tp_dt(uint8_t sa, uint8_t sequence, const uint8_t *payload, size_t payload_len, SYN_CAN_Frame *frame)
+SYN_Status syn_j1939_build_tp_dt(uint8_t sa, uint8_t sequence, const uint8_t *payload,
+                                 size_t payload_len, SYN_CAN_Frame *frame)
 {
     if (!frame || !payload || sequence == 0 || payload_len == 0 || payload_len > 7) {
         return SYN_INVALID_PARAM;
     }
 
-    frame->id  = syn_j1939_id_pack(6, SYN_J1939_PGN_TP_DT, sa, SYN_J1939_ADDR_GLOBAL);
+    frame->id = syn_j1939_id_pack(6, SYN_J1939_PGN_TP_DT, sa, SYN_J1939_ADDR_GLOBAL);
     frame->dlc = 8;
     frame->extended = true;
 
@@ -176,9 +188,11 @@ SYN_Status syn_j1939_build_tp_dt(uint8_t sa, uint8_t sequence, const uint8_t *pa
     return SYN_OK;
 }
 
-size_t syn_j1939_encode_dm1(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *dtc_list, size_t dtc_count, uint8_t mil_lamp_status)
+size_t syn_j1939_encode_dm1(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *dtc_list,
+                            size_t dtc_count, uint8_t mil_lamp_status)
 {
-    if (!buf || buf_size < 2) return 0;
+    if (!buf || buf_size < 2)
+        return 0;
 
     buf[0] = (uint8_t)(mil_lamp_status & 0xFFU);
     buf[1] = 0xFFU; /* Reserved / Flash Lamp status */
@@ -193,12 +207,13 @@ size_t syn_j1939_encode_dm1(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *
 
     size_t offset = 2;
     for (size_t i = 0; i < dtc_count; i++) {
-        if (offset + 4 > buf_size) break;
+        if (offset + 4 > buf_size)
+            break;
 
         uint32_t spn = dtc_list[i].spn & 0x7FFFFU;
         uint8_t fmi = dtc_list[i].fmi & 0x1FU;
-        uint8_t oc  = dtc_list[i].occurrence_count & 0x7FU;
-        uint8_t cm  = (uint8_t)(dtc_list[i].conversion_method & 0x01U);
+        uint8_t oc = dtc_list[i].occurrence_count & 0x7FU;
+        uint8_t cm = (uint8_t)(dtc_list[i].conversion_method & 0x01U);
 
         syn_poke_u16_le((uint16_t)spn, buf, offset);
         buf[offset + 2] = (uint8_t)(((spn >> 11) & 0xE0U) | fmi);
@@ -210,11 +225,8 @@ size_t syn_j1939_encode_dm1(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *
     return offset;
 }
 
-SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node,
-                                   const SYN_CAN_Frame *frame,
-                                   uint32_t *out_pgn,
-                                   const uint8_t **out_data,
-                                   size_t *out_len)
+SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node, const SYN_CAN_Frame *frame,
+                                   uint32_t *out_pgn, const uint8_t **out_data, size_t *out_len)
 {
     if (!node || !frame || !out_pgn || !out_data || !out_len) {
         return SYN_INVALID_PARAM;
@@ -231,7 +243,8 @@ SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node,
         if (ctrl == SYN_J1939_TP_CTRL_BAM || ctrl == SYN_J1939_TP_CTRL_RTS) {
             uint16_t total_bytes = syn_peek_u16_le(frame->data, 1);
             uint8_t total_packets = frame->data[3];
-            uint32_t pgn = (uint32_t)syn_peek_u16_le(frame->data, 5) | ((uint32_t)frame->data[7] << 16);
+            uint32_t pgn =
+                (uint32_t)syn_peek_u16_le(frame->data, 5) | ((uint32_t)frame->data[7] << 16);
 
             if (total_bytes <= sizeof(node->tp_rx.data) && total_packets > 0) {
                 node->tp_rx.active = true;
@@ -263,9 +276,9 @@ SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node,
                 node->tp_rx.received_packets++;
 
                 if (node->tp_rx.received_packets >= node->tp_rx.total_packets) {
-                    *out_pgn  = node->tp_rx.pgn;
+                    *out_pgn = node->tp_rx.pgn;
                     *out_data = node->tp_rx.data;
-                    *out_len  = node->tp_rx.total_bytes;
+                    *out_len = node->tp_rx.total_bytes;
                     node->tp_rx.active = false;
                     return SYN_OK;
                 }
@@ -275,9 +288,9 @@ SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node,
     }
 
     /* Single-frame packet handling */
-    *out_pgn  = hdr.pgn;
+    *out_pgn = hdr.pgn;
     *out_data = frame->data;
-    *out_len  = frame->dlc;
+    *out_len = frame->dlc;
 
     return SYN_OK;
 }

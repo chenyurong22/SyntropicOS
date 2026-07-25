@@ -11,8 +11,9 @@
 #define SYN_PORT_SPI_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,20 +23,20 @@ extern "C" {
 
 /** @brief SPI clock polarity/phase mode. */
 typedef enum {
-    SYN_SPI_MODE_0 = 0,  /**< CPOL=0, CPHA=0 */
-    SYN_SPI_MODE_1 = 1,  /**< CPOL=0, CPHA=1 */
-    SYN_SPI_MODE_2 = 2,  /**< CPOL=1, CPHA=0 */
-    SYN_SPI_MODE_3 = 3,  /**< CPOL=1, CPHA=1 */
+    SYN_SPI_MODE_0 = 0, /**< CPOL=0, CPHA=0 */
+    SYN_SPI_MODE_1 = 1, /**< CPOL=0, CPHA=1 */
+    SYN_SPI_MODE_2 = 2, /**< CPOL=1, CPHA=0 */
+    SYN_SPI_MODE_3 = 3, /**< CPOL=1, CPHA=1 */
 } SYN_SPI_Mode;
 
 /* ── SPI configuration ──────────────────────────────────────────────────── */
 
 /** @brief SPI bus configuration. */
 typedef struct {
-    uint8_t       bus;            /**< SPI bus index (0, 1, ...)           */
-    uint32_t      clock_hz;       /**< SPI clock frequency                */
-    SYN_SPI_Mode mode;           /**< Clock polarity / phase             */
-    uint8_t       bit_order;      /**< 0 = MSB first (default), 1 = LSB  */
+    uint8_t bus;       /**< SPI bus index (0, 1, ...)           */
+    uint32_t clock_hz; /**< SPI clock frequency                */
+    SYN_SPI_Mode mode; /**< Clock polarity / phase             */
+    uint8_t bit_order; /**< 0 = MSB first (default), 1 = LSB  */
 } SYN_SPI_Config;
 
 /* ── Port functions (user implements) ───────────────────────────────────── */
@@ -66,10 +67,7 @@ SYN_Status syn_port_spi_deinit(uint8_t bus);
  * @param len     Number of bytes to transfer.
  * @return SYN_OK on success.
  */
-SYN_Status syn_port_spi_transfer(uint8_t bus,
-                                   const uint8_t *tx_buf,
-                                   uint8_t *rx_buf,
-                                   size_t len);
+SYN_Status syn_port_spi_transfer(uint8_t bus, const uint8_t *tx_buf, uint8_t *rx_buf, size_t len);
 
 /**
  * @brief Assert (pull low) an SPI chip-select pin.

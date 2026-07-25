@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_EXTI) || SYN_USE_EXTI
@@ -9,8 +9,8 @@
  * @brief GPIO interrupt dispatcher implementation.
  */
 
-#include "syn_exti.h"
 #include "../util/syn_assert.h"
+#include "syn_exti.h"
 
 #include <string.h>
 
@@ -18,14 +18,14 @@
 
 /** @brief EXTI callback table entry. */
 typedef struct {
-    SYN_GPIO_Pin       pin;     /**< Registered pin                  */
-    SYN_EXTI_Callback  cb;      /**< User callback                   */
-    void               *ctx;    /**< User context                    */
-    bool                active; /**< true if interrupt is enabled     */
+    SYN_GPIO_Pin pin;     /**< Registered pin                  */
+    SYN_EXTI_Callback cb; /**< User callback                   */
+    void *ctx;            /**< User context                    */
+    bool active;          /**< true if interrupt is enabled     */
 } EXTI_Entry;
 
-static EXTI_Entry exti_table[SYN_EXTI_MAX_PINS];  /**< Registered callbacks.  */
-static size_t     exti_count;                      /**< Number of registered.  */
+static EXTI_Entry exti_table[SYN_EXTI_MAX_PINS]; /**< Registered callbacks.  */
+static size_t exti_count;                        /**< Number of registered.  */
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
@@ -53,16 +53,15 @@ void syn_exti_init(void)
     exti_count = 0;
 }
 
-SYN_Status syn_exti_register(SYN_GPIO_Pin pin, SYN_EXTI_Edge edge,
-                                SYN_EXTI_Callback cb, void *ctx)
+SYN_Status syn_exti_register(SYN_GPIO_Pin pin, SYN_EXTI_Edge edge, SYN_EXTI_Callback cb, void *ctx)
 {
     SYN_ASSERT(cb != NULL);
 
     /* Check if already registered — update in place */
     EXTI_Entry *e = find_entry(pin);
     if (e != NULL) {
-        e->cb     = cb;
-        e->ctx    = ctx;
+        e->cb = cb;
+        e->ctx = ctx;
         e->active = true;
         syn_port_exti_configure(pin, edge);
         return SYN_OK;
@@ -74,9 +73,9 @@ SYN_Status syn_exti_register(SYN_GPIO_Pin pin, SYN_EXTI_Edge edge,
     }
 
     e = &exti_table[exti_count++];
-    e->pin    = pin;
-    e->cb     = cb;
-    e->ctx    = ctx;
+    e->pin = pin;
+    e->cb = cb;
+    e->ctx = ctx;
     e->active = true;
 
     syn_port_exti_configure(pin, edge);
@@ -89,7 +88,7 @@ void syn_exti_unregister(SYN_GPIO_Pin pin)
     if (e != NULL) {
         syn_port_exti_disable(pin);
         e->active = false;
-        e->cb     = NULL;
+        e->cb = NULL;
     }
 }
 

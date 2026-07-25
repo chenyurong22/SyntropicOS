@@ -3,30 +3,29 @@
  * @brief Unity tests for syn_kalman (Kalman filter).
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/dsp/syn_kalman.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 #include <stdio.h>
 
 /* ── Helper ─────────────────────────────────────────────────────────────── */
 
-#define ASSERT_Q16_NEAR(expected, actual, tol_q16)                       \
-    do {                                                                  \
-        q16_t _e = (expected), _a = (actual), _t = (tol_q16);           \
-        q16_t _d = (_a > _e) ? (_a - _e) : (_e - _a);                  \
-        if (_d > _t) {                                                    \
-            char _msg[80];                                                \
-            snprintf(_msg, sizeof(_msg),                                  \
-                "Expected %ld ± %ld, got %ld (delta %ld)",               \
-                (long)_e, (long)_t, (long)_a, (long)_d);                \
-            TEST_FAIL_MESSAGE(_msg);                                      \
-        }                                                                 \
+#define ASSERT_Q16_NEAR(expected, actual, tol_q16)                                            \
+    do {                                                                                      \
+        q16_t _e = (expected), _a = (actual), _t = (tol_q16);                                 \
+        q16_t _d = (_a > _e) ? (_a - _e) : (_e - _a);                                         \
+        if (_d > _t) {                                                                        \
+            char _msg[80];                                                                    \
+            snprintf(_msg, sizeof(_msg), "Expected %ld ± %ld, got %ld (delta %ld)", (long)_e, \
+                     (long)_t, (long)_a, (long)_d);                                           \
+            TEST_FAIL_MESSAGE(_msg);                                                          \
+        }                                                                                     \
     } while (0)
 
-#define Q16_TOL      131   /* ±0.002 */
-#define Q16_KF_TOL   6554  /* ±0.1 — Kalman convergence tolerance */
+#define Q16_TOL 131     /* ±0.002 */
+#define Q16_KF_TOL 6554 /* ±0.1 — Kalman convergence tolerance */
 
 /* ── Test: init validates dimensions ───────────────────────────────────── */
 
@@ -42,10 +41,14 @@ static void test_kalman_init_valid(void)
     SYN_MAT_DECL(H, 1, 2);
     SYN_MAT_DECL(R, 1, 1);
 
-    cfg.x = &x;  cfg.P = &P;  cfg.F = &F;
-    cfg.Q = &Q;  cfg.H = &H;  cfg.R = &R;
+    cfg.x = &x;
+    cfg.P = &P;
+    cfg.F = &F;
+    cfg.Q = &Q;
+    cfg.H = &H;
+    cfg.R = &R;
     cfg.n_state = 2;
-    cfg.n_meas  = 1;
+    cfg.n_meas = 1;
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_kalman_init(&kf, &cfg));
 }
@@ -63,10 +66,14 @@ static void test_kalman_init_bad_dims(void)
     SYN_MAT_DECL(H, 1, 2);
     SYN_MAT_DECL(R, 1, 1);
 
-    cfg.x = &x;  cfg.P = &P;  cfg.F = &F;
-    cfg.Q = &Q;  cfg.H = &H;  cfg.R = &R;
+    cfg.x = &x;
+    cfg.P = &P;
+    cfg.F = &F;
+    cfg.Q = &Q;
+    cfg.H = &H;
+    cfg.R = &R;
     cfg.n_state = 2;
-    cfg.n_meas  = 1;
+    cfg.n_meas = 1;
 
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
 }
@@ -109,16 +116,20 @@ static void test_kalman_constant_converge(void)
 
     /* Process noise: small */
     syn_matrix_zero(&Qn);
-    SYN_MAT_AT(&Qn, 0, 0) = Q16_FROM_FRAC(1, 100);  /* 0.01 */
+    SYN_MAT_AT(&Qn, 0, 0) = Q16_FROM_FRAC(1, 100); /* 0.01 */
 
     /* Measurement noise: moderate */
     syn_matrix_zero(&R);
-    SYN_MAT_AT(&R, 0, 0) = Q16_ONE;  /* 1.0 */
+    SYN_MAT_AT(&R, 0, 0) = Q16_ONE; /* 1.0 */
 
-    cfg.x = &x;  cfg.P = &P;  cfg.F = &F;
-    cfg.Q = &Qn; cfg.H = &H;  cfg.R = &R;
+    cfg.x = &x;
+    cfg.P = &P;
+    cfg.F = &F;
+    cfg.Q = &Qn;
+    cfg.H = &H;
+    cfg.R = &R;
     cfg.n_state = 1;
-    cfg.n_meas  = 1;
+    cfg.n_meas = 1;
 
     syn_kalman_init(&kf, &cfg);
     SYN_KALMAN_SCRATCH_ASSIGN(&kf, s);
@@ -160,10 +171,14 @@ static void test_kalman_predict_grows_P(void)
     SYN_MAT_AT(&Qn, 0, 0) = Q16_HALF;
     SYN_MAT_AT(&R, 0, 0) = Q16_ONE;
 
-    cfg.x = &x;  cfg.P = &P;  cfg.F = &F;
-    cfg.Q = &Qn; cfg.H = &H;  cfg.R = &R;
+    cfg.x = &x;
+    cfg.P = &P;
+    cfg.F = &F;
+    cfg.Q = &Qn;
+    cfg.H = &H;
+    cfg.R = &R;
     cfg.n_state = 1;
-    cfg.n_meas  = 1;
+    cfg.n_meas = 1;
 
     syn_kalman_init(&kf, &cfg);
     SYN_KALMAN_SCRATCH_ASSIGN(&kf, s);

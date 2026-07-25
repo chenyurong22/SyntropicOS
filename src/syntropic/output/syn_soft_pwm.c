@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SOFT_PWM) || SYN_USE_SOFT_PWM
@@ -9,23 +9,22 @@
  * @brief Software PWM implementation.
  */
 
-#include "syn_soft_pwm.h"
 #include "../drivers/syn_gpio.h"
 #include "../util/syn_assert.h"
+#include "syn_soft_pwm.h"
 
 #include <string.h>
 
-void syn_soft_pwm_init(SYN_SoftPWM *pwm, SYN_GPIO_Pin pin,
-                        uint16_t resolution)
+void syn_soft_pwm_init(SYN_SoftPWM *pwm, SYN_GPIO_Pin pin, uint16_t resolution)
 {
     SYN_ASSERT(pwm != NULL);
     SYN_ASSERT(resolution > 0);
 
     memset(pwm, 0, sizeof(*pwm));
-    pwm->pin         = pin;
-    pwm->resolution  = resolution;
-    pwm->duty        = 0;
-    pwm->counter     = 0;
+    pwm->pin = pin;
+    pwm->resolution = resolution;
+    pwm->duty = 0;
+    pwm->counter = 0;
     pwm->active_high = true;
 
     syn_gpio_write(pin, SYN_GPIO_LOW);
@@ -45,7 +44,8 @@ void syn_soft_pwm_set_percent(SYN_SoftPWM *pwm, uint8_t percent)
 {
     SYN_ASSERT(pwm != NULL);
 
-    if (percent > 100) percent = 100;
+    if (percent > 100)
+        percent = 100;
     uint16_t duty = (uint16_t)(((uint32_t)percent * pwm->resolution + 50u) / 100u);
     pwm->duty = duty;
 }

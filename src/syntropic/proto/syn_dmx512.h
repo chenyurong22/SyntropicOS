@@ -11,18 +11,19 @@
 #define SYN_DMX512_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** @brief DMX512 Protocol Constants */
-#define SYN_DMX512_MAX_CHANNELS           512U
-#define SYN_DMX512_START_CODE_NULL        0x00U /**< Standard dimmer start code */
-#define SYN_DMX512_BAUD_RATE              250000UL
+#define SYN_DMX512_MAX_CHANNELS 512U
+#define SYN_DMX512_START_CODE_NULL 0x00U /**< Standard dimmer start code */
+#define SYN_DMX512_BAUD_RATE 250000UL
 
 /** @brief DMX512 Receiver State Machine States */
 typedef enum {
@@ -33,20 +34,20 @@ typedef enum {
 
 /** @brief DMX512 Master Handle */
 typedef struct {
-    uint8_t  channels[SYN_DMX512_MAX_CHANNELS]; /**< Universe channel buffer (1..512) */
-    uint16_t num_channels;                       /**< Configured universe length       */
-    uint8_t  start_code;                         /**< Active start code (default 0x00) */
+    uint8_t channels[SYN_DMX512_MAX_CHANNELS]; /**< Universe channel buffer (1..512) */
+    uint16_t num_channels;                     /**< Configured universe length       */
+    uint8_t start_code;                        /**< Active start code (default 0x00) */
 } SYN_DMX512_Master;
 
 /** @brief DMX512 Slave Handle */
 typedef struct {
-    uint8_t            rx_channels[SYN_DMX512_MAX_CHANNELS]; /**< Local footprint channels */
-    uint16_t           start_address;                        /**< Start address (1..512)   */
-    uint16_t           footprint;                            /**< Number of channels used  */
-    SYN_DMX512_RxState rx_state;                             /**< Receiver state           */
-    uint16_t           current_slot;                         /**< Current slot index       */
-    uint8_t            start_code;                           /**< Received start code      */
-    bool               frame_complete;                       /**< Frame updated flag       */
+    uint8_t rx_channels[SYN_DMX512_MAX_CHANNELS]; /**< Local footprint channels */
+    uint16_t start_address;                       /**< Start address (1..512)   */
+    uint16_t footprint;                           /**< Number of channels used  */
+    SYN_DMX512_RxState rx_state;                  /**< Receiver state           */
+    uint16_t current_slot;                        /**< Current slot index       */
+    uint8_t start_code;                           /**< Received start code      */
+    bool frame_complete;                          /**< Frame updated flag       */
 } SYN_DMX512_Slave;
 
 /**
@@ -63,7 +64,8 @@ void syn_dmx512_master_init(SYN_DMX512_Master *master, uint16_t num_channels);
  * @param value    8-bit slot value (0..255).
  * @return SYN_OK on success, error code on invalid channel.
  */
-SYN_Status syn_dmx512_master_set_channel(SYN_DMX512_Master *master, uint16_t channel, uint8_t value);
+SYN_Status syn_dmx512_master_set_channel(SYN_DMX512_Master *master, uint16_t channel,
+                                         uint8_t value);
 
 /**
  * @brief Get channel value (1-indexed channel, 1..512).
@@ -80,7 +82,8 @@ uint8_t syn_dmx512_master_get_channel(const SYN_DMX512_Master *master, uint16_t 
  * @param max_len  Maximum capacity of out_buf.
  * @return Number of payload bytes written (1 + num_channels).
  */
-size_t syn_dmx512_master_build_frame(const SYN_DMX512_Master *master, uint8_t *out_buf, size_t max_len);
+size_t syn_dmx512_master_build_frame(const SYN_DMX512_Master *master, uint8_t *out_buf,
+                                     size_t max_len);
 
 /**
  * @brief Initialize DMX512 Slave engine.

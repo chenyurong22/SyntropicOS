@@ -44,7 +44,8 @@ SYN_Status syn_fft_window_hanning(q16_t *out, uint16_t n);
 SYN_Status syn_fft_window_hamming(q16_t *out, uint16_t n);
 
 /**
- * @brief Generate Blackman-Harris window: w[i] = 0.42 - 0.5*cos(2*pi*i/(n-1)) + 0.08*cos(4*pi*i/(n-1)).
+ * @brief Generate Blackman-Harris window: w[i] = 0.42 - 0.5*cos(2*pi*i/(n-1)) +
+ * 0.08*cos(4*pi*i/(n-1)).
  * @param out Output buffer of size n.
  * @param n   Window length.
  * @return SYN_OK on success, SYN_INVALID_PARAM if NULL or n <= 1.
@@ -53,9 +54,9 @@ SYN_Status syn_fft_window_blackman(q16_t *out, uint16_t n);
 
 /** @brief FFT peak information structure. */
 typedef struct {
-    uint16_t bin;          /**< FFT bin index */
-    q16_t    magnitude;    /**< Peak magnitude in Q16.16 */
-    q16_t    freq_hz;      /**< Peak frequency in Hz in Q16.16 */
+    uint16_t bin;    /**< FFT bin index */
+    q16_t magnitude; /**< Peak magnitude in Q16.16 */
+    q16_t freq_hz;   /**< Peak frequency in Hz in Q16.16 */
 } SYN_FFTPeak;
 
 /**

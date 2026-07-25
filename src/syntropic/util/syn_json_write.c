@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_JSON) || SYN_USE_JSON
@@ -9,8 +9,8 @@
  * @brief Streaming JSON builder implementation.
  */
 
-#include "syn_json_write.h"
 #include "../util/syn_assert.h"
+#include "syn_json_write.h"
 
 #include <string.h>
 
@@ -23,7 +23,8 @@
  */
 static void jw_putc(SYN_JsonWriter *w, char ch)
 {
-    if (w->overflow) return;
+    if (w->overflow)
+        return;
     if (w->len + 1 >= w->capacity) {
         w->overflow = true;
         return;
@@ -39,7 +40,8 @@ static void jw_putc(SYN_JsonWriter *w, char ch)
  */
 static void jw_puts(SYN_JsonWriter *w, const char *s)
 {
-    if (w->overflow) return;
+    if (w->overflow)
+        return;
     size_t slen = strlen(s);
     if (w->len + slen >= w->capacity) {
         w->overflow = true;
@@ -61,18 +63,28 @@ static void jw_str(SYN_JsonWriter *w, const char *s)
     while (*s && !w->overflow) {
         char ch = *s++;
         switch (ch) {
-            case '"':  jw_puts(w, "\\\""); break;
-            case '\\': jw_puts(w, "\\\\"); break;
-            case '\n': jw_puts(w, "\\n");  break;
-            case '\r': jw_puts(w, "\\r");  break;
-            case '\t': jw_puts(w, "\\t");  break;
-            default:
-                if ((uint8_t)ch < 0x20) {
-                    /* Skip control chars */
-                } else {
-                    jw_putc(w, ch);
-                }
-                break;
+        case '"':
+            jw_puts(w, "\\\"");
+            break;
+        case '\\':
+            jw_puts(w, "\\\\");
+            break;
+        case '\n':
+            jw_puts(w, "\\n");
+            break;
+        case '\r':
+            jw_puts(w, "\\r");
+            break;
+        case '\t':
+            jw_puts(w, "\\t");
+            break;
+        default:
+            if ((uint8_t)ch < 0x20) {
+                /* Skip control chars */
+            } else {
+                jw_putc(w, ch);
+            }
+            break;
         }
     }
     jw_putc(w, '"');
@@ -109,7 +121,8 @@ static void jw_int(SYN_JsonWriter *w, int32_t val)
         }
     }
 
-    if (neg) tmp[pos++] = '-';
+    if (neg)
+        tmp[pos++] = '-';
     for (int i = dpos - 1; i >= 0; i--) {
         tmp[pos++] = digits[i];
     }
@@ -179,9 +192,13 @@ void syn_json_init(SYN_JsonWriter *w, char *buf, size_t capacity)
 void syn_json_obj_open(SYN_JsonWriter *w)
 {
     SYN_ASSERT(w != NULL);
-    if (w->depth >= SYN_JSON_MAX_DEPTH) { w->overflow = true; return; }
+    if (w->depth >= SYN_JSON_MAX_DEPTH) {
+        w->overflow = true;
+        return;
+    }
     /* Only insert comma if this isn't following a key */
-    if (w->needs_comma) jw_putc(w, ',');
+    if (w->needs_comma)
+        jw_putc(w, ',');
     jw_putc(w, '{');
     w->depth++;
     w->needs_comma = false;
@@ -191,15 +208,20 @@ void syn_json_obj_close(SYN_JsonWriter *w)
 {
     SYN_ASSERT(w != NULL);
     jw_putc(w, '}');
-    if (w->depth > 0) w->depth--;
+    if (w->depth > 0)
+        w->depth--;
     w->needs_comma = true;
 }
 
 void syn_json_arr_open(SYN_JsonWriter *w)
 {
     SYN_ASSERT(w != NULL);
-    if (w->depth >= SYN_JSON_MAX_DEPTH) { w->overflow = true; return; }
-    if (w->needs_comma) jw_putc(w, ',');
+    if (w->depth >= SYN_JSON_MAX_DEPTH) {
+        w->overflow = true;
+        return;
+    }
+    if (w->needs_comma)
+        jw_putc(w, ',');
     jw_putc(w, '[');
     w->depth++;
     w->needs_comma = false;
@@ -209,7 +231,8 @@ void syn_json_arr_close(SYN_JsonWriter *w)
 {
     SYN_ASSERT(w != NULL);
     jw_putc(w, ']');
-    if (w->depth > 0) w->depth--;
+    if (w->depth > 0)
+        w->depth--;
     w->needs_comma = true;
 }
 

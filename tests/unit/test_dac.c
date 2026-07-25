@@ -6,9 +6,9 @@
  * max_raw = 4095.  1 LSB = 3300/4095 ~= 0.806 mV.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/drivers/syn_dac.h"
+#include "unity/unity.h"
 
 #define DAC_CH 0u
 

@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SEQUENCER) || SYN_USE_SEQUENCER
@@ -9,29 +9,27 @@
  * @brief Timed action sequencer implementation.
  */
 
-#include "syn_sequencer.h"
 #include "../util/syn_assert.h"
+#include "syn_sequencer.h"
 
 #include <string.h>
 
-void syn_seq_init(SYN_Sequencer *seq,
-                   const SYN_SeqStep *steps, uint16_t count)
+void syn_seq_init(SYN_Sequencer *seq, const SYN_SeqStep *steps, uint16_t count)
 {
     SYN_ASSERT(seq != NULL);
     SYN_ASSERT(steps != NULL);
     SYN_ASSERT(count > 0);
 
     memset(seq, 0, sizeof(*seq));
-    seq->steps      = steps;
+    seq->steps = steps;
     seq->step_count = count;
-    seq->state      = SYN_SEQ_IDLE;
+    seq->state = SYN_SEQ_IDLE;
 }
 
-void syn_seq_on_complete(SYN_Sequencer *seq,
-                          SYN_SeqCompleteCallback cb, void *ctx)
+void syn_seq_on_complete(SYN_Sequencer *seq, SYN_SeqCompleteCallback cb, void *ctx)
 {
     SYN_ASSERT(seq != NULL);
-    seq->on_complete     = cb;
+    seq->on_complete = cb;
     seq->on_complete_ctx = ctx;
 }
 
@@ -45,7 +43,7 @@ void syn_seq_start(SYN_Sequencer *seq)
 {
     SYN_ASSERT(seq != NULL);
     seq->current = 0;
-    seq->state   = SYN_SEQ_RUNNING;
+    seq->state = SYN_SEQ_RUNNING;
 }
 
 void syn_seq_stop(SYN_Sequencer *seq)

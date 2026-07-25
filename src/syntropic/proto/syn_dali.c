@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_DALI) || SYN_USE_DALI
@@ -9,8 +9,8 @@
  * @brief Digital Addressable Lighting Interface (DALI / IEC 62386) Protocol Stack implementation.
  */
 
-#include "syn_dali.h"
 #include "../util/syn_assert.h"
+#include "syn_dali.h"
 
 #include <string.h>
 
@@ -21,10 +21,11 @@ uint16_t syn_dali_encode_forward(uint8_t addr, uint8_t data_cmd)
 
 bool syn_dali_decode_forward(uint16_t raw_16, SYN_DALI_ForwardFrame *frame)
 {
-    if (frame == NULL) return false;
+    if (frame == NULL)
+        return false;
 
-    frame->raw      = raw_16;
-    uint8_t addr    = (uint8_t)((raw_16 >> 8) & 0xFFU);
+    frame->raw = raw_16;
+    uint8_t addr = (uint8_t)((raw_16 >> 8) & 0xFFU);
     frame->data_cmd = (uint8_t)(raw_16 & 0xFFU);
 
     /* Address decoding:
@@ -38,16 +39,16 @@ bool syn_dali_decode_forward(uint16_t raw_16, SYN_DALI_ForwardFrame *frame)
 
     if ((addr & 0x80U) == 0x00U) {
         frame->addr_type = SYN_DALI_ADDR_SHORT;
-        frame->address   = (addr >> 1) & 0x3FU;
+        frame->address = (addr >> 1) & 0x3FU;
     } else if ((addr & 0xE0U) == 0x80U) {
         frame->addr_type = SYN_DALI_ADDR_GROUP;
-        frame->address   = (addr >> 1) & 0x0FU;
+        frame->address = (addr >> 1) & 0x0FU;
     } else if ((addr & 0xFEU) == 0xFEU) {
         frame->addr_type = SYN_DALI_ADDR_BROADCAST;
-        frame->address   = 0xFFU;
+        frame->address = 0xFFU;
     } else {
         frame->addr_type = SYN_DALI_ADDR_SPECIAL;
-        frame->address   = addr;
+        frame->address = addr;
     }
 
     return true;
@@ -60,7 +61,8 @@ uint8_t syn_dali_encode_backward(uint8_t data)
 
 bool syn_dali_decode_backward(uint8_t raw_8, SYN_DALI_BackwardFrame *frame)
 {
-    if (frame == NULL) return false;
+    if (frame == NULL)
+        return false;
     frame->data = raw_8;
     return true;
 }
@@ -74,8 +76,10 @@ SYN_Status syn_dali_slave_init(SYN_DALI_SlaveState *slave, const SYN_DALI_SlaveC
     memset(slave, 0, sizeof(*slave));
     slave->cfg = *cfg;
 
-    if (slave->cfg.min_level == 0) slave->cfg.min_level = 1;
-    if (slave->cfg.max_level == 0) slave->cfg.max_level = 254;
+    if (slave->cfg.min_level == 0)
+        slave->cfg.min_level = 1;
+    if (slave->cfg.max_level == 0)
+        slave->cfg.max_level = 254;
     if (slave->cfg.power_on_level != SYN_DALI_MASK_LEVEL) {
         slave->actual_level = slave->cfg.power_on_level;
     } else {
@@ -105,10 +109,8 @@ static bool check_address_match(const SYN_DALI_SlaveState *slave, const SYN_DALI
     return false;
 }
 
-SYN_Status syn_dali_slave_process(SYN_DALI_SlaveState *slave,
-                                  const SYN_DALI_ForwardFrame *req,
-                                  uint8_t *resp_data,
-                                  bool *has_resp)
+SYN_Status syn_dali_slave_process(SYN_DALI_SlaveState *slave, const SYN_DALI_ForwardFrame *req,
+                                  uint8_t *resp_data, bool *has_resp)
 {
     if (slave == NULL || req == NULL || resp_data == NULL || has_resp == NULL) {
         return SYN_INVALID_PARAM;
@@ -129,8 +131,10 @@ SYN_Status syn_dali_slave_process(SYN_DALI_SlaveState *slave,
                 slave->actual_level = 0;
                 slave->lamp_on = false;
             } else {
-                if (target_level < slave->cfg.min_level) target_level = slave->cfg.min_level;
-                if (target_level > slave->cfg.max_level) target_level = slave->cfg.max_level;
+                if (target_level < slave->cfg.min_level)
+                    target_level = slave->cfg.min_level;
+                if (target_level > slave->cfg.max_level)
+                    target_level = slave->cfg.max_level;
                 slave->actual_level = target_level;
                 slave->lamp_on = true;
             }
@@ -249,10 +253,14 @@ SYN_Status syn_dali_slave_process(SYN_DALI_SlaveState *slave,
 
         case SYN_DALI_CMD_QUERY_STATUS: {
             uint8_t status = 0;
-            if (slave->control_gear_failure) status |= (1U << 0);
-            if (slave->lamp_failure)         status |= (1U << 1);
-            if (slave->lamp_on)              status |= (1U << 2);
-            if (slave->cfg.short_address == SYN_DALI_SHORT_ADDR_UNASSIGNED) status |= (1U << 6);
+            if (slave->control_gear_failure)
+                status |= (1U << 0);
+            if (slave->lamp_failure)
+                status |= (1U << 1);
+            if (slave->lamp_on)
+                status |= (1U << 2);
+            if (slave->cfg.short_address == SYN_DALI_SHORT_ADDR_UNASSIGNED)
+                status |= (1U << 6);
             *resp_data = status;
             *has_resp = true;
             break;
@@ -324,20 +332,25 @@ SYN_Status syn_dali_slave_process(SYN_DALI_SlaveState *slave,
             break;
 
         default:
-            if (cmd >= SYN_DALI_CMD_GO_TO_SCENE_BASE && cmd <= (SYN_DALI_CMD_GO_TO_SCENE_BASE + 15U)) {
+            if (cmd >= SYN_DALI_CMD_GO_TO_SCENE_BASE &&
+                cmd <= (SYN_DALI_CMD_GO_TO_SCENE_BASE + 15U)) {
                 uint8_t scene_idx = cmd - SYN_DALI_CMD_GO_TO_SCENE_BASE;
                 uint8_t scene_lvl = slave->scenes[scene_idx];
                 if (scene_lvl != SYN_DALI_MASK_LEVEL) {
                     slave->actual_level = scene_lvl;
                     slave->lamp_on = (scene_lvl > 0);
                 }
-            } else if (cmd >= SYN_DALI_CMD_STORE_DTR_AS_SCENE_BASE && cmd <= (SYN_DALI_CMD_STORE_DTR_AS_SCENE_BASE + 15U)) {
+            } else if (cmd >= SYN_DALI_CMD_STORE_DTR_AS_SCENE_BASE &&
+                       cmd <= (SYN_DALI_CMD_STORE_DTR_AS_SCENE_BASE + 15U)) {
                 slave->scenes[cmd - SYN_DALI_CMD_STORE_DTR_AS_SCENE_BASE] = slave->dtr0;
-            } else if (cmd >= SYN_DALI_CMD_REMOVE_FROM_SCENE_BASE && cmd <= (SYN_DALI_CMD_REMOVE_FROM_SCENE_BASE + 15U)) {
+            } else if (cmd >= SYN_DALI_CMD_REMOVE_FROM_SCENE_BASE &&
+                       cmd <= (SYN_DALI_CMD_REMOVE_FROM_SCENE_BASE + 15U)) {
                 slave->scenes[cmd - SYN_DALI_CMD_REMOVE_FROM_SCENE_BASE] = SYN_DALI_MASK_LEVEL;
-            } else if (cmd >= SYN_DALI_CMD_ADD_TO_GROUP_BASE && cmd <= (SYN_DALI_CMD_ADD_TO_GROUP_BASE + 15U)) {
+            } else if (cmd >= SYN_DALI_CMD_ADD_TO_GROUP_BASE &&
+                       cmd <= (SYN_DALI_CMD_ADD_TO_GROUP_BASE + 15U)) {
                 slave->cfg.group_mask |= (1U << (cmd - SYN_DALI_CMD_ADD_TO_GROUP_BASE));
-            } else if (cmd >= SYN_DALI_CMD_REMOVE_FROM_GROUP_BASE && cmd <= (SYN_DALI_CMD_REMOVE_FROM_GROUP_BASE + 15U)) {
+            } else if (cmd >= SYN_DALI_CMD_REMOVE_FROM_GROUP_BASE &&
+                       cmd <= (SYN_DALI_CMD_REMOVE_FROM_GROUP_BASE + 15U)) {
                 slave->cfg.group_mask &= ~(1U << (cmd - SYN_DALI_CMD_REMOVE_FROM_GROUP_BASE));
             }
             break;
@@ -377,11 +390,13 @@ SYN_Status syn_dali_slave_process(SYN_DALI_SlaveState *slave,
             break;
 
         case SYN_DALI_SPEC_SEARCHADDRH:
-            slave->search_address = (slave->search_address & 0x00FFFFU) | ((uint32_t)spec_data << 16);
+            slave->search_address =
+                (slave->search_address & 0x00FFFFU) | ((uint32_t)spec_data << 16);
             break;
 
         case SYN_DALI_SPEC_SEARCHADDRM:
-            slave->search_address = (slave->search_address & 0xFF00FFU) | ((uint32_t)spec_data << 8);
+            slave->search_address =
+                (slave->search_address & 0xFF00FFU) | ((uint32_t)spec_data << 8);
             break;
 
         case SYN_DALI_SPEC_SEARCHADDRL:
@@ -428,7 +443,8 @@ SYN_Status syn_dali_slave_process(SYN_DALI_SlaveState *slave,
 
 size_t syn_dali_manchester_encode_byte(uint8_t val, uint8_t *bit_out)
 {
-    if (bit_out == NULL) return 0;
+    if (bit_out == NULL)
+        return 0;
 
     size_t idx = 0;
     for (int i = 7; i >= 0; i--) {
@@ -448,7 +464,8 @@ size_t syn_dali_manchester_encode_byte(uint8_t val, uint8_t *bit_out)
 
 bool syn_dali_manchester_decode_byte(const uint8_t *bit_in, uint8_t *val_out)
 {
-    if (bit_in == NULL || val_out == NULL) return false;
+    if (bit_in == NULL || val_out == NULL)
+        return false;
 
     uint8_t val = 0;
     size_t idx = 0;

@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_CBOR) || SYN_USE_CBOR
@@ -10,6 +10,7 @@
  */
 
 #include "syn_cbor_write.h"
+
 #include <string.h>
 
 /**
@@ -19,7 +20,8 @@
  */
 static void emit_byte(SYN_CborWriter *w, uint8_t b)
 {
-    if (w->overflow) return;
+    if (w->overflow)
+        return;
     if (w->len >= w->cap) {
         w->overflow = true;
         return;
@@ -68,7 +70,7 @@ static void emit_head(SYN_CborWriter *w, uint8_t major, uint64_t val)
         emit_byte(w, mt | 26u);
         emit_byte(w, (uint8_t)(val >> 24u));
         emit_byte(w, (uint8_t)(val >> 16u));
-        emit_byte(w, (uint8_t)(val >>  8u));
+        emit_byte(w, (uint8_t)(val >> 8u));
         emit_byte(w, (uint8_t)(val));
     } else {
         emit_byte(w, mt | 27u);
@@ -78,16 +80,16 @@ static void emit_head(SYN_CborWriter *w, uint8_t major, uint64_t val)
         emit_byte(w, (uint8_t)(val >> 32u));
         emit_byte(w, (uint8_t)(val >> 24u));
         emit_byte(w, (uint8_t)(val >> 16u));
-        emit_byte(w, (uint8_t)(val >>  8u));
+        emit_byte(w, (uint8_t)(val >> 8u));
         emit_byte(w, (uint8_t)(val));
     }
 }
 
 void syn_cbor_writer_init(SYN_CborWriter *w, uint8_t *buf, size_t cap)
 {
-    w->buf      = buf;
-    w->cap      = cap;
-    w->len      = 0u;
+    w->buf = buf;
+    w->cap = cap;
+    w->len = 0u;
     w->overflow = false;
 }
 
@@ -130,7 +132,7 @@ void syn_cbor_write_float(SYN_CborWriter *w, float v)
     /* Emit big-endian */
     emit_byte(w, (uint8_t)(bits >> 24u));
     emit_byte(w, (uint8_t)(bits >> 16u));
-    emit_byte(w, (uint8_t)(bits >>  8u));
+    emit_byte(w, (uint8_t)(bits >> 8u));
     emit_byte(w, (uint8_t)(bits));
 }
 

@@ -3,12 +3,12 @@
  * @brief Unity tests for syn_adc — full coverage (adds filter and stats paths).
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/drivers/syn_adc.h"
 #include "syntropic/dsp/syn_filter.h"
 #include "syntropic/dsp/syn_signal.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_adc(void)
 {
@@ -40,7 +40,7 @@ static void test_adc(void)
     TEST_ASSERT_EQUAL_INT(2148, val);
 
     /* With scale */
-    syn_adc_set_calibration(&adc, 0, 2048, 10);  /* × 2.0 */
+    syn_adc_set_calibration(&adc, 0, 2048, 10); /* × 2.0 */
     val = syn_adc_read(&adc);
     TEST_ASSERT_EQUAL_INT(4096, val);
 }
@@ -53,12 +53,12 @@ static void test_adc_filter_ma(void)
 
     SYN_ADC adc;
     SYN_ADC_Config cfg = {
-        .channel    = 0,
+        .channel = 0,
         .oversample = 1,
-        .filter     = &ma_filter,
+        .filter = &ma_filter,
         .filter_type = SYN_ADC_FILTER_MA,
         .cal_offset = 0,
-        .cal_scale  = 1,
+        .cal_scale = 1,
         .cal_scale_shift = 0,
     };
     mock_adc_value = 100;
@@ -82,12 +82,12 @@ static void test_adc_filter_ema(void)
 
     SYN_ADC adc;
     SYN_ADC_Config cfg = {
-        .channel    = 0,
+        .channel = 0,
         .oversample = 1,
-        .filter     = &ema_filter,
+        .filter = &ema_filter,
         .filter_type = SYN_ADC_FILTER_EMA,
         .cal_offset = 0,
-        .cal_scale  = 1,
+        .cal_scale = 1,
         .cal_scale_shift = 0,
     };
     mock_adc_value = 100;
@@ -109,12 +109,12 @@ static void test_adc_filter_median(void)
 
     SYN_ADC adc;
     SYN_ADC_Config cfg = {
-        .channel    = 0,
+        .channel = 0,
         .oversample = 1,
-        .filter     = &med_filter,
+        .filter = &med_filter,
         .filter_type = SYN_ADC_FILTER_MEDIAN,
         .cal_offset = 0,
-        .cal_scale  = 1,
+        .cal_scale = 1,
         .cal_scale_shift = 0,
     };
     mock_adc_value = 50;
@@ -137,12 +137,12 @@ static void test_adc_filter_default(void)
 
     SYN_ADC adc;
     SYN_ADC_Config cfg = {
-        .channel    = 0,
+        .channel = 0,
         .oversample = 1,
-        .filter     = &dummy_filter,
+        .filter = &dummy_filter,
         .filter_type = 99, /* unknown type → default branch */
         .cal_offset = 0,
-        .cal_scale  = 1,
+        .cal_scale = 1,
         .cal_scale_shift = 0,
     };
     mock_adc_value = 512;
@@ -161,12 +161,12 @@ static void test_adc_stats(void)
 
     SYN_ADC adc;
     SYN_ADC_Config cfg = {
-        .channel    = 0,
+        .channel = 0,
         .oversample = 1,
-        .filter     = NULL,
+        .filter = NULL,
         .filter_type = SYN_ADC_FILTER_NONE,
         .cal_offset = 0,
-        .cal_scale  = 1,
+        .cal_scale = 1,
         .cal_scale_shift = 0,
     };
     mock_adc_value = 1000;

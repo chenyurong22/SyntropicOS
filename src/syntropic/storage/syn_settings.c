@@ -1,12 +1,12 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SETTINGS) || SYN_USE_SETTINGS
 
-#include "syn_settings.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_crc.h"
+#include "syn_settings.h"
 
 #include <string.h>
 
@@ -19,17 +19,15 @@ static uint16_t compute_crc(const void *data, uint16_t size)
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
-SYN_Status syn_settings_init(SYN_Settings *s,
-                               uint32_t flash_base, uint8_t sector_count,
-                               void *data, uint16_t data_size,
-                               const void *defaults)
+SYN_Status syn_settings_init(SYN_Settings *s, uint32_t flash_base, uint8_t sector_count, void *data,
+                             uint16_t data_size, const void *defaults)
 {
     SYN_ASSERT(s != NULL);
     SYN_ASSERT(data != NULL);
     SYN_ASSERT(defaults != NULL);
     SYN_ASSERT(data_size > 0);
 
-    s->data     = data;
+    s->data = data;
     s->data_size = data_size;
     s->defaults = defaults;
     s->on_change = NULL;
@@ -92,8 +90,7 @@ SYN_Status syn_settings_reset(SYN_Settings *s)
     return syn_settings_save(s);
 }
 
-void syn_settings_on_change(SYN_Settings *s,
-                              SYN_SettingsChangeCallback cb, void *ctx)
+void syn_settings_on_change(SYN_Settings *s, SYN_SettingsChangeCallback cb, void *ctx)
 {
     SYN_ASSERT(s != NULL);
     s->on_change = cb;

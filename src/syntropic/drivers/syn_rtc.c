@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_RTC) || SYN_USE_RTC
@@ -9,15 +9,14 @@
  * @brief RTC driver implementation — port delegation + epoch math.
  */
 
-#include "syn_rtc.h"
 #include "../util/syn_assert.h"
+#include "syn_rtc.h"
 
 /* ── Days in each month (non-leap year) ─────────────────────────────────── */
 
 /** @brief Days per month (non-leap year). */
-static const uint8_t s_days_in_month[12] = {
-    31u, 28u, 31u, 30u, 31u, 30u, 31u, 31u, 30u, 31u, 30u, 31u
-};
+static const uint8_t s_days_in_month[12] = {31u, 28u, 31u, 30u, 31u, 30u,
+                                            31u, 31u, 30u, 31u, 30u, 31u};
 
 /**
  * @brief Test if a year is a leap year.
@@ -47,13 +46,18 @@ static uint8_t rtc_days_in_month(uint8_t month, uint16_t year)
 bool syn_rtc_is_valid(const SYN_RTC_DateTime *dt)
 {
     SYN_ASSERT(dt != NULL);
-    if (dt->year  < 1970u)                                return false;
-    if (dt->month < 1u || dt->month > 12u)                return false;
-    if (dt->day   < 1u || dt->day > rtc_days_in_month(dt->month, dt->year))
-                                                           return false;
-    if (dt->hour   > 23u)                                 return false;
-    if (dt->minute > 59u)                                 return false;
-    if (dt->second > 59u)                                 return false;
+    if (dt->year < 1970u)
+        return false;
+    if (dt->month < 1u || dt->month > 12u)
+        return false;
+    if (dt->day < 1u || dt->day > rtc_days_in_month(dt->month, dt->year))
+        return false;
+    if (dt->hour > 23u)
+        return false;
+    if (dt->minute > 59u)
+        return false;
+    if (dt->second > 59u)
+        return false;
     return true;
 }
 
@@ -79,7 +83,8 @@ SYN_Status syn_rtc_get(SYN_RTC_DateTime *dt)
 {
     SYN_ASSERT(dt != NULL);
     SYN_Status status = syn_port_rtc_get(dt);
-    if (status != SYN_OK) return status;
+    if (status != SYN_OK)
+        return status;
 
     if (s_drift_ppm != 0) {
         uint32_t epoch = syn_rtc_to_epoch(dt);
@@ -98,8 +103,6 @@ SYN_Status syn_rtc_set(const SYN_RTC_DateTime *dt)
     }
     return syn_port_rtc_set(dt);
 }
-
-
 
 uint32_t syn_rtc_to_epoch(const SYN_RTC_DateTime *dt)
 {
@@ -121,22 +124,21 @@ uint32_t syn_rtc_to_epoch(const SYN_RTC_DateTime *dt)
     /* Add elapsed days in the current month (day is 1-indexed) */
     days += (uint32_t)dt->day - 1u;
 
-    return days      * 86400u
-         + (uint32_t)dt->hour   * 3600u
-         + (uint32_t)dt->minute * 60u
-         + (uint32_t)dt->second;
+    return days * 86400u + (uint32_t)dt->hour * 3600u + (uint32_t)dt->minute * 60u +
+           (uint32_t)dt->second;
 }
-
-
 
 void syn_rtc_from_epoch(uint32_t epoch, SYN_RTC_DateTime *dt)
 {
     SYN_ASSERT(dt != NULL);
 
     /* Extract time-of-day */
-    dt->second = (uint8_t)(epoch % 60u); epoch /= 60u;
-    dt->minute = (uint8_t)(epoch % 60u); epoch /= 60u;
-    dt->hour   = (uint8_t)(epoch % 24u); epoch /= 24u;
+    dt->second = (uint8_t)(epoch % 60u);
+    epoch /= 60u;
+    dt->minute = (uint8_t)(epoch % 60u);
+    epoch /= 60u;
+    dt->hour = (uint8_t)(epoch % 24u);
+    epoch /= 24u;
 
     /* epoch now = days since 1970-01-01 */
     uint32_t days = epoch;
@@ -145,7 +147,8 @@ void syn_rtc_from_epoch(uint32_t epoch, SYN_RTC_DateTime *dt)
     uint16_t year = 1970u;
     for (;;) {
         uint32_t days_in_year = rtc_is_leap(year) ? 366u : 365u;
-        if (days < days_in_year) break;
+        if (days < days_in_year)
+            break;
         days -= days_in_year;
         year++;
     }
@@ -155,12 +158,13 @@ void syn_rtc_from_epoch(uint32_t epoch, SYN_RTC_DateTime *dt)
     uint8_t month = 1u;
     for (;;) {
         uint32_t dim = (uint32_t)rtc_days_in_month(month, year);
-        if (days < dim) break;
+        if (days < dim)
+            break;
         days -= dim;
         month++;
     }
     dt->month = month;
-    dt->day   = (uint8_t)(days + 1u);
+    dt->day = (uint8_t)(days + 1u);
 }
 
 #endif /* SYN_USE_RTC */

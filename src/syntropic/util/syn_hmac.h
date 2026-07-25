@@ -28,15 +28,15 @@
 #define SYN_HMAC_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SHA256) || SYN_USE_SHA256
 
 #include "syn_sha256.h"
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #ifdef __cplusplus
@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 /** @brief HMAC-SHA256 output size in bytes. */
-#define SYN_HMAC_SHA256_SIZE  SYN_SHA256_DIGEST_SIZE
+#define SYN_HMAC_SHA256_SIZE SYN_SHA256_DIGEST_SIZE
 
 /* ── Context ────────────────────────────────────────────────────────────── */
 
@@ -55,8 +55,8 @@ extern "C" {
  * outer key pad (used during finalization).
  */
 typedef struct {
-    SYN_SHA256  inner;                              /**< Inner hash context   */
-    uint8_t     o_key_pad[SYN_SHA256_BLOCK_SIZE];   /**< Outer key pad (K ⊕ opad) */
+    SYN_SHA256 inner;                         /**< Inner hash context   */
+    uint8_t o_key_pad[SYN_SHA256_BLOCK_SIZE]; /**< Outer key pad (K ⊕ opad) */
 } SYN_HMAC_SHA256;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -70,8 +70,7 @@ typedef struct {
  * @param key      Secret key.
  * @param key_len  Key length in bytes.
  */
-static inline void syn_hmac_sha256_init(SYN_HMAC_SHA256 *ctx,
-                                         const void *key, size_t key_len)
+static inline void syn_hmac_sha256_init(SYN_HMAC_SHA256 *ctx, const void *key, size_t key_len)
 {
     uint8_t k_buf[SYN_SHA256_BLOCK_SIZE];
     unsigned i;
@@ -88,8 +87,8 @@ static inline void syn_hmac_sha256_init(SYN_HMAC_SHA256 *ctx,
     /* Compute i_key_pad = K ⊕ 0x36  and  o_key_pad = K ⊕ 0x5C */
     uint8_t i_key_pad[SYN_SHA256_BLOCK_SIZE];
     for (i = 0; i < SYN_SHA256_BLOCK_SIZE; i++) {
-        i_key_pad[i]        = k_buf[i] ^ 0x36u;
-        ctx->o_key_pad[i]   = k_buf[i] ^ 0x5Cu;
+        i_key_pad[i] = k_buf[i] ^ 0x36u;
+        ctx->o_key_pad[i] = k_buf[i] ^ 0x5Cu;
     }
 
     /* Inner hash: SHA-256(i_key_pad || message...) */
@@ -103,8 +102,7 @@ static inline void syn_hmac_sha256_init(SYN_HMAC_SHA256 *ctx,
  * @param data  Message data.
  * @param len   Length in bytes.
  */
-static inline void syn_hmac_sha256_update(SYN_HMAC_SHA256 *ctx,
-                                            const void *data, size_t len)
+static inline void syn_hmac_sha256_update(SYN_HMAC_SHA256 *ctx, const void *data, size_t len)
 {
     syn_sha256_update(&ctx->inner, data, len);
 }
@@ -114,8 +112,7 @@ static inline void syn_hmac_sha256_update(SYN_HMAC_SHA256 *ctx,
  * @param ctx  HMAC context.
  * @param mac  Output buffer (must be at least 32 bytes).
  */
-static inline void syn_hmac_sha256_final(SYN_HMAC_SHA256 *ctx,
-                                           uint8_t mac[SYN_HMAC_SHA256_SIZE])
+static inline void syn_hmac_sha256_final(SYN_HMAC_SHA256 *ctx, uint8_t mac[SYN_HMAC_SHA256_SIZE])
 {
     uint8_t inner_hash[SYN_SHA256_DIGEST_SIZE];
 
@@ -138,9 +135,8 @@ static inline void syn_hmac_sha256_final(SYN_HMAC_SHA256 *ctx,
  * @param data_len  Message length in bytes.
  * @param mac       Output buffer (must be at least 32 bytes).
  */
-static inline void syn_hmac_sha256(const void *key, size_t key_len,
-                                     const void *data, size_t data_len,
-                                     uint8_t mac[SYN_HMAC_SHA256_SIZE])
+static inline void syn_hmac_sha256(const void *key, size_t key_len, const void *data,
+                                   size_t data_len, uint8_t mac[SYN_HMAC_SHA256_SIZE])
 {
     SYN_HMAC_SHA256 ctx;
     syn_hmac_sha256_init(&ctx, key, key_len);

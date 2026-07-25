@@ -47,8 +47,8 @@
 #ifndef SYN_STREAM_H
 #define SYN_STREAM_H
 
-#include "../util/syn_ringbuf.h"
 #include "../pt/syn_pt.h"
+#include "../util/syn_ringbuf.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -66,10 +66,10 @@ extern "C" {
  * All fields are considered private. Use the API functions below.
  */
 typedef struct {
-    SYN_RingBuf  rb;           /**< Underlying ring buffer (composition)   */
-    size_t       threshold;    /**< Readable when count >= this (0 = any)  */
-    uint8_t      delimiter;    /**< Delimiter byte for line mode           */
-    bool         delim_en;     /**< true if delimiter mode is active       */
+    SYN_RingBuf rb;    /**< Underlying ring buffer (composition)   */
+    size_t threshold;  /**< Readable when count >= this (0 = any)  */
+    uint8_t delimiter; /**< Delimiter byte for line mode           */
+    bool delim_en;     /**< true if delimiter mode is active       */
 } SYN_Stream;
 
 /* ── Init / config ──────────────────────────────────────────────────────── */
@@ -221,8 +221,7 @@ void syn_stream_flush(SYN_Stream *s);
  * @param pt      Protothread context.
  * @param stream  Pointer to SYN_Stream.
  */
-#define PT_STREAM_WAIT(pt, stream)  \
-    PT_WAIT_UNTIL(pt, syn_stream_readable(stream))
+#define PT_STREAM_WAIT(pt, stream) PT_WAIT_UNTIL(pt, syn_stream_readable(stream))
 
 #ifdef __cplusplus
 }

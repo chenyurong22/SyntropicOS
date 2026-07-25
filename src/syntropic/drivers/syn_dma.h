@@ -12,9 +12,10 @@
 
 #include "../common/syn_defs.h"
 #include "../port/syn_port_dma.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,17 +23,17 @@ extern "C" {
 
 /** @brief DMA channel execution state */
 typedef enum {
-    SYN_DMA_STATE_IDLE = 0,    /**< Channel ready for transfer */
-    SYN_DMA_STATE_BUSY = 1,    /**< Transfer actively running */
-    SYN_DMA_STATE_COMPLETE = 2,/**< Last transfer finished */
-    SYN_DMA_STATE_ERROR = 3    /**< Transfer error occurred */
+    SYN_DMA_STATE_IDLE = 0,     /**< Channel ready for transfer */
+    SYN_DMA_STATE_BUSY = 1,     /**< Transfer actively running */
+    SYN_DMA_STATE_COMPLETE = 2, /**< Last transfer finished */
+    SYN_DMA_STATE_ERROR = 3     /**< Transfer error occurred */
 } SYN_DMA_State;
 
 /** @brief DMA ISR event flags */
 typedef enum {
     SYN_DMA_EVENT_HALF_COMPLETE = 0x01, /**< Half transfer completed */
-    SYN_DMA_EVENT_COMPLETE      = 0x02, /**< Full transfer completed */
-    SYN_DMA_EVENT_ERROR         = 0x04  /**< Hardware bus or transfer error */
+    SYN_DMA_EVENT_COMPLETE = 0x02,      /**< Full transfer completed */
+    SYN_DMA_EVENT_ERROR = 0x04          /**< Hardware bus or transfer error */
 } SYN_DMA_Event;
 
 struct SYN_DMA;
@@ -44,26 +45,26 @@ typedef void (*SYN_DMA_Callback)(struct SYN_DMA *dma, SYN_DMA_Event event, void 
  * @brief Configuration parameters for a DMA channel.
  */
 typedef struct {
-    uint8_t           channel_id;   /**< Hardware DMA channel index */
-    SYN_DMA_Direction dir;          /**< Transfer direction */
-    SYN_DMA_Size      data_size;    /**< Data width (1, 2, or 4 bytes) */
-    bool              src_inc;      /**< Auto-increment source address */
-    bool              dst_inc;      /**< Auto-increment destination address */
-    SYN_DMA_Callback  callback;     /**< Optional ISR event callback */
-    void             *user_ctx;     /**< User context passed to callback */
+    uint8_t channel_id;        /**< Hardware DMA channel index */
+    SYN_DMA_Direction dir;     /**< Transfer direction */
+    SYN_DMA_Size data_size;    /**< Data width (1, 2, or 4 bytes) */
+    bool src_inc;              /**< Auto-increment source address */
+    bool dst_inc;              /**< Auto-increment destination address */
+    SYN_DMA_Callback callback; /**< Optional ISR event callback */
+    void *user_ctx;            /**< User context passed to callback */
 } SYN_DMA_Config;
 
 /**
  * @brief DMA Channel instance object.
  */
 typedef struct SYN_DMA {
-    SYN_DMA_Config    cfg;          /**< Channel static configuration */
-    SYN_DMA_State     state;        /**< Current channel execution state */
-    const void       *current_src;  /**< Active transfer source address */
-    void             *current_dst;  /**< Active transfer destination address */
-    size_t            current_len;  /**< Active transfer length in bytes */
-    uint32_t          transfers_cnt;/**< Total successful transfers count */
-    uint32_t          errors_cnt;   /**< Total transfer errors count */
+    SYN_DMA_Config cfg;      /**< Channel static configuration */
+    SYN_DMA_State state;     /**< Current channel execution state */
+    const void *current_src; /**< Active transfer source address */
+    void *current_dst;       /**< Active transfer destination address */
+    size_t current_len;      /**< Active transfer length in bytes */
+    uint32_t transfers_cnt;  /**< Total successful transfers count */
+    uint32_t errors_cnt;     /**< Total transfer errors count */
 } SYN_DMA;
 
 /**

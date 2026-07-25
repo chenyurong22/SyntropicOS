@@ -3,8 +3,9 @@
  * @brief Unit test suite for Hashed Timing Wheel Scheduler (syn_timer_wheel).
  */
 
-#include "unity/unity.h"
 #include "syntropic/sched/syn_timer_wheel.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 static int s_timer1_fired = 0;
@@ -34,7 +35,8 @@ void test_timer_wheel_add_step_cancel(void)
     s_timer2_fired = 0;
 
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_timer_wheel_add(&wheel, &n1, 3, timer1_cb, NULL));
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_timer_wheel_add(&wheel, &n2, 70, timer2_cb, NULL)); /* Multi-rotation timer */
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_timer_wheel_add(&wheel, &n2, 70, timer2_cb, NULL)); /* Multi-rotation timer */
 
     /* Step 1 & 2: no timers fire */
     TEST_ASSERT_EQUAL_UINT32(0, syn_timer_wheel_step(&wheel));
@@ -71,7 +73,8 @@ void test_timer_wheel_add_step_cancel(void)
     syn_timer_wheel_cancel(&wheel, &t_b);
 
     /* Step 5 ticks to fire t_a and t_c */
-    for (int i = 0; i < 4; i++) syn_timer_wheel_step(&wheel);
+    for (int i = 0; i < 4; i++)
+        syn_timer_wheel_step(&wheel);
     TEST_ASSERT_EQUAL_UINT32(2, syn_timer_wheel_step(&wheel));
 
     /* Null & param checks */

@@ -42,36 +42,36 @@ extern "C" {
 
 /** @brief Boot data persisted to flash across resets. */
 typedef struct {
-    uint32_t  boot_count;       /**< Total boot count (monotonic)         */
-    uint16_t  fail_count;       /**< Consecutive boots without healthy    */
-    uint8_t   last_reset;       /**< Last reset reason (application-set)  */
-    uint8_t   was_healthy;      /**< Did last boot complete successfully? */
+    uint32_t boot_count; /**< Total boot count (monotonic)         */
+    uint16_t fail_count; /**< Consecutive boots without healthy    */
+    uint8_t last_reset;  /**< Last reset reason (application-set)  */
+    uint8_t was_healthy; /**< Did last boot complete successfully? */
 } SYN_BootData;
 
 /* ── Reset reasons (application can extend) ─────────────────────────────── */
 
 /** @brief Reset reason codes — application can extend from SYN_RESET_USER. */
 typedef enum {
-    SYN_RESET_UNKNOWN     = 0,   /**< Unknown reset cause.            */
-    SYN_RESET_POWER_ON    = 1,   /**< Power-on reset.                 */
-    SYN_RESET_WATCHDOG    = 2,   /**< Watchdog reset.                 */
-    SYN_RESET_SOFTWARE    = 3,   /**< Software reset.                 */
-    SYN_RESET_EXTERNAL    = 4,   /**< External reset pin.             */
-    SYN_RESET_BROWNOUT    = 5,   /**< Brown-out detected.             */
-    SYN_RESET_ASSERT      = 6,   /**< Assert failure.                 */
-    SYN_RESET_USER        = 0x80,  /**< Application-specific start    */
+    SYN_RESET_UNKNOWN = 0,  /**< Unknown reset cause.            */
+    SYN_RESET_POWER_ON = 1, /**< Power-on reset.                 */
+    SYN_RESET_WATCHDOG = 2, /**< Watchdog reset.                 */
+    SYN_RESET_SOFTWARE = 3, /**< Software reset.                 */
+    SYN_RESET_EXTERNAL = 4, /**< External reset pin.             */
+    SYN_RESET_BROWNOUT = 5, /**< Brown-out detected.             */
+    SYN_RESET_ASSERT = 6,   /**< Assert failure.                 */
+    SYN_RESET_USER = 0x80,  /**< Application-specific start    */
 } SYN_ResetReason;
 
 /* ── Boot manager ───────────────────────────────────────────────────────── */
 
 /** @brief Boot manager — crash-loop detection and safe-mode state. */
 typedef struct {
-    SYN_ParamStore  *store;         /**< Param store for persistence     */
-    SYN_BootData     data;          /**< Current boot data               */
-    uint16_t          safe_threshold; /**< fail_count to trigger safe mode */
-    bool              safe_mode;     /**< Are we in safe mode?            */
-    bool              initialized;   /**< Init complete flag              */
-    SYN_ErrLog       *errlog;      /**< If set, boot events are logged  */
+    SYN_ParamStore *store;   /**< Param store for persistence     */
+    SYN_BootData data;       /**< Current boot data               */
+    uint16_t safe_threshold; /**< fail_count to trigger safe mode */
+    bool safe_mode;          /**< Are we in safe mode?            */
+    bool initialized;        /**< Init complete flag              */
+    SYN_ErrLog *errlog;      /**< If set, boot events are logged  */
 } SYN_Boot;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -88,8 +88,7 @@ typedef struct {
  *                        Set to 0 to disable safe mode detection.
  * @return SYN_OK on normal boot, SYN_ERROR on first-ever boot (no data).
  */
-SYN_Status syn_boot_init(SYN_Boot *boot, SYN_ParamStore *store,
-                           uint16_t safe_threshold);
+SYN_Status syn_boot_init(SYN_Boot *boot, SYN_ParamStore *store, uint16_t safe_threshold);
 
 /**
  * @brief Mark this boot as healthy.

@@ -72,9 +72,7 @@ static inline SYN_Status syn_gpio_toggle(SYN_GPIO_Pin pin)
  * @param mode   Mode to apply to all pins.
  * @return SYN_OK if all succeeded, or the first error encountered.
  */
-SYN_Status syn_gpio_init_multiple(const SYN_GPIO_Pin *pins,
-                                    size_t count,
-                                    SYN_GPIO_Mode mode);
+SYN_Status syn_gpio_init_multiple(const SYN_GPIO_Pin *pins, size_t count, SYN_GPIO_Mode mode);
 
 /**
  * @brief Write the same state to multiple pins.
@@ -84,9 +82,7 @@ SYN_Status syn_gpio_init_multiple(const SYN_GPIO_Pin *pins,
  * @param state  State to write.
  * @return SYN_OK if all succeeded, or the first error encountered.
  */
-SYN_Status syn_gpio_write_multiple(const SYN_GPIO_Pin *pins,
-                                     size_t count,
-                                     SYN_GPIO_State state);
+SYN_Status syn_gpio_write_multiple(const SYN_GPIO_Pin *pins, size_t count, SYN_GPIO_State state);
 
 #ifdef __cplusplus
 }

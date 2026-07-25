@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_FFT) || SYN_USE_FFT
@@ -9,8 +9,8 @@
  * @brief Fixed-point Q16.16 Radix-2 Decimation-in-Time Fast Fourier Transform implementation.
  */
 
-#include "syn_fft.h"
 #include "../util/syn_assert.h"
+#include "syn_fft.h"
 
 /* Quarter-sine lookup table for N=256. Covers i=0..64 (0 to PI/2 radians). */
 /** @brief Quarter-sine lookup table for N=256 FFT (Q16 fixed-point). */
@@ -81,7 +81,7 @@ static void get_twiddle(uint16_t k, uint16_t stage, q16_t *wr, q16_t *wi)
 {
     uint16_t idx = (uint16_t)((256u * k) >> stage);
     uint16_t theta = idx & 0x3F;       /* idx % 64 */
-    uint16_t quad  = (idx >> 6) & 0x03; /* idx / 64 */
+    uint16_t quad = (idx >> 6) & 0x03; /* idx / 64 */
 
     SYN_ASSERT(quad <= 1); /* k < m/2 guarantees idx < 128 */
 
@@ -97,7 +97,6 @@ static void get_twiddle(uint16_t k, uint16_t stage, q16_t *wr, q16_t *wi)
     *wr = c;
     *wi = -s; /* e^(-i*theta) = cos(theta) - i*sin(theta) */
 }
-
 
 SYN_Status syn_dsp_fft(q16_t *real, q16_t *imag, uint16_t n)
 {
@@ -153,7 +152,8 @@ SYN_Status syn_dsp_fft(q16_t *real, q16_t *imag, uint16_t n)
 
 SYN_Status syn_fft_window_hanning(q16_t *out, uint16_t n)
 {
-    if (out == NULL || n <= 1) return SYN_INVALID_PARAM;
+    if (out == NULL || n <= 1)
+        return SYN_INVALID_PARAM;
 
     q16_t two_pi = Q16_2_PI;
     q16_t n_minus_1 = Q16_FROM_INT(n - 1);
@@ -168,7 +168,8 @@ SYN_Status syn_fft_window_hanning(q16_t *out, uint16_t n)
 
 SYN_Status syn_fft_window_hamming(q16_t *out, uint16_t n)
 {
-    if (out == NULL || n <= 1) return SYN_INVALID_PARAM;
+    if (out == NULL || n <= 1)
+        return SYN_INVALID_PARAM;
 
     q16_t two_pi = Q16_2_PI;
     q16_t n_minus_1 = Q16_FROM_INT(n - 1);
@@ -185,7 +186,8 @@ SYN_Status syn_fft_window_hamming(q16_t *out, uint16_t n)
 
 SYN_Status syn_fft_window_blackman(q16_t *out, uint16_t n)
 {
-    if (out == NULL || n <= 1) return SYN_INVALID_PARAM;
+    if (out == NULL || n <= 1)
+        return SYN_INVALID_PARAM;
 
     q16_t two_pi = Q16_2_PI;
     q16_t n_minus_1 = Q16_FROM_INT(n - 1);
@@ -204,7 +206,8 @@ SYN_Status syn_fft_window_blackman(q16_t *out, uint16_t n)
 
 SYN_Status syn_fft_magnitude_spectrum(const q16_t *real, const q16_t *imag, q16_t *mag, uint16_t n)
 {
-    if (real == NULL || imag == NULL || mag == NULL || n == 0) return SYN_INVALID_PARAM;
+    if (real == NULL || imag == NULL || mag == NULL || n == 0)
+        return SYN_INVALID_PARAM;
 
     uint16_t n_bins = (n >> 1) + 1;
     for (uint16_t k = 0; k < n_bins; k++) {
@@ -225,9 +228,9 @@ SYN_Status syn_fft_find_peaks(const q16_t *mag, uint16_t n_bins, q16_t sample_ra
 
     for (uint16_t k = 1; k < n_bins - 1 && count < max_peaks; k++) {
         if (mag[k] > mag[k - 1] && mag[k] > mag[k + 1]) {
-            peaks[count].bin       = k;
+            peaks[count].bin = k;
             peaks[count].magnitude = mag[k];
-            peaks[count].freq_hz   = q16_mul(Q16_FROM_INT(k), bin_resolution);
+            peaks[count].freq_hz = q16_mul(Q16_FROM_INT(k), bin_resolution);
             count++;
         }
     }
@@ -250,12 +253,14 @@ SYN_Status syn_fft_find_peaks(const q16_t *mag, uint16_t n_bins, q16_t sample_ra
 SYN_Status syn_fft_thd(const q16_t *mag, uint16_t n_bins, uint16_t fundamental_bin,
                        uint8_t max_harmonics, q16_t *thd_pct)
 {
-    if (mag == NULL || thd_pct == NULL || fundamental_bin == 0 || fundamental_bin >= n_bins || max_harmonics == 0) {
+    if (mag == NULL || thd_pct == NULL || fundamental_bin == 0 || fundamental_bin >= n_bins ||
+        max_harmonics == 0) {
         return SYN_INVALID_PARAM;
     }
 
     q16_t v1 = mag[fundamental_bin];
-    if (v1 == 0) return SYN_INVALID_PARAM;
+    if (v1 == 0)
+        return SYN_INVALID_PARAM;
 
     int64_t sum_h2 = 0;
     for (uint8_t h = 2; h <= max_harmonics + 1; h++) {

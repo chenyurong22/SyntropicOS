@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SNTP) || SYN_USE_SNTP
@@ -9,12 +9,13 @@
  * @brief SNTP client implementation — RFC 4330 subset.
  */
 
-#include "syn_sntp.h"
+#include "../port/syn_port_system.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
-#include "../port/syn_port_system.h"
-#include <string.h>
+#include "syn_sntp.h"
+
 #include <stdio.h>
+#include <string.h>
 
 /* ── Internal Helpers ───────────────────────────────────────────────────── */
 
@@ -23,22 +24,22 @@ static SYN_Status sntp_parse_packet(SYN_SNTP *sntp, const uint8_t *pkt, size_t l
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
-void syn_sntp_init(SYN_SNTP *sntp, const SYN_SockAddr *server,
-                   uint32_t sync_interval_s)
+void syn_sntp_init(SYN_SNTP *sntp, const SYN_SockAddr *server, uint32_t sync_interval_s)
 {
     SYN_ASSERT(sntp != NULL);
     SYN_ASSERT(server != NULL);
 
     memset(sntp, 0, sizeof(*sntp));
-    sntp->server          = *server;
+    sntp->server = *server;
     sntp->sync_interval_s = sync_interval_s;
-    sntp->synced          = false;
+    sntp->synced = false;
 
     /* Initialize backoff: 1s base, 60s max, factor 2, max_retries */
     syn_backoff_init(&sntp->backoff, 1000, 60000, 2, SYN_SNTP_MAX_RETRIES);
-    /* Initialize EMA drift filter: alpha=64 (~0.25 smoothing factor for network jitter rejection) */
+    /* Initialize EMA drift filter: alpha=64 (~0.25 smoothing factor for network jitter rejection)
+     */
     syn_filter_ema_init(&sntp->drift_filter, 64);
-    sntp->udp_sock        = SYN_SOCKET_INVALID;
+    sntp->udp_sock = SYN_SOCKET_INVALID;
 }
 
 /**
@@ -50,43 +51,47 @@ void syn_sntp_init(SYN_SNTP *sntp, const SYN_SockAddr *server,
  */
 static SYN_Status sntp_parse_packet(SYN_SNTP *sntp, const uint8_t *pkt, size_t len)
 {
-    if (len < SYN_SNTP_PACKET_SIZE) return SYN_BUSY;
+    if (len < SYN_SNTP_PACKET_SIZE)
+        return SYN_BUSY;
 
     /* Validate mode (4=server, 5=broadcast) and stratum != 0 */
     uint8_t mode = pkt[0] & 0x07;
-    if (mode != 4 && mode != 5) return SYN_ERROR;
-    if (pkt[1] == 0) return SYN_ERROR;  /* kiss-of-death */
+    if (mode != 4 && mode != 5)
+        return SYN_ERROR;
+    if (pkt[1] == 0)
+        return SYN_ERROR; /* kiss-of-death */
 
     /* Extract transmit timestamp (bytes 40–47, NTP epoch big-endian) */
-    uint32_t ntp_s    = syn_peek_u32(pkt, 40);
+    uint32_t ntp_s = syn_peek_u32(pkt, 40);
     uint32_t ntp_frac = syn_peek_u32(pkt, 44);
 
-    if (ntp_s < SYN_SNTP_EPOCH_OFFSET) return SYN_ERROR;
+    if (ntp_s < SYN_SNTP_EPOCH_OFFSET)
+        return SYN_ERROR;
 
-    uint32_t new_epoch   = ntp_s - SYN_SNTP_EPOCH_OFFSET;
+    uint32_t new_epoch = ntp_s - SYN_SNTP_EPOCH_OFFSET;
     uint32_t new_tick_ms = syn_port_get_tick_ms();
 
     /* Calculate clock drift in PPM if we have a previous sync baseline */
     if (sntp->synced && sntp->prev_sync_epoch != 0) {
-        uint32_t ntp_elapsed_s   = new_epoch - sntp->prev_sync_epoch;
+        uint32_t ntp_elapsed_s = new_epoch - sntp->prev_sync_epoch;
         uint32_t tick_elapsed_ms = new_tick_ms - sntp->prev_sync_tick_ms;
 
         if (ntp_elapsed_s >= 5) {
             int64_t expected_ms = (int64_t)ntp_elapsed_s * 1000LL;
-            int64_t diff_ms     = (int64_t)tick_elapsed_ms - expected_ms;
-            int16_t raw_ppm     = (int16_t)((diff_ms * 1000000LL) / expected_ms);
-            
+            int64_t diff_ms = (int64_t)tick_elapsed_ms - expected_ms;
+            int16_t raw_ppm = (int16_t)((diff_ms * 1000000LL) / expected_ms);
+
             /* Apply SyntropicOS Exponential Moving Average Filter (SYN_FilterEMA) */
-            sntp->drift_ppm     = (int32_t)syn_filter_ema_update(&sntp->drift_filter, raw_ppm);
+            sntp->drift_ppm = (int32_t)syn_filter_ema_update(&sntp->drift_filter, raw_ppm);
         }
     }
 
-    sntp->prev_sync_epoch   = new_epoch;
+    sntp->prev_sync_epoch = new_epoch;
     sntp->prev_sync_tick_ms = new_tick_ms;
-    sntp->epoch_s           = new_epoch;
-    sntp->epoch_frac        = ntp_frac;
-    sntp->sync_tick_ms      = new_tick_ms;
-    sntp->synced            = true;
+    sntp->epoch_s = new_epoch;
+    sntp->epoch_frac = ntp_frac;
+    sntp->sync_tick_ms = new_tick_ms;
+    sntp->synced = true;
 
     return SYN_OK;
 }
@@ -99,7 +104,8 @@ SYN_Status syn_sntp_query(SYN_SNTP *sntp)
     SYN_SockAddr from;
 
     SYN_Socket sock = syn_port_udp_open(0);
-    if (sock == SYN_SOCKET_INVALID) return SYN_ERROR;
+    if (sock == SYN_SOCKET_INVALID)
+        return SYN_ERROR;
 
     if (sntp_send_request(sntp, sock) != SYN_OK) {
         syn_port_sock_close(sock);
@@ -109,14 +115,16 @@ SYN_Status syn_sntp_query(SYN_SNTP *sntp)
     int n = syn_port_udp_recvfrom(sock, pkt, sizeof(pkt), &from, SYN_SNTP_TIMEOUT_MS);
     syn_port_sock_close(sock);
 
-    if (n < (int)SYN_SNTP_PACKET_SIZE) return (n <= 0) ? SYN_TIMEOUT : SYN_ERROR;
+    if (n < (int)SYN_SNTP_PACKET_SIZE)
+        return (n <= 0) ? SYN_TIMEOUT : SYN_ERROR;
 
     return sntp_parse_packet(sntp, pkt, (size_t)n);
 }
 
 uint32_t syn_sntp_get_epoch_s(const SYN_SNTP *sntp)
 {
-    if (!sntp->synced) return 0;
+    if (!sntp->synced)
+        return 0;
 
     uint32_t elapsed_ms = syn_port_get_tick_ms() - sntp->sync_tick_ms;
     return sntp->epoch_s + (elapsed_ms / 1000u);
@@ -124,17 +132,19 @@ uint32_t syn_sntp_get_epoch_s(const SYN_SNTP *sntp)
 
 uint32_t syn_sntp_get_epoch_ns(const SYN_SNTP *sntp)
 {
-    if (!sntp->synced) return 0;
+    if (!sntp->synced)
+        return 0;
 
     uint32_t elapsed_ms = syn_port_get_tick_ms() - sntp->sync_tick_ms;
-    uint32_t sub_s_ms   = elapsed_ms % 1000u;
+    uint32_t sub_s_ms = elapsed_ms % 1000u;
 
-    return sub_s_ms * 1000000u;  /* ms → ns */
+    return sub_s_ms * 1000000u; /* ms → ns */
 }
 
 int32_t syn_sntp_get_drift_ppm(const SYN_SNTP *sntp)
 {
-    if (!sntp) return 0;
+    if (!sntp)
+        return 0;
     return sntp->drift_ppm;
 }
 
@@ -193,7 +203,6 @@ SYN_PT_Status syn_sntp_task(SYN_PT *pt, SYN_Task *task)
         syn_backoff_reset(&sntp->backoff);
 
         while (sntp->backoff.attempts < SYN_SNTP_MAX_RETRIES) {
-
             /* Phase 1: Open socket */
             sntp->udp_sock = syn_port_udp_open(0);
             if (sntp->udp_sock == SYN_SOCKET_INVALID) {
@@ -211,9 +220,8 @@ SYN_PT_Status syn_sntp_task(SYN_PT *pt, SYN_Task *task)
 
             /* Phase 3: Non-blocking poll with deadline */
             sntp->recv_deadline = syn_port_get_tick_ms() + SYN_SNTP_TIMEOUT_MS;
-            PT_WAIT_UNTIL(pt,
-                sntp_try_recv(sntp, sntp->udp_sock) != SYN_BUSY ||
-                (int32_t)(syn_port_get_tick_ms() - sntp->recv_deadline) >= 0);
+            PT_WAIT_UNTIL(pt, sntp_try_recv(sntp, sntp->udp_sock) != SYN_BUSY ||
+                                  (int32_t)(syn_port_get_tick_ms() - sntp->recv_deadline) >= 0);
 
             syn_port_sock_close(sntp->udp_sock);
             sntp->udp_sock = SYN_SOCKET_INVALID;

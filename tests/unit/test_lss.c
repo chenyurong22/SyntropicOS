@@ -3,17 +3,16 @@
  * @brief Unity unit tests for CANopen CiA 305 LSS Master & Slave.
  */
 
-#include "unity/unity.h"
 #include "syntropic/proto/syn_lss.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 static SYN_LSSSlave g_lss_slave;
-static SYN_LSSAddress g_lss_addr = {
-    .vendor_id = 0x000000A5,
-    .product_code = 0x12345678,
-    .revision_no = 0x00010002,
-    .serial_no = 0x99887766
-};
+static SYN_LSSAddress g_lss_addr = {.vendor_id = 0x000000A5,
+                                    .product_code = 0x12345678,
+                                    .revision_no = 0x00010002,
+                                    .serial_no = 0x99887766};
 
 void test_lss_init(void)
 {
@@ -96,7 +95,7 @@ void test_lss_inquire_address(void)
     TEST_ASSERT_TRUE(syn_lss_slave_process(&g_lss_slave, &req, &resp));
     TEST_ASSERT_EQUAL(SYN_LSS_CS_INQUIRE_VENDOR, resp.data[0]);
     uint32_t vendor = (uint32_t)resp.data[1] | ((uint32_t)resp.data[2] << 8) |
-                     ((uint32_t)resp.data[3] << 16) | ((uint32_t)resp.data[4] << 24);
+                      ((uint32_t)resp.data[3] << 16) | ((uint32_t)resp.data[4] << 24);
     TEST_ASSERT_EQUAL(0x000000A5, vendor);
 }
 

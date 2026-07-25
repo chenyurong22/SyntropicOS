@@ -3,14 +3,13 @@
  * @brief Unity tests for syn_stepper.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/motor/syn_stepper.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_stepper(void)
 {
-
     mock_tick_ms = 0;
 
     SYN_Stepper stepper;
@@ -101,7 +100,7 @@ static void test_stepper_accel_clamp(void)
     syn_stepper_init(&s, 5, 6);
     /* High accel relative to speed: v²/(2a) would exceed half of 3 steps */
     syn_stepper_set_speed(&s, 1000, 10000); /* max_speed=1000 steps/s, accel=10000 steps/s² */
-    syn_stepper_move(&s, 3);              /* only 3 steps — accel_steps would be 50, clamped to 1 */
+    syn_stepper_move(&s, 3); /* only 3 steps — accel_steps would be 50, clamped to 1 */
     TEST_ASSERT_TRUE(syn_stepper_is_moving(&s));
 
     int ticks = 0;

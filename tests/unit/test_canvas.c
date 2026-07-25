@@ -3,15 +3,20 @@
  * @brief Unity tests for syn_canvas.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/display/syn_canvas.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int cvs_flush_n = 0;
 static size_t cvs_flush_sz = 0;
 static void cvs_flush(const uint8_t *b, size_t l, void *c)
-    { (void)b; (void)c; cvs_flush_n++; cvs_flush_sz = l; }
+{
+    (void)b;
+    (void)c;
+    cvs_flush_n++;
+    cvs_flush_sz = l;
+}
 
 static void test_canvas(void)
 {
@@ -43,15 +48,17 @@ static void test_canvas(void)
     syn_canvas_line(&c, 0, 0, 31, 0, 1);
     int lok = 1;
     for (int x = 0; x < 32; x++) {
-        if (!(fb[x] & 0x01)) { lok = 0; break; }
+        if (!(fb[x] & 0x01)) {
+            lok = 0;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(lok);
 
     /* Filled rect */
     syn_canvas_clear(&c);
     syn_canvas_rect_fill(&c, 0, 0, 2, 2, 1);
-    TEST_ASSERT_TRUE((fb[0] & 0x01) && (fb[1] & 0x01) &&
-                     (fb[0] & 0x02) && (fb[1] & 0x02));
+    TEST_ASSERT_TRUE((fb[0] & 0x01) && (fb[1] & 0x01) && (fb[0] & 0x02) && (fb[1] & 0x02));
 
     /* Circle draws some pixels */
     syn_canvas_clear(&c);
@@ -59,7 +66,8 @@ static void test_canvas(void)
     int cpx = 0;
     for (size_t i = 0; i < sizeof(fb); i++) {
         for (int b = 0; b < 8; b++) {
-            if (fb[i] & (1 << b)) cpx++;
+            if (fb[i] & (1 << b))
+                cpx++;
         }
     }
     TEST_ASSERT_TRUE(cpx > 0);
@@ -80,7 +88,7 @@ static void test_canvas(void)
     syn_canvas_circle_fill(&c, 16, 8, 4, 1);
     /* Center (16,8) is at page 1, x=16, which is idx 48, bit 0x01 */
     TEST_ASSERT_TRUE(fb[48] & 0x01);
-    
+
     /* Test syn_canvas_rect_round and filled version */
     syn_canvas_clear(&c);
     syn_canvas_rect_round(&c, 0, 0, 10, 10, 3, 1);
@@ -96,12 +104,12 @@ static void test_canvas(void)
 
     /* Test syn_canvas_bitmap */
     syn_canvas_clear(&c);
-    const uint8_t icon[2] = { 0xC0, 0x03 }; /* 11000000 00000011 */
+    const uint8_t icon[2] = {0xC0, 0x03}; /* 11000000 00000011 */
     syn_canvas_bitmap(&c, 0, 0, icon, 16, 1, 1);
     /* check bits at (0,0), (1,0) are set, (2,0) is not, and (14,0), (15,0) are set.
      * All are on page 0 (y=0), so bit is 0x01. */
-    TEST_ASSERT_TRUE(fb[0] & 0x01); /* x=0 */
-    TEST_ASSERT_TRUE(fb[1] & 0x01); /* x=1 */
+    TEST_ASSERT_TRUE(fb[0] & 0x01);  /* x=0 */
+    TEST_ASSERT_TRUE(fb[1] & 0x01);  /* x=1 */
     TEST_ASSERT_FALSE(fb[2] & 0x01); /* x=2 */
     TEST_ASSERT_TRUE(fb[14] & 0x01); /* x=14 */
     TEST_ASSERT_TRUE(fb[15] & 0x01); /* x=15 */
@@ -121,8 +129,8 @@ static void test_canvas(void)
 
 /* Extended mock: also records the buf pointer and length */
 static const uint8_t *partial_flush_buf = NULL;
-static size_t         partial_flush_len = 0;
-static int            partial_flush_n   = 0;
+static size_t partial_flush_len = 0;
+static int partial_flush_n = 0;
 static void partial_flush_fn(const uint8_t *b, size_t l, void *ctx)
 {
     (void)ctx;
@@ -139,7 +147,7 @@ static void test_canvas_flush_partial_basic(void)
 
     partial_flush_buf = NULL;
     partial_flush_len = 0;
-    partial_flush_n   = 0;
+    partial_flush_n = 0;
 
     /* Flush 16 bytes starting at offset 8 */
     syn_canvas_flush_partial(&c, 8u, 16u);
@@ -156,14 +164,14 @@ static void test_canvas_flush_partial_clamps_to_buf_size(void)
     SYN_Canvas c;
     syn_canvas_init(&c, fb, 64, 8, 1, partial_flush_fn, NULL);
 
-    partial_flush_n   = 0;
+    partial_flush_n = 0;
     partial_flush_len = 0;
 
     /* Ask for 32 bytes at offset 48 — only 16 remain, must clamp */
     syn_canvas_flush_partial(&c, 48u, 32u);
 
     TEST_ASSERT_EQUAL_INT(1, partial_flush_n);
-    TEST_ASSERT_EQUAL_size_t(16u, partial_flush_len);  /* clamped */
+    TEST_ASSERT_EQUAL_size_t(16u, partial_flush_len); /* clamped */
 }
 
 static void test_canvas_flush_partial_offset_past_end_is_noop(void)
@@ -190,7 +198,7 @@ static void test_canvas_flush_partial_simulated_chunked_loop(void)
 
     partial_flush_n = 0;
 
-    size_t pos   = 0u;
+    size_t pos = 0u;
     size_t chunk = 16u;
     while (pos < c.buf_size) {
         syn_canvas_flush_partial(&c, pos, chunk);
@@ -214,8 +222,8 @@ static void test_canvas_clip_rect(void)
     syn_canvas_init(&c, fb, 32, 16, 1, NULL, NULL);
 
     /* Default clip rect should be full display */
-    TEST_ASSERT_EQUAL_INT(0,  c.clip_x);
-    TEST_ASSERT_EQUAL_INT(0,  c.clip_y);
+    TEST_ASSERT_EQUAL_INT(0, c.clip_x);
+    TEST_ASSERT_EQUAL_INT(0, c.clip_y);
     TEST_ASSERT_EQUAL_INT(32, c.clip_w);
     TEST_ASSERT_EQUAL_INT(16, c.clip_h);
 

@@ -3,11 +3,10 @@
  * @brief Unity tests for syn_ramp.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
-
 #include "syntropic/util/syn_ramp.h"
+#include "unity/unity.h"
 
 static void test_ramp(void)
 {
@@ -18,11 +17,13 @@ static void test_ramp(void)
     syn_ramp_set_target(&r, 100, 10);
     TEST_ASSERT_TRUE(!syn_ramp_done(&r));
     int32_t val = 0;
-    for (int i = 0; i < 10; i++) val = syn_ramp_update(&r);
+    for (int i = 0; i < 10; i++)
+        val = syn_ramp_update(&r);
     TEST_ASSERT_EQUAL_INT(100, val);
     TEST_ASSERT_TRUE(syn_ramp_done(&r));
     syn_ramp_set_target(&r, 50, 25);
-    syn_ramp_update(&r); syn_ramp_update(&r);
+    syn_ramp_update(&r);
+    syn_ramp_update(&r);
     TEST_ASSERT_TRUE(syn_ramp_value(&r) == 50);
     syn_ramp_jump(&r, 999);
     TEST_ASSERT_TRUE(syn_ramp_value(&r) == 999);
@@ -32,12 +33,16 @@ static void test_ramp(void)
     syn_ramp_init(&r, 0);
     syn_ramp_set_target_trapezoid(&r, 1000, 100, 10);
     int iters = 0;
-    while (!syn_ramp_done(&r) && iters < 500) { syn_ramp_update(&r); iters++; }
+    while (!syn_ramp_done(&r) && iters < 500) {
+        syn_ramp_update(&r);
+        iters++;
+    }
     TEST_ASSERT_TRUE(syn_ramp_done(&r));
     TEST_ASSERT_TRUE(syn_ramp_value(&r) == 1000);
     syn_ramp_init(&r, 100);
     syn_ramp_set_target(&r, -100, 50);
-    for (int i = 0; i < 4; i++) syn_ramp_update(&r);
+    for (int i = 0; i < 4; i++)
+        syn_ramp_update(&r);
     TEST_ASSERT_TRUE(syn_ramp_value(&r) == -100);
 }
 
@@ -94,7 +99,7 @@ static void test_ramp_linear_done_at_diff_zero(void)
     SYN_Ramp r;
     syn_ramp_init(&r, 100);
     syn_ramp_set_target(&r, 101, 1); /* 1 step away */
-    r.done = false; /* ensure not short-circuited */
+    r.done = false;                  /* ensure not short-circuited */
     /* First update: diff=1, steps to 101, sets done=true via line 76 */
     syn_ramp_update(&r);
     TEST_ASSERT_EQUAL_INT(101, r.current);

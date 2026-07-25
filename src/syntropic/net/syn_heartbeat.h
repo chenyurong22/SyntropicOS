@@ -26,11 +26,11 @@
 #define SYN_HEARTBEAT_H
 
 #include "../common/syn_defs.h"
-#include "syn_router.h"
 #include "../system/syn_errlog.h"
+#include "syn_router.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,17 +38,17 @@ extern "C" {
 
 /* ── Error codes ────────────────────────────────────────────────────────── */
 
-#define SYN_HB_ERR_PEER_LOST   0x0500  /**< Peer heartbeat timeout.   */
-#define SYN_HB_ERR_PEER_FOUND  0x0501  /**< Peer reappeared.          */
+#define SYN_HB_ERR_PEER_LOST 0x0500  /**< Peer heartbeat timeout.   */
+#define SYN_HB_ERR_PEER_FOUND 0x0501 /**< Peer reappeared.          */
 
 /* ── Peer entry ─────────────────────────────────────────────────────────── */
 
 /** @brief Tracked peer entry. */
 typedef struct {
-    uint8_t   node_id;      /**< Peer's node ID                          */
-    uint32_t  last_seen;    /**< Tick of last heartbeat received         */
-    bool      alive;        /**< Is peer currently alive?                */
-    bool      used;         /**< Is this slot in use?                    */
+    uint8_t node_id;    /**< Peer's node ID                          */
+    uint32_t last_seen; /**< Tick of last heartbeat received         */
+    bool alive;         /**< Is peer currently alive?                */
+    bool used;          /**< Is this slot in use?                    */
 } SYN_HB_Peer;
 
 /* ── Callbacks ──────────────────────────────────────────────────────────── */
@@ -64,20 +64,20 @@ typedef void (*SYN_HB_Callback)(uint8_t node_id, void *ctx);
 
 /** @brief Heartbeat monitor — send keepalives, track peer liveness. */
 typedef struct {
-    SYN_Router    *router;          /**< Packet router                   */
-    SYN_HB_Peer  *peers;           /**< Caller-owned peer array         */
-    uint8_t         peer_capacity;   /**< Peer array capacity             */
-    uint8_t         peer_count;      /**< Number of tracked peers         */
+    SYN_Router *router;    /**< Packet router                   */
+    SYN_HB_Peer *peers;    /**< Caller-owned peer array         */
+    uint8_t peer_capacity; /**< Peer array capacity             */
+    uint8_t peer_count;    /**< Number of tracked peers         */
 
-    uint32_t        interval_ms;     /**< How often to send our heartbeat */
-    uint32_t        timeout_ms;      /**< Peer considered dead after this */
-    uint32_t        last_tx_tick;    /**< When we last sent               */
+    uint32_t interval_ms;  /**< How often to send our heartbeat */
+    uint32_t timeout_ms;   /**< Peer considered dead after this */
+    uint32_t last_tx_tick; /**< When we last sent               */
 
-    SYN_HB_Callback on_peer_lost;    /**< Called when peer goes dead      */
-    SYN_HB_Callback on_peer_found;   /**< Called when peer reappears      */
-    void            *cb_ctx;         /**< Context for callbacks           */
+    SYN_HB_Callback on_peer_lost;  /**< Called when peer goes dead      */
+    SYN_HB_Callback on_peer_found; /**< Called when peer reappears      */
+    void *cb_ctx;                  /**< Context for callbacks           */
 
-    SYN_ErrLog    *errlog;          /**< Optional error logging          */
+    SYN_ErrLog *errlog; /**< Optional error logging          */
 } SYN_Heartbeat;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -94,9 +94,8 @@ typedef struct {
  * @param interval_ms How often to send our heartbeat.
  * @param timeout_ms  How long before a peer is "dead".
  */
-void syn_heartbeat_init(SYN_Heartbeat *hb, SYN_Router *router,
-                           SYN_HB_Peer *peers, uint8_t peer_cap,
-                           uint32_t interval_ms, uint32_t timeout_ms);
+void syn_heartbeat_init(SYN_Heartbeat *hb, SYN_Router *router, SYN_HB_Peer *peers, uint8_t peer_cap,
+                        uint32_t interval_ms, uint32_t timeout_ms);
 
 /**
  * @brief Add a peer to monitor.
@@ -122,8 +121,7 @@ void syn_heartbeat_update(SYN_Heartbeat *hb);
  * @param cb   Callback function.
  * @param ctx  User context.
  */
-void syn_heartbeat_on_peer_lost(SYN_Heartbeat *hb,
-                                   SYN_HB_Callback cb, void *ctx);
+void syn_heartbeat_on_peer_lost(SYN_Heartbeat *hb, SYN_HB_Callback cb, void *ctx);
 
 /**
  * @brief Register peer-found callback.
@@ -131,8 +129,7 @@ void syn_heartbeat_on_peer_lost(SYN_Heartbeat *hb,
  * @param cb   Callback function.
  * @param ctx  User context.
  */
-void syn_heartbeat_on_peer_found(SYN_Heartbeat *hb,
-                                    SYN_HB_Callback cb, void *ctx);
+void syn_heartbeat_on_peer_found(SYN_Heartbeat *hb, SYN_HB_Callback cb, void *ctx);
 
 /**
  * @brief Check if a specific peer is alive.

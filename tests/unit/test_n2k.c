@@ -3,14 +3,15 @@
  * @brief Unit test suite for NMEA 2000 marine CAN protocol engine (syn_n2k).
  */
 
-#include "unity/unity.h"
 #include "syntropic/proto/syn_n2k.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 void test_n2k_position_rapid_encode_decode(void)
 {
     SYN_N2K_PositionRapid pos_tx = {
-        .latitude_1e7  = 377749290,  /* +37.7749290 N */
+        .latitude_1e7 = 377749290,   /* +37.7749290 N */
         .longitude_1e7 = -1224194155 /* -122.4194155 W */
     };
     SYN_CAN_Frame frame;
@@ -32,10 +33,10 @@ void test_n2k_position_rapid_encode_decode(void)
 void test_n2k_cog_sog_rapid_encode_decode(void)
 {
     SYN_N2K_CogSogRapid cs_tx = {
-        .sid          = 42,
-        .cog_ref      = 0,     /* True */
-        .cog_rad_1e4  = 31415, /* ~3.1415 rad (180 deg) */
-        .sog_m_s_1e2  = 1250   /* 12.50 m/s (~24.3 knots) */
+        .sid = 42,
+        .cog_ref = 0,         /* True */
+        .cog_rad_1e4 = 31415, /* ~3.1415 rad (180 deg) */
+        .sog_m_s_1e2 = 1250   /* 12.50 m/s (~24.3 knots) */
     };
     SYN_CAN_Frame frame;
 
@@ -55,11 +56,11 @@ void test_n2k_heading_and_battery_status(void)
 {
     /* Heading test */
     SYN_N2K_VesselHeading h_tx = {
-        .sid               = 1,
-        .heading_rad_1e4   = 15708, /* 90 deg */
+        .sid = 1,
+        .heading_rad_1e4 = 15708, /* 90 deg */
         .deviation_rad_1e4 = -100,
         .variation_rad_1e4 = 250,
-        .heading_ref       = 1 /* Magnetic */
+        .heading_ref = 1 /* Magnetic */
     };
     SYN_CAN_Frame frame_h;
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_n2k_encode_heading(0x01, &h_tx, &frame_h));
@@ -71,13 +72,11 @@ void test_n2k_heading_and_battery_status(void)
     TEST_ASSERT_EQUAL_INT16(h_tx.variation_rad_1e4, h_rx.variation_rad_1e4);
 
     /* Battery status test */
-    SYN_N2K_BatteryStatus b_tx = {
-        .instance        = 0,
-        .voltage_1e2     = 1380, /* 13.80V */
-        .current_1e1     = 250,  /* 25.0A */
-        .temperature_1e1 = 2982, /* 25.0 C (298.2K) */
-        .sid             = 10
-    };
+    SYN_N2K_BatteryStatus b_tx = {.instance = 0,
+                                  .voltage_1e2 = 1380,     /* 13.80V */
+                                  .current_1e1 = 250,      /* 25.0A */
+                                  .temperature_1e1 = 2982, /* 25.0 C (298.2K) */
+                                  .sid = 10};
     SYN_CAN_Frame frame_b;
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_n2k_encode_battery(0x01, &b_tx, &frame_b));
 
@@ -90,12 +89,12 @@ void test_n2k_heading_and_battery_status(void)
 
     /* DC Detailed status test (PGN 127506) */
     SYN_N2K_DcDetailedStatus dc_tx = {
-        .sid             = 12,
-        .instance        = 1,
-        .dc_type         = 0,  /* Battery */
+        .sid = 12,
+        .instance = 1,
+        .dc_type = 0,          /* Battery */
         .state_of_charge = 85, /* 85% */
         .state_of_health = 98, /* 98% */
-        .time_to_go_min  = 420,/* 7 hours */
+        .time_to_go_min = 420, /* 7 hours */
         .capacity_ah_1e1 = 200 /* 200.0 AH */
     };
     SYN_CAN_Frame frame_dc;
@@ -113,10 +112,10 @@ void test_n2k_heading_and_battery_status(void)
 void test_n2k_environmental_parameters(void)
 {
     SYN_N2K_EnvParams env_tx = {
-        .sid             = 3,
-        .water_temp_1e2  = 29315, /* 20.0 C */
-        .air_temp_1e2    = 29815, /* 25.0 C */
-        .pressure_pa_1e2 = 10132  /* 1013.2 hPa */
+        .sid = 3,
+        .water_temp_1e2 = 29315, /* 20.0 C */
+        .air_temp_1e2 = 29815,   /* 25.0 C */
+        .pressure_pa_1e2 = 10132 /* 1013.2 hPa */
     };
     SYN_CAN_Frame frame;
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_n2k_encode_environment(0x01, &env_tx, &frame));
@@ -137,23 +136,25 @@ void test_n2k_fast_packet_reassembly(void)
     uint32_t can_id = syn_j1939_id_pack(6, target_pgn, 0x10, SYN_J1939_ADDR_GLOBAL);
 
     /* Frame 0 (First Frame: seq_id 1, index 0, total 18 bytes) */
-    SYN_CAN_Frame f0 = { .id = can_id, .dlc = 8, .extended = true };
+    SYN_CAN_Frame f0 = {.id = can_id, .dlc = 8, .extended = true};
     f0.data[0] = (1U << 5) | 0U; /* seq_id=1, index=0 */
     f0.data[1] = 18;             /* total 18 bytes */
     memcpy(&f0.data[2], "HELLO!", 6);
 
     const uint8_t *payload = NULL;
     size_t len = 0;
-    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_n2k_fastpacket_process(&rx, &f0, target_pgn, &payload, &len));
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY,
+                          syn_n2k_fastpacket_process(&rx, &f0, target_pgn, &payload, &len));
 
     /* Frame 1 (Second Frame: seq_id 1, index 1) */
-    SYN_CAN_Frame f1 = { .id = can_id, .dlc = 8, .extended = true };
+    SYN_CAN_Frame f1 = {.id = can_id, .dlc = 8, .extended = true};
     f1.data[0] = (1U << 5) | 1U; /* seq_id=1, index=1 */
     memcpy(&f1.data[1], " WORLD!", 7);
-    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_n2k_fastpacket_process(&rx, &f1, target_pgn, &payload, &len));
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY,
+                          syn_n2k_fastpacket_process(&rx, &f1, target_pgn, &payload, &len));
 
     /* Frame 2 (Third Frame: seq_id 1, index 2, final 5 bytes) */
-    SYN_CAN_Frame f2 = { .id = can_id, .dlc = 8, .extended = true };
+    SYN_CAN_Frame f2 = {.id = can_id, .dlc = 8, .extended = true};
     f2.data[0] = (1U << 5) | 2U; /* seq_id=1, index=2 */
     memcpy(&f2.data[1], "N2K!!", 5);
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_n2k_fastpacket_process(&rx, &f2, target_pgn, &payload, &len));
@@ -163,7 +164,8 @@ void test_n2k_fast_packet_reassembly(void)
     TEST_ASSERT_EQUAL_MEMORY("HELLO! WORLD!N2K!!", payload, 18);
 
     /* Null invalid params */
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_n2k_fastpacket_process(NULL, &f2, target_pgn, &payload, &len));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_n2k_fastpacket_process(NULL, &f2, target_pgn, &payload, &len));
 }
 
 void run_n2k_tests(void)

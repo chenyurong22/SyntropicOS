@@ -3,24 +3,40 @@
  * @brief Unity tests for syn_button — full coverage.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/input/syn_button.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
-static int btn_press_count   = 0;
+static int btn_press_count = 0;
 static int btn_release_count = 0;
-static int btn_long_count    = 0;
-static int btn_repeat_count  = 0;
+static int btn_long_count = 0;
+static int btn_repeat_count = 0;
 
 static void btn_on_press(SYN_Button *b, void *ctx)
-    { (void)b; (void)ctx; btn_press_count++; }
+{
+    (void)b;
+    (void)ctx;
+    btn_press_count++;
+}
 static void btn_on_release(SYN_Button *b, void *ctx)
-    { (void)b; (void)ctx; btn_release_count++; }
+{
+    (void)b;
+    (void)ctx;
+    btn_release_count++;
+}
 static void btn_on_long(SYN_Button *b, void *ctx)
-    { (void)b; (void)ctx; btn_long_count++; }
+{
+    (void)b;
+    (void)ctx;
+    btn_long_count++;
+}
 static void btn_on_repeat(SYN_Button *b, void *ctx)
-    { (void)b; (void)ctx; btn_repeat_count++; }
+{
+    (void)b;
+    (void)ctx;
+    btn_repeat_count++;
+}
 
 static void reset_counts(void)
 {

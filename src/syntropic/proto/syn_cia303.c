@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_CANOPEN) || SYN_USE_CANOPEN
@@ -9,16 +9,16 @@
  * @brief CANopen CiA 303-3 Indicator & Status LED implementation.
  */
 
-#include "syn_cia303.h"
 #include "../util/syn_assert.h"
+#include "syn_cia303.h"
 
 #include <string.h>
 
 /* NMT State constants matching CiA 301 / syn_canopen_mgr */
 #ifndef SYN_CANOPEN_NMT_STOPPED
-#define SYN_CANOPEN_NMT_STOPPED          0x04U
-#define SYN_CANOPEN_NMT_OPERATIONAL      0x05U
-#define SYN_CANOPEN_NMT_PRE_OPERATIONAL  0x7FU
+#define SYN_CANOPEN_NMT_STOPPED 0x04U
+#define SYN_CANOPEN_NMT_OPERATIONAL 0x05U
+#define SYN_CANOPEN_NMT_PRE_OPERATIONAL 0x7FU
 #endif
 
 void syn_cia303_init(SYN_CiA303_Indicator *ind, SYN_LED *run_led, SYN_LED *err_led)
@@ -26,20 +26,23 @@ void syn_cia303_init(SYN_CiA303_Indicator *ind, SYN_LED *run_led, SYN_LED *err_l
     SYN_ASSERT(ind != NULL);
 
     memset(ind, 0, sizeof(*ind));
-    ind->run_led   = run_led;
-    ind->err_led   = err_led;
+    ind->run_led = run_led;
+    ind->err_led = err_led;
     ind->run_state = SYN_CIA303_RUN_OFF;
     ind->err_state = SYN_CIA303_ERR_OFF;
 
-    if (run_led != NULL) syn_led_off(run_led);
-    if (err_led != NULL) syn_led_off(err_led);
+    if (run_led != NULL)
+        syn_led_off(run_led);
+    if (err_led != NULL)
+        syn_led_off(err_led);
 }
 
 void syn_cia303_set_nmt_state(SYN_CiA303_Indicator *ind, uint8_t nmt_state)
 {
     SYN_ASSERT(ind != NULL);
 
-    if (ind->run_led == NULL) return;
+    if (ind->run_led == NULL)
+        return;
 
     SYN_CiA303_RunState new_state;
     switch (nmt_state) {
@@ -71,7 +74,8 @@ void syn_cia303_set_error_state(SYN_CiA303_Indicator *ind, SYN_CiA303_ErrState e
 {
     SYN_ASSERT(ind != NULL);
 
-    if (ind->err_led == NULL) return;
+    if (ind->err_led == NULL)
+        return;
 
     ind->err_state = err_state;
 

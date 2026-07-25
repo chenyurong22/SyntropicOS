@@ -3,16 +3,17 @@
  * @brief Unity tests for syn_timer.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/sched/syn_timer.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int timer_fire_count = 0;
 
 static void timer_callback(SYN_Timer *t, void *ctx)
 {
-    (void)t; (void)ctx;
+    (void)t;
+    (void)ctx;
     timer_fire_count++;
 }
 
@@ -123,7 +124,8 @@ static void test_timer_extensions(void)
 
     mock_tick_advance(250); /* t = 350 */
     TEST_ASSERT_TRUE(syn_timer_expired(&periodic_tmr));
-    TEST_ASSERT_EQUAL_INT(mock_tick_ms + periodic_tmr.period_ms, periodic_tmr.target_tick); /* snapped forward to now + period */
+    TEST_ASSERT_EQUAL_INT(mock_tick_ms + periodic_tmr.period_ms,
+                          periodic_tmr.target_tick); /* snapped forward to now + period */
 
     syn_timer_stop(&periodic_tmr);
 }
@@ -158,4 +160,3 @@ void run_timer_tests(void)
     RUN_TEST(test_timer_extensions);
     RUN_TEST(test_timer_tick_wraparound);
 }
-

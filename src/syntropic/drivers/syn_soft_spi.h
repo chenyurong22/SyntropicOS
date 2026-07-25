@@ -11,8 +11,9 @@
 #define SYN_SOFT_SPI_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,20 +33,20 @@ typedef enum {
  * @brief Software SPI instance.
  */
 typedef struct {
-    SYN_GPIO_Pin sck;              /**< SCK GPIO pin identifier */
-    SYN_GPIO_Pin mosi;             /**< MOSI GPIO pin identifier */
-    SYN_GPIO_Pin miso;             /**< MISO GPIO pin identifier */
-    SYN_SPIMode mode;              /**< SPI phase and polarity mode */
-    uint32_t delay_loops;          /**< Iteration count for half-clock software delay */
-    
+    SYN_GPIO_Pin sck;     /**< SCK GPIO pin identifier */
+    SYN_GPIO_Pin mosi;    /**< MOSI GPIO pin identifier */
+    SYN_GPIO_Pin miso;    /**< MISO GPIO pin identifier */
+    SYN_SPIMode mode;     /**< SPI phase and polarity mode */
+    uint32_t delay_loops; /**< Iteration count for half-clock software delay */
+
     // Cached states for faster transfer
-    bool cpha;                     /**< Clock phase cache */
-    SYN_GPIO_State idle_state;     /**< Cached idle pin state */
-    SYN_GPIO_State active_state;   /**< Cached active pin state */
+    bool cpha;                   /**< Clock phase cache */
+    SYN_GPIO_State idle_state;   /**< Cached idle pin state */
+    SYN_GPIO_State active_state; /**< Cached active pin state */
 
     // Optional chip select (set to (SYN_GPIO_Pin)-1 if unused)
-    SYN_GPIO_Pin cs_pin;           /**< Chip select GPIO pin identifier */
-    bool cs_active_low;            /**< CS active logic polarity */
+    SYN_GPIO_Pin cs_pin; /**< Chip select GPIO pin identifier */
+    bool cs_active_low;  /**< CS active logic polarity */
 } SYN_SoftSPI;
 
 /**
@@ -57,7 +58,8 @@ typedef struct {
  * @param mode         SPI Mode (0-3).
  * @param delay_loops  Number of iterations for a half-clock delay.
  */
-void syn_soft_spi_init(SYN_SoftSPI *spi, SYN_GPIO_Pin sck, SYN_GPIO_Pin mosi, SYN_GPIO_Pin miso, SYN_SPIMode mode, uint32_t delay_loops);
+void syn_soft_spi_init(SYN_SoftSPI *spi, SYN_GPIO_Pin sck, SYN_GPIO_Pin mosi, SYN_GPIO_Pin miso,
+                       SYN_SPIMode mode, uint32_t delay_loops);
 
 /**
  * @brief Transfer a single byte (read and write simultaneously).

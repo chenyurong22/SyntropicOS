@@ -3,14 +3,17 @@
  * @brief Unity tests for syn_actuator.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
-
 #include "syntropic/motor/syn_actuator.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int32_t act_mock_pos = 500;
-static int32_t act_read(void *c) { (void)c; return act_mock_pos; }
+static int32_t act_read(void *c)
+{
+    (void)c;
+    return act_mock_pos;
+}
 
 static void test_actuator(void)
 {
@@ -19,9 +22,14 @@ static void test_actuator(void)
     act_mock_pos = 500;
     SYN_Actuator act;
     SYN_Actuator_Config acfg = {
-        .dc_motor = &act_motor, .read_pos = act_read, .read_ctx = NULL,
-        .stroke_min = 100, .stroke_max = 900, .update_hz = 50,
-        .pid_kp = 100, .pid_scale = 4,
+        .dc_motor = &act_motor,
+        .read_pos = act_read,
+        .read_ctx = NULL,
+        .stroke_min = 100,
+        .stroke_max = 900,
+        .update_hz = 50,
+        .pid_kp = 100,
+        .pid_scale = 4,
     };
     syn_actuator_init(&act, &acfg);
     TEST_ASSERT_EQUAL_INT32(500, syn_actuator_position(&act));
@@ -52,9 +60,14 @@ static void test_actuator_clear_stall(void)
     syn_dc_motor_init(&motor, 12, 13, SYN_DC_MODE_PWM_DIR);
     SYN_Actuator act;
     SYN_Actuator_Config cfg = {
-        .dc_motor = &motor, .read_pos = act_read, .read_ctx = NULL,
-        .stroke_min = 0, .stroke_max = 1000, .update_hz = 50,
-        .pid_kp = 100, .pid_scale = 4,
+        .dc_motor = &motor,
+        .read_pos = act_read,
+        .read_ctx = NULL,
+        .stroke_min = 0,
+        .stroke_max = 1000,
+        .update_hz = 50,
+        .pid_kp = 100,
+        .pid_scale = 4,
     };
     act_mock_pos = 500;
     syn_actuator_init(&act, &cfg);

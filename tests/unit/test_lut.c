@@ -3,19 +3,18 @@
  * @brief Unity tests for syn_lut.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/util/syn_lut.h"
+#include "unity/unity.h"
 
 static void test_lut(void)
 {
-
     static const SYN_LUT_Entry table[] = {
-        {   0, 3300 },
-        {  25, 2048 },
-        {  50, 1200 },
-        { 100,  400 },
+        {0, 3300},
+        {25, 2048},
+        {50, 1200},
+        {100, 400},
     };
     const size_t count = sizeof(table) / sizeof(table[0]);
 

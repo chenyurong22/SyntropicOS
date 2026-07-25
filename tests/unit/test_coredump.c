@@ -6,8 +6,8 @@
  * integrity checking.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
+#include "unity/unity.h"
 
 /*
  * SYN_USE_COREDUMP=1 and SYN_COREDUMP_FLASH_ADDR=0 are defined in
@@ -30,14 +30,14 @@ static void test_coredump_save_and_read(void)
 
     SYN_FaultContext ctx;
     memset(&ctx, 0, sizeof(ctx));
-    ctx.pc   = 0x08001234;
-    ctx.lr   = 0x08001200;
-    ctx.sp   = (uint32_t)(uintptr_t)fake_stack;
-    ctx.r0   = 0x11;
-    ctx.r1   = 0x22;
-    ctx.r2   = 0x33;
-    ctx.r3   = 0x44;
-    ctx.r12  = 0x55;
+    ctx.pc = 0x08001234;
+    ctx.lr = 0x08001200;
+    ctx.sp = (uint32_t)(uintptr_t)fake_stack;
+    ctx.r0 = 0x11;
+    ctx.r1 = 0x22;
+    ctx.r2 = 0x33;
+    ctx.r3 = 0x44;
+    ctx.r12 = 0x55;
     ctx.xpsr = 0x01000000;
 
     mock_tick_ms = 42000;

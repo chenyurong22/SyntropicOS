@@ -43,8 +43,8 @@
 #ifndef SYN_PT_H
 #define SYN_PT_H
 
-#include "../common/syn_defs.h"
 #include "../common/syn_compiler.h"
+#include "../common/syn_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +59,7 @@ extern "C" {
  * exactly 2 bytes of RAM.
  */
 typedef struct {
-    uint16_t lc;   /**< Line continuation — stores __LINE__ at last yield */
+    uint16_t lc; /**< Line continuation — stores __LINE__ at last yield */
 } SYN_PT;
 
 /* ── Return status ──────────────────────────────────────────────────────── */
@@ -68,10 +68,10 @@ typedef struct {
  * @brief Return value from a protothread function.
  */
 typedef enum {
-    PT_WAITING = 0,  /**< Thread is blocked (condition not yet met)  */
-    PT_YIELDED = 1,  /**< Thread voluntarily yielded — call again    */
-    PT_EXITED  = 2,  /**< Thread ran to PT_END — normal completion   */
-    PT_ENDED   = 3,  /**< Thread was explicitly ended via PT_EXIT    */
+    PT_WAITING = 0, /**< Thread is blocked (condition not yet met)  */
+    PT_YIELDED = 1, /**< Thread voluntarily yielded — call again    */
+    PT_EXITED = 2,  /**< Thread ran to PT_END — normal completion   */
+    PT_ENDED = 3,   /**< Thread was explicitly ended via PT_EXIT    */
 } SYN_PT_Status;
 
 /* ── Core macros ────────────────────────────────────────────────────────── */
@@ -79,7 +79,7 @@ typedef enum {
 /**
  * @brief Initialize (or reset) a protothread so it starts from the top.
  */
-#define PT_INIT(pt)   ((pt)->lc = 0)
+#define PT_INIT(pt) ((pt)->lc = 0)
 
 /**
  * @brief Open a protothread body. Must be the first statement in the
@@ -88,23 +88,24 @@ typedef enum {
  * Expands to the head of a switch statement that jumps to the last
  * saved continuation point.
  */
-#define PT_BEGIN(pt)                                          \
-    do {                                                       \
-        char _pt_yield_flag = 1;                               \
-        (void)_pt_yield_flag;                                  \
-        switch ((pt)->lc) {                                    \
+#define PT_BEGIN(pt)             \
+    do {                         \
+        char _pt_yield_flag = 1; \
+        (void)_pt_yield_flag;    \
+        switch ((pt)->lc) {      \
         case 0:
 
 /**
  * @brief Close a protothread body. Returns PT_EXITED and resets the
  *        continuation so the thread can be restarted if desired.
  */
-#define PT_END(pt)                                            \
-        }                                                      \
-        _pt_yield_flag = 0;                                    \
-        PT_INIT(pt);                                           \
-        return PT_EXITED;                                      \
-    } while (0)
+#define PT_END(pt)      \
+    }                   \
+    _pt_yield_flag = 0; \
+    PT_INIT(pt);        \
+    return PT_EXITED;   \
+    }                   \
+    while (0)
 
 /**
  * @brief Block until @p cond evaluates to true.
@@ -112,34 +113,34 @@ typedef enum {
  * Each time the protothread is polled and @p cond is false, it returns
  * PT_WAITING and resumes at this point on the next call.
  */
-#define PT_WAIT_UNTIL(pt, cond)                               \
-    do {                                                       \
-        (pt)->lc = __LINE__;                                   \
-        SYN_FALLTHROUGH; /* intentional Duff's device */      \
-        case __LINE__:                                         \
-        if (!(cond)) {                                         \
-            return PT_WAITING;                                 \
-        }                                                      \
+#define PT_WAIT_UNTIL(pt, cond)                          \
+    do {                                                 \
+        (pt)->lc = __LINE__;                             \
+        SYN_FALLTHROUGH; /* intentional Duff's device */ \
+    case __LINE__:                                       \
+        if (!(cond)) {                                   \
+            return PT_WAITING;                           \
+        }                                                \
     } while (0)
 
 /**
  * @brief Block while @p cond is true. Dual of PT_WAIT_UNTIL.
  */
-#define PT_WAIT_WHILE(pt, cond)   PT_WAIT_UNTIL(pt, !(cond))
+#define PT_WAIT_WHILE(pt, cond) PT_WAIT_UNTIL(pt, !(cond))
 
 /**
  * @brief Yield control unconditionally. The protothread will resume at
  *        this point on the next call.
  */
-#define PT_YIELD(pt)                                          \
-    do {                                                       \
-        _pt_yield_flag = 0;                                    \
-        (pt)->lc = __LINE__;                                   \
-        SYN_FALLTHROUGH;                                      \
-        case __LINE__:                                         \
-        if (_pt_yield_flag == 0) {                             \
-            return PT_YIELDED;                                 \
-        }                                                      \
+#define PT_YIELD(pt)               \
+    do {                           \
+        _pt_yield_flag = 0;        \
+        (pt)->lc = __LINE__;       \
+        SYN_FALLTHROUGH;           \
+    case __LINE__:                 \
+        if (_pt_yield_flag == 0) { \
+            return PT_YIELDED;     \
+        }                          \
     } while (0)
 
 /**
@@ -148,33 +149,33 @@ typedef enum {
  * Like PT_WAIT_WHILE, but returns PT_YIELDED instead of PT_WAITING,
  * signaling the scheduler that this thread actively wants to run.
  */
-#define PT_YIELD_UNTIL(pt, cond)                              \
-    do {                                                       \
-        _pt_yield_flag = 0;                                    \
-        (pt)->lc = __LINE__;                                   \
-        SYN_FALLTHROUGH;                                      \
-        case __LINE__:                                         \
-        if ((_pt_yield_flag == 0) || !(cond)) {                \
-            return PT_YIELDED;                                 \
-        }                                                      \
+#define PT_YIELD_UNTIL(pt, cond)                \
+    do {                                        \
+        _pt_yield_flag = 0;                     \
+        (pt)->lc = __LINE__;                    \
+        SYN_FALLTHROUGH;                        \
+    case __LINE__:                              \
+        if ((_pt_yield_flag == 0) || !(cond)) { \
+            return PT_YIELDED;                  \
+        }                                       \
     } while (0)
 
 /**
  * @brief Terminate the protothread immediately.
  */
-#define PT_EXIT(pt)                                           \
-    do {                                                       \
-        PT_INIT(pt);                                           \
-        return PT_ENDED;                                       \
+#define PT_EXIT(pt)      \
+    do {                 \
+        PT_INIT(pt);     \
+        return PT_ENDED; \
     } while (0)
 
 /**
  * @brief Reset the protothread and restart from PT_BEGIN on next call.
  */
-#define PT_RESTART(pt)                                        \
-    do {                                                       \
-        PT_INIT(pt);                                           \
-        return PT_WAITING;                                     \
+#define PT_RESTART(pt)     \
+    do {                   \
+        PT_INIT(pt);       \
+        return PT_WAITING; \
     } while (0)
 
 /* ── Child / sub-protothread ────────────────────────────────────────────── */
@@ -193,15 +194,15 @@ typedef enum {
  *   PT_SPAWN(pt, &child_pt, child_func(&child_pt));
  * @endcode
  */
-#define PT_SPAWN(pt, child, func)                             \
-    do {                                                       \
-        PT_INIT(child);                                        \
-        (pt)->lc = __LINE__;                                   \
-        SYN_FALLTHROUGH;                                      \
-        case __LINE__:                                         \
-        if ((func) < PT_EXITED) {                              \
-            return PT_WAITING;                                 \
-        }                                                      \
+#define PT_SPAWN(pt, child, func) \
+    do {                          \
+        PT_INIT(child);           \
+        (pt)->lc = __LINE__;      \
+        SYN_FALLTHROUGH;          \
+    case __LINE__:                \
+        if ((func) < PT_EXITED) { \
+            return PT_WAITING;    \
+        }                         \
     } while (0)
 
 /* ── Timer-aware delay (requires task descriptor) ───────────────────────── */
@@ -224,8 +225,8 @@ typedef enum {
  * @param target   Pointer to a uint32_t that will hold the deadline tick.
  * @param ms       Delay duration in milliseconds.
  */
-#define PT_DELAY_MS(pt, target, ms)                                             \
-    do {                                                                        \
+#define PT_DELAY_MS(pt, target, ms)                                            \
+    do {                                                                       \
         *(target) = syn_port_get_tick_ms() + (uint32_t)(ms);                   \
         PT_WAIT_UNTIL(pt, (int32_t)(syn_port_get_tick_ms() - *(target)) >= 0); \
     } while (0)
@@ -237,8 +238,7 @@ typedef enum {
  * @param task  Pointer to the SYN_Task struct.
  * @param ms    Delay duration in milliseconds.
  */
-#define PT_TASK_DELAY_MS(pt, task, ms) \
-    PT_DELAY_MS(pt, &(task)->delay_until, ms)
+#define PT_TASK_DELAY_MS(pt, task, ms) PT_DELAY_MS(pt, &(task)->delay_until, ms)
 
 /**
  * @brief Defer to all ready tasks, regardless of priority.
@@ -254,10 +254,10 @@ typedef enum {
  * @param pt    Protothread.
  * @param task  Pointer to the SYN_Task struct.
  */
-#define PT_DEFER(pt, task)                                    \
-    do {                                                       \
-        (task)->state = (uint8_t)SYN_TASK_DEFERRED;            \
-        PT_YIELD(pt);                                          \
+#define PT_DEFER(pt, task)                          \
+    do {                                            \
+        (task)->state = (uint8_t)SYN_TASK_DEFERRED; \
+        PT_YIELD(pt);                               \
     } while (0)
 
 /**
@@ -279,22 +279,22 @@ typedef enum {
  * @param grp   Pointer to SYN_EventGroup.
  * @param mask  Bitmask of event flags to wait for (any of them).
  */
-#define PT_BLOCK_EVENT(pt, task, grp, mask)                    \
-    do {                                                       \
-        (task)->wait_event = (SYN_EventFlags *)(grp);          \
-        (task)->wait_mask  = (mask);                            \
-        (task)->state = (uint8_t)SYN_TASK_BLOCKED;             \
-        PT_YIELD(pt);                                          \
-        (grp)->flags &= ~(mask);  /* Auto-clear matched */    \
+#define PT_BLOCK_EVENT(pt, task, grp, mask)               \
+    do {                                                  \
+        (task)->wait_event = (SYN_EventFlags *)(grp);     \
+        (task)->wait_mask = (mask);                       \
+        (task)->state = (uint8_t)SYN_TASK_BLOCKED;        \
+        PT_YIELD(pt);                                     \
+        (grp)->flags &= ~(mask); /* Auto-clear matched */ \
     } while (0)
 
 /* ── Query macros ───────────────────────────────────────────────────────── */
 
 /** Check if a protothread is still running (has not exited). */
-#define PT_IS_RUNNING(pt)     ((pt)->lc != 0)
+#define PT_IS_RUNNING(pt) ((pt)->lc != 0)
 
 /** Check if a protothread has not yet started or has been reset. */
-#define PT_IS_IDLE(pt)        ((pt)->lc == 0)
+#define PT_IS_IDLE(pt) ((pt)->lc == 0)
 
 #ifdef __cplusplus
 }

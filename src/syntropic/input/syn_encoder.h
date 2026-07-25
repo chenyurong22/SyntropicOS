@@ -45,29 +45,29 @@ extern "C" {
 
 /** @brief Encoder rotation direction. */
 typedef enum {
-    SYN_ENCODER_NONE = 0,   /**< No rotation detected             */
-    SYN_ENCODER_CW   = 1,   /**< Clockwise                        */
-    SYN_ENCODER_CCW   = -1, /**< Counter-clockwise                */
+    SYN_ENCODER_NONE = 0, /**< No rotation detected             */
+    SYN_ENCODER_CW = 1,   /**< Clockwise                        */
+    SYN_ENCODER_CCW = -1, /**< Counter-clockwise                */
 } SYN_EncoderDir;
 
 /* ── Encoder descriptor ─────────────────────────────────────────────────── */
 
 /** @brief Quadrature encoder instance — pins, position, delta. */
 typedef struct {
-    SYN_GPIO_Pin  pin_a;            /**< Channel A GPIO pin              */
-    SYN_GPIO_Pin  pin_b;            /**< Channel B GPIO pin              */
+    SYN_GPIO_Pin pin_a; /**< Channel A GPIO pin              */
+    SYN_GPIO_Pin pin_b; /**< Channel B GPIO pin              */
 
-    int32_t        position;    /**< Accumulated position (signed)        */
-    int32_t        delta;       /**< Steps since last get_delta()         */
-    uint8_t        last_state;  /**< Previous A/B state (2-bit)           */
-    int8_t         last_dir;    /**< Last non-zero direction              */
+    int32_t position;   /**< Accumulated position (signed)        */
+    int32_t delta;      /**< Steps since last get_delta()         */
+    uint8_t last_state; /**< Previous A/B state (2-bit)           */
+    int8_t last_dir;    /**< Last non-zero direction              */
 
     /* Optional: step multiplier (for encoders with detents every N states) */
-    uint8_t        steps_per_detent; /**< Typically 1, 2, or 4            */
-    int8_t         sub_count;        /**< Sub-step accumulator            */
+    uint8_t steps_per_detent; /**< Typically 1, 2, or 4            */
+    int8_t sub_count;         /**< Sub-step accumulator            */
 
     /* Statistics (optional) */
-    SYN_Signal   *stats;            /**< If set, delta pushed on get_delta */
+    SYN_Signal *stats; /**< If set, delta pushed on get_delta */
 } SYN_Encoder;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -79,9 +79,7 @@ typedef struct {
  * @param pin_a   Channel A GPIO.
  * @param pin_b   Channel B GPIO.
  */
-void syn_encoder_init(SYN_Encoder *enc,
-                       SYN_GPIO_Pin pin_a,
-                       SYN_GPIO_Pin pin_b);
+void syn_encoder_init(SYN_Encoder *enc, SYN_GPIO_Pin pin_a, SYN_GPIO_Pin pin_b);
 
 /**
  * @brief Set steps-per-detent (default = 1).

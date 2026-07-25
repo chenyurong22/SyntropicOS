@@ -4,7 +4,9 @@
  */
 
 #include "syntropic/proto/syn_canopen.h"
+
 #include "syntropic/util/syn_pack.h"
+
 #include <string.h>
 
 /**
@@ -15,7 +17,8 @@
  * @param data Payload data pointer.
  * @param len Payload length.
  */
-static void canopen_queue_tx(SYN_CANOpenNode *node, uint32_t cob_id, const uint8_t *data, uint8_t len)
+static void canopen_queue_tx(SYN_CANOpenNode *node, uint32_t cob_id, const uint8_t *data,
+                             uint8_t len)
 {
     if (node == NULL) {
         return;
@@ -35,7 +38,8 @@ static void canopen_queue_tx(SYN_CANOpenNode *node, uint32_t cob_id, const uint8
  * @param subindex 8-bit OD Subindex.
  * @return Pointer to entry if found, NULL otherwise.
  */
-static const SYN_CANOpenODEntry *canopen_find_od(const SYN_CANOpenNode *node, uint16_t index, uint8_t subindex)
+static const SYN_CANOpenODEntry *canopen_find_od(const SYN_CANOpenNode *node, uint16_t index,
+                                                 uint8_t subindex)
 {
     if (node == NULL || node->od_table == NULL) {
         return NULL;
@@ -58,7 +62,8 @@ static const SYN_CANOpenODEntry *canopen_find_od(const SYN_CANOpenNode *node, ui
  * @param subindex 8-bit OD Subindex.
  * @param abort_code 32-bit SDO Abort code.
  */
-static void canopen_send_sdo_abort(SYN_CANOpenNode *node, uint16_t index, uint8_t subindex, uint32_t abort_code)
+static void canopen_send_sdo_abort(SYN_CANOpenNode *node, uint16_t index, uint8_t subindex,
+                                   uint32_t abort_code)
 {
     uint8_t payload[8];
     size_t pos = 0;
@@ -70,10 +75,8 @@ static void canopen_send_sdo_abort(SYN_CANOpenNode *node, uint16_t index, uint8_
     canopen_queue_tx(node, 0x580U + node->node_id, payload, 8);
 }
 
-SYN_Status syn_canopen_init(SYN_CANOpenNode *node,
-                            const SYN_CANOpenNodeConfig *cfg,
-                            const SYN_CANOpenODEntry *od_table,
-                            size_t od_count)
+SYN_Status syn_canopen_init(SYN_CANOpenNode *node, const SYN_CANOpenNodeConfig *cfg,
+                            const SYN_CANOpenODEntry *od_table, size_t od_count)
 {
     if (node == NULL || cfg == NULL || od_table == NULL || od_count == 0) {
         return SYN_INVALID_PARAM;
@@ -91,18 +94,14 @@ SYN_Status syn_canopen_init(SYN_CANOpenNode *node,
     node->nmt_state = SYN_CANOPEN_NMT_STATE_PREOP;
 
     /* Queue Bootup Message: COB-ID = 0x700 + NodeID, payload = 0x00 */
-    uint8_t boot_payload[1] = { 0x00U };
+    uint8_t boot_payload[1] = {0x00U};
     canopen_queue_tx(node, 0x700U + node->node_id, boot_payload, 1);
 
     return SYN_OK;
 }
 
-SYN_Status syn_canopen_od_read(SYN_CANOpenNode *node,
-                               uint16_t index,
-                               uint8_t subindex,
-                               void *buf,
-                               size_t buf_size,
-                               size_t *out_len)
+SYN_Status syn_canopen_od_read(SYN_CANOpenNode *node, uint16_t index, uint8_t subindex, void *buf,
+                               size_t buf_size, size_t *out_len)
 {
     if (node == NULL || buf == NULL || out_len == NULL) {
         return SYN_INVALID_PARAM;
@@ -127,11 +126,8 @@ SYN_Status syn_canopen_od_read(SYN_CANOpenNode *node,
     return SYN_OK;
 }
 
-SYN_Status syn_canopen_od_write(SYN_CANOpenNode *node,
-                                uint16_t index,
-                                uint8_t subindex,
-                                const void *data,
-                                size_t len)
+SYN_Status syn_canopen_od_write(SYN_CANOpenNode *node, uint16_t index, uint8_t subindex,
+                                const void *data, size_t len)
 {
     if (node == NULL || data == NULL) {
         return SYN_INVALID_PARAM;
@@ -155,9 +151,7 @@ SYN_Status syn_canopen_od_write(SYN_CANOpenNode *node,
     return SYN_OK;
 }
 
-SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node,
-                                  uint32_t cob_id,
-                                  const uint8_t *data,
+SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const uint8_t *data,
                                   uint8_t len)
 {
     if (node == NULL || data == NULL || len == 0) {
@@ -183,7 +177,7 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node,
             case SYN_CANOPEN_NMT_CMD_RESET_COMM:
                 node->nmt_state = SYN_CANOPEN_NMT_STATE_PREOP;
                 {
-                    uint8_t boot_payload[1] = { 0x00U };
+                    uint8_t boot_payload[1] = {0x00U};
                     canopen_queue_tx(node, 0x700U + node->node_id, boot_payload, 1);
                 }
                 break;
@@ -221,7 +215,8 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node,
                 if (entry_idx == NULL) {
                     canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_NOT_EXIST);
                 } else {
-                    canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_SUBINDEX_NOT_EXIST);
+                    canopen_send_sdo_abort(node, index, subindex,
+                                           SYN_CANOPEN_SDO_ABORT_SUBINDEX_NOT_EXIST);
                 }
             } else if (entry->access == SYN_CANOPEN_ACCESS_RO) {
                 canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_READ_ONLY);
@@ -229,7 +224,7 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node,
                 canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
             } else {
                 (void)syn_canopen_od_write(node, index, subindex, &data[4], write_len);
-                uint8_t resp[8] = { 0x60U, data[1], data[2], data[3], 0, 0, 0, 0 };
+                uint8_t resp[8] = {0x60U, data[1], data[2], data[3], 0, 0, 0, 0};
                 canopen_queue_tx(node, 0x580U + node->node_id, resp, 8);
             }
             return SYN_OK;
@@ -249,14 +244,17 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node,
                 if (entry_idx == NULL) {
                     canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_NOT_EXIST);
                 } else {
-                    canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_SUBINDEX_NOT_EXIST);
+                    canopen_send_sdo_abort(node, index, subindex,
+                                           SYN_CANOPEN_SDO_ABORT_SUBINDEX_NOT_EXIST);
                 }
             } else if (entry->access == SYN_CANOPEN_ACCESS_WO) {
                 canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_WRITE_ONLY);
             } else {
-                uint8_t read_buf[4] = { 0 };
+                uint8_t read_buf[4] = {0};
                 size_t read_len = 0;
-                if (syn_canopen_od_read(node, index, subindex, read_buf, sizeof(read_buf), &read_len) == SYN_OK && read_len <= 4) {
+                if (syn_canopen_od_read(node, index, subindex, read_buf, sizeof(read_buf),
+                                        &read_len) == SYN_OK &&
+                    read_len <= 4) {
                     uint8_t n = (uint8_t)(4 - read_len);
                     uint8_t resp[8];
                     resp[0] = 0x43U | (uint8_t)(n << 2);
@@ -269,7 +267,8 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node,
                     }
                     canopen_queue_tx(node, 0x580U + node->node_id, resp, 8);
                 } else {
-                    canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
+                    canopen_send_sdo_abort(node, index, subindex,
+                                           SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
                 }
             }
             return SYN_OK;
@@ -280,7 +279,8 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node,
     if (node->nmt_state == SYN_CANOPEN_NMT_STATE_OPERATIONAL) {
         for (int i = 0; i < 4; i++) {
             if (node->cfg.rpdo[i].enabled && node->cfg.rpdo[i].cob_id == cob_id) {
-                (void)syn_canopen_od_write(node, node->cfg.rpdo[i].od_index, node->cfg.rpdo[i].od_subindex, data, len);
+                (void)syn_canopen_od_write(node, node->cfg.rpdo[i].od_index,
+                                           node->cfg.rpdo[i].od_subindex, data, len);
                 return SYN_OK;
             }
         }
@@ -311,9 +311,11 @@ SYN_Status syn_canopen_update(SYN_CANOpenNode *node, uint32_t dt_ms)
     if (node->nmt_state == SYN_CANOPEN_NMT_STATE_OPERATIONAL) {
         for (int i = 0; i < 4; i++) {
             if (node->cfg.tpdo[i].enabled && !node->tx_pending) {
-                uint8_t tpdo_buf[8] = { 0 };
+                uint8_t tpdo_buf[8] = {0};
                 size_t tpdo_len = 0;
-                if (syn_canopen_od_read(node, node->cfg.tpdo[i].od_index, node->cfg.tpdo[i].od_subindex, tpdo_buf, sizeof(tpdo_buf), &tpdo_len) == SYN_OK) {
+                if (syn_canopen_od_read(node, node->cfg.tpdo[i].od_index,
+                                        node->cfg.tpdo[i].od_subindex, tpdo_buf, sizeof(tpdo_buf),
+                                        &tpdo_len) == SYN_OK) {
                     canopen_queue_tx(node, node->cfg.tpdo[i].cob_id, tpdo_buf, (uint8_t)tpdo_len);
                 }
             }
@@ -329,7 +331,7 @@ SYN_Status syn_canopen_send_emcy(SYN_CANOpenNode *node, uint16_t err_code, uint8
         return SYN_INVALID_PARAM;
     }
 
-    uint8_t payload[8] = { 0 };
+    uint8_t payload[8] = {0};
     payload[0] = (uint8_t)(err_code & 0xFFU);
     payload[1] = (uint8_t)((err_code >> 8) & 0xFFU);
     payload[2] = err_reg;
@@ -339,9 +341,7 @@ SYN_Status syn_canopen_send_emcy(SYN_CANOpenNode *node, uint16_t err_code, uint8
     return SYN_OK;
 }
 
-bool syn_canopen_get_tx(SYN_CANOpenNode *node,
-                        uint32_t *out_cob_id,
-                        uint8_t *out_data,
+bool syn_canopen_get_tx(SYN_CANOpenNode *node, uint32_t *out_cob_id, uint8_t *out_data,
                         uint8_t *out_len)
 {
     if (node == NULL || !node->tx_pending) {

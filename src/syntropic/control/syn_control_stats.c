@@ -1,5 +1,7 @@
 #include "syntropic/control/syn_control_stats.h"
+
 #include "syntropic/util/syn_assert.h"
+
 #include <math.h>
 #include <string.h>
 
@@ -14,7 +16,7 @@ void syn_control_stats_update(SYN_ControlStats *stats, int32_t error, int32_t ou
     SYN_ASSERT(stats != NULL);
 
     int32_t abs_err = (error < 0) ? -error : error;
-    
+
     /* Accumulate error stats */
     stats->sum_sq_err += (int64_t)error * error;
     if (abs_err > stats->max_error) {
@@ -31,7 +33,7 @@ void syn_control_stats_update(SYN_ControlStats *stats, int32_t error, int32_t ou
     }
     stats->last_output = output;
 
-    /* Accumulate precision (ITAE) stats 
+    /* Accumulate precision (ITAE) stats
      * We use sample index as a proxy for time. */
     stats->sum_itae += (int64_t)stats->samples * abs_err;
 
@@ -49,7 +51,7 @@ void syn_control_stats_report(const SYN_ControlStats *stats, SYN_ControlReport *
     }
 
     report->max_error = stats->max_error;
-    
+
     /* RMS Error */
     report->rms_error = (int32_t)sqrt((double)stats->sum_sq_err / stats->samples);
 

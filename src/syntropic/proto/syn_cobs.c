@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_COBS) || SYN_USE_COBS
@@ -9,8 +9,8 @@
  * @brief COBS packet framing implementation.
  */
 
-#include "syn_cobs.h"
 #include "../util/syn_assert.h"
+#include "syn_cobs.h"
 
 #include <string.h>
 
@@ -21,9 +21,10 @@ size_t syn_cobs_encode(const void *src, size_t src_len, void *dst)
     const uint8_t *s = (const uint8_t *)src;
     uint8_t *d = (uint8_t *)dst;
 
-    if (src_len == 0) return 0;
+    if (src_len == 0)
+        return 0;
 
-    uint8_t *code_ptr = d++;   /* pointer to the code byte */
+    uint8_t *code_ptr = d++; /* pointer to the code byte */
     uint8_t code = 1;
 
     for (size_t i = 0; i < src_len; i++) {
@@ -56,7 +57,8 @@ size_t syn_cobs_decode(const void *src, size_t src_len, void *dst)
     uint8_t *d = (uint8_t *)dst;
     size_t remaining = src_len;
 
-    if (src_len == 0) return 0;
+    if (src_len == 0)
+        return 0;
 
     while (remaining > 0) {
         uint8_t code = *s++;
@@ -87,20 +89,18 @@ size_t syn_cobs_decode(const void *src, size_t src_len, void *dst)
 
 /* ── Streaming decoder ──────────────────────────────────────────────────── */
 
-void syn_cobs_decoder_init(SYN_COBS_Decoder *dec,
-                            uint8_t *buf, size_t buf_size,
-                            SYN_COBS_PacketCallback callback,
-                            void *ctx)
+void syn_cobs_decoder_init(SYN_COBS_Decoder *dec, uint8_t *buf, size_t buf_size,
+                           SYN_COBS_PacketCallback callback, void *ctx)
 {
     SYN_ASSERT(dec != NULL);
     SYN_ASSERT(buf != NULL);
     SYN_ASSERT(buf_size > 0);
 
-    dec->buf      = buf;
+    dec->buf = buf;
     dec->buf_size = buf_size;
-    dec->idx      = 0;
+    dec->idx = 0;
     dec->callback = callback;
-    dec->ctx      = ctx;
+    dec->ctx = ctx;
 }
 
 void syn_cobs_decoder_feed(SYN_COBS_Decoder *dec, uint8_t byte)

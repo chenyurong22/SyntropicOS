@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_TIMER) || SYN_USE_TIMER
@@ -9,27 +9,24 @@
  * @brief Software timer implementation.
  */
 
-#include "syn_timer.h"
 #include "../port/syn_port_system.h"
 #include "../util/syn_assert.h"
+#include "syn_timer.h"
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
-void syn_timer_init(SYN_Timer *timer,
-                     uint32_t period_ms,
-                     bool periodic,
-                     SYN_TimerCallback callback,
-                     void *user_data)
+void syn_timer_init(SYN_Timer *timer, uint32_t period_ms, bool periodic, SYN_TimerCallback callback,
+                    void *user_data)
 {
     SYN_ASSERT(timer != NULL);
     SYN_ASSERT(period_ms > 0);
 
-    timer->period_ms   = period_ms;
+    timer->period_ms = period_ms;
     timer->target_tick = 0;
-    timer->callback    = callback;
-    timer->user_data   = user_data;
-    timer->periodic    = periodic;
-    timer->active      = false;
+    timer->callback = callback;
+    timer->user_data = user_data;
+    timer->periodic = periodic;
+    timer->active = false;
 }
 
 void syn_timer_start(SYN_Timer *timer)
@@ -37,7 +34,7 @@ void syn_timer_start(SYN_Timer *timer)
     SYN_ASSERT(timer != NULL);
 
     timer->target_tick = syn_port_get_tick_ms() + timer->period_ms;
-    timer->active      = true;
+    timer->active = true;
 }
 
 void syn_timer_stop(SYN_Timer *timer)
@@ -128,7 +125,8 @@ uint32_t syn_timer_next_expiry(const SYN_Timer *timers, size_t count)
     bool any_ready_now = false;
 
     for (size_t i = 0; i < count; i++) {
-        if (!timers[i].active) continue;
+        if (!timers[i].active)
+            continue;
 
         /* Check if this timer has already expired */
         if ((int32_t)(now - timers[i].target_tick) >= 0) {
@@ -137,8 +135,7 @@ uint32_t syn_timer_next_expiry(const SYN_Timer *timers, size_t count)
         }
 
         /* Timer is in the future — track the earliest */
-        if ((int32_t)(timers[i].target_tick - earliest) < 0 ||
-            earliest == UINT32_MAX) {
+        if ((int32_t)(timers[i].target_tick - earliest) < 0 || earliest == UINT32_MAX) {
             earliest = timers[i].target_tick;
         }
     }

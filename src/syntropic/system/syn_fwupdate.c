@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_BOOT) || SYN_USE_BOOT
@@ -9,11 +9,11 @@
  * @brief Streaming firmware updater implementation.
  */
 
-#include "syn_fwupdate.h"
-#include "syn_fwimage.h"
+#include "../port/syn_port_flash.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_crc.h"
-#include "../port/syn_port_flash.h"
+#include "syn_fwimage.h"
+#include "syn_fwupdate.h"
 
 #include <string.h>
 
@@ -26,7 +26,8 @@
  */
 static SYN_Status flush_page(SYN_FwUpdate *upd)
 {
-    if (upd->page_buf_used == 0) return SYN_OK;
+    if (upd->page_buf_used == 0)
+        return SYN_OK;
 
     uint32_t addr = upd->data_addr + upd->bytes_written;
 
@@ -37,14 +38,15 @@ static SYN_Status flush_page(SYN_FwUpdate *upd)
         /* Erase if we're at a sector boundary and have written data before */
         if (addr == sector_start && upd->bytes_written > 0) {
             SYN_Status st = syn_port_flash_erase(sector_start);
-            if (st != SYN_OK) return st;
+            if (st != SYN_OK)
+                return st;
         }
     }
 
     /* Write the buffered data */
-    SYN_Status st = syn_port_flash_write(addr, upd->page_buf,
-                                          upd->page_buf_used);
-    if (st != SYN_OK) return st;
+    SYN_Status st = syn_port_flash_write(addr, upd->page_buf, upd->page_buf_used);
+    if (st != SYN_OK)
+        return st;
 
     upd->bytes_written += upd->page_buf_used;
     upd->page_buf_used = 0;
@@ -54,22 +56,21 @@ static SYN_Status flush_page(SYN_FwUpdate *upd)
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
-SYN_Status syn_fwupdate_begin(SYN_FwUpdate *upd,
-                               uint32_t slot_addr, uint32_t max_size,
-                               uint8_t *page_buf, uint16_t page_buf_size)
+SYN_Status syn_fwupdate_begin(SYN_FwUpdate *upd, uint32_t slot_addr, uint32_t max_size,
+                              uint8_t *page_buf, uint16_t page_buf_size)
 {
     SYN_ASSERT(upd != NULL);
     SYN_ASSERT(page_buf != NULL);
     SYN_ASSERT(page_buf_size > 0);
 
     memset(upd, 0, sizeof(*upd));
-    upd->slot_addr     = slot_addr;
-    upd->data_addr     = slot_addr + (uint32_t)sizeof(SYN_FwImageHeader);
-    upd->max_size      = max_size;
-    upd->page_buf      = page_buf;
+    upd->slot_addr = slot_addr;
+    upd->data_addr = slot_addr + (uint32_t)sizeof(SYN_FwImageHeader);
+    upd->max_size = max_size;
+    upd->page_buf = page_buf;
     upd->page_buf_size = page_buf_size;
-    upd->crc_state     = SYN_CRC32_INIT;
-    upd->active        = true;
+    upd->crc_state = SYN_CRC32_INIT;
+    upd->active = true;
 
 #if defined(SYN_FW_USE_HMAC) && SYN_FW_USE_HMAC
     /* HMAC is initialized lazily in set_key(); key_set starts false
@@ -99,12 +100,13 @@ SYN_Status syn_fwupdate_begin(SYN_FwUpdate *upd,
     return st;
 }
 
-SYN_Status syn_fwupdate_write(SYN_FwUpdate *upd,
-                               const uint8_t *data, size_t len)
+SYN_Status syn_fwupdate_write(SYN_FwUpdate *upd, const uint8_t *data, size_t len)
 {
     SYN_ASSERT(upd != NULL);
-    if (!upd->active || upd->error) return SYN_ERROR;
-    if (data == NULL || len == 0) return SYN_OK;
+    if (!upd->active || upd->error)
+        return SYN_ERROR;
+    if (data == NULL || len == 0)
+        return SYN_OK;
 
     /* Check size limit */
     if (upd->bytes_written + upd->page_buf_used + len > upd->max_size) {
@@ -127,7 +129,8 @@ SYN_Status syn_fwupdate_write(SYN_FwUpdate *upd,
     while (offset < len) {
         size_t space = (size_t)(upd->page_buf_size - upd->page_buf_used);
         size_t to_copy = len - offset;
-        if (to_copy > space) to_copy = space;
+        if (to_copy > space)
+            to_copy = space;
 
         memcpy(upd->page_buf + upd->page_buf_used, data + offset, to_copy);
         upd->page_buf_used += (uint16_t)to_copy;
@@ -146,15 +149,15 @@ SYN_Status syn_fwupdate_write(SYN_FwUpdate *upd,
     return SYN_OK;
 }
 
-SYN_Status syn_fwupdate_finish(SYN_FwUpdate *upd,
-                                uint32_t expected_crc,
+SYN_Status syn_fwupdate_finish(SYN_FwUpdate *upd, uint32_t expected_crc,
 #if defined(SYN_FW_USE_HMAC) && SYN_FW_USE_HMAC
-                                const uint8_t *expected_hmac,
+                               const uint8_t *expected_hmac,
 #endif
-                                uint32_t version_code)
+                               uint32_t version_code)
 {
     SYN_ASSERT(upd != NULL);
-    if (!upd->active || upd->error) return SYN_ERROR;
+    if (!upd->active || upd->error)
+        return SYN_ERROR;
 
     /* Flush remaining data */
     SYN_Status st = flush_page(upd);
@@ -200,11 +203,11 @@ SYN_Status syn_fwupdate_finish(SYN_FwUpdate *upd,
     /* Write the final header with state = NEW */
     SYN_FwImageHeader hdr;
     memset(&hdr, 0, sizeof(hdr));
-    hdr.magic        = SYN_FW_MAGIC;
+    hdr.magic = SYN_FW_MAGIC;
     hdr.version_code = version_code;
-    hdr.image_size   = upd->bytes_written;
-    hdr.image_crc    = computed_crc;
-    hdr.state        = SYN_FW_STATE_NEW;
+    hdr.image_size = upd->bytes_written;
+    hdr.image_crc = computed_crc;
+    hdr.state = SYN_FW_STATE_NEW;
 
 #if defined(SYN_FW_USE_HMAC) && SYN_FW_USE_HMAC
     /* Store HMAC in header if key was set */
@@ -237,7 +240,8 @@ SYN_Status syn_fwupdate_finish(SYN_FwUpdate *upd,
 void syn_fwupdate_abort(SYN_FwUpdate *upd)
 {
     SYN_ASSERT(upd != NULL);
-    if (!upd->active) return;
+    if (!upd->active)
+        return;
 
     /* Write an INVALID header */
     SYN_FwImageHeader hdr;
@@ -251,15 +255,14 @@ void syn_fwupdate_abort(SYN_FwUpdate *upd)
     syn_port_flash_write(upd->slot_addr, &hdr, sizeof(hdr));
 
     upd->active = false;
-    upd->error  = true;
+    upd->error = true;
 }
 
 #endif /* SYN_USE_BOOT */
 
 #if defined(SYN_FW_USE_HMAC) && SYN_FW_USE_HMAC
 
-void syn_fwupdate_set_key(SYN_FwUpdate *upd,
-                           const void *key, size_t key_len)
+void syn_fwupdate_set_key(SYN_FwUpdate *upd, const void *key, size_t key_len)
 {
     SYN_ASSERT(upd != NULL);
     SYN_ASSERT(key != NULL);

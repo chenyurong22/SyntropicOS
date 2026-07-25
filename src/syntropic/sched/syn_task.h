@@ -16,6 +16,7 @@
 #define SYN_TASK_H
 
 #include "../pt/syn_pt.h"
+
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -30,12 +31,12 @@ struct SYN_EventGroup;
 
 /** @brief Cooperative task lifecycle state. */
 typedef enum {
-    SYN_TASK_READY     = 0,  /**< Eligible to run on next scheduler tick */
-    SYN_TASK_SUSPENDED = 1,  /**< Paused — skipped by scheduler          */
-    SYN_TASK_DEAD      = 2,  /**< Exited — will not run again            */
-    SYN_TASK_DEFERRED  = 3,  /**< Deferred — skipped for one pass        */
-    SYN_TASK_BLOCKED   = 4,  /**< Blocked on event — skipped until fired */
-    SYN_TASK_WAITING   = 5,  /**< PT_WAIT condition false — skip this tick */
+    SYN_TASK_READY = 0,     /**< Eligible to run on next scheduler tick */
+    SYN_TASK_SUSPENDED = 1, /**< Paused — skipped by scheduler          */
+    SYN_TASK_DEAD = 2,      /**< Exited — will not run again            */
+    SYN_TASK_DEFERRED = 3,  /**< Deferred — skipped for one pass        */
+    SYN_TASK_BLOCKED = 4,   /**< Blocked on event — skipped until fired */
+    SYN_TASK_WAITING = 5,   /**< PT_WAIT condition false — skip this tick */
 } SYN_TaskState;
 
 /* ── Forward declaration ────────────────────────────────────────────────── */
@@ -66,15 +67,15 @@ typedef SYN_PT_Status (*SYN_TaskFunc)(SYN_PT *pt, struct SYN_Task *task);
  * Typical size: ~28 bytes on a 32-bit target.
  */
 typedef struct SYN_Task {
-    SYN_PT          pt;           /**< Protothread continuation (2 bytes)      */
-    SYN_TaskFunc    func;         /**< The task's protothread function          */
-    const char      *name;         /**< Human-readable name (for debug/logging)  */
-    uint8_t          priority;     /**< 0 = highest priority                     */
-    uint8_t          state;        /**< SYN_TaskState                           */
-    uint32_t         delay_until;  /**< Tick deadline for PT_TASK_DELAY_MS       */
-    void            *user_data;    /**< Optional pointer to task-private state   */
-    SYN_EventFlags  *wait_event;   /**< Event flags task blocks on (NULL if not blocking) */
-    uint32_t         wait_mask;    /**< Bitmask of event flags to wait for       */
+    SYN_PT pt;                  /**< Protothread continuation (2 bytes)      */
+    SYN_TaskFunc func;          /**< The task's protothread function          */
+    const char *name;           /**< Human-readable name (for debug/logging)  */
+    uint8_t priority;           /**< 0 = highest priority                     */
+    uint8_t state;              /**< SYN_TaskState                           */
+    uint32_t delay_until;       /**< Tick deadline for PT_TASK_DELAY_MS       */
+    void *user_data;            /**< Optional pointer to task-private state   */
+    SYN_EventFlags *wait_event; /**< Event flags task blocks on (NULL if not blocking) */
+    uint32_t wait_mask;         /**< Bitmask of event flags to wait for       */
 } SYN_Task;
 
 #ifdef __cplusplus

@@ -29,7 +29,7 @@
 #define SYN_GEO_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_GEO) || SYN_USE_GEO
@@ -37,8 +37,8 @@
 #include "../common/syn_defs.h"
 #include "../proto/syn_nmea.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,13 +47,13 @@ extern "C" {
 /* ── WGS-84 Ellipsoid Constants ────────────────────────────────────────── */
 
 /** WGS-84 Semi-major axis in meters (a). */
-#define SYN_GEO_WGS84_A       6378137.0
+#define SYN_GEO_WGS84_A 6378137.0
 
 /** WGS-84 Inverse flattening (1/f). */
-#define SYN_GEO_WGS84_INV_F   298.257223563
+#define SYN_GEO_WGS84_INV_F 298.257223563
 
 /** WGS-84 First eccentricity squared (e^2 = 2f - f^2). */
-#define SYN_GEO_WGS84_E2      0.0066943799901413165
+#define SYN_GEO_WGS84_E2 0.0066943799901413165
 
 /* ── Data Structures ───────────────────────────────────────────────────── */
 
@@ -61,21 +61,21 @@ extern "C" {
  * @brief Structured Geographic Position with accuracy bound and fix quality.
  */
 typedef struct {
-    double              latitude;      /**< Decimal degrees (+N, -S)            */
-    double              longitude;     /**< Decimal degrees (+E, -W)            */
-    double              altitude_m;    /**< Altitude above MSL/ellipsoid (m)    */
-    float               accuracy_m;    /**< Estimated 3D position error bound   */
-    SYN_NMEA_FixQuality fix_type;      /**< GPS, DGPS, RTK_FIXED, RTK_FLOAT     */
-    bool                valid;         /**< true if position data is valid      */
+    double latitude;              /**< Decimal degrees (+N, -S)            */
+    double longitude;             /**< Decimal degrees (+E, -W)            */
+    double altitude_m;            /**< Altitude above MSL/ellipsoid (m)    */
+    float accuracy_m;             /**< Estimated 3D position error bound   */
+    SYN_NMEA_FixQuality fix_type; /**< GPS, DGPS, RTK_FIXED, RTK_FLOAT     */
+    bool valid;                   /**< true if position data is valid      */
 } SYN_GeoPos;
 
 /**
  * @brief Local East-North-Up (ENU) 3D Cartesian coordinates in meters.
  */
 typedef struct {
-    double east_m;   /**< Local East offset in meters  */
-    double north_m;  /**< Local North offset in meters */
-    double up_m;     /**< Local Up offset in meters    */
+    double east_m;  /**< Local East offset in meters  */
+    double north_m; /**< Local North offset in meters */
+    double up_m;    /**< Local Up offset in meters    */
 } SYN_ENU;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -91,8 +91,8 @@ typedef struct {
  * @param out_z    Output ECEF Z coordinate in meters. Must not be NULL.
  * @return SYN_OK on success, SYN_INVALID_PARAM if outputs are NULL.
  */
-SYN_Status syn_geo_wgs84_to_ecef(double lat_deg, double lon_deg, double alt_m,
-                                 double *out_x, double *out_y, double *out_z);
+SYN_Status syn_geo_wgs84_to_ecef(double lat_deg, double lon_deg, double alt_m, double *out_x,
+                                 double *out_y, double *out_z);
 
 /**
  * @brief Convert Earth-Centered Earth-Fixed (ECEF) coordinates back to WGS-84 Geodetic.
@@ -107,8 +107,8 @@ SYN_Status syn_geo_wgs84_to_ecef(double lat_deg, double lon_deg, double alt_m,
  * @param out_alt  Output Altitude in meters. Must not be NULL.
  * @return SYN_OK on success, SYN_INVALID_PARAM if outputs are NULL.
  */
-SYN_Status syn_geo_ecef_to_wgs84(double x, double y, double z,
-                                 double *out_lat, double *out_lon, double *out_alt);
+SYN_Status syn_geo_ecef_to_wgs84(double x, double y, double z, double *out_lat, double *out_lon,
+                                 double *out_alt);
 
 /**
  * @brief Convert global ECEF coordinates to a Local East-North-Up (ENU) frame.
@@ -125,9 +125,8 @@ SYN_Status syn_geo_ecef_to_wgs84(double x, double y, double z,
  * @param out_enu      Output ENU Cartesian coordinates. Must not be NULL.
  * @return SYN_OK on success, SYN_INVALID_PARAM if out_enu is NULL.
  */
-SYN_Status syn_geo_ecef_to_enu(double x, double y, double z,
-                               double ref_lat_deg, double ref_lon_deg, double ref_alt_m,
-                               SYN_ENU *out_enu);
+SYN_Status syn_geo_ecef_to_enu(double x, double y, double z, double ref_lat_deg, double ref_lon_deg,
+                               double ref_alt_m, SYN_ENU *out_enu);
 
 /**
  * @brief Direct conversion from WGS-84 Geodetic to Local East-North-Up (ENU).
@@ -143,9 +142,8 @@ SYN_Status syn_geo_ecef_to_enu(double x, double y, double z,
  * @param out_enu      Output ENU Cartesian coordinates in meters.
  * @return SYN_OK on success, SYN_INVALID_PARAM if out_enu is NULL.
  */
-SYN_Status syn_geo_wgs84_to_enu(double lat_deg, double lon_deg, double alt_m,
-                                double ref_lat_deg, double ref_lon_deg, double ref_alt_m,
-                                SYN_ENU *out_enu);
+SYN_Status syn_geo_wgs84_to_enu(double lat_deg, double lon_deg, double alt_m, double ref_lat_deg,
+                                double ref_lon_deg, double ref_alt_m, SYN_ENU *out_enu);
 
 /**
  * @brief Compute 2D surface geodesic distance using the Haversine formula.
@@ -156,8 +154,7 @@ SYN_Status syn_geo_wgs84_to_enu(double lat_deg, double lon_deg, double alt_m,
  * @param lon2_deg  Point 2 Longitude in decimal degrees.
  * @return 2D Surface distance in meters.
  */
-double syn_geo_haversine_m(double lat1_deg, double lon1_deg,
-                           double lat2_deg, double lon2_deg);
+double syn_geo_haversine_m(double lat1_deg, double lon1_deg, double lat2_deg, double lon2_deg);
 
 /**
  * @brief Compute 3D Euclidean Cartesian distance between two ENU points.

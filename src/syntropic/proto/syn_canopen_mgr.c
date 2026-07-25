@@ -4,8 +4,10 @@
  */
 
 #include "syn_canopen_mgr.h"
+
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
+
 #include <string.h>
 
 void syn_canopen_mgr_init(SYN_CANOpenManager *mgr)
@@ -25,21 +27,22 @@ void syn_canopen_mgr_build_nmt(SYN_CAN_Frame *frame, uint8_t target_node, uint8_
 }
 
 SYN_Status syn_canopen_mgr_sdo_read_init(SYN_CANOpenManager *mgr, SYN_CAN_Frame *frame,
-                                          uint8_t node_id, uint16_t index, uint8_t subindex)
+                                         uint8_t node_id, uint16_t index, uint8_t subindex)
 {
     SYN_ASSERT(mgr != NULL && frame != NULL);
-    if (node_id < 1 || node_id > 127) return SYN_INVALID_PARAM;
+    if (node_id < 1 || node_id > 127)
+        return SYN_INVALID_PARAM;
     if (mgr->sdo_client.state == SYN_SDO_CLIENT_STATE_WAIT_READ ||
         mgr->sdo_client.state == SYN_SDO_CLIENT_STATE_WAIT_WRITE) {
         return SYN_BUSY;
     }
 
     mgr->sdo_client.target_node = node_id;
-    mgr->sdo_client.index       = index;
-    mgr->sdo_client.subindex    = subindex;
-    mgr->sdo_client.state       = SYN_SDO_CLIENT_STATE_WAIT_READ;
-    mgr->sdo_client.abort_code  = 0;
-    mgr->sdo_client.timeout_ms  = 1000;
+    mgr->sdo_client.index = index;
+    mgr->sdo_client.subindex = subindex;
+    mgr->sdo_client.state = SYN_SDO_CLIENT_STATE_WAIT_READ;
+    mgr->sdo_client.abort_code = 0;
+    mgr->sdo_client.timeout_ms = 1000;
 
     memset(frame, 0, sizeof(*frame));
     frame->id = 0x600U + node_id; /* SDO Request COB-ID */
@@ -52,24 +55,25 @@ SYN_Status syn_canopen_mgr_sdo_read_init(SYN_CANOpenManager *mgr, SYN_CAN_Frame 
 }
 
 SYN_Status syn_canopen_mgr_sdo_write_init(SYN_CANOpenManager *mgr, SYN_CAN_Frame *frame,
-                                           uint8_t node_id, uint16_t index, uint8_t subindex,
-                                           const void *data, size_t len)
+                                          uint8_t node_id, uint16_t index, uint8_t subindex,
+                                          const void *data, size_t len)
 {
     SYN_ASSERT(mgr != NULL && frame != NULL && data != NULL);
-    if (node_id < 1 || node_id > 127 || len == 0 || len > 4) return SYN_INVALID_PARAM;
+    if (node_id < 1 || node_id > 127 || len == 0 || len > 4)
+        return SYN_INVALID_PARAM;
     if (mgr->sdo_client.state == SYN_SDO_CLIENT_STATE_WAIT_READ ||
         mgr->sdo_client.state == SYN_SDO_CLIENT_STATE_WAIT_WRITE) {
         return SYN_BUSY;
     }
 
     mgr->sdo_client.target_node = node_id;
-    mgr->sdo_client.index       = index;
-    mgr->sdo_client.subindex    = subindex;
-    mgr->sdo_client.state       = SYN_SDO_CLIENT_STATE_WAIT_WRITE;
-    mgr->sdo_client.abort_code  = 0;
-    mgr->sdo_client.data_len    = len;
+    mgr->sdo_client.index = index;
+    mgr->sdo_client.subindex = subindex;
+    mgr->sdo_client.state = SYN_SDO_CLIENT_STATE_WAIT_WRITE;
+    mgr->sdo_client.abort_code = 0;
+    mgr->sdo_client.data_len = len;
     memcpy(mgr->sdo_client.data, data, len);
-    mgr->sdo_client.timeout_ms  = 1000;
+    mgr->sdo_client.timeout_ms = 1000;
 
     memset(frame, 0, sizeof(*frame));
     frame->id = 0x600U + node_id; /* SDO Request COB-ID */
@@ -91,10 +95,10 @@ void syn_canopen_mgr_process_frame(SYN_CANOpenManager *mgr, const SYN_CAN_Frame 
     /* Check Heartbeat (COB-ID 0x700 + NodeID) */
     if (frame->id >= 0x701U && frame->id <= 0x77FU && frame->dlc >= 1) {
         uint8_t node_id = (uint8_t)(frame->id - 0x700U);
-        mgr->nodes[node_id].node_id   = node_id;
+        mgr->nodes[node_id].node_id = node_id;
         mgr->nodes[node_id].nmt_state = frame->data[0] & 0x7FU;
-        mgr->nodes[node_id].timer_ms  = 0;
-        mgr->nodes[node_id].online     = true;
+        mgr->nodes[node_id].timer_ms = 0;
+        mgr->nodes[node_id].online = true;
         return;
     }
 

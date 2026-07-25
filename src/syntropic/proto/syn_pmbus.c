@@ -5,10 +5,11 @@
  */
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #include "syn_pmbus.h"
+
 #include <math.h>
 
 #if defined(SYN_USE_PMBUS) && SYN_USE_PMBUS
@@ -53,8 +54,10 @@ uint16_t syn_pmbus_float_to_linear11(float val)
     }
 
     int16_t mantissa = (int16_t)temp;
-    if (mantissa > 1023) mantissa = 1023;
-    if (mantissa < -1024) mantissa = -1024;
+    if (mantissa > 1023)
+        mantissa = 1023;
+    if (mantissa < -1024)
+        mantissa = -1024;
 
     uint16_t u_exp = (uint16_t)(((uint8_t)exponent) & 0x1F);
     uint16_t u_mant = (uint16_t)(((uint16_t)mantissa) & 0x07FF);
@@ -87,14 +90,17 @@ uint16_t syn_pmbus_float_to_linear16(float val, uint8_t vout_mode)
     } else {
         scaled *= (float)(1 << (-exponent));
     }
-    if (scaled < 0.0f) scaled = 0.0f;
-    if (scaled > 65535.0f) scaled = 65535.0f;
+    if (scaled < 0.0f)
+        scaled = 0.0f;
+    if (scaled > 65535.0f)
+        scaled = 65535.0f;
     return (uint16_t)(scaled + 0.5f);
 }
 
 void syn_pmbus_encode_read_cmd(SYN_SMBUS_Packet *pkt, uint8_t slave_addr, uint8_t cmd, bool use_pec)
 {
-    if (pkt == NULL) return;
+    if (pkt == NULL)
+        return;
     pkt->slave_addr = slave_addr;
     pkt->command = cmd;
     pkt->proto = SYN_SMBUS_PROTO_READ_WORD;

@@ -12,9 +12,10 @@
 
 #include "../common/syn_defs.h"
 #include "../sched/syn_sched.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,16 +25,16 @@ extern "C" {
  * @brief Task Execution Profile Metrics Structure.
  */
 typedef struct {
-    const char *task_name;      /**< Pointer to task name string            */
-    uint32_t    step_count;     /**< Total number of times task executed    */
-    uint32_t    total_time_us;  /**< Total accumulated execution time in us */
-    uint32_t    max_yield_us;   /**< Maximum continuous execution time in us*/
-    uint32_t    last_start_us;  /**< Microsecond timestamp of step start    */
-    float       cpu_pct;        /**< Computed CPU utilization percentage    */
+    const char *task_name;  /**< Pointer to task name string            */
+    uint32_t step_count;    /**< Total number of times task executed    */
+    uint32_t total_time_us; /**< Total accumulated execution time in us */
+    uint32_t max_yield_us;  /**< Maximum continuous execution time in us*/
+    uint32_t last_start_us; /**< Microsecond timestamp of step start    */
+    float cpu_pct;          /**< Computed CPU utilization percentage    */
 } SYN_TaskProfile;
 
 #ifndef SYN_TASK_PROFILE_MAX_TASKS
-  #define SYN_TASK_PROFILE_MAX_TASKS 16
+#define SYN_TASK_PROFILE_MAX_TASKS 16
 #endif
 
 /**
@@ -41,9 +42,9 @@ typedef struct {
  */
 typedef struct {
     SYN_TaskProfile profiles[SYN_TASK_PROFILE_MAX_TASKS]; /**< Task profile array  */
-    size_t          count;                                 /**< Profile count       */
-    uint32_t        window_start_us;                       /**< Profile window start*/
-    bool            enabled;                               /**< Profiler enable flag*/
+    size_t count;                                         /**< Profile count       */
+    uint32_t window_start_us;                             /**< Profile window start*/
+    bool enabled;                                         /**< Profiler enable flag*/
 } SYN_TaskProfileManager;
 
 /**
@@ -67,7 +68,8 @@ void syn_task_profile_enable(SYN_TaskProfileManager *mgr, bool enable);
  * @param task_name Task identifier name.
  * @param now_us Current microsecond timestamp.
  */
-void syn_task_profile_step_start(SYN_TaskProfileManager *mgr, size_t task_idx, const char *task_name, uint32_t now_us);
+void syn_task_profile_step_start(SYN_TaskProfileManager *mgr, size_t task_idx,
+                                 const char *task_name, uint32_t now_us);
 
 /**
  * @brief Record the completion / yield of a task step execution.
@@ -91,7 +93,8 @@ void syn_task_profile_update(SYN_TaskProfileManager *mgr, uint32_t now_us);
  * @param profile Output profile metrics pointer.
  * @return SYN_OK on success, or SYN_INVALID_PARAM.
  */
-SYN_Status syn_task_profile_get(const SYN_TaskProfileManager *mgr, size_t task_idx, SYN_TaskProfile *profile);
+SYN_Status syn_task_profile_get(const SYN_TaskProfileManager *mgr, size_t task_idx,
+                                SYN_TaskProfile *profile);
 
 #ifdef __cplusplus
 }

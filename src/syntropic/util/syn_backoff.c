@@ -4,16 +4,21 @@
  */
 
 #include "syn_backoff.h"
-#include "syn_random.h"
-#include "syn_assert.h"
 
-void syn_backoff_init(SYN_Backoff *b, uint32_t min_ms, uint32_t max_ms, uint8_t factor, uint8_t max_attempts)
+#include "syn_assert.h"
+#include "syn_random.h"
+
+#include <string.h>
+
+void syn_backoff_init(SYN_Backoff *b, uint32_t min_ms, uint32_t max_ms, uint8_t factor,
+                      uint8_t max_attempts)
 {
     SYN_ASSERT(b != NULL);
-    b->min_ms       = min_ms;
-    b->max_ms       = max_ms;
+    (void)memset(b, 0, sizeof(*b));
+    b->min_ms = min_ms;
+    b->max_ms = max_ms;
     b->max_attempts = max_attempts;
-    b->factor       = (factor < 1) ? 1 : factor;
+    b->factor = (factor < 1) ? 1 : factor;
     syn_backoff_reset(b);
 }
 
@@ -21,7 +26,7 @@ void syn_backoff_reset(SYN_Backoff *b)
 {
     SYN_ASSERT(b != NULL);
     b->current_ms = b->min_ms;
-    b->attempts   = 0;
+    b->attempts = 0;
 }
 
 uint32_t syn_backoff_next_ms(SYN_Backoff *b)

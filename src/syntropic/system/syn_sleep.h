@@ -32,8 +32,9 @@
 #define SYN_SLEEP_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,36 +44,36 @@ extern "C" {
 
 /** @brief Sleep depth selector. */
 typedef enum {
-    SYN_SLEEP_NONE   = 0,  /**< No sleep (busy wait)                    */
-    SYN_SLEEP_LIGHT  = 1,  /**< WFI / idle — fast wakeup                */
-    SYN_SLEEP_DEEP   = 2,  /**< Stop mode — slower wakeup, lower power  */
+    SYN_SLEEP_NONE = 0,  /**< No sleep (busy wait)                    */
+    SYN_SLEEP_LIGHT = 1, /**< WFI / idle — fast wakeup                */
+    SYN_SLEEP_DEEP = 2,  /**< Stop mode — slower wakeup, lower power  */
 } SYN_SleepMode;
 
 /** @name Sleep Lock IDs (bit positions)
  * Users can define their own; these are common examples.
  * @{
  */
-#define SYN_SLEEP_LOCK_UART     (1u << 0)  /**< UART peripheral active     */
-#define SYN_SLEEP_LOCK_SPI      (1u << 1)  /**< SPI peripheral active      */
-#define SYN_SLEEP_LOCK_I2C      (1u << 2)  /**< I2C peripheral active      */
-#define SYN_SLEEP_LOCK_DMA      (1u << 3)  /**< DMA transfer in progress   */
-#define SYN_SLEEP_LOCK_ADC      (1u << 4)  /**< ADC conversion in progress */
-#define SYN_SLEEP_LOCK_TIMER    (1u << 5)  /**< Hardware timer active      */
-#define SYN_SLEEP_LOCK_APP0     (1u << 8)  /**< Application-defined lock 0 */
-#define SYN_SLEEP_LOCK_APP1     (1u << 9)  /**< Application-defined lock 1 */
-#define SYN_SLEEP_LOCK_APP2     (1u << 10) /**< Application-defined lock 2 */
-#define SYN_SLEEP_LOCK_APP3     (1u << 11) /**< Application-defined lock 3 */
+#define SYN_SLEEP_LOCK_UART (1u << 0)  /**< UART peripheral active     */
+#define SYN_SLEEP_LOCK_SPI (1u << 1)   /**< SPI peripheral active      */
+#define SYN_SLEEP_LOCK_I2C (1u << 2)   /**< I2C peripheral active      */
+#define SYN_SLEEP_LOCK_DMA (1u << 3)   /**< DMA transfer in progress   */
+#define SYN_SLEEP_LOCK_ADC (1u << 4)   /**< ADC conversion in progress */
+#define SYN_SLEEP_LOCK_TIMER (1u << 5) /**< Hardware timer active      */
+#define SYN_SLEEP_LOCK_APP0 (1u << 8)  /**< Application-defined lock 0 */
+#define SYN_SLEEP_LOCK_APP1 (1u << 9)  /**< Application-defined lock 1 */
+#define SYN_SLEEP_LOCK_APP2 (1u << 10) /**< Application-defined lock 2 */
+#define SYN_SLEEP_LOCK_APP3 (1u << 11) /**< Application-defined lock 3 */
 /** @} */
 
 /* ── Sleep coordinator ──────────────────────────────────────────────────── */
 
 /** @brief Sleep coordinator — tracks wake locks and sleep statistics. */
 typedef struct {
-    SYN_SleepMode   max_depth;       /**< Deepest allowed sleep mode     */
-    volatile uint32_t lock_mask;      /**< Active wake locks (bitmask)    */
-    uint32_t          enter_count;    /**< Times we actually slept        */
-    uint32_t          veto_count;     /**< Times sleep was vetoed         */
-    bool              enabled;        /**< Global enable                  */
+    SYN_SleepMode max_depth;     /**< Deepest allowed sleep mode     */
+    volatile uint32_t lock_mask; /**< Active wake locks (bitmask)    */
+    uint32_t enter_count;        /**< Times we actually slept        */
+    uint32_t veto_count;         /**< Times sleep was vetoed         */
+    bool enabled;                /**< Global enable                  */
 } SYN_Sleep;
 
 /* ── Port function (user implements) ────────────────────────────────────── */
@@ -96,11 +97,11 @@ extern void syn_port_sleep(SYN_SleepMode mode);
  */
 static inline void syn_sleep_init(SYN_Sleep *s, SYN_SleepMode max_depth)
 {
-    s->max_depth   = max_depth;
-    s->lock_mask   = 0;
+    s->max_depth = max_depth;
+    s->lock_mask = 0;
     s->enter_count = 0;
-    s->veto_count  = 0;
-    s->enabled     = true;
+    s->veto_count = 0;
+    s->enabled = true;
 }
 
 /**

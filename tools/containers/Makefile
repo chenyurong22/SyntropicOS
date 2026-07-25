@@ -34,7 +34,7 @@ help:
 	@echo "  make container-integration Execute 3rd-party container integration suite"
 
 test:
-	@make -f $(ROOT_DIR)/tests/Makefile.unity test
+	@make -C $(ROOT_DIR) -f tests/Makefile.unity test
 
 format:
 	@bash $(ROOT_DIR)/tools/lint/run_format.sh

@@ -36,9 +36,9 @@
 #include "../pt/syn_pt.h"
 #include "../sched/syn_task.h"
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,10 +50,10 @@ extern "C" {
  * @brief Supported HTTP request methods.
  */
 typedef enum {
-    SYN_HTTP_GET    = 0,             /**< Retrieve a resource */
-    SYN_HTTP_POST   = 1,             /**< Submit data to be processed */
-    SYN_HTTP_PUT    = 2,             /**< Upload or replace a resource */
-    SYN_HTTP_DELETE = 3,             /**< Delete a resource */
+    SYN_HTTP_GET = 0,    /**< Retrieve a resource */
+    SYN_HTTP_POST = 1,   /**< Submit data to be processed */
+    SYN_HTTP_PUT = 2,    /**< Upload or replace a resource */
+    SYN_HTTP_DELETE = 3, /**< Delete a resource */
 } SYN_HttpMethod;
 
 /* ── Request (parsed, presented to handler) ────────────────────────────── */
@@ -62,16 +62,16 @@ typedef enum {
  * @brief Parsed HTTP request container presented to route handlers.
  */
 typedef struct {
-    SYN_HttpMethod  method;          /**< GET, POST, etc.                  */
-    const char     *path;            /**< Request path (in work_buf)       */
-    const char     *query;           /**< Query string after '?', or NULL  */
-    uint32_t        content_length;  /**< Content-Length, 0 if absent      */
-    const char     *content_type;    /**< Content-Type, or NULL            */
-    const char     *headers;         /**< Pointer to start of headers      */
-    SYN_Socket      client_sock;     /**< Client socket (for body reads)   */
-    size_t          body_consumed;   /**< Bytes of body already consumed   */
-    size_t          body_buffered_offset; /**< Offset in work_buf to buffered body */
-    size_t          body_buffered_len;    /**< Length of buffered body bytes    */
+    SYN_HttpMethod method;       /**< GET, POST, etc.                  */
+    const char *path;            /**< Request path (in work_buf)       */
+    const char *query;           /**< Query string after '?', or NULL  */
+    uint32_t content_length;     /**< Content-Length, 0 if absent      */
+    const char *content_type;    /**< Content-Type, or NULL            */
+    const char *headers;         /**< Pointer to start of headers      */
+    SYN_Socket client_sock;      /**< Client socket (for body reads)   */
+    size_t body_consumed;        /**< Bytes of body already consumed   */
+    size_t body_buffered_offset; /**< Offset in work_buf to buffered body */
+    size_t body_buffered_len;    /**< Length of buffered body bytes    */
 } SYN_HttpdRequest;
 
 /* ── Response writer ───────────────────────────────────────────────────── */
@@ -80,11 +80,11 @@ typedef struct {
  * @brief HTTP response formatting state.
  */
 typedef struct {
-    SYN_Socket  sock;               /**< Client socket                    */
-    uint8_t    *buf;                 /**< Shared work buffer               */
-    size_t      buf_size;            /**< Buffer capacity                  */
-    bool        headers_sent;        /**< Have headers been finalized?     */
-    bool        upgraded;            /**< Has connection been upgraded?    */
+    SYN_Socket sock;   /**< Client socket                    */
+    uint8_t *buf;      /**< Shared work buffer               */
+    size_t buf_size;   /**< Buffer capacity                  */
+    bool headers_sent; /**< Have headers been finalized?     */
+    bool upgraded;     /**< Has connection been upgraded?    */
 } SYN_HttpdResponse;
 
 /* ── Route handler ─────────────────────────────────────────────────────── */
@@ -95,9 +95,7 @@ typedef struct {
  * Called when a request matches the route. The handler sends the
  * response using syn_httpd_status(), syn_httpd_header(), syn_httpd_body().
  */
-typedef void (*SYN_HttpdHandler)(const SYN_HttpdRequest *req,
-                                  SYN_HttpdResponse *resp,
-                                  void *ctx);
+typedef void (*SYN_HttpdHandler)(const SYN_HttpdRequest *req, SYN_HttpdResponse *resp, void *ctx);
 
 /* ── Route entry ───────────────────────────────────────────────────────── */
 
@@ -105,10 +103,10 @@ typedef void (*SYN_HttpdHandler)(const SYN_HttpdRequest *req,
  * @brief An HTTP routing entry configuration.
  */
 typedef struct {
-    SYN_HttpMethod    method;        /**< HTTP method to match             */
-    const char       *path;          /**< Path to match (or prefix + '*')  */
-    SYN_HttpdHandler  handler;       /**< Handler function                 */
-    void             *ctx;           /**< User context for handler         */
+    SYN_HttpMethod method;    /**< HTTP method to match             */
+    const char *path;         /**< Path to match (or prefix + '*')  */
+    SYN_HttpdHandler handler; /**< Handler function                 */
+    void *ctx;                /**< User context for handler         */
 } SYN_HttpdRoute;
 
 /* ── Server instance ───────────────────────────────────────────────────── */
@@ -120,30 +118,29 @@ typedef struct {
  *   IDLE → READING_HEADERS → DISPATCHING → IDLE
  */
 typedef enum {
-    SYN_HTTPD_IDLE,              /**< Polling for new client connection   */
-    SYN_HTTPD_READING_HEADERS,   /**< Accumulating header bytes (non-blocking) */
-    SYN_HTTPD_DISPATCHING,       /**< Headers complete — parse, route, respond */
+    SYN_HTTPD_IDLE,            /**< Polling for new client connection   */
+    SYN_HTTPD_READING_HEADERS, /**< Accumulating header bytes (non-blocking) */
+    SYN_HTTPD_DISPATCHING,     /**< Headers complete — parse, route, respond */
 } SYN_HttpdState;
 
 /**
  * @brief HTTP server context structure.
  */
 typedef struct {
-    const SYN_HttpdRoute *routes;    /**< Array of registered route entries */
-    size_t                route_count; /**< Number of routes in array */
-    uint8_t              *work_buf;  /**< Buffer for request processing */
-    size_t                work_buf_size; /**< Size of work buffer in bytes */
-    uint16_t              port;      /**< Listening TCP port number */
-    SYN_Socket            listener;  /**< Bound listener socket handle */
-    bool                  running;   /**< Server state active flag */
+    const SYN_HttpdRoute *routes; /**< Array of registered route entries */
+    size_t route_count;           /**< Number of routes in array */
+    uint8_t *work_buf;            /**< Buffer for request processing */
+    size_t work_buf_size;         /**< Size of work buffer in bytes */
+    uint16_t port;                /**< Listening TCP port number */
+    SYN_Socket listener;          /**< Bound listener socket handle */
+    bool running;                 /**< Server state active flag */
 
     /* ── Connection state (non-blocking request pipeline) ──────────── */
-    SYN_HttpdState        state;          /**< Current processing phase    */
-    SYN_Socket            client;         /**< Active client socket        */
-    size_t                rx_total;       /**< Bytes accumulated in work_buf */
-    uint32_t              recv_deadline;  /**< Tick deadline for header recv */
+    SYN_HttpdState state;   /**< Current processing phase    */
+    SYN_Socket client;      /**< Active client socket        */
+    size_t rx_total;        /**< Bytes accumulated in work_buf */
+    uint32_t recv_deadline; /**< Tick deadline for header recv */
 } SYN_Httpd;
-
 
 /* ── Server API ────────────────────────────────────────────────────────── */
 
@@ -160,9 +157,8 @@ typedef struct {
  * @param work_buf_size  Buffer size (512+ recommended).
  * @return SYN_OK on success, SYN_ERROR if bind/listen fails.
  */
-SYN_Status syn_httpd_init(SYN_Httpd *srv, uint16_t port,
-                           const SYN_HttpdRoute *routes, size_t route_count,
-                           uint8_t *work_buf, size_t work_buf_size);
+SYN_Status syn_httpd_init(SYN_Httpd *srv, uint16_t port, const SYN_HttpdRoute *routes,
+                          size_t route_count, uint8_t *work_buf, size_t work_buf_size);
 
 /**
  * @brief Protothread task function for the HTTP server.
@@ -219,8 +215,7 @@ void syn_httpd_status(const SYN_HttpdResponse *resp, int code, const char *reaso
  * @param name   Header key string (e.g. "Content-Type").
  * @param value  Header value string (e.g. "text/plain").
  */
-void syn_httpd_header(const SYN_HttpdResponse *resp,
-                       const char *name, const char *value);
+void syn_httpd_header(const SYN_HttpdResponse *resp, const char *name, const char *value);
 
 /**
  * @brief Send response body data.
@@ -253,9 +248,8 @@ void syn_httpd_body_str(SYN_HttpdResponse *resp, const char *str);
  * @param max_len  Buffer capacity in bytes.
  * @return Bytes read, 0 at end of body, -1 on error.
  */
-int syn_httpd_read_body(const SYN_HttpdRequest *req,
-                         const SYN_HttpdResponse *resp,
-                         void *buf, size_t max_len);
+int syn_httpd_read_body(const SYN_HttpdRequest *req, const SYN_HttpdResponse *resp, void *buf,
+                        size_t max_len);
 
 #ifdef __cplusplus
 }

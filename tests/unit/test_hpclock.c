@@ -11,10 +11,10 @@
  *   - Tick-to-nanosecond integer conversion
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/drivers/syn_hpclock.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 /* ── Simulated hardware ────────────────────────────────────────────────── */
 
@@ -27,7 +27,7 @@ volatile uint32_t *syn_port_hpclock_lsb_ptr(void)
 
 uint32_t syn_port_hpclock_freq_hz(void)
 {
-    return 16000000UL;  /* 16 MHz — typical AVR/ARM clock */
+    return 16000000UL; /* 16 MHz — typical AVR/ARM clock */
 }
 
 /* ── Resolve tests ─────────────────────────────────────────────────────── */
@@ -37,7 +37,7 @@ static void test_resolve_no_overflow(void)
     /* msb_1 == msb_2 → clean, no overflow in the window */
     SYN_HPTimestamp ts;
     ts.msb_1 = 5;
-    ts.lsb   = 1000;
+    ts.lsb = 1000;
     ts.msb_2 = 5;
 
     uint64_t ticks = syn_hpclock_resolve(&ts);
@@ -53,9 +53,9 @@ static void test_resolve_overflow_before_lsb(void)
      * Correct MSB is msb_2 (the post-overflow value).
      */
     SYN_HPTimestamp ts;
-    ts.msb_1 = 5;             /* read before overflow */
-    ts.lsb   = 0x00000010;   /* small → post-wrap */
-    ts.msb_2 = 6;             /* read after overflow */
+    ts.msb_1 = 5;        /* read before overflow */
+    ts.lsb = 0x00000010; /* small → post-wrap */
+    ts.msb_2 = 6;        /* read after overflow */
 
     uint64_t ticks = syn_hpclock_resolve(&ts);
     uint64_t expected = ((uint64_t)6 << 32) | 0x00000010ULL;
@@ -70,9 +70,9 @@ static void test_resolve_overflow_after_lsb(void)
      * Correct MSB is msb_1 (the pre-overflow value).
      */
     SYN_HPTimestamp ts;
-    ts.msb_1 = 5;             /* read before overflow */
-    ts.lsb   = 0xFFFFFFF0;   /* large → pre-wrap */
-    ts.msb_2 = 6;             /* read after overflow */
+    ts.msb_1 = 5;        /* read before overflow */
+    ts.lsb = 0xFFFFFFF0; /* large → pre-wrap */
+    ts.msb_2 = 6;        /* read after overflow */
 
     uint64_t ticks = syn_hpclock_resolve(&ts);
     uint64_t expected = ((uint64_t)5 << 32) | 0xFFFFFFF0ULL;
@@ -89,7 +89,7 @@ static void test_resolve_overflow_lsb_at_half_range(void)
      */
     SYN_HPTimestamp ts;
     ts.msb_1 = 5;
-    ts.lsb   = 0x80000000;
+    ts.lsb = 0x80000000;
     ts.msb_2 = 6;
 
     uint64_t ticks = syn_hpclock_resolve(&ts);
@@ -105,7 +105,7 @@ static void test_resolve_overflow_lsb_just_below_half(void)
      */
     SYN_HPTimestamp ts;
     ts.msb_1 = 5;
-    ts.lsb   = 0x7FFFFFFF;
+    ts.lsb = 0x7FFFFFFF;
     ts.msb_2 = 6;
 
     uint64_t ticks = syn_hpclock_resolve(&ts);
@@ -146,12 +146,12 @@ static void test_elapsed(void)
 
     /* Start: tick 100, msb 0 — no overflow */
     start.msb_1 = 0;
-    start.lsb   = 100;
+    start.lsb = 100;
     start.msb_2 = 0;
 
     /* End: tick 500, msb 0 — no overflow */
     end.msb_1 = 0;
-    end.lsb   = 500;
+    end.lsb = 500;
     end.msb_2 = 0;
 
     uint64_t dt = syn_hpclock_elapsed(&start, &end);
@@ -164,12 +164,12 @@ static void test_elapsed_across_overflow(void)
 
     /* Start: near end of msb=2 epoch — no overflow */
     start.msb_1 = 2;
-    start.lsb   = 0xFFFFFF00;
+    start.lsb = 0xFFFFFF00;
     start.msb_2 = 2;
 
     /* End: early in msb=3 epoch — no overflow */
     end.msb_1 = 3;
-    end.lsb   = 0x00000100;
+    end.lsb = 0x00000100;
     end.msb_2 = 3;
 
     uint64_t dt = syn_hpclock_elapsed(&start, &end);
@@ -217,12 +217,15 @@ static void test_overflow_tick_macro(void)
 
 /* ── Runner ────────────────────────────────────────────────────────────── */
 
-void setUp(void) {
+void setUp(void)
+{
     syn_hpclock_msb = 0;
     fake_timer_cnt = 0;
 }
 
-void tearDown(void) {}
+void tearDown(void)
+{
+}
 
 int main(void)
 {

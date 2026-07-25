@@ -22,8 +22,8 @@
 #include "../common/syn_defs.h"
 #include "../port/syn_port_spi.h"
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #ifdef __cplusplus
@@ -34,9 +34,9 @@ extern "C" {
 
 /** @brief SPI device descriptor — bus, CS, read-bit convention. */
 typedef struct {
-    uint8_t  bus;       /**< SPI bus number                              */
-    uint8_t  cs;        /**< Chip select index                           */
-    uint8_t  read_bit;  /**< OR'd into register addr for reads (e.g., 0x80) */
+    uint8_t bus;      /**< SPI bus number                              */
+    uint8_t cs;       /**< Chip select index                           */
+    uint8_t read_bit; /**< OR'd into register addr for reads (e.g., 0x80) */
 } SYN_SPIDev;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -48,12 +48,10 @@ typedef struct {
  * @param cs        Chip-select index.
  * @param read_bit  Bit OR'd into register address for reads.
  */
-static inline void syn_spi_dev_init(SYN_SPIDev *dev,
-                                     uint8_t bus, uint8_t cs,
-                                     uint8_t read_bit)
+static inline void syn_spi_dev_init(SYN_SPIDev *dev, uint8_t bus, uint8_t cs, uint8_t read_bit)
 {
-    dev->bus      = bus;
-    dev->cs       = cs;
+    dev->bus = bus;
+    dev->cs = cs;
     dev->read_bit = read_bit;
 }
 
@@ -63,11 +61,10 @@ static inline void syn_spi_dev_init(SYN_SPIDev *dev,
  * @param reg  Register address.
  * @return Register value.
  */
-static inline uint8_t syn_spi_dev_read8(const SYN_SPIDev *dev,
-                                         uint8_t reg)
+static inline uint8_t syn_spi_dev_read8(const SYN_SPIDev *dev, uint8_t reg)
 {
-    uint8_t tx[2] = { (uint8_t)(reg | dev->read_bit), 0x00 };
-    uint8_t rx[2] = { 0, 0 };
+    uint8_t tx[2] = {(uint8_t)(reg | dev->read_bit), 0x00};
+    uint8_t rx[2] = {0, 0};
 
     syn_port_spi_cs_assert(dev->bus, dev->cs);
     syn_port_spi_transfer(dev->bus, tx, rx, 2);
@@ -83,10 +80,9 @@ static inline uint8_t syn_spi_dev_read8(const SYN_SPIDev *dev,
  * @param val  Value to write.
  * @return SYN_OK on success.
  */
-static inline SYN_Status syn_spi_dev_write8(const SYN_SPIDev *dev,
-                                               uint8_t reg, uint8_t val)
+static inline SYN_Status syn_spi_dev_write8(const SYN_SPIDev *dev, uint8_t reg, uint8_t val)
 {
-    uint8_t tx[2] = { reg, val };
+    uint8_t tx[2] = {reg, val};
 
     syn_port_spi_cs_assert(dev->bus, dev->cs);
     syn_port_spi_transfer(dev->bus, tx, NULL, 2);
@@ -103,9 +99,8 @@ static inline SYN_Status syn_spi_dev_write8(const SYN_SPIDev *dev,
  * @param len  Number of bytes to read.
  * @return SYN_OK on success.
  */
-static inline SYN_Status syn_spi_dev_read_burst(const SYN_SPIDev *dev,
-                                                    uint8_t reg,
-                                                    uint8_t *buf, size_t len)
+static inline SYN_Status syn_spi_dev_read_burst(const SYN_SPIDev *dev, uint8_t reg, uint8_t *buf,
+                                                size_t len)
 {
     uint8_t tx_reg = (uint8_t)(reg | dev->read_bit);
 
@@ -134,10 +129,8 @@ static inline SYN_Status syn_spi_dev_read_burst(const SYN_SPIDev *dev,
  * @param len   Number of bytes.
  * @return SYN_OK on success.
  */
-static inline SYN_Status syn_spi_dev_write_burst(const SYN_SPIDev *dev,
-                                                     uint8_t reg,
-                                                     const uint8_t *data,
-                                                     size_t len)
+static inline SYN_Status syn_spi_dev_write_burst(const SYN_SPIDev *dev, uint8_t reg,
+                                                 const uint8_t *data, size_t len)
 {
     syn_port_spi_cs_assert(dev->bus, dev->cs);
     syn_port_spi_transfer(dev->bus, &reg, NULL, 1);

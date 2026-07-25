@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_MODBUS) || SYN_USE_MODBUS
@@ -9,9 +9,9 @@
  * @brief Modbus TCP ADU (MBAP) framing implementation.
  */
 
-#include "syn_modbus_tcp.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
+#include "syn_modbus_tcp.h"
 
 #include <string.h>
 
@@ -34,9 +34,9 @@ bool syn_mbap_decode_header(const uint8_t *buf, SYN_MBAP_Header *hdr)
 
     size_t pos = 0;
     hdr->transaction_id = syn_unpack_u16(buf, &pos);
-    hdr->protocol_id    = syn_unpack_u16(buf, &pos);
-    hdr->length         = syn_unpack_u16(buf, &pos);
-    hdr->unit_id        = syn_unpack_u8(buf, &pos);
+    hdr->protocol_id = syn_unpack_u16(buf, &pos);
+    hdr->length = syn_unpack_u16(buf, &pos);
+    hdr->unit_id = syn_unpack_u8(buf, &pos);
 
     return (hdr->protocol_id == 0x0000);
 }
@@ -73,10 +73,8 @@ static uint16_t get_response_pdu_len(const uint8_t *buf)
     }
 }
 
-bool syn_modbus_tcp_process_slave(SYN_Modbus *mb,
-                                  const uint8_t *req_adu, uint16_t req_len,
-                                  uint8_t *resp_adu, uint16_t resp_max,
-                                  uint16_t *resp_len)
+bool syn_modbus_tcp_process_slave(SYN_Modbus *mb, const uint8_t *req_adu, uint16_t req_len,
+                                  uint8_t *resp_adu, uint16_t resp_max, uint16_t *resp_len)
 {
     SYN_ASSERT(mb != NULL);
     SYN_ASSERT(req_adu != NULL);
@@ -134,9 +132,9 @@ bool syn_modbus_tcp_process_slave(SYN_Modbus *mb,
 
     SYN_MBAP_Header resp_hdr;
     resp_hdr.transaction_id = req_hdr.transaction_id;
-    resp_hdr.protocol_id    = 0x0000;
-    resp_hdr.length         = (uint16_t)(1 + resp_pdu_len); /* Unit ID (1) + PDU */
-    resp_hdr.unit_id        = req_hdr.unit_id;
+    resp_hdr.protocol_id = 0x0000;
+    resp_hdr.length = (uint16_t)(1 + resp_pdu_len); /* Unit ID (1) + PDU */
+    resp_hdr.unit_id = req_hdr.unit_id;
 
     syn_mbap_encode_header(&resp_hdr, resp_adu);
     memcpy(&resp_adu[SYN_MBAP_HEADER_LEN], &mb->buf[1], resp_pdu_len);
@@ -146,24 +144,25 @@ bool syn_modbus_tcp_process_slave(SYN_Modbus *mb,
 }
 
 SYN_Status syn_modbus_tcp_build_client_adu(uint16_t transaction_id, uint8_t unit_id,
-                                           const uint8_t *pdu, uint16_t pdu_len,
-                                           uint8_t *req_adu, uint16_t req_max,
-                                           uint16_t *req_len)
+                                           const uint8_t *pdu, uint16_t pdu_len, uint8_t *req_adu,
+                                           uint16_t req_max, uint16_t *req_len)
 {
     SYN_ASSERT(pdu != NULL);
     SYN_ASSERT(req_adu != NULL);
     SYN_ASSERT(req_len != NULL);
 
-    if (pdu_len == 0 || pdu_len > 253) return SYN_INVALID_PARAM;
+    if (pdu_len == 0 || pdu_len > 253)
+        return SYN_INVALID_PARAM;
 
     uint16_t total_len = SYN_MBAP_HEADER_LEN + pdu_len;
-    if (total_len > req_max) return SYN_INVALID_PARAM;
+    if (total_len > req_max)
+        return SYN_INVALID_PARAM;
 
     SYN_MBAP_Header hdr;
     hdr.transaction_id = transaction_id;
-    hdr.protocol_id    = 0x0000;
-    hdr.length         = (uint16_t)(1 + pdu_len);
-    hdr.unit_id        = unit_id;
+    hdr.protocol_id = 0x0000;
+    hdr.length = (uint16_t)(1 + pdu_len);
+    hdr.unit_id = unit_id;
 
     syn_mbap_encode_header(&hdr, req_adu);
     memcpy(&req_adu[SYN_MBAP_HEADER_LEN], pdu, pdu_len);

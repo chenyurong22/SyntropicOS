@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_FOC) || SYN_USE_FOC
@@ -12,21 +12,21 @@
  * No floating point, no heap allocation.
  */
 
-#include "syn_foc.h"
-#include "../util/syn_assert.h"
 #include "../common/syn_defs.h"
+#include "../util/syn_assert.h"
+#include "syn_foc.h"
 
 /** @brief Precomputed √3 in Q16.16 (≈ 1.73205). */
-#define Q16_SQRT3         113512
+#define Q16_SQRT3 113512
 
 /** @brief Precomputed 1/√3 in Q16.16 (≈ 0.57735). */
-#define Q16_INV_SQRT3     37837
+#define Q16_INV_SQRT3 37837
 
 /** @brief Precomputed 2/√3 in Q16.16 (≈ 1.15470). */
-#define Q16_2_INV_SQRT3   75674
+#define Q16_2_INV_SQRT3 75674
 
 /** @brief Precomputed √3/2 in Q16.16 (≈ 0.86603). */
-#define Q16_SQRT3_OVER_2  56756
+#define Q16_SQRT3_OVER_2 56756
 
 /* ── Clarke transform ───────────────────────────────────────────────────── */
 
@@ -90,17 +90,17 @@ void syn_foc_inv_park(const SYN_FOC_DQ *dq, q16_t theta, SYN_FOC_AB *ab)
      * β = d·sin(θ) + q·cos(θ)
      */
     ab->alpha = q16_mul(dq->d, cos_t) - q16_mul(dq->q, sin_t);
-    ab->beta  = q16_mul(dq->d, sin_t) + q16_mul(dq->q, cos_t);
+    ab->beta = q16_mul(dq->d, sin_t) + q16_mul(dq->q, cos_t);
 }
 
 /* ── SVPWM ──────────────────────────────────────────────────────────────── */
 
-void syn_foc_svpwm(const SYN_FOC_AB *ab, q16_t v_bus,
-                   q16_t *duty_a, q16_t *duty_b, q16_t *duty_c)
+void syn_foc_svpwm(const SYN_FOC_AB *ab, q16_t v_bus, q16_t *duty_a, q16_t *duty_b, q16_t *duty_c)
 {
     SYN_ASSERT(ab != NULL && duty_a != NULL && duty_b != NULL && duty_c != NULL);
     SYN_ASSERT(v_bus > 0);
-    if (v_bus <= 0) return;
+    if (v_bus <= 0)
+        return;
 
     /*
      * Standard 7-segment SVPWM via inverse Clarke with center-aligned PWM.

@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_DNS) || SYN_USE_DNS
@@ -9,10 +9,11 @@
  * @brief UDP DNS resolver and mDNS responder implementation.
  */
 
-#include "syn_dns.h"
+#include "../port/syn_port_system.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
-#include "../port/syn_port_system.h"
+#include "syn_dns.h"
+
 #include <string.h>
 
 /**
@@ -59,7 +60,8 @@ static bool parse_qname(const uint8_t *buf, size_t buf_len, size_t *pos)
 {
     size_t p = *pos;
     for (;;) {
-        if (p >= buf_len) return false;
+        if (p >= buf_len)
+            return false;
         uint8_t len = buf[p];
         if ((len & 0xC0) == 0xC0) {
             /* Pointer */
@@ -87,37 +89,46 @@ static bool parse_qname(const uint8_t *buf, size_t buf_len, size_t *pos)
  * @param expected_txid  Transaction ID to verify.
  * @return SYN_OK on success, SYN_ERROR on format/parsing error.
  */
-static SYN_Status parse_response(const uint8_t *buf, size_t rx_len, SYN_SockAddr *addr_out, uint16_t expected_txid)
+static SYN_Status parse_response(const uint8_t *buf, size_t rx_len, SYN_SockAddr *addr_out,
+                                 uint16_t expected_txid)
 {
-    if (rx_len < 12) return SYN_ERROR;
+    if (rx_len < 12)
+        return SYN_ERROR;
     uint16_t rx_txid = syn_peek_u16(buf, 0);
-    if (rx_txid != expected_txid) return SYN_ERROR; /* Bad ID */
-    if ((buf[3] & 0x0F) != 0) return SYN_ERROR;             /* RCODE != 0 (error) */
+    if (rx_txid != expected_txid)
+        return SYN_ERROR; /* Bad ID */
+    if ((buf[3] & 0x0F) != 0)
+        return SYN_ERROR; /* RCODE != 0 (error) */
 
     uint16_t questions = syn_peek_u16(buf, 4);
-    uint16_t answers   = syn_peek_u16(buf, 6);
+    uint16_t answers = syn_peek_u16(buf, 6);
 
-    if (answers == 0) return SYN_ERROR;
+    if (answers == 0)
+        return SYN_ERROR;
 
     /* Skip questions */
     size_t pos = 12;
     for (uint16_t i = 0; i < questions; i++) {
-        if (!parse_qname(buf, rx_len, &pos)) return SYN_ERROR;
+        if (!parse_qname(buf, rx_len, &pos))
+            return SYN_ERROR;
         pos += 4; /* skip QTYPE and QCLASS */
     }
 
     /* Parse answers */
     for (uint16_t i = 0; i < answers; i++) {
-        if (!parse_qname(buf, rx_len, &pos)) return SYN_ERROR;
-        if (pos + 10 > rx_len) return SYN_ERROR;
+        if (!parse_qname(buf, rx_len, &pos))
+            return SYN_ERROR;
+        if (pos + 10 > rx_len)
+            return SYN_ERROR;
 
-        uint16_t type  = syn_peek_u16(buf, pos);
+        uint16_t type = syn_peek_u16(buf, pos);
         uint16_t rdlen = syn_peek_u16(buf, pos + 8);
         pos += 10;
 
         if (type == 1 && rdlen == 4) {
             /* IPv4 A Record */
-            if (pos + 4 > rx_len) return SYN_ERROR;
+            if (pos + 4 > rx_len)
+                return SYN_ERROR;
             memcpy(addr_out->ip, buf + pos, 4);
             addr_out->port = 0;
             return SYN_OK;
@@ -165,8 +176,10 @@ SYN_PT_Status syn_dns_resolve_task(SYN_PT *pt, SYN_Task *task)
     {
         size_t pos = 12;
         pos += encode_qname(r->buf + pos, r->hostname);
-        syn_poke_u16(0x0001, r->buf, pos); pos += 2; /* QTYPE = A */
-        syn_poke_u16(0x0001, r->buf, pos); pos += 2; /* QCLASS = IN */
+        syn_poke_u16(0x0001, r->buf, pos);
+        pos += 2; /* QTYPE = A */
+        syn_poke_u16(0x0001, r->buf, pos);
+        pos += 2; /* QCLASS = IN */
         r->query_len = pos;
     }
 
@@ -242,26 +255,35 @@ SYN_Status syn_mdns_init(SYN_Mdns *mdns, const char *hostname, const uint8_t ip[
 static bool match_qname_local(const uint8_t *buf, size_t buf_len, size_t *pos, const char *hostname)
 {
     size_t p = *pos;
-    if (p >= buf_len) return false;
-    
+    if (p >= buf_len)
+        return false;
+
     /* First label: hostname length + string */
     uint8_t h_len = buf[p++];
     size_t host_len = strlen(hostname);
-    if (h_len != host_len) return false;
-    if (p + host_len > buf_len) return false;
-    if (memcmp(buf + p, hostname, host_len) != 0) return false;
+    if (h_len != host_len)
+        return false;
+    if (p + host_len > buf_len)
+        return false;
+    if (memcmp(buf + p, hostname, host_len) != 0)
+        return false;
     p += host_len;
 
     /* Second label: "local" length + string */
-    if (p >= buf_len) return false;
+    if (p >= buf_len)
+        return false;
     uint8_t l_len = buf[p++];
-    if (l_len != 5) return false;
-    if (p + 5 > buf_len) return false;
-    if (memcmp(buf + p, "local", 5) != 0) return false;
+    if (l_len != 5)
+        return false;
+    if (p + 5 > buf_len)
+        return false;
+    if (memcmp(buf + p, "local", 5) != 0)
+        return false;
     p += 5;
 
     /* Terminator */
-    if (p >= buf_len || buf[p] != 0) return false;
+    if (p >= buf_len || buf[p] != 0)
+        return false;
     p++;
 
     *pos = p;
@@ -283,9 +305,9 @@ SYN_PT_Status syn_mdns_task(SYN_PT *pt, SYN_Task *task)
             int n = syn_port_udp_recvfrom(mdns->sock, buf, sizeof(buf), &from, 0);
             if (n > 12) {
                 size_t rx_len = (size_t)n;
-                uint16_t flags     = syn_peek_u16(buf, 2);
+                uint16_t flags = syn_peek_u16(buf, 2);
                 uint16_t questions = syn_peek_u16(buf, 4);
-                
+
                 /* Parse if it's a query (Flags QR bit = 0) */
                 if ((flags & 0x8000) == 0 && questions > 0) {
                     size_t pos = 12;
@@ -296,7 +318,8 @@ SYN_PT_Status syn_mdns_task(SYN_PT *pt, SYN_Task *task)
                             break;
                         }
                         /* if didn't match, parse to skip */
-                        if (!parse_qname(buf, rx_len, &pos)) break;
+                        if (!parse_qname(buf, rx_len, &pos))
+                            break;
                         pos += 4; /* QTYPE + QCLASS */
                     }
 
@@ -317,11 +340,15 @@ SYN_PT_Status syn_mdns_task(SYN_PT *pt, SYN_Task *task)
                         rpos += 5;
                         resp[rpos++] = 0;
 
-                        syn_poke_u16(0x0001, resp, rpos); rpos += 2; /* TYPE = A */
-                        syn_poke_u16(0x8001, resp, rpos); rpos += 2; /* CLASS = IN + cache flush */
-                        syn_poke_u32(120, resp, rpos);    rpos += 4; /* TTL = 120 */
-                        syn_poke_u16(4, resp, rpos);      rpos += 2; /* RDLEN = 4 */
-                        memcpy(resp + rpos, mdns->ip, 4);            /* Address */
+                        syn_poke_u16(0x0001, resp, rpos);
+                        rpos += 2; /* TYPE = A */
+                        syn_poke_u16(0x8001, resp, rpos);
+                        rpos += 2; /* CLASS = IN + cache flush */
+                        syn_poke_u32(120, resp, rpos);
+                        rpos += 4; /* TTL = 120 */
+                        syn_poke_u16(4, resp, rpos);
+                        rpos += 2;                        /* RDLEN = 4 */
+                        memcpy(resp + rpos, mdns->ip, 4); /* Address */
                         rpos += 4;
 
                         /* Send mDNS reply back to multicast group 224.0.0.251:5353 */

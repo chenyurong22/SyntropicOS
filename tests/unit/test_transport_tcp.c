@@ -1,6 +1,7 @@
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/net/syn_transport_tcp.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 void test_transport_tcp_send(void)
@@ -10,7 +11,7 @@ void test_transport_tcp_send(void)
     syn_transport_tcp_init(&t, &tcp, 1);
     mock_sock_connected = true;
 
-    uint8_t data[] = { 0xAA, 0xBB, 0xCC };
+    uint8_t data[] = {0xAA, 0xBB, 0xCC};
     TEST_ASSERT_TRUE(syn_transport_send(&t, data, sizeof(data)));
 
     /* Verify 2-byte length + payload */
@@ -29,7 +30,7 @@ void test_transport_tcp_recv_full(void)
     syn_transport_tcp_init(&t, &tcp, 1);
     mock_sock_connected = true;
 
-    uint8_t rx_data[] = { 0x00, 0x04, 0x11, 0x22, 0x33, 0x44 };
+    uint8_t rx_data[] = {0x00, 0x04, 0x11, 0x22, 0x33, 0x44};
     mock_sock_set_response(rx_data, sizeof(rx_data));
 
     uint8_t out[16];
@@ -53,27 +54,27 @@ void test_transport_tcp_recv_fragmented(void)
     size_t out_len = 0;
 
     /* 1. Feed length MSB */
-    uint8_t chunk1[] = { 0x00 };
+    uint8_t chunk1[] = {0x00};
     mock_sock_set_response(chunk1, 1);
     TEST_ASSERT_FALSE(syn_transport_recv(&t, out, sizeof(out), &out_len));
     TEST_ASSERT_EQUAL_UINT8(1, tcp.state);
 
     /* 2. Feed length LSB */
-    uint8_t chunk2[] = { 0x03 };
+    uint8_t chunk2[] = {0x03};
     mock_sock_set_response(chunk2, 1);
     TEST_ASSERT_FALSE(syn_transport_recv(&t, out, sizeof(out), &out_len));
     TEST_ASSERT_EQUAL_UINT8(2, tcp.state);
     TEST_ASSERT_EQUAL_UINT16(3, tcp.payload_len);
 
     /* 3. Feed partial payload */
-    uint8_t chunk3[] = { 0xAA, 0xBB };
+    uint8_t chunk3[] = {0xAA, 0xBB};
     mock_sock_set_response(chunk3, 2);
     TEST_ASSERT_FALSE(syn_transport_recv(&t, out, sizeof(out), &out_len));
     TEST_ASSERT_EQUAL_UINT8(2, tcp.state);
     TEST_ASSERT_EQUAL_UINT16(2, tcp.bytes_read);
 
     /* 4. Feed final payload byte */
-    uint8_t chunk4[] = { 0xCC };
+    uint8_t chunk4[] = {0xCC};
     mock_sock_set_response(chunk4, 1);
     TEST_ASSERT_TRUE(syn_transport_recv(&t, out, sizeof(out), &out_len));
     TEST_ASSERT_EQUAL_UINT32(3, out_len);
@@ -92,7 +93,7 @@ static void test_transport_tcp_send_header_fail(void)
     mock_sock_connected = true;
     mock_sock_send_fail = true; /* fail immediately */
 
-    uint8_t data[] = { 0x01 };
+    uint8_t data[] = {0x01};
     bool ok = syn_transport_send(&t, data, sizeof(data));
     TEST_ASSERT_FALSE(ok);
     mock_sock_send_fail = false;
@@ -108,7 +109,7 @@ static void test_transport_tcp_send_payload_fail(void)
     /* Fail after 2 bytes (the header) so the payload write fails */
     mock_sock_send_fail_after_bytes = 2;
 
-    uint8_t data[] = { 0x01, 0x02 };
+    uint8_t data[] = {0x01, 0x02};
     bool ok = syn_transport_send(&t, data, sizeof(data));
     TEST_ASSERT_FALSE(ok);
     mock_sock_send_fail_after_bytes = -1;
@@ -123,7 +124,7 @@ static void test_transport_tcp_recv_oversized(void)
     mock_sock_connected = true;
 
     /* Send a length header larger than the internal rx_buf */
-    uint8_t rx[] = { 0xFF, 0xFF }; /* length = 65535, far exceeds rx_buf */
+    uint8_t rx[] = {0xFF, 0xFF}; /* length = 65535, far exceeds rx_buf */
     mock_sock_set_response(rx, sizeof(rx));
 
     uint8_t out[16];
@@ -146,7 +147,7 @@ static void test_transport_tcp_recv_empty_packet(void)
     mock_sock_connected = true;
 
     /* Length = 0x0000: feed both bytes at once so state machine gets high+low */
-    uint8_t rx[] = { 0x00, 0x00 };
+    uint8_t rx[] = {0x00, 0x00};
     mock_sock_set_response(rx, sizeof(rx));
 
     uint8_t out[16];
@@ -169,7 +170,7 @@ static void test_transport_tcp_recv_outbuf_too_small(void)
     mock_sock_connected = true;
 
     /* Frame a 5-byte payload: length header = 0x0005, then 5 data bytes */
-    uint8_t rx[] = { 0x00, 0x05, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };
+    uint8_t rx[] = {0x00, 0x05, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE};
     mock_sock_set_response(rx, sizeof(rx));
 
     /* But provide a 2-byte output buffer — smaller than payload */

@@ -3,8 +3,9 @@
  * @brief Unit test suite for Opt-In Task Execution Profiler (syn_task_profile).
  */
 
-#include "unity/unity.h"
 #include "syntropic/debug/syn_task_profile.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 void test_task_profile_init_and_step(void)

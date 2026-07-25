@@ -16,9 +16,9 @@
 
 #define _POSIX_C_SOURCE 200809L
 
+#include "syntropic/common/syn_defs.h"
 #include "syntropic/display/syn_canvas.h"
 #include "syntropic/ui/syn_imgui.h"
-#include "syntropic/common/syn_defs.h"
 #include "syntropic/util/syn_assert.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -27,11 +27,11 @@
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 /* minimal nearest-neighbour scaler inline — no dep needed */
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <stdbool.h>
 
 /* ── assert ──────────────────────────────────────────────────────────────── */
 void syn_assert_failed(const char *file, int line)
@@ -41,9 +41,9 @@ void syn_assert_failed(const char *file, int line)
 }
 
 /* ── Display geometry ────────────────────────────────────────────────────── */
-#define W   128
-#define H   64
-#define SZ  (W * H / 8)
+#define W 128
+#define H 64
+#define SZ (W * H / 8)
 
 /* ── Framebuffer → RGBA (4× scale) ──────────────────────────────────────── */
 #define SCALE 4
@@ -56,9 +56,9 @@ static void fb_to_rgba(const uint8_t *fb, uint8_t *rgba)
             uint8_t v = ((fb[page * W + px] >> bit) & 1) ? 255 : 0;
             for (int sy = 0; sy < SCALE; sy++)
                 for (int sx = 0; sx < SCALE; sx++) {
-                    int idx = ((py*SCALE+sy)*ow + (px*SCALE+sx))*4;
-                    rgba[idx+0] = rgba[idx+1] = rgba[idx+2] = v;
-                    rgba[idx+3] = 255;
+                    int idx = ((py * SCALE + sy) * ow + (px * SCALE + sx)) * 4;
+                    rgba[idx + 0] = rgba[idx + 1] = rgba[idx + 2] = v;
+                    rgba[idx + 3] = 255;
                 }
         }
     }
@@ -66,14 +66,15 @@ static void fb_to_rgba(const uint8_t *fb, uint8_t *rgba)
 }
 
 /* ── One test case ───────────────────────────────────────────────────────── */
-typedef struct { char name[64]; uint8_t fb[SZ]; } TestFrame;
+typedef struct {
+    char name[64];
+    uint8_t fb[SZ];
+} TestFrame;
 
 static TestFrame g_frames[64];
-static int       g_nframes = 0;
+static int g_nframes = 0;
 
-static void begin_frame(const char *name,
-                        SYN_Canvas *c, SYN_IMGUI_Context *ctx,
-                        uint8_t *fb,
+static void begin_frame(const char *name, SYN_Canvas *c, SYN_IMGUI_Context *ctx, uint8_t *fb,
                         bool sel, bool back, int32_t enc)
 {
     memset(fb, 0, SZ);
@@ -96,7 +97,9 @@ static void end_frame(SYN_IMGUI_Context *ctx, uint8_t *fb)
 
 /* Macro to simplify */
 #define BEGIN(name, sel, back, enc) \
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx; \
+    uint8_t _fb[SZ];                \
+    SYN_Canvas _c;                  \
+    SYN_IMGUI_Context _ctx;         \
     begin_frame(name, &_c, &_ctx, _fb, sel, back, enc)
 #define END() end_frame(&_ctx, _fb)
 
@@ -145,7 +148,7 @@ static void tc_checkbox(void)
     BEGIN("checkbox: states", false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     bool checked = true, unchecked = false;
-    syn_imgui_checkbox(&_ctx, "Checked",   &checked,   0, 0, 0, 0);
+    syn_imgui_checkbox(&_ctx, "Checked", &checked, 0, 0, 0, 0);
     syn_imgui_checkbox(&_ctx, "Unchecked", &unchecked, 0, 0, 0, 0);
     syn_imgui_layout_end(&_ctx);
     END();
@@ -157,9 +160,9 @@ static void tc_checkbox_flags(void)
     BEGIN("chk_flags: mixed", false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     uint32_t f = 0x05; /* bits 0 and 2 set */
-    syn_imgui_checkbox_flags(&_ctx, "Bit 0 ON",  &f, 0x01, 0, 0, 0, 0);
+    syn_imgui_checkbox_flags(&_ctx, "Bit 0 ON", &f, 0x01, 0, 0, 0, 0);
     syn_imgui_checkbox_flags(&_ctx, "Bit 1 OFF", &f, 0x02, 0, 0, 0, 0);
-    syn_imgui_checkbox_flags(&_ctx, "Bit 2 ON",  &f, 0x04, 0, 0, 0, 0);
+    syn_imgui_checkbox_flags(&_ctx, "Bit 2 ON", &f, 0x04, 0, 0, 0, 0);
     syn_imgui_layout_end(&_ctx);
     END();
 }
@@ -167,7 +170,9 @@ static void tc_checkbox_flags(void)
 /* ── Slider ──────────────────────────────────────────────────────────────── */
 static void tc_slider_idle(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("slider: 50%", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     int32_t v = 50;
@@ -179,7 +184,9 @@ static void tc_slider_idle(void)
 /* Rewrite slider tests properly */
 static void tc_slider_low(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("slider: 10%", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     int32_t v = 10;
@@ -190,7 +197,9 @@ static void tc_slider_low(void)
 
 static void tc_slider_full(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("slider: 100%", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     int32_t v = 100;
@@ -202,7 +211,9 @@ static void tc_slider_full(void)
 static void tc_slider_active(void)
 {
     /* Two-frame sequence: select to enter active, then render */
-    uint8_t fb[SZ]; SYN_Canvas c; SYN_IMGUI_Context ctx;
+    uint8_t fb[SZ];
+    SYN_Canvas c;
+    SYN_IMGUI_Context ctx;
     memset(fb, 0, SZ);
     syn_canvas_init(&c, fb, W, H, 1, NULL, NULL);
     syn_imgui_init(&ctx);
@@ -231,8 +242,8 @@ static void tc_slider_active(void)
     syn_canvas_clear(&c);
     syn_imgui_init(&ctx);
     ctx.last_max_id = 1;
-    ctx.focused_id  = 1;
-    ctx.active_id   = 1;
+    ctx.focused_id = 1;
+    ctx.active_id = 1;
     syn_imgui_begin(&ctx, &c, false, false, 0, false, 0, 0);
     syn_imgui_layout_begin(&ctx, 0, 0, W);
     v = 65;
@@ -244,7 +255,9 @@ static void tc_slider_active(void)
 /* ── Radio ───────────────────────────────────────────────────────────────── */
 static void tc_radio(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("radio: sel=1", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     int32_t mode = 1;
@@ -258,7 +271,9 @@ static void tc_radio(void)
 /* ── Combo ───────────────────────────────────────────────────────────────── */
 static void tc_combo_idle(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("combo: idle sel=1", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     const char *opts[] = {"Alpha", "Beta", "Gamma"};
@@ -270,9 +285,13 @@ static void tc_combo_idle(void)
 
 static void tc_combo_active(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("combo: editing", &_c, &_ctx, _fb, false, false, 0);
-    _ctx.last_max_id = 1; _ctx.focused_id = 1; _ctx.active_id = 1;
+    _ctx.last_max_id = 1;
+    _ctx.focused_id = 1;
+    _ctx.active_id = 1;
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     const char *opts[] = {"Alpha", "Beta", "Gamma"};
     int32_t sel = 2;
@@ -284,7 +303,9 @@ static void tc_combo_active(void)
 /* ── Spinner ─────────────────────────────────────────────────────────────── */
 static void tc_spinner(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("spinner: val=42", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     int32_t v = 42;
@@ -296,11 +317,13 @@ static void tc_spinner(void)
 /* ── Toggle ──────────────────────────────────────────────────────────────── */
 static void tc_toggle(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("toggle: on+off", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     bool on = true, off = false;
-    syn_imgui_toggle(&_ctx, "WiFi ON",  &on,  0, 0, 0, 0);
+    syn_imgui_toggle(&_ctx, "WiFi ON", &on, 0, 0, 0, 0);
     syn_imgui_toggle(&_ctx, "BLE  OFF", &off, 0, 0, 0, 0);
     syn_imgui_layout_end(&_ctx);
     end_frame(&_ctx, _fb);
@@ -309,7 +332,9 @@ static void tc_toggle(void)
 /* ── Tabs ────────────────────────────────────────────────────────────────── */
 static void tc_tabs(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("tabs: tab 1 active", &_c, &_ctx, _fb, false, false, 0);
     const char *tabs[] = {"Overview", "Advanced", "Log"};
     int32_t active = 1;
@@ -319,7 +344,9 @@ static void tc_tabs(void)
 
 static void tc_tabs_layout(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("tabs: layout resolved", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     const char *tabs[] = {"Dash", "Set", "Info"};
@@ -332,7 +359,9 @@ static void tc_tabs_layout(void)
 /* ── Collapsing header ───────────────────────────────────────────────────── */
 static void tc_collapsing_collapsed(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("collapsing: closed", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     bool open = false;
@@ -344,7 +373,9 @@ static void tc_collapsing_collapsed(void)
 
 static void tc_collapsing_open(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("collapsing: open", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     bool open = true, closed = false;
@@ -360,12 +391,14 @@ static void tc_collapsing_open(void)
 /* ── Selectable list ─────────────────────────────────────────────────────── */
 static void tc_selectable(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("selectable: 3 items", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     bool s0 = true, s1 = false, s2 = true;
     syn_imgui_selectable(&_ctx, "Item Alpha", &s0, 0, 0, 0, 0);
-    syn_imgui_selectable(&_ctx, "Item Beta",  &s1, 0, 0, 0, 0);
+    syn_imgui_selectable(&_ctx, "Item Beta", &s1, 0, 0, 0, 0);
     syn_imgui_selectable(&_ctx, "Item Gamma", &s2, 0, 0, 0, 0);
     syn_imgui_layout_end(&_ctx);
     end_frame(&_ctx, _fb);
@@ -374,12 +407,15 @@ static void tc_selectable(void)
 /* ── Scroll region ───────────────────────────────────────────────────────── */
 static void tc_scroll_top(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("scroll: top (0)", &_c, &_ctx, _fb, false, false, 0);
     int16_t off = 0;
     syn_imgui_scroll_begin(&_ctx, 0, 0, W, H, &off);
     for (int i = 0; i < 8; i++) {
-        char lbl[16]; snprintf(lbl, sizeof(lbl), "Row %d", i+1);
+        char lbl[16];
+        snprintf(lbl, sizeof(lbl), "Row %d", i + 1);
         bool sel = (i == 1);
         syn_imgui_selectable(&_ctx, lbl, &sel, 0, 0, 0, 0);
     }
@@ -389,12 +425,15 @@ static void tc_scroll_top(void)
 
 static void tc_scroll_mid(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("scroll: mid (28px)", &_c, &_ctx, _fb, false, false, 0);
     int16_t off = 28;
     syn_imgui_scroll_begin(&_ctx, 0, 0, W, H, &off);
     for (int i = 0; i < 8; i++) {
-        char lbl[16]; snprintf(lbl, sizeof(lbl), "Row %d", i+1);
+        char lbl[16];
+        snprintf(lbl, sizeof(lbl), "Row %d", i + 1);
         bool sel = false;
         syn_imgui_selectable(&_ctx, lbl, &sel, 0, 0, 0, 0);
     }
@@ -405,7 +444,9 @@ static void tc_scroll_mid(void)
 /* ── Separator text ──────────────────────────────────────────────────────── */
 static void tc_separator_text(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("separator_text", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     syn_imgui_separator_text(&_ctx, "Section A", 0, 0, 0);
@@ -419,20 +460,24 @@ static void tc_separator_text(void)
 /* ── Progress bars ───────────────────────────────────────────────────────── */
 static void tc_progress_bars(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("progress: 0/50/100/%", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
-    syn_imgui_progress_bar_ex(&_ctx,   0, 0, 100, NULL,    0, 0, 0, 0);
-    syn_imgui_progress_bar_ex(&_ctx,  50, 0, 100, NULL,    0, 0, 0, 0);
-    syn_imgui_progress_bar_ex(&_ctx, 100, 0, 100, NULL,    0, 0, 0, 0);
-    syn_imgui_progress_bar_ex(&_ctx,  73, 0, 100, "Done!", 0, 0, 0, 0);
+    syn_imgui_progress_bar_ex(&_ctx, 0, 0, 100, NULL, 0, 0, 0, 0);
+    syn_imgui_progress_bar_ex(&_ctx, 50, 0, 100, NULL, 0, 0, 0, 0);
+    syn_imgui_progress_bar_ex(&_ctx, 100, 0, 100, NULL, 0, 0, 0, 0);
+    syn_imgui_progress_bar_ex(&_ctx, 73, 0, 100, "Done!", 0, 0, 0, 0);
     syn_imgui_layout_end(&_ctx);
     end_frame(&_ctx, _fb);
 }
 
 static void tc_progress_indeterminate(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("progress: indeterminate", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     /* value < min triggers indeterminate mode */
@@ -445,12 +490,14 @@ static void tc_progress_indeterminate(void)
 /* ── Value int ───────────────────────────────────────────────────────────── */
 static void tc_value_int(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("value_int: pos/neg/zero", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
-    syn_imgui_value_int(&_ctx, "RPM",  1500, 0, 0);
-    syn_imgui_value_int(&_ctx, "Temp", -23,  0, 0);
-    syn_imgui_value_int(&_ctx, "Err",  0,    0, 0);
+    syn_imgui_value_int(&_ctx, "RPM", 1500, 0, 0);
+    syn_imgui_value_int(&_ctx, "Temp", -23, 0, 0);
+    syn_imgui_value_int(&_ctx, "Err", 0, 0, 0);
     syn_imgui_layout_end(&_ctx);
     end_frame(&_ctx, _fb);
 }
@@ -458,7 +505,9 @@ static void tc_value_int(void)
 /* ── Text marquee ────────────────────────────────────────────────────────── */
 static void tc_marquee_static(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("marquee: short (static)", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     int16_t off = 0;
@@ -469,7 +518,9 @@ static void tc_marquee_static(void)
 
 static void tc_marquee_scrolling(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("marquee: scrolled 20px", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     int16_t off = 20;
@@ -481,7 +532,9 @@ static void tc_marquee_scrolling(void)
 /* ── Text wrapped ────────────────────────────────────────────────────────── */
 static void tc_text_wrapped(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("text_wrapped", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     syn_imgui_text_wrapped(&_ctx, "Word wrap test: long lines break here nicely", 0, 0, 0);
@@ -492,21 +545,25 @@ static void tc_text_wrapped(void)
 /* ── Status bar ──────────────────────────────────────────────────────────── */
 static void tc_status_bar(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("status_bar", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     syn_imgui_label(&_ctx, "Main content here", 0, 0);
     syn_imgui_label(&_ctx, "More content here", 0, 0);
     syn_imgui_layout_end(&_ctx);
     /* Status bar is outside layout — draw at fixed bottom */
-    syn_imgui_status_bar(&_ctx, "Ready | 3.3V | WiFi", 0, H-9, W);
+    syn_imgui_status_bar(&_ctx, "Ready | 3.3V | WiFi", 0, H - 9, W);
     end_frame(&_ctx, _fb);
 }
 
 /* ── Bar chart ───────────────────────────────────────────────────────────── */
 static void tc_bar_chart(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("bar_chart", &_c, &_ctx, _fb, false, false, 0);
     int32_t data[] = {10, 70, 40, 90, 20, 60};
     syn_imgui_bar_chart(&_ctx, "Samples", data, 6, 0, 100, 0, 0, W, H);
@@ -516,9 +573,11 @@ static void tc_bar_chart(void)
 /* ── Graph ───────────────────────────────────────────────────────────────── */
 static void tc_graph(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("graph: sine-like", &_c, &_ctx, _fb, false, false, 0);
-    int32_t data[] = {50,72,88,95,88,72,50,28,12,5,12,28,50,72,88,95};
+    int32_t data[] = {50, 72, 88, 95, 88, 72, 50, 28, 12, 5, 12, 28, 50, 72, 88, 95};
     syn_imgui_graph(&_ctx, "Signal", data, 16, 0, 100, 0, 0, W, H);
     end_frame(&_ctx, _fb);
 }
@@ -526,16 +585,20 @@ static void tc_graph(void)
 /* ── Gauge ───────────────────────────────────────────────────────────────── */
 static void tc_gauge(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("gauge: 75%", &_c, &_ctx, _fb, false, false, 0);
-    syn_imgui_gauge(&_ctx, "Speed", 75, 0, 100, W/2, H/2+8, 28);
+    syn_imgui_gauge(&_ctx, "Speed", 75, 0, 100, W / 2, H / 2 + 8, 28);
     end_frame(&_ctx, _fb);
 }
 
 /* ── Dialog ──────────────────────────────────────────────────────────────── */
 static void tc_dialog(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("dialog: modal", &_c, &_ctx, _fb, false, false, 0);
     /* draw background content first without ending frame */
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
@@ -554,7 +617,9 @@ static void tc_dialog(void)
 /* ── Disabled nested ─────────────────────────────────────────────────────── */
 static void tc_disabled_mixed(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("disabled: mixed layout", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     syn_imgui_label(&_ctx, "Enabled label", 0, 0);
@@ -571,7 +636,9 @@ static void tc_disabled_mixed(void)
 /* ── same_line layout ────────────────────────────────────────────────────── */
 static void tc_same_line(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("same_line: 3 buttons", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, 30);
     /* NOTE: all-zero w/h required for layout_resolve to fire.
@@ -588,7 +655,9 @@ static void tc_same_line(void)
 /* ── layout_row ──────────────────────────────────────────────────────────── */
 static void tc_layout_row(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("layout_row: 2-col", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     int16_t widths[] = {60, 64};
@@ -606,11 +675,13 @@ static void tc_layout_row(void)
 /* ── Icon button ─────────────────────────────────────────────────────────── */
 static void tc_icon_button(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("icon_button", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     /* 8x8 filled square icon */
-    static const uint8_t icon[8] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+    static const uint8_t icon[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     syn_imgui_icon_button(&_ctx, icon, 8, 8, 0, 0, 20, 0);
     syn_imgui_same_line(&_ctx);
     syn_imgui_label(&_ctx, "Play", 0, 0);
@@ -621,7 +692,9 @@ static void tc_icon_button(void)
 /* ── Full page 0 (the actual app screen) ─────────────────────────────────── */
 static void tc_page0_full(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("page0: full screen", &_c, &_ctx, _fb, false, false, 0);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     uint32_t flags = 0x01;
@@ -638,7 +711,9 @@ static void tc_page0_full(void)
 /* ── Focus wrap: navigate past last widget ───────────────────────────────── */
 static void tc_focus_wrap(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     /* enc=3 on a 3-widget list should wrap to widget 1 */
     begin_frame("focus wrap: 3→1", &_c, &_ctx, _fb, false, false, 3);
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
@@ -652,9 +727,13 @@ static void tc_focus_wrap(void)
 /* ── Navigator: back button clears active ────────────────────────────────── */
 static void tc_back_clears_active(void)
 {
-    uint8_t _fb[SZ]; SYN_Canvas _c; SYN_IMGUI_Context _ctx;
+    uint8_t _fb[SZ];
+    SYN_Canvas _c;
+    SYN_IMGUI_Context _ctx;
     begin_frame("back: exits slider", &_c, &_ctx, _fb, false, true, 0);
-    _ctx.last_max_id = 1; _ctx.focused_id = 1; _ctx.active_id = 1;
+    _ctx.last_max_id = 1;
+    _ctx.focused_id = 1;
+    _ctx.active_id = 1;
     syn_imgui_layout_begin(&_ctx, 0, 0, W);
     int32_t v = 50;
     syn_imgui_slider(&_ctx, "Vol (editing)", &v, 0, 100, 0, 0, 0, 0);
@@ -666,16 +745,15 @@ static void tc_back_clears_active(void)
  * Grid assembly
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-#define CELL_W  (W * SCALE)    /* 512 */
-#define CELL_H  (H * SCALE)    /* 256 */
-#define LABEL_H  22
-#define COLS     4
-#define MARGIN   6
-#define FONT_PX  1  /* we'll draw label in white text directly into the grid */
+#define CELL_W (W * SCALE) /* 512 */
+#define CELL_H (H * SCALE) /* 256 */
+#define LABEL_H 22
+#define COLS 4
+#define MARGIN 6
+#define FONT_PX 1 /* we'll draw label in white text directly into the grid */
 
 /* Tiny 5×7 digit/letter renderer for grid labels — just uses stb style */
-static void draw_label(uint8_t *grid, int gw, int x, int y,
-                       const char *text, int scale)
+static void draw_label(uint8_t *grid, int gw, int x, int y, const char *text, int scale)
 {
     /* Write text as white pixels — minimal 5px-wide glyph using canvas would
      * require linking back to syn_canvas. Instead just write the string into
@@ -684,7 +762,12 @@ static void draw_label(uint8_t *grid, int gw, int x, int y,
      * indicator line + rely on the label being visible to a human reader via
      * a separate text overlay.  Actually: write the label text to stdout and
      * trust the grid ordering — each frame title is printed to console. */
-    (void)grid; (void)gw; (void)x; (void)y; (void)text; (void)scale;
+    (void)grid;
+    (void)gw;
+    (void)x;
+    (void)y;
+    (void)text;
+    (void)scale;
 }
 
 int main(void)
@@ -736,15 +819,20 @@ int main(void)
 
     /* Assemble grid */
     int rows = (g_nframes + COLS - 1) / COLS;
-    int gw   = COLS * (CELL_W + MARGIN) + MARGIN;
-    int gh   = rows * (CELL_H + LABEL_H + MARGIN) + MARGIN;
+    int gw = COLS * (CELL_W + MARGIN) + MARGIN;
+    int gh = rows * (CELL_H + LABEL_H + MARGIN) + MARGIN;
 
     uint8_t *grid = calloc((size_t)(gw * gh * 3), 1);
-    if (!grid) { perror("calloc"); return 1; }
+    if (!grid) {
+        perror("calloc");
+        return 1;
+    }
 
     /* Dark background */
     for (int i = 0; i < gw * gh * 3; i += 3) {
-        grid[i+0] = 20; grid[i+1] = 22; grid[i+2] = 30;
+        grid[i + 0] = 20;
+        grid[i + 1] = 22;
+        grid[i + 2] = 30;
     }
 
     uint8_t *rgba = malloc((size_t)(CELL_W * CELL_H * 4));
@@ -752,8 +840,8 @@ int main(void)
     for (int fi = 0; fi < g_nframes; fi++) {
         int col = fi % COLS;
         int row = fi / COLS;
-        int ox  = MARGIN + col * (CELL_W + MARGIN);
-        int oy  = MARGIN + row * (CELL_H + LABEL_H + MARGIN);
+        int ox = MARGIN + col * (CELL_W + MARGIN);
+        int oy = MARGIN + row * (CELL_H + LABEL_H + MARGIN);
 
         /* Decode frame to RGBA then blit RGB into grid */
         fb_to_rgba(g_frames[fi].fb, rgba);
@@ -761,9 +849,9 @@ int main(void)
             for (int px = 0; px < CELL_W; px++) {
                 int si = (py * CELL_W + px) * 4;
                 int di = ((oy + py) * gw + (ox + px)) * 3;
-                grid[di+0] = rgba[si+0];
-                grid[di+1] = rgba[si+1];
-                grid[di+2] = rgba[si+2];
+                grid[di + 0] = rgba[si + 0];
+                grid[di + 1] = rgba[si + 1];
+                grid[di + 2] = rgba[si + 2];
             }
         }
 
@@ -772,7 +860,9 @@ int main(void)
         for (int py = 0; py < LABEL_H; py++) {
             for (int px = 0; px < CELL_W; px++) {
                 int di = ((ly + py) * gw + (ox + px)) * 3;
-                grid[di+0] = 40; grid[di+1] = 44; grid[di+2] = 55;
+                grid[di + 0] = 40;
+                grid[di + 1] = 44;
+                grid[di + 2] = 55;
             }
         }
         /* Print frame index+name: no easy way to render text into RGBA
@@ -783,7 +873,9 @@ int main(void)
         uint8_t bright = 200;
         for (int b = 0; b < 3 && dot_x + b < gw; b++) {
             int di = (dot_y * gw + dot_x + b) * 3;
-            grid[di] = bright; grid[di+1] = bright; grid[di+2] = bright;
+            grid[di] = bright;
+            grid[di + 1] = bright;
+            grid[di + 2] = bright;
         }
     }
 

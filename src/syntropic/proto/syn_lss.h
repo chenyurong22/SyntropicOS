@@ -10,11 +10,12 @@
 #ifndef SYN_LSS_H
 #define SYN_LSS_H
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
 #include "../common/syn_defs.h"
 #include "../drivers/syn_can.h"
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,50 +23,50 @@ extern "C" {
 
 /** @brief LSS CAN Identifier Definitions */
 #define SYN_LSS_COB_ID_MASTER 0x7E5U /**< Master to Slave Request COB-ID */
-#define SYN_LSS_COB_ID_SLAVE  0x7E4U /**< Slave to Master Response COB-ID */
+#define SYN_LSS_COB_ID_SLAVE 0x7E4U  /**< Slave to Master Response COB-ID */
 
 /** @brief LSS Command Specifiers (CS) */
-#define SYN_LSS_CS_SWITCH_MODE_GLOBAL   0x04U /**< Switch mode global */
-#define SYN_LSS_CS_CONFIGURE_NODE_ID    0x11U /**< Configure Node-ID */
+#define SYN_LSS_CS_SWITCH_MODE_GLOBAL 0x04U   /**< Switch mode global */
+#define SYN_LSS_CS_CONFIGURE_NODE_ID 0x11U    /**< Configure Node-ID */
 #define SYN_LSS_CS_CONFIGURE_BIT_TIMING 0x13U /**< Configure Bit Timing */
-#define SYN_LSS_CS_ACTIVATE_BIT_TIMING  0x15U /**< Activate Bit Timing */
-#define SYN_LSS_CS_STORE_CONFIG         0x17U /**< Store Configuration */
-#define SYN_LSS_CS_SWITCH_MODE_SELECT   0x40U /**< Switch mode selective vendor */
-#define SYN_LSS_CS_INQUIRE_VENDOR       0x5AU /**< Inquire Vendor-ID */
-#define SYN_LSS_CS_INQUIRE_PRODUCT      0x5BU /**< Inquire Product-Code */
-#define SYN_LSS_CS_INQUIRE_REV          0x5CU /**< Inquire Revision-Number */
-#define SYN_LSS_CS_INQUIRE_SERIAL       0x5DU /**< Inquire Serial-Number */
+#define SYN_LSS_CS_ACTIVATE_BIT_TIMING 0x15U  /**< Activate Bit Timing */
+#define SYN_LSS_CS_STORE_CONFIG 0x17U         /**< Store Configuration */
+#define SYN_LSS_CS_SWITCH_MODE_SELECT 0x40U   /**< Switch mode selective vendor */
+#define SYN_LSS_CS_INQUIRE_VENDOR 0x5AU       /**< Inquire Vendor-ID */
+#define SYN_LSS_CS_INQUIRE_PRODUCT 0x5BU      /**< Inquire Product-Code */
+#define SYN_LSS_CS_INQUIRE_REV 0x5CU          /**< Inquire Revision-Number */
+#define SYN_LSS_CS_INQUIRE_SERIAL 0x5DU       /**< Inquire Serial-Number */
 
 /** @brief LSS Operating Modes */
-#define SYN_LSS_MODE_OPERATION     0x00U /**< LSS Operation Mode */
+#define SYN_LSS_MODE_OPERATION 0x00U     /**< LSS Operation Mode */
 #define SYN_LSS_MODE_CONFIGURATION 0x01U /**< LSS Configuration Mode */
 
 /** @brief LSS Bit Timing Table Entries (CiA 305 Standard Baud Rates) */
 #define SYN_LSS_BAUD_1000K 0x00U /**< 1000 kbit/s */
-#define SYN_LSS_BAUD_800K  0x01U /**< 800 kbit/s */
-#define SYN_LSS_BAUD_500K  0x02U /**< 500 kbit/s */
-#define SYN_LSS_BAUD_250K  0x03U /**< 250 kbit/s */
-#define SYN_LSS_BAUD_125K  0x04U /**< 125 kbit/s */
-#define SYN_LSS_BAUD_100K  0x05U /**< 100 kbit/s */
-#define SYN_LSS_BAUD_50K   0x06U /**< 50 kbit/s */
-#define SYN_LSS_BAUD_20K   0x07U /**< 20 kbit/s */
-#define SYN_LSS_BAUD_10K   0x08U /**< 10 kbit/s */
+#define SYN_LSS_BAUD_800K 0x01U  /**< 800 kbit/s */
+#define SYN_LSS_BAUD_500K 0x02U  /**< 500 kbit/s */
+#define SYN_LSS_BAUD_250K 0x03U  /**< 250 kbit/s */
+#define SYN_LSS_BAUD_125K 0x04U  /**< 125 kbit/s */
+#define SYN_LSS_BAUD_100K 0x05U  /**< 100 kbit/s */
+#define SYN_LSS_BAUD_50K 0x06U   /**< 50 kbit/s */
+#define SYN_LSS_BAUD_20K 0x07U   /**< 20 kbit/s */
+#define SYN_LSS_BAUD_10K 0x08U   /**< 10 kbit/s */
 
 /** @brief LSS Address Structure (Unique 128-bit identity) */
 typedef struct {
-    uint32_t vendor_id;     /**< 32-bit Vendor-ID */
-    uint32_t product_code;  /**< 32-bit Product-Code */
-    uint32_t revision_no;   /**< 32-bit Revision-Number */
-    uint32_t serial_no;     /**< 32-bit Serial-Number */
+    uint32_t vendor_id;    /**< 32-bit Vendor-ID */
+    uint32_t product_code; /**< 32-bit Product-Code */
+    uint32_t revision_no;  /**< 32-bit Revision-Number */
+    uint32_t serial_no;    /**< 32-bit Serial-Number */
 } SYN_LSSAddress;
 
 /** @brief LSS Slave Instance State */
 typedef struct {
-    uint8_t        mode;        /**< Current LSS mode (Operation / Configuration) */
-    uint8_t        node_id;     /**< Current configured Node-ID */
-    uint8_t        baud_table;  /**< Pending configured baud table entry */
-    SYN_LSSAddress addr;        /**< Static LSS 128-bit Identity Address */
-    bool           store_req;   /**< True if store configuration requested */
+    uint8_t mode;        /**< Current LSS mode (Operation / Configuration) */
+    uint8_t node_id;     /**< Current configured Node-ID */
+    uint8_t baud_table;  /**< Pending configured baud table entry */
+    SYN_LSSAddress addr; /**< Static LSS 128-bit Identity Address */
+    bool store_req;      /**< True if store configuration requested */
 } SYN_LSSSlave;
 
 /**

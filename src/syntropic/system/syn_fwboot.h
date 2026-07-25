@@ -35,8 +35,8 @@
 #include "../common/syn_defs.h"
 #include "syn_fwimage.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,18 +44,18 @@ extern "C" {
 
 /* ── Slot indices ───────────────────────────────────────────────────────── */
 
-#define SYN_FW_SLOT_A  0      /**< Firmware slot A index.  */
-#define SYN_FW_SLOT_B  1      /**< Firmware slot B index.  */
-#define SYN_FW_SLOT_NONE  0xFF /**< No valid slot.          */
+#define SYN_FW_SLOT_A 0       /**< Firmware slot A index.  */
+#define SYN_FW_SLOT_B 1       /**< Firmware slot B index.  */
+#define SYN_FW_SLOT_NONE 0xFF /**< No valid slot.          */
 
 /* ── Boot manager ───────────────────────────────────────────────────────── */
 
 /** @brief A/B firmware boot manager — slot selection and rollback state. */
 typedef struct {
-    uint32_t           slot_addr[2];   /**< Flash base of slot A and B     */
-    SYN_FwImageHeader  slot_hdr[2];    /**< Cached headers                 */
-    uint8_t            active_slot;    /**< Currently running slot          */
-    bool               initialized;    /**< Init complete                   */
+    uint32_t slot_addr[2];         /**< Flash base of slot A and B     */
+    SYN_FwImageHeader slot_hdr[2]; /**< Cached headers                 */
+    uint8_t active_slot;           /**< Currently running slot          */
+    bool initialized;              /**< Init complete                   */
 } SYN_FwBootManager;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -70,8 +70,7 @@ typedef struct {
  * @param slot_b  Flash base address of slot B.
  * @return SYN_OK on success.
  */
-SYN_Status syn_fwboot_init(SYN_FwBootManager *mgr,
-                            uint32_t slot_a, uint32_t slot_b);
+SYN_Status syn_fwboot_init(SYN_FwBootManager *mgr, uint32_t slot_a, uint32_t slot_b);
 
 /**
  * @brief Select the best slot to boot.
@@ -108,8 +107,7 @@ SYN_Status syn_fwboot_confirm(SYN_FwBootManager *mgr);
  * @param slot  Slot index (SYN_FW_SLOT_A or SYN_FW_SLOT_B).
  * @return Flash base address, or 0 if invalid slot.
  */
-static inline uint32_t syn_fwboot_slot_addr(const SYN_FwBootManager *mgr,
-                                             uint8_t slot)
+static inline uint32_t syn_fwboot_slot_addr(const SYN_FwBootManager *mgr, uint8_t slot)
 {
     return (slot < 2) ? mgr->slot_addr[slot] : 0;
 }
@@ -120,8 +118,8 @@ static inline uint32_t syn_fwboot_slot_addr(const SYN_FwBootManager *mgr,
  * @param slot  Slot index.
  * @return Pointer to cached header, or NULL if invalid slot.
  */
-static inline const SYN_FwImageHeader *syn_fwboot_slot_header(
-    const SYN_FwBootManager *mgr, uint8_t slot)
+static inline const SYN_FwImageHeader *syn_fwboot_slot_header(const SYN_FwBootManager *mgr,
+                                                              uint8_t slot)
 {
     return (slot < 2) ? &mgr->slot_hdr[slot] : NULL;
 }

@@ -1,11 +1,11 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_BUTTON) || SYN_USE_BUTTON
 
 #if defined(SYN_USE_FSM) && !SYN_USE_FSM
-  #error "syn_button requires SYN_USE_FSM=1 (table-driven FSM)"
+#error "syn_button requires SYN_USE_FSM=1 (table-driven FSM)"
 #endif
 
 /**
@@ -13,19 +13,19 @@
  * @brief Debounced button implementation using syn_fsm.
  */
 
-#include "syn_button.h"
 #include "../drivers/syn_gpio.h"
 #include "../util/syn_assert.h"
+#include "syn_button.h"
 
 #include <string.h>
 
 /* ── Internal FSM events ───────────────────────────────────────────────── */
 
 enum {
-    BTN_EV_RAW_PRESS = 0,    /**< GPIO went active                       */
-    BTN_EV_RAW_RELEASE,      /**< GPIO went inactive                     */
-    BTN_EV_DEBOUNCE_OK,      /**< Debounce timer expired while still held */
-    BTN_EV_LONG_PRESS,       /**< Long-press threshold reached           */
+    BTN_EV_RAW_PRESS = 0, /**< GPIO went active                       */
+    BTN_EV_RAW_RELEASE,   /**< GPIO went inactive                     */
+    BTN_EV_DEBOUNCE_OK,   /**< Debounce timer expired while still held */
+    BTN_EV_LONG_PRESS,    /**< Long-press threshold reached           */
 };
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
@@ -51,8 +51,7 @@ static bool button_read_raw(const SYN_Button *btn)
  * @param cb   Callback (may be NULL).
  * @param ctx  User context for callback.
  */
-static void button_fire_event(SYN_Button *btn, uint8_t evt,
-                              SYN_ButtonCallback cb, void *ctx)
+static void button_fire_event(SYN_Button *btn, uint8_t evt, SYN_ButtonCallback cb, void *ctx)
 {
     btn->events |= evt;
     if (cb != NULL) {
@@ -69,7 +68,7 @@ static void button_fire_event(SYN_Button *btn, uint8_t evt,
 static void action_start_debounce(void *ctx)
 {
     SYN_Button *btn = (SYN_Button *)ctx;
-    btn->state_tick  = syn_port_get_tick_ms();
+    btn->state_tick = syn_port_get_tick_ms();
     btn->raw_pressed = true;
 }
 
@@ -80,7 +79,7 @@ static void action_start_debounce(void *ctx)
 static void action_bounce_back(void *ctx)
 {
     SYN_Button *btn = (SYN_Button *)ctx;
-    btn->state_tick  = syn_port_get_tick_ms();
+    btn->state_tick = syn_port_get_tick_ms();
     btn->raw_pressed = false;
 }
 
@@ -91,12 +90,11 @@ static void action_bounce_back(void *ctx)
 static void action_confirm_press(void *ctx)
 {
     SYN_Button *btn = (SYN_Button *)ctx;
-    btn->state_tick  = syn_port_get_tick_ms();
-    btn->pressed     = true;
+    btn->state_tick = syn_port_get_tick_ms();
+    btn->pressed = true;
     btn->repeat_tick = syn_port_get_tick_ms();
 
-    button_fire_event(btn, SYN_BUTTON_EVT_PRESS,
-                      btn->on_press, btn->on_press_ctx);
+    button_fire_event(btn, SYN_BUTTON_EVT_PRESS, btn->on_press, btn->on_press_ctx);
 }
 
 /**
@@ -106,12 +104,11 @@ static void action_confirm_press(void *ctx)
 static void action_release(void *ctx)
 {
     SYN_Button *btn = (SYN_Button *)ctx;
-    btn->state_tick  = syn_port_get_tick_ms();
-    btn->pressed     = false;
+    btn->state_tick = syn_port_get_tick_ms();
+    btn->pressed = false;
     btn->raw_pressed = false;
 
-    button_fire_event(btn, SYN_BUTTON_EVT_RELEASE,
-                      btn->on_release, btn->on_release_ctx);
+    button_fire_event(btn, SYN_BUTTON_EVT_RELEASE, btn->on_release, btn->on_release_ctx);
 }
 
 /**
@@ -121,11 +118,10 @@ static void action_release(void *ctx)
 static void action_long_press(void *ctx)
 {
     SYN_Button *btn = (SYN_Button *)ctx;
-    btn->state_tick  = syn_port_get_tick_ms();
+    btn->state_tick = syn_port_get_tick_ms();
     btn->repeat_tick = syn_port_get_tick_ms();
 
-    button_fire_event(btn, SYN_BUTTON_EVT_LONG_PRESS,
-                      btn->on_long_press, btn->on_long_press_ctx);
+    button_fire_event(btn, SYN_BUTTON_EVT_LONG_PRESS, btn->on_long_press, btn->on_long_press_ctx);
 }
 
 /* ── FSM transition table ───────────────────────────────────────────────── */
@@ -133,41 +129,40 @@ static void action_long_press(void *ctx)
 /** @brief Button FSM transition table. */
 static const SYN_FSM_Transition g_button_transitions[] = {
     /* IDLE: wait for press */
-    { SYN_BUTTON_STATE_IDLE,       BTN_EV_RAW_PRESS,    SYN_BUTTON_STATE_DEBOUNCING, NULL, action_start_debounce },
+    {SYN_BUTTON_STATE_IDLE, BTN_EV_RAW_PRESS, SYN_BUTTON_STATE_DEBOUNCING, NULL,
+     action_start_debounce},
 
     /* DEBOUNCING: bounce back or confirm */
-    { SYN_BUTTON_STATE_DEBOUNCING, BTN_EV_RAW_RELEASE,  SYN_BUTTON_STATE_IDLE,       NULL, action_bounce_back    },
-    { SYN_BUTTON_STATE_DEBOUNCING, BTN_EV_DEBOUNCE_OK,  SYN_BUTTON_STATE_PRESSED,    NULL, action_confirm_press  },
+    {SYN_BUTTON_STATE_DEBOUNCING, BTN_EV_RAW_RELEASE, SYN_BUTTON_STATE_IDLE, NULL,
+     action_bounce_back},
+    {SYN_BUTTON_STATE_DEBOUNCING, BTN_EV_DEBOUNCE_OK, SYN_BUTTON_STATE_PRESSED, NULL,
+     action_confirm_press},
 
     /* PRESSED: release or escalate to held */
-    { SYN_BUTTON_STATE_PRESSED,    BTN_EV_RAW_RELEASE,  SYN_BUTTON_STATE_IDLE,       NULL, action_release        },
-    { SYN_BUTTON_STATE_PRESSED,    BTN_EV_LONG_PRESS,   SYN_BUTTON_STATE_HELD,       NULL, action_long_press     },
+    {SYN_BUTTON_STATE_PRESSED, BTN_EV_RAW_RELEASE, SYN_BUTTON_STATE_IDLE, NULL, action_release},
+    {SYN_BUTTON_STATE_PRESSED, BTN_EV_LONG_PRESS, SYN_BUTTON_STATE_HELD, NULL, action_long_press},
 
     /* HELD: release */
-    { SYN_BUTTON_STATE_HELD,       BTN_EV_RAW_RELEASE,  SYN_BUTTON_STATE_IDLE,       NULL, action_release        },
+    {SYN_BUTTON_STATE_HELD, BTN_EV_RAW_RELEASE, SYN_BUTTON_STATE_IDLE, NULL, action_release},
 
-    SYN_FSM_END
-};
+    SYN_FSM_END};
 
 /* ── Initialization ─────────────────────────────────────────────────────── */
 
-void syn_button_init(SYN_Button *btn,
-                      SYN_GPIO_Pin pin,
-                      SYN_ButtonPolarity polarity,
-                      uint16_t debounce_ms)
+void syn_button_init(SYN_Button *btn, SYN_GPIO_Pin pin, SYN_ButtonPolarity polarity,
+                     uint16_t debounce_ms)
 {
     SYN_ASSERT(btn != NULL);
 
     memset(btn, 0, sizeof(*btn));
-    btn->pin          = pin;
-    btn->polarity     = (uint8_t)polarity;
-    btn->debounce_ms  = debounce_ms;
-    btn->pressed      = false;
-    btn->raw_pressed  = false;
-    btn->state_tick   = syn_port_get_tick_ms();
+    btn->pin = pin;
+    btn->polarity = (uint8_t)polarity;
+    btn->debounce_ms = debounce_ms;
+    btn->pressed = false;
+    btn->raw_pressed = false;
+    btn->state_tick = syn_port_get_tick_ms();
 
-    syn_fsm_init(&btn->fsm, g_button_transitions,
-                 (SYN_FSM_State)SYN_BUTTON_STATE_IDLE, "btn");
+    syn_fsm_init(&btn->fsm, g_button_transitions, (SYN_FSM_State)SYN_BUTTON_STATE_IDLE, "btn");
     syn_fsm_set_context(&btn->fsm, btn);
 }
 
@@ -175,30 +170,28 @@ void syn_button_init(SYN_Button *btn,
 
 void syn_button_on_press(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx)
 {
-    btn->on_press     = cb;
+    btn->on_press = cb;
     btn->on_press_ctx = ctx;
 }
 
 void syn_button_on_release(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx)
 {
-    btn->on_release     = cb;
+    btn->on_release = cb;
     btn->on_release_ctx = ctx;
 }
 
-void syn_button_on_long_press(SYN_Button *btn, SYN_ButtonCallback cb,
-                               uint16_t hold_ms, void *ctx)
+void syn_button_on_long_press(SYN_Button *btn, SYN_ButtonCallback cb, uint16_t hold_ms, void *ctx)
 {
-    btn->on_long_press     = cb;
+    btn->on_long_press = cb;
     btn->on_long_press_ctx = ctx;
-    btn->long_press_ms     = hold_ms;
+    btn->long_press_ms = hold_ms;
 }
 
-void syn_button_on_repeat(SYN_Button *btn, SYN_ButtonCallback cb,
-                           uint16_t interval_ms, void *ctx)
+void syn_button_on_repeat(SYN_Button *btn, SYN_ButtonCallback cb, uint16_t interval_ms, void *ctx)
 {
-    btn->on_repeat     = cb;
+    btn->on_repeat = cb;
     btn->on_repeat_ctx = ctx;
-    btn->repeat_ms     = interval_ms;
+    btn->repeat_ms = interval_ms;
 }
 
 /* ── State machine update ───────────────────────────────────────────────── */
@@ -230,11 +223,9 @@ void syn_button_update(SYN_Button *btn)
                 syn_fsm_dispatch(&btn->fsm, BTN_EV_LONG_PRESS);
             }
             /* Check repeat (stays in same state, no FSM transition) */
-            if (btn->repeat_ms > 0 &&
-                (now - btn->repeat_tick) >= btn->repeat_ms) {
+            if (btn->repeat_ms > 0 && (now - btn->repeat_tick) >= btn->repeat_ms) {
                 btn->repeat_tick = now;
-                button_fire_event(btn, SYN_BUTTON_EVT_REPEAT,
-                                  btn->on_repeat, btn->on_repeat_ctx);
+                button_fire_event(btn, SYN_BUTTON_EVT_REPEAT, btn->on_repeat, btn->on_repeat_ctx);
             }
         }
     } else if (current == SYN_BUTTON_STATE_HELD) {
@@ -242,11 +233,9 @@ void syn_button_update(SYN_Button *btn)
             syn_fsm_dispatch(&btn->fsm, BTN_EV_RAW_RELEASE);
         } else {
             /* Check repeat in held state */
-            if (btn->repeat_ms > 0 &&
-                (now - btn->repeat_tick) >= btn->repeat_ms) {
+            if (btn->repeat_ms > 0 && (now - btn->repeat_tick) >= btn->repeat_ms) {
                 btn->repeat_tick = now;
-                button_fire_event(btn, SYN_BUTTON_EVT_REPEAT,
-                                  btn->on_repeat, btn->on_repeat_ctx);
+                button_fire_event(btn, SYN_BUTTON_EVT_REPEAT, btn->on_repeat, btn->on_repeat_ctx);
             }
         }
     }

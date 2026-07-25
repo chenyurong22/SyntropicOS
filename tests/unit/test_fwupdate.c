@@ -3,22 +3,22 @@
  * @brief Tests for firmware image headers, streaming updater, and A/B boot.
  */
 
-#include "unity/unity.h"
+#include "mocks/mock_port.h"
+#include "syntropic/port/syn_port_flash.h"
+#include "syntropic/system/syn_fwboot.h"
 #include "syntropic/system/syn_fwimage.h"
 #include "syntropic/system/syn_fwupdate.h"
-#include "syntropic/system/syn_fwboot.h"
 #include "syntropic/util/syn_crc.h"
-#include "syntropic/port/syn_port_flash.h"
-#include "mocks/mock_port.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
 /* Use the mock flash for all operations.
  * Layout: slot A at 0x0000, slot B at 0x0800 (within mock_flash[4096]).
  * Each slot is 2048 bytes (2 sectors of 1024). */
-#define SLOT_A_ADDR   0x0000u
-#define SLOT_B_ADDR   0x0800u
-#define SLOT_SIZE     (2048u - (uint32_t)sizeof(SYN_FwImageHeader))
+#define SLOT_A_ADDR 0x0000u
+#define SLOT_B_ADDR 0x0800u
+#define SLOT_SIZE (2048u - (uint32_t)sizeof(SYN_FwImageHeader))
 
 /* ── Image header tests ─────────────────────────────────────────────────── */
 
@@ -26,11 +26,11 @@ void test_fwimage_seal_and_validate(void)
 {
     SYN_FwImageHeader hdr;
     memset(&hdr, 0, sizeof(hdr));
-    hdr.magic        = SYN_FW_MAGIC;
-    hdr.version_code = 0x00010200;  /* v1.2.0 */
-    hdr.image_size   = 512;
-    hdr.image_crc    = 0xDEADBEEF;
-    hdr.state        = SYN_FW_STATE_CONFIRMED;
+    hdr.magic = SYN_FW_MAGIC;
+    hdr.version_code = 0x00010200; /* v1.2.0 */
+    hdr.image_size = 512;
+    hdr.image_crc = 0xDEADBEEF;
+    hdr.state = SYN_FW_STATE_CONFIRMED;
 
     syn_fwimage_seal_header(&hdr);
 
@@ -52,9 +52,9 @@ void test_fwimage_corrupted_crc(void)
 {
     SYN_FwImageHeader hdr;
     memset(&hdr, 0, sizeof(hdr));
-    hdr.magic        = SYN_FW_MAGIC;
+    hdr.magic = SYN_FW_MAGIC;
     hdr.version_code = 0x00010000;
-    hdr.state        = SYN_FW_STATE_CONFIRMED;
+    hdr.state = SYN_FW_STATE_CONFIRMED;
     syn_fwimage_seal_header(&hdr);
 
     /* Corrupt the version */
@@ -105,12 +105,12 @@ void test_fwupdate_basic(void)
 
     /* Create a small firmware image */
     uint8_t firmware[128];
-    for (int i = 0; i < 128; i++) firmware[i] = (uint8_t)i;
+    for (int i = 0; i < 128; i++)
+        firmware[i] = (uint8_t)i;
 
     uint32_t expected_crc = syn_crc32(firmware, sizeof(firmware));
 
-    SYN_Status st = syn_fwupdate_begin(&upd, SLOT_A_ADDR, SLOT_SIZE,
-                                        page_buf, sizeof(page_buf));
+    SYN_Status st = syn_fwupdate_begin(&upd, SLOT_A_ADDR, SLOT_SIZE, page_buf, sizeof(page_buf));
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_TRUE(syn_fwupdate_active(&upd));
 
@@ -146,8 +146,7 @@ void test_fwupdate_crc_mismatch(void)
     uint8_t firmware[32];
     memset(firmware, 0xAA, sizeof(firmware));
 
-    syn_fwupdate_begin(&upd, SLOT_A_ADDR, SLOT_SIZE,
-                       page_buf, sizeof(page_buf));
+    syn_fwupdate_begin(&upd, SLOT_A_ADDR, SLOT_SIZE, page_buf, sizeof(page_buf));
     syn_fwupdate_write(&upd, firmware, sizeof(firmware));
 
     /* Provide wrong CRC */
@@ -167,8 +166,7 @@ void test_fwupdate_abort(void)
     static uint8_t page_buf[64];
     SYN_FwUpdate upd;
 
-    syn_fwupdate_begin(&upd, SLOT_A_ADDR, SLOT_SIZE,
-                       page_buf, sizeof(page_buf));
+    syn_fwupdate_begin(&upd, SLOT_A_ADDR, SLOT_SIZE, page_buf, sizeof(page_buf));
 
     uint8_t chunk[16] = {0};
     syn_fwupdate_write(&upd, chunk, sizeof(chunk));
@@ -189,11 +187,11 @@ static void write_test_header(uint32_t addr, uint8_t state, uint32_t version)
 {
     SYN_FwImageHeader hdr;
     memset(&hdr, 0, sizeof(hdr));
-    hdr.magic        = SYN_FW_MAGIC;
+    hdr.magic = SYN_FW_MAGIC;
     hdr.version_code = version;
-    hdr.image_size   = 64;
-    hdr.image_crc    = 0xDEADBEEF;
-    hdr.state        = state;
+    hdr.image_size = 64;
+    hdr.image_crc = 0xDEADBEEF;
+    hdr.state = state;
     syn_fwimage_seal_header(&hdr);
 
     syn_port_flash_erase(addr);
@@ -333,7 +331,7 @@ static void test_fwupdate_write_flush_fail(void)
 
     /* Fill exactly the page buffer to trigger a flush — then fail the write */
     mock_flash_write_fail_next = true;
-    uint8_t data[4] = { 0x01, 0x02, 0x03, 0x04 };
+    uint8_t data[4] = {0x01, 0x02, 0x03, 0x04};
     st = syn_fwupdate_write(&upd, data, sizeof(data));
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
     TEST_ASSERT_TRUE(upd.error);
@@ -350,7 +348,7 @@ static void test_fwupdate_finish_flush_fail(void)
     TEST_ASSERT_EQUAL(SYN_OK, st);
 
     /* Write some data (doesn't fill page buffer yet) */
-    uint8_t data[5] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
+    uint8_t data[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
     st = syn_fwupdate_write(&upd, data, sizeof(data));
     TEST_ASSERT_EQUAL(SYN_OK, st);
 
@@ -373,7 +371,7 @@ static void test_fwupdate_finish_erase_fail(void)
     TEST_ASSERT_EQUAL(SYN_OK, st);
 
     /* Write a byte, compute CRC */
-    uint8_t data[1] = { 0xAB };
+    uint8_t data[1] = {0xAB};
     st = syn_fwupdate_write(&upd, data, sizeof(data));
     TEST_ASSERT_EQUAL(SYN_OK, st);
     uint32_t crc = syn_crc32_final(syn_crc32_update(SYN_CRC32_INIT, data, sizeof(data)));
@@ -418,8 +416,7 @@ static void test_fwupdate_sector_erase_fail(void)
     static uint8_t pbuf[64];
     SYN_FwUpdate upd;
 
-    SYN_Status st = syn_fwupdate_begin(&upd, SLOT_A_ADDR, SLOT_SIZE,
-                                        pbuf, sizeof(pbuf));
+    SYN_Status st = syn_fwupdate_begin(&upd, SLOT_A_ADDR, SLOT_SIZE, pbuf, sizeof(pbuf));
     TEST_ASSERT_EQUAL(SYN_OK, st);
 
     /* Write enough to fill first sector (1024 - header size).
@@ -432,7 +429,8 @@ static void test_fwupdate_sector_erase_fail(void)
     while (fill > 0) {
         size_t n = fill > sizeof(chunk) ? sizeof(chunk) : fill;
         st = syn_fwupdate_write(&upd, chunk, n);
-        if (st != SYN_OK) break;
+        if (st != SYN_OK)
+            break;
         fill -= n;
     }
     TEST_ASSERT_EQUAL(SYN_OK, st);

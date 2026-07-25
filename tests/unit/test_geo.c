@@ -3,10 +3,11 @@
  * @brief Unity tests for syn_geo — geodetic & 3D coordinate transformations.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/util/syn_geo.h"
+#include "unity/unity.h"
+
 #include <math.h>
 
 /* ── Test Suite ────────────────────────────────────────────────────────── */
@@ -37,7 +38,8 @@ static void test_wgs84_to_ecef_north_pole(void)
 
 static void test_ecef_to_wgs84_round_trip(void)
 {
-    /* Round trip test for a known city coordinate (e.g. San Francisco ~ 37.7749 N, -122.4194 W, 30m alt) */
+    /* Round trip test for a known city coordinate (e.g. San Francisco ~ 37.7749 N, -122.4194 W, 30m
+     * alt) */
     double orig_lat = 37.774929;
     double orig_lon = -122.419416;
     double orig_alt = 30.0;
@@ -62,9 +64,8 @@ static void test_wgs84_to_enu_identity_at_origin(void)
     double ref_alt = 10.0;
 
     SYN_ENU enu;
-    SYN_Status st = syn_geo_wgs84_to_enu(ref_lat, ref_lon, ref_alt,
-                                         ref_lat, ref_lon, ref_alt,
-                                         &enu);
+    SYN_Status st =
+        syn_geo_wgs84_to_enu(ref_lat, ref_lon, ref_alt, ref_lat, ref_lon, ref_alt, &enu);
 
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_DOUBLE_WITHIN(1e-4, 0.0, enu.east_m);
@@ -83,9 +84,7 @@ static void test_wgs84_to_enu_10m_north(void)
     double target_lat = ref_lat + 0.000089932;
 
     SYN_ENU enu;
-    syn_geo_wgs84_to_enu(target_lat, ref_lon, ref_alt,
-                         ref_lat, ref_lon, ref_alt,
-                         &enu);
+    syn_geo_wgs84_to_enu(target_lat, ref_lon, ref_alt, ref_lat, ref_lon, ref_alt, &enu);
 
     TEST_ASSERT_DOUBLE_WITHIN(0.01, 0.0, enu.east_m);
     TEST_ASSERT_DOUBLE_WITHIN(0.05, 10.0, enu.north_m);
@@ -94,15 +93,16 @@ static void test_wgs84_to_enu_10m_north(void)
 
 static void test_haversine_distance(void)
 {
-    /* Known baseline: London Heathrow (51.4700 N, -0.4543 W) to JFK Airport (40.6413 N, -73.7781 W) ~ 5555 km */
+    /* Known baseline: London Heathrow (51.4700 N, -0.4543 W) to JFK Airport (40.6413 N, -73.7781 W)
+     * ~ 5555 km */
     double dist_m = syn_geo_haversine_m(51.4700, -0.4543, 40.6413, -73.7781);
     TEST_ASSERT_DOUBLE_WITHIN(10000.0, 5555000.0, dist_m);
 }
 
 static void test_3d_distance(void)
 {
-    SYN_ENU p1 = { .east_m = 0.0, .north_m = 0.0, .up_m = 0.0 };
-    SYN_ENU p2 = { .east_m = 3.0, .north_m = 4.0, .up_m = 12.0 };
+    SYN_ENU p1 = {.east_m = 0.0, .north_m = 0.0, .up_m = 0.0};
+    SYN_ENU p2 = {.east_m = 3.0, .north_m = 4.0, .up_m = 12.0};
 
     /* 3^2 + 4^2 + 12^2 = 9 + 16 + 144 = 169 -> sqrt = 13 */
     double dist = syn_geo_3d_distance_m(&p1, &p2);
@@ -112,11 +112,7 @@ static void test_3d_distance(void)
 static void test_pos_from_gga_fix_qualities(void)
 {
     SYN_NMEA_GGA gga = {
-        .latitude = 37.7749,
-        .longitude = -122.4194,
-        .altitude_m = 15.5f,
-        .valid = true
-    };
+        .latitude = 37.7749, .longitude = -122.4194, .altitude_m = 15.5f, .valid = true};
     SYN_GeoPos pos;
 
     /* RTK Fixed -> 0.01m */
@@ -158,8 +154,12 @@ static void test_geo_null_params(void)
 
 /* ── Runner ────────────────────────────────────────────────────────────── */
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 int main(void)
 {

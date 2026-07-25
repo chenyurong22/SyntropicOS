@@ -1,19 +1,26 @@
+#include "mock_port.h"
+#include "syntropic/display/syn_canvas.h"
+#include "unity/unity.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "syntropic/display/syn_canvas.h"
-#include "mock_port.h"
-#include "unity/unity.h"
 
 static bool flushed = false;
 static void test_flush(const uint8_t *buf, size_t len, void *ctx)
 {
-    (void)buf; (void)len; (void)ctx;
+    (void)buf;
+    (void)len;
+    (void)ctx;
     flushed = true;
 }
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_renode_display_canvas_rendering(void)
 {

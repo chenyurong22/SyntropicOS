@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_VFS) || SYN_USE_VFS
@@ -9,15 +9,16 @@
  * @brief Virtual File System (VFS) abstraction implementation.
  */
 
-#include "syn_vfs.h"
 #include "../util/syn_assert.h"
+#include "syn_vfs.h"
+
 #include <string.h>
 
-static SYN_VfsMount g_mounts[SYN_VFS_MAX_MOUNTS];  /**< Mount table.           */
-static size_t       g_mount_count = 0;               /**< Number of active mounts. */
+static SYN_VfsMount g_mounts[SYN_VFS_MAX_MOUNTS]; /**< Mount table.           */
+static size_t g_mount_count = 0;                  /**< Number of active mounts. */
 
-static SYN_VfsFile  g_files[SYN_VFS_MAX_OPEN_FILES]; /**< Open file handles.     */
-static SYN_VfsDir   g_dirs[SYN_VFS_MAX_OPEN_DIRS];   /**< Open directory handles. */
+static SYN_VfsFile g_files[SYN_VFS_MAX_OPEN_FILES]; /**< Open file handles.     */
+static SYN_VfsDir g_dirs[SYN_VFS_MAX_OPEN_DIRS];    /**< Open directory handles. */
 
 void syn_vfs_init(void)
 {
@@ -43,10 +44,10 @@ SYN_Status syn_vfs_mount(const char *prefix, const SYN_VfsOps *ops, void *fs_dat
         }
     }
 
-    g_mounts[g_mount_count].prefix     = prefix;
+    g_mounts[g_mount_count].prefix = prefix;
     g_mounts[g_mount_count].prefix_len = strlen(prefix);
-    g_mounts[g_mount_count].ops        = ops;
-    g_mounts[g_mount_count].fs_data    = fs_data;
+    g_mounts[g_mount_count].ops = ops;
+    g_mounts[g_mount_count].fs_data = fs_data;
     g_mount_count++;
 
     return SYN_OK;
@@ -109,7 +110,7 @@ int syn_vfs_open(const char *path, int flags)
         return -2; /* No free file descriptors */
     }
 
-    g_files[fd].ops     = m->ops;
+    g_files[fd].ops = m->ops;
     g_files[fd].fs_file = NULL;
     g_files[fd].is_open = true;
 
@@ -225,7 +226,7 @@ int syn_vfs_opendir(const char *path)
         return -2; /* No free dir slots */
     }
 
-    g_dirs[dd].ops    = m->ops;
+    g_dirs[dd].ops = m->ops;
     g_dirs[dd].fs_dir = NULL;
     g_dirs[dd].is_open = true;
 

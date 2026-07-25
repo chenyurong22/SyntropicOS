@@ -25,9 +25,9 @@
 #ifndef SYN_TRANSPORT_H
 #define SYN_TRANSPORT_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,7 +56,7 @@ typedef struct {
      */
     bool (*recv)(uint8_t *data, size_t max_len, size_t *out_len, void *ctx);
 
-    void *ctx;  /**< Transport-specific context */
+    void *ctx; /**< Transport-specific context */
 } SYN_Transport;
 
 /* ── Convenience: send/receive via transport ────────────────────────────── */
@@ -68,10 +68,10 @@ typedef struct {
  * @param len   Packet length.
  * @return true if sent successfully.
  */
-static inline bool syn_transport_send(SYN_Transport *t,
-                                        const uint8_t *data, size_t len)
+static inline bool syn_transport_send(SYN_Transport *t, const uint8_t *data, size_t len)
 {
-    if (t == NULL || t->send == NULL) return false;
+    if (t == NULL || t->send == NULL)
+        return false;
     return t->send(data, len, t->ctx);
 }
 
@@ -83,11 +83,11 @@ static inline bool syn_transport_send(SYN_Transport *t,
  * @param out_len  [out] Actual received length.
  * @return true if a complete packet was received.
  */
-static inline bool syn_transport_recv(SYN_Transport *t,
-                                        uint8_t *data, size_t max_len,
-                                        size_t *out_len)
+static inline bool syn_transport_recv(SYN_Transport *t, uint8_t *data, size_t max_len,
+                                      size_t *out_len)
 {
-    if (t == NULL || t->recv == NULL) return false;
+    if (t == NULL || t->recv == NULL)
+        return false;
     return t->recv(data, max_len, out_len, t->ctx);
 }
 

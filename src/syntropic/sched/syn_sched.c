@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SCHED) || SYN_USE_SCHED
@@ -9,17 +9,19 @@
  * @brief Cooperative scheduler implementation.
  */
 
-#include "syn_sched.h"
 #include "../port/syn_port_system.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_event.h"
 #include "../util/syn_metrics.h"
+#include "syn_sched.h"
 
 #include <limits.h>
 
 #if SYN_USE_METRICS
-SYN_METRIC_DECLARE(sched_ticks,    "sched_ticks",    "Total scheduler run calls", SYN_METRIC_TYPE_COUNTER);
-SYN_METRIC_DECLARE(sched_switches, "sched_switches", "Total task executions",    SYN_METRIC_TYPE_COUNTER);
+SYN_METRIC_DECLARE(sched_ticks, "sched_ticks", "Total scheduler run calls",
+                   SYN_METRIC_TYPE_COUNTER);
+SYN_METRIC_DECLARE(sched_switches, "sched_switches", "Total task executions",
+                   SYN_METRIC_TYPE_COUNTER);
 #endif
 
 /* ── Initialization ─────────────────────────────────────────────────────── */
@@ -29,7 +31,7 @@ void syn_sched_init(SYN_Sched *sched, SYN_Task *tasks, size_t count)
     SYN_ASSERT(sched != NULL);
     SYN_ASSERT(tasks != NULL || count == 0);
 
-    sched->tasks      = tasks;
+    sched->tasks = tasks;
     sched->task_count = count;
 
     for (size_t i = 0; i < SYN_SCHED_PRIO_LEVELS; i++) {
@@ -40,27 +42,23 @@ void syn_sched_init(SYN_Sched *sched, SYN_Task *tasks, size_t count)
     SYN_METRIC_REGISTER(sched_switches);
 }
 
-void syn_task_create(SYN_Task *task,
-                      const char *name,
-                      SYN_TaskFunc func,
-                      uint8_t priority,
-                      void *user_data)
+void syn_task_create(SYN_Task *task, const char *name, SYN_TaskFunc func, uint8_t priority,
+                     void *user_data)
 {
     SYN_ASSERT(task != NULL);
     SYN_ASSERT(func != NULL);
     SYN_ASSERT(priority < SYN_SCHED_PRIO_LEVELS);
 
     PT_INIT(&task->pt);
-    task->func        = func;
-    task->name        = name;
-    task->priority    = priority;
-    task->state       = (uint8_t)SYN_TASK_READY;
+    task->func = func;
+    task->name = name;
+    task->priority = priority;
+    task->state = (uint8_t)SYN_TASK_READY;
     task->delay_until = 0;
-    task->user_data   = user_data;
-    task->wait_event  = NULL;
-    task->wait_mask   = 0;
+    task->user_data = user_data;
+    task->wait_event = NULL;
+    task->wait_mask = 0;
 }
-
 
 /**
  * @brief Execute a single task's protothread function.
@@ -109,14 +107,14 @@ bool syn_sched_run(SYN_Sched *sched)
      * Bounded by task_count so we stop if every task is waiting.
      */
     const SYN_Task *executed_task = NULL;
-    size_t    executed_idx  = 0;
-    size_t    attempts      = 0;
+    size_t executed_idx = 0;
+    size_t attempts = 0;
 
     while (attempts < n) {
         SYN_Task *best_task = NULL;
-        size_t    best_idx  = 0;
-        uint8_t   best_prio = 255;
-        size_t    best_dist = n;   /* Larger than any valid distance */
+        size_t best_idx = 0;
+        uint8_t best_prio = 255;
+        size_t best_dist = n; /* Larger than any valid distance */
 
         for (size_t i = 0; i < n; i++) {
             SYN_Task *task = &sched->tasks[i];
@@ -128,7 +126,7 @@ bool syn_sched_run(SYN_Sched *sched)
             any_alive = true;
 
             if (task->state == (uint8_t)SYN_TASK_SUSPENDED ||
-                task->state == (uint8_t)SYN_TASK_DEFERRED  ||
+                task->state == (uint8_t)SYN_TASK_DEFERRED ||
                 task->state == (uint8_t)SYN_TASK_WAITING) {
                 continue;
             }
@@ -142,7 +140,7 @@ bool syn_sched_run(SYN_Sched *sched)
                     task->state = (uint8_t)SYN_TASK_READY;
                     /* Fall through to normal priority evaluation */
                 } else {
-                    continue;  /* Still blocked */
+                    continue; /* Still blocked */
                 }
             }
 
@@ -154,23 +152,22 @@ bool syn_sched_run(SYN_Sched *sched)
             /* Task is ready — compute rotation distance for its priority */
             const uint8_t prio = task->priority;
             size_t rr_start = sched->rr_per_prio[prio];
-            if (rr_start >= n) { rr_start = 0; } /* Defensive clamp */
+            if (rr_start >= n) {
+                rr_start = 0;
+            } /* Defensive clamp */
 
-            const size_t dist = (i >= rr_start)
-                              ? (i - rr_start)
-                              : (n - rr_start + i);
+            const size_t dist = (i >= rr_start) ? (i - rr_start) : (n - rr_start + i);
 
-            if (prio < best_prio ||
-                (prio == best_prio && dist < best_dist)) {
+            if (prio < best_prio || (prio == best_prio && dist < best_dist)) {
                 best_prio = prio;
                 best_dist = dist;
                 best_task = task;
-                best_idx  = i;
+                best_idx = i;
             }
         }
 
         if (best_task == NULL) {
-            break;  /* No eligible tasks this tick */
+            break; /* No eligible tasks this tick */
         }
 
         SYN_PT_Status status = sched_run_task(best_task);
@@ -186,7 +183,7 @@ bool syn_sched_run(SYN_Sched *sched)
 
         /* Task did real work (or deferred itself via PT_DEFER). */
         executed_task = best_task;
-        executed_idx  = best_idx;
+        executed_idx = best_idx;
         SYN_METRIC_INC(sched_switches);
 
         /* Advance round-robin unless the task deferred (PT_DEFER sets
@@ -195,7 +192,7 @@ bool syn_sched_run(SYN_Sched *sched)
             const size_t next = executed_idx + 1;
             sched->rr_per_prio[best_prio] = (next >= n) ? 0 : next;
         }
-        break;  /* One useful execution per tick */
+        break; /* One useful execution per tick */
     }
 
     /* Clean up task states for the next tick:
@@ -208,8 +205,7 @@ bool syn_sched_run(SYN_Sched *sched)
         const uint8_t st = sched->tasks[i].state;
         if (st == (uint8_t)SYN_TASK_WAITING) {
             sched->tasks[i].state = (uint8_t)SYN_TASK_READY;
-        } else if (st == (uint8_t)SYN_TASK_DEFERRED &&
-                   &sched->tasks[i] != executed_task) {
+        } else if (st == (uint8_t)SYN_TASK_DEFERRED && &sched->tasks[i] != executed_task) {
             sched->tasks[i].state = (uint8_t)SYN_TASK_READY;
         }
     }
@@ -237,8 +233,7 @@ uint32_t syn_sched_next_wakeup(const SYN_Sched *sched)
     for (size_t i = 0; i < sched->task_count; i++) {
         const SYN_Task *task = &sched->tasks[i];
 
-        if (task->state == (uint8_t)SYN_TASK_DEAD ||
-            task->state == (uint8_t)SYN_TASK_SUSPENDED) {
+        if (task->state == (uint8_t)SYN_TASK_DEAD || task->state == (uint8_t)SYN_TASK_SUSPENDED) {
             continue;
         }
 
@@ -247,7 +242,7 @@ uint32_t syn_sched_next_wakeup(const SYN_Sched *sched)
         if (task->state == (uint8_t)SYN_TASK_BLOCKED) {
             if (task->wait_event != NULL &&
                 (syn_event_flags_get(task->wait_event) & task->wait_mask)) {
-                any_ready_now = true;  /* Event fired — don't sleep */
+                any_ready_now = true; /* Event fired — don't sleep */
             }
             continue;
         }
@@ -268,10 +263,10 @@ uint32_t syn_sched_next_wakeup(const SYN_Sched *sched)
          * Cap at UINT32_MAX-1 so a real deadline at counter wrap
          * is never confused with the "no deadlines" sentinel. */
         uint32_t target = task->delay_until;
-        if (target == UINT32_MAX) target = UINT32_MAX - 1;
+        if (target == UINT32_MAX)
+            target = UINT32_MAX - 1;
 
-        if ((int32_t)(target - earliest) < 0 ||
-            earliest == UINT32_MAX) {
+        if ((int32_t)(target - earliest) < 0 || earliest == UINT32_MAX) {
             earliest = target;
         }
     }
@@ -312,10 +307,8 @@ SYN_NORETURN void syn_sched_run_tickless(SYN_Sched *sched, SYN_Sleep *sleep)
 
 #if defined(SYN_USE_TIMER) && SYN_USE_TIMER
 
-SYN_NORETURN void syn_sched_run_tickless_ex(SYN_Sched *sched,
-                                             SYN_Sleep *sleep,
-                                             SYN_Timer *timers,
-                                             size_t timer_count)
+SYN_NORETURN void syn_sched_run_tickless_ex(SYN_Sched *sched, SYN_Sleep *sleep, SYN_Timer *timers,
+                                            size_t timer_count)
 {
     SYN_ASSERT(sched != NULL);
     SYN_ASSERT(sleep != NULL);
@@ -329,13 +322,12 @@ SYN_NORETURN void syn_sched_run_tickless_ex(SYN_Sched *sched,
 
         /* Compute sleep duration: min of task deadlines and timer expiries */
         uint32_t now = syn_port_get_tick_ms();
-        uint32_t task_wake  = syn_sched_next_wakeup(sched);
+        uint32_t task_wake = syn_sched_next_wakeup(sched);
         uint32_t timer_wake = syn_timer_next_expiry(timers, timer_count);
 
         /* Pick the earlier deadline */
         uint32_t wake = task_wake;
-        if (timer_wake != UINT32_MAX &&
-            (wake == UINT32_MAX || (int32_t)(timer_wake - wake) < 0)) {
+        if (timer_wake != UINT32_MAX && (wake == UINT32_MAX || (int32_t)(timer_wake - wake) < 0)) {
             wake = timer_wake;
         }
 
@@ -379,8 +371,8 @@ void syn_task_restart(SYN_Task *task)
     SYN_ASSERT(task != NULL);
     PT_INIT(&task->pt);
     task->delay_until = 0;
-    task->wait_event  = NULL;
-    task->wait_mask   = 0;
+    task->wait_event = NULL;
+    task->wait_mask = 0;
     task->state = (uint8_t)SYN_TASK_READY;
 }
 

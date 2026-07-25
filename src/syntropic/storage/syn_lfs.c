@@ -1,11 +1,11 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_LFS) || SYN_USE_LFS
 
 #if defined(SYN_USE_VFS) && !SYN_USE_VFS
-  #error "syn_lfs requires SYN_USE_VFS=1"
+#error "syn_lfs requires SYN_USE_VFS=1"
 #endif
 
 /**
@@ -13,9 +13,9 @@
  * @brief LittleFS filesystem VFS adapter implementation.
  */
 
-#include "syn_lfs.h"
 #include "../port/syn_port_flash.h"
 #include "../util/syn_assert.h"
+#include "syn_lfs.h"
 
 #if __has_include("lfs.h")
 #include "lfs.h"
@@ -23,24 +23,24 @@
 /* Context structs that pair lfs_t* with each file/dir — avoids relying on
  * internal lfs_file_t/lfs_dir_t back-pointers which are version-dependent. */
 typedef struct {
-    lfs_t       *lfs;
-    lfs_file_t   file;
-    bool         used;
+    lfs_t *lfs;
+    lfs_file_t file;
+    bool used;
 } SYN_LfsFileCtx;
 
 typedef struct {
-    lfs_t       *lfs;
-    lfs_dir_t    dir;
-    bool         used;
+    lfs_t *lfs;
+    lfs_dir_t dir;
+    bool used;
 } SYN_LfsDirCtx;
 
 static SYN_LfsFileCtx g_lfs_files[SYN_VFS_MAX_OPEN_FILES];
-static SYN_LfsDirCtx  g_lfs_dirs[SYN_VFS_MAX_OPEN_DIRS];
+static SYN_LfsDirCtx g_lfs_dirs[SYN_VFS_MAX_OPEN_DIRS];
 
 /* ── LittleFS block device callbacks ────────────────────────────────────── */
 
-static int syn_lfs_bd_read(const struct lfs_config *c, lfs_block_t block,
-                           lfs_off_t off, void *buffer, lfs_size_t size)
+static int syn_lfs_bd_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off,
+                           void *buffer, lfs_size_t size)
 {
     const SYN_LfsConfig *cfg = (const SYN_LfsConfig *)c->context;
     uint32_t addr = cfg->start_addr + (block * cfg->block_size) + off;
@@ -50,8 +50,8 @@ static int syn_lfs_bd_read(const struct lfs_config *c, lfs_block_t block,
     return LFS_ERR_OK;
 }
 
-static int syn_lfs_bd_prog(const struct lfs_config *c, lfs_block_t block,
-                           lfs_off_t off, const void *buffer, lfs_size_t size)
+static int syn_lfs_bd_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off,
+                           const void *buffer, lfs_size_t size)
 {
     const SYN_LfsConfig *cfg = (const SYN_LfsConfig *)c->context;
     uint32_t addr = cfg->start_addr + (block * cfg->block_size) + off;
@@ -83,19 +83,19 @@ void syn_lfs_init_config(struct lfs_config *cfg, const SYN_LfsConfig *syn_cfg)
     SYN_ASSERT(syn_cfg != NULL);
 
     cfg->context = (void *)syn_cfg;
-    cfg->read  = syn_lfs_bd_read;
-    cfg->prog  = syn_lfs_bd_prog;
+    cfg->read = syn_lfs_bd_read;
+    cfg->prog = syn_lfs_bd_prog;
     cfg->erase = syn_lfs_bd_erase;
-    cfg->sync  = syn_lfs_bd_sync;
+    cfg->sync = syn_lfs_bd_sync;
 
     /* These values depend on the flash hardware limitations */
-    cfg->read_size      = 16;
-    cfg->prog_size      = 16;
-    cfg->block_size     = syn_cfg->block_size;
-    cfg->block_count    = syn_cfg->size / syn_cfg->block_size;
-    cfg->cache_size     = 64;
+    cfg->read_size = 16;
+    cfg->prog_size = 16;
+    cfg->block_size = syn_cfg->block_size;
+    cfg->block_count = syn_cfg->size / syn_cfg->block_size;
+    cfg->cache_size = 64;
     cfg->lookahead_size = 16;
-    cfg->block_cycles   = 500;
+    cfg->block_cycles = 500;
 }
 
 /* ── VFS Mapping ────────────────────────────────────────────────────────── */
@@ -118,19 +118,25 @@ static int syn_lfs_vfs_open(SYN_VfsFile *file, const char *path, int flags, void
     }
 
     g_lfs_files[f_idx].used = true;
-    g_lfs_files[f_idx].lfs  = lfs;
+    g_lfs_files[f_idx].lfs = lfs;
     file->fs_file = &g_lfs_files[f_idx];
 
     /* Map flags */
     int lfs_flags = 0;
     int mode = flags & 0x03;
-    if (mode == SYN_O_RDONLY) lfs_flags |= LFS_O_RDONLY;
-    else if (mode == SYN_O_WRONLY) lfs_flags |= LFS_O_WRONLY;
-    else if (mode == SYN_O_RDWR) lfs_flags |= LFS_O_RDWR;
+    if (mode == SYN_O_RDONLY)
+        lfs_flags |= LFS_O_RDONLY;
+    else if (mode == SYN_O_WRONLY)
+        lfs_flags |= LFS_O_WRONLY;
+    else if (mode == SYN_O_RDWR)
+        lfs_flags |= LFS_O_RDWR;
 
-    if (flags & SYN_O_CREAT)  lfs_flags |= LFS_O_CREAT;
-    if (flags & SYN_O_APPEND) lfs_flags |= LFS_O_APPEND;
-    if (flags & SYN_O_TRUNC)  lfs_flags |= LFS_O_TRUNC;
+    if (flags & SYN_O_CREAT)
+        lfs_flags |= LFS_O_CREAT;
+    if (flags & SYN_O_APPEND)
+        lfs_flags |= LFS_O_APPEND;
+    if (flags & SYN_O_TRUNC)
+        lfs_flags |= LFS_O_TRUNC;
 
     int ret = lfs_file_open(lfs, &g_lfs_files[f_idx].file, path, lfs_flags);
     if (ret < 0) {
@@ -145,7 +151,8 @@ static int syn_lfs_vfs_open(SYN_VfsFile *file, const char *path, int flags, void
 static int syn_lfs_vfs_close(SYN_VfsFile *file)
 {
     SYN_LfsFileCtx *ctx = (SYN_LfsFileCtx *)file->fs_file;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
 
     int ret = lfs_file_close(ctx->lfs, &ctx->file);
     ctx->used = false;
@@ -156,25 +163,30 @@ static int syn_lfs_vfs_close(SYN_VfsFile *file)
 static int syn_lfs_vfs_read(SYN_VfsFile *file, void *buf, size_t len)
 {
     SYN_LfsFileCtx *ctx = (SYN_LfsFileCtx *)file->fs_file;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
     return (int)lfs_file_read(ctx->lfs, &ctx->file, buf, len);
 }
 
 static int syn_lfs_vfs_write(SYN_VfsFile *file, const void *buf, size_t len)
 {
     SYN_LfsFileCtx *ctx = (SYN_LfsFileCtx *)file->fs_file;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
     return (int)lfs_file_write(ctx->lfs, &ctx->file, buf, len);
 }
 
 static int32_t syn_lfs_vfs_seek(SYN_VfsFile *file, int32_t offset, int whence)
 {
     SYN_LfsFileCtx *ctx = (SYN_LfsFileCtx *)file->fs_file;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
 
     int lfs_whence = LFS_SEEK_SET;
-    if (whence == SYN_SEEK_CUR) lfs_whence = LFS_SEEK_CUR;
-    else if (whence == SYN_SEEK_END) lfs_whence = LFS_SEEK_END;
+    if (whence == SYN_SEEK_CUR)
+        lfs_whence = LFS_SEEK_CUR;
+    else if (whence == SYN_SEEK_END)
+        lfs_whence = LFS_SEEK_END;
 
     return (int32_t)lfs_file_seek(ctx->lfs, &ctx->file, offset, lfs_whence);
 }
@@ -182,7 +194,8 @@ static int32_t syn_lfs_vfs_seek(SYN_VfsFile *file, int32_t offset, int whence)
 static int32_t syn_lfs_vfs_tell(SYN_VfsFile *file)
 {
     SYN_LfsFileCtx *ctx = (SYN_LfsFileCtx *)file->fs_file;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
     return (int32_t)lfs_file_tell(ctx->lfs, &ctx->file);
 }
 
@@ -215,7 +228,7 @@ static int syn_lfs_vfs_opendir(SYN_VfsDir *dir, const char *path, void *fs_data)
     }
 
     g_lfs_dirs[d_idx].used = true;
-    g_lfs_dirs[d_idx].lfs  = lfs;
+    g_lfs_dirs[d_idx].lfs = lfs;
     dir->fs_dir = &g_lfs_dirs[d_idx];
 
     int ret = lfs_dir_open(lfs, &g_lfs_dirs[d_idx].dir, path);
@@ -231,7 +244,8 @@ static int syn_lfs_vfs_opendir(SYN_VfsDir *dir, const char *path, void *fs_data)
 static int syn_lfs_vfs_readdir(SYN_VfsDir *dir, SYN_VfsDirEnt *ent)
 {
     SYN_LfsDirCtx *ctx = (SYN_LfsDirCtx *)dir->fs_dir;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
 
     struct lfs_info info;
     int ret = lfs_dir_read(ctx->lfs, &ctx->dir, &info);
@@ -250,7 +264,8 @@ static int syn_lfs_vfs_readdir(SYN_VfsDir *dir, SYN_VfsDirEnt *ent)
 static int syn_lfs_vfs_closedir(SYN_VfsDir *dir)
 {
     SYN_LfsDirCtx *ctx = (SYN_LfsDirCtx *)dir->fs_dir;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
 
     int ret = lfs_dir_close(ctx->lfs, &ctx->dir);
     ctx->used = false;
@@ -258,19 +273,17 @@ static int syn_lfs_vfs_closedir(SYN_VfsDir *dir)
     return ret;
 }
 
-static const SYN_VfsOps g_lfs_vfs_ops = {
-    .open     = syn_lfs_vfs_open,
-    .close    = syn_lfs_vfs_close,
-    .read     = syn_lfs_vfs_read,
-    .write    = syn_lfs_vfs_write,
-    .seek     = syn_lfs_vfs_seek,
-    .tell     = syn_lfs_vfs_tell,
-    .unlink   = syn_lfs_vfs_unlink,
-    .mkdir    = syn_lfs_vfs_mkdir,
-    .opendir  = syn_lfs_vfs_opendir,
-    .readdir  = syn_lfs_vfs_readdir,
-    .closedir = syn_lfs_vfs_closedir
-};
+static const SYN_VfsOps g_lfs_vfs_ops = {.open = syn_lfs_vfs_open,
+                                         .close = syn_lfs_vfs_close,
+                                         .read = syn_lfs_vfs_read,
+                                         .write = syn_lfs_vfs_write,
+                                         .seek = syn_lfs_vfs_seek,
+                                         .tell = syn_lfs_vfs_tell,
+                                         .unlink = syn_lfs_vfs_unlink,
+                                         .mkdir = syn_lfs_vfs_mkdir,
+                                         .opendir = syn_lfs_vfs_opendir,
+                                         .readdir = syn_lfs_vfs_readdir,
+                                         .closedir = syn_lfs_vfs_closedir};
 
 const SYN_VfsOps *syn_lfs_get_ops(void)
 {

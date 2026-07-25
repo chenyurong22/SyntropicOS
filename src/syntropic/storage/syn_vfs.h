@@ -8,9 +8,10 @@
 #define SYN_VFS_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,90 +21,90 @@ extern "C" {
  *  Override in syn_config.h if needed.
  *  @{ */
 #ifndef SYN_VFS_MAX_OPEN_FILES
-  #define SYN_VFS_MAX_OPEN_FILES  4  /**< Max simultaneously open files  */
+#define SYN_VFS_MAX_OPEN_FILES 4 /**< Max simultaneously open files  */
 #endif
 
 #ifndef SYN_VFS_MAX_OPEN_DIRS
-  #define SYN_VFS_MAX_OPEN_DIRS   2  /**< Max simultaneously open dirs   */
+#define SYN_VFS_MAX_OPEN_DIRS 2 /**< Max simultaneously open dirs   */
 #endif
 
 #ifndef SYN_VFS_MAX_MOUNTS
-  #define SYN_VFS_MAX_MOUNTS      2  /**< Max mounted filesystems        */
+#define SYN_VFS_MAX_MOUNTS 2 /**< Max mounted filesystems        */
 #endif
 /** @} */
 
 /** @defgroup vfs_flags File Opening Flags
  *  @{ */
-#define SYN_O_RDONLY  0x00  /**< Open for reading only               */
-#define SYN_O_WRONLY  0x01  /**< Open for writing only               */
-#define SYN_O_RDWR    0x02  /**< Open for reading and writing        */
-#define SYN_O_CREAT   0x04  /**< Create file if it does not exist    */
-#define SYN_O_APPEND  0x08  /**< Append writes to end of file        */
-#define SYN_O_TRUNC   0x10  /**< Truncate file to zero length        */
+#define SYN_O_RDONLY 0x00 /**< Open for reading only               */
+#define SYN_O_WRONLY 0x01 /**< Open for writing only               */
+#define SYN_O_RDWR 0x02   /**< Open for reading and writing        */
+#define SYN_O_CREAT 0x04  /**< Create file if it does not exist    */
+#define SYN_O_APPEND 0x08 /**< Append writes to end of file        */
+#define SYN_O_TRUNC 0x10  /**< Truncate file to zero length        */
 /** @} */
 
 /** @defgroup vfs_seek Seek Origins
  *  @{ */
-#define SYN_SEEK_SET  0  /**< Seek relative to start of file        */
-#define SYN_SEEK_CUR  1  /**< Seek relative to current position     */
-#define SYN_SEEK_END  2  /**< Seek relative to end of file          */
+#define SYN_SEEK_SET 0 /**< Seek relative to start of file        */
+#define SYN_SEEK_CUR 1 /**< Seek relative to current position     */
+#define SYN_SEEK_END 2 /**< Seek relative to end of file          */
 /** @} */
 
 /**
  * @brief Directory entry returned by syn_vfs_readdir().
  */
 typedef struct {
-    char     name[64];  /**< Entry name (null-terminated)        */
-    uint32_t size;      /**< File size in bytes (0 for dirs)     */
-    bool     is_dir;    /**< true if the entry is a directory    */
+    char name[64]; /**< Entry name (null-terminated)        */
+    uint32_t size; /**< File size in bytes (0 for dirs)     */
+    bool is_dir;   /**< true if the entry is a directory    */
 } SYN_VfsDirEnt;
 
-typedef struct SYN_VfsFile SYN_VfsFile;  /**< Forward declaration of file descriptor   */
-typedef struct SYN_VfsDir SYN_VfsDir;    /**< Forward declaration of directory descriptor */
+typedef struct SYN_VfsFile SYN_VfsFile; /**< Forward declaration of file descriptor   */
+typedef struct SYN_VfsDir SYN_VfsDir;   /**< Forward declaration of directory descriptor */
 
 /**
  * @brief VFS operations structure. Implement these for your filesystem (e.g. LittleFS).
  */
 typedef struct {
-    int     (*open)(SYN_VfsFile *file, const char *path, int flags, void *fs_data);  /**< Open a file          */
-    int     (*close)(SYN_VfsFile *file);                                              /**< Close a file         */
-    int     (*read)(SYN_VfsFile *file, void *buf, size_t len);                        /**< Read from a file     */
-    int     (*write)(SYN_VfsFile *file, const void *buf, size_t len);                 /**< Write to a file      */
-    int32_t (*seek)(SYN_VfsFile *file, int32_t offset, int whence);                   /**< Seek in a file       */
-    int32_t (*tell)(SYN_VfsFile *file);                                               /**< Get file position    */
-    int     (*unlink)(const char *path, void *fs_data);                               /**< Delete a file        */
-    int     (*mkdir)(const char *path, void *fs_data);                                /**< Create a directory   */
-    int     (*opendir)(SYN_VfsDir *dir, const char *path, void *fs_data);             /**< Open a directory     */
-    int     (*readdir)(SYN_VfsDir *dir, SYN_VfsDirEnt *ent);                          /**< Read directory entry */
-    int     (*closedir)(SYN_VfsDir *dir);                                             /**< Close a directory    */
+    int (*open)(SYN_VfsFile *file, const char *path, int flags, void *fs_data); /**< Open a file */
+    int (*close)(SYN_VfsFile *file);                                  /**< Close a file         */
+    int (*read)(SYN_VfsFile *file, void *buf, size_t len);            /**< Read from a file     */
+    int (*write)(SYN_VfsFile *file, const void *buf, size_t len);     /**< Write to a file      */
+    int32_t (*seek)(SYN_VfsFile *file, int32_t offset, int whence);   /**< Seek in a file       */
+    int32_t (*tell)(SYN_VfsFile *file);                               /**< Get file position    */
+    int (*unlink)(const char *path, void *fs_data);                   /**< Delete a file        */
+    int (*mkdir)(const char *path, void *fs_data);                    /**< Create a directory   */
+    int (*opendir)(SYN_VfsDir *dir, const char *path, void *fs_data); /**< Open a directory     */
+    int (*readdir)(SYN_VfsDir *dir, SYN_VfsDirEnt *ent);              /**< Read directory entry */
+    int (*closedir)(SYN_VfsDir *dir);                                 /**< Close a directory    */
 } SYN_VfsOps;
 
 /**
  * @brief Open file descriptor.
  */
 struct SYN_VfsFile {
-    const SYN_VfsOps *ops;      /**< Filesystem operations vtable                  */
-    void             *fs_file;  /**< Filesystem-specific file context pointer       */
-    bool              is_open;  /**< true while the descriptor is in use            */
+    const SYN_VfsOps *ops; /**< Filesystem operations vtable                  */
+    void *fs_file;         /**< Filesystem-specific file context pointer       */
+    bool is_open;          /**< true while the descriptor is in use            */
 };
 
 /**
  * @brief Open directory descriptor.
  */
 struct SYN_VfsDir {
-    const SYN_VfsOps *ops;      /**< Filesystem operations vtable                  */
-    void             *fs_dir;   /**< Filesystem-specific directory context pointer  */
-    bool              is_open;  /**< true while the descriptor is in use            */
+    const SYN_VfsOps *ops; /**< Filesystem operations vtable                  */
+    void *fs_dir;          /**< Filesystem-specific directory context pointer  */
+    bool is_open;          /**< true while the descriptor is in use            */
 };
 
 /**
  * @brief Mount point binding a path prefix to a filesystem.
  */
 typedef struct {
-    const char       *prefix;      /**< Mount path prefix (e.g. "/flash")             */
-    size_t            prefix_len;  /**< Cached strlen(prefix) for fast matching        */
-    const SYN_VfsOps *ops;         /**< Filesystem operations for this mount           */
-    void             *fs_data;     /**< Filesystem instance pointer (e.g. lfs_t *)     */
+    const char *prefix;    /**< Mount path prefix (e.g. "/flash")             */
+    size_t prefix_len;     /**< Cached strlen(prefix) for fast matching        */
+    const SYN_VfsOps *ops; /**< Filesystem operations for this mount           */
+    void *fs_data;         /**< Filesystem instance pointer (e.g. lfs_t *)     */
 } SYN_VfsMount;
 
 /* ── API ────────────────────────────────────────────────────────────────── */

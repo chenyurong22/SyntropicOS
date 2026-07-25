@@ -3,21 +3,20 @@
  * @brief Unity tests for syn_param.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/storage/syn_param.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 typedef struct {
     uint16_t brightness;
-    int16_t  offset;
-    uint8_t  mode;
-    uint8_t  _pad;
+    int16_t offset;
+    uint8_t mode;
+    uint8_t _pad;
 } TestParams;
 
 static void test_param_store(void)
 {
-
     /* Erase flash */
     memset(mock_flash, 0xFF, sizeof(mock_flash));
 
@@ -27,7 +26,7 @@ static void test_param_store(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 
     /* Save defaults */
-    TestParams params = { .brightness = 80, .offset = -10, .mode = 3 };
+    TestParams params = {.brightness = 80, .offset = -10, .mode = 3};
     st = syn_param_save(&store, &params);
     TEST_ASSERT_EQUAL(SYN_OK, st);
 

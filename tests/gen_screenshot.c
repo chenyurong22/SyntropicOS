@@ -3,8 +3,8 @@
  * @brief Renders a mock dashboard in 16bpp color mode and writes the framebuffer to disk.
  */
 
-#include "syntropic/syntropic.h"
 #include "syntropic/display/syn_canvas.h"
+#include "syntropic/syntropic.h"
 #include "syntropic/ui/syn_imgui.h"
 
 #include <stdio.h>
@@ -21,10 +21,10 @@ int main(void)
     syn_imgui_init(&ctx);
 
     /* Setup state variables */
-    int32_t mode = 1;         /* Auto mode selected */
-    bool led_state = true;    /* LED status checkbox checked */
-    int32_t speed = 70;       /* Speed slider set to 70% */
-    int32_t temp_data[10] = { 20, 24, 30, 42, 35, 45, 55, 60, 58, 62 }; /* Graph telemetry */
+    int32_t mode = 1;      /* Auto mode selected */
+    bool led_state = true; /* LED status checkbox checked */
+    int32_t speed = 70;    /* Speed slider set to 70% */
+    int32_t temp_data[10] = {20, 24, 30, 42, 35, 45, 55, 60, 58, 62}; /* Graph telemetry */
     (void)mode;
     (void)led_state;
     (void)speed;

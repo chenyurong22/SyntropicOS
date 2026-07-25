@@ -3,13 +3,13 @@
  * @brief Unity tests for syn_cobs.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/proto/syn_cobs.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static uint8_t cobs_rx_buf[256];
-static size_t  cobs_rx_len = 0;
+static size_t cobs_rx_len = 0;
 
 static void cobs_on_packet(const uint8_t *data, size_t len, void *ctx)
 {
@@ -21,7 +21,7 @@ static void cobs_on_packet(const uint8_t *data, size_t len, void *ctx)
 static void test_cobs(void)
 {
     /* Encode / decode roundtrip */
-    uint8_t orig[] = { 0x00, 0x11, 0x00, 0x00, 0x22, 0x33 };
+    uint8_t orig[] = {0x00, 0x11, 0x00, 0x00, 0x22, 0x33};
     uint8_t encoded[16], decoded[16];
     size_t enc_len = syn_cobs_encode(orig, sizeof(orig), encoded);
     TEST_ASSERT_TRUE(enc_len > 0);
@@ -31,14 +31,14 @@ static void test_cobs(void)
     TEST_ASSERT_EQUAL_INT(0, memcmp(orig, decoded, sizeof(orig)));
 
     /* Simple data (no zeros) */
-    uint8_t simple[] = { 0x01, 0x02, 0x03 };
+    uint8_t simple[] = {0x01, 0x02, 0x03};
     enc_len = syn_cobs_encode(simple, 3, encoded);
     dec_len = syn_cobs_decode(encoded, enc_len, decoded);
     TEST_ASSERT_EQUAL_INT(3, dec_len);
     TEST_ASSERT_EQUAL_INT(0, memcmp(simple, decoded, 3));
 
     /* All zeros */
-    uint8_t zeros[] = { 0x00, 0x00, 0x00 };
+    uint8_t zeros[] = {0x00, 0x00, 0x00};
     enc_len = syn_cobs_encode(zeros, 3, encoded);
     dec_len = syn_cobs_decode(encoded, enc_len, decoded);
     TEST_ASSERT_EQUAL_INT(3, dec_len);
@@ -47,8 +47,7 @@ static void test_cobs(void)
     /* Streaming decoder */
     SYN_COBS_Decoder dec;
     uint8_t stream_buf[128];
-    syn_cobs_decoder_init(&dec, stream_buf, sizeof(stream_buf),
-                           cobs_on_packet, NULL);
+    syn_cobs_decoder_init(&dec, stream_buf, sizeof(stream_buf), cobs_on_packet, NULL);
 
     /* Feed the encoded packet byte-by-byte, then delimiter */
     enc_len = syn_cobs_encode(simple, 3, encoded);
@@ -70,7 +69,8 @@ static void test_cobs_max_run(void)
     /* 254 non-zero bytes causes a code=0xFF boundary flush */
     static uint8_t src[254];
     static uint8_t dst[256];
-    for (int i = 0; i < 254; i++) src[i] = (uint8_t)(i + 1);
+    for (int i = 0; i < 254; i++)
+        src[i] = (uint8_t)(i + 1);
 
     size_t enc = syn_cobs_encode(src, sizeof(src), dst);
     TEST_ASSERT_TRUE(enc > 0);
@@ -85,7 +85,7 @@ static void test_cobs_max_run(void)
 /** Decode with 0x00 as a code byte — exercises line 67 (invalid code=0) */
 static void test_cobs_decode_zero_in_payload(void)
 {
-    uint8_t bad[] = { 0x01, 0x00, 0x01 };
+    uint8_t bad[] = {0x01, 0x00, 0x01};
     uint8_t out[16];
     size_t n = syn_cobs_decode(bad, sizeof(bad), out);
     TEST_ASSERT_EQUAL_size_t(0, n);
@@ -94,7 +94,7 @@ static void test_cobs_decode_zero_in_payload(void)
 /** Decode with run longer than remaining data — exercises line 72 (malformed) */
 static void test_cobs_decode_malformed(void)
 {
-    uint8_t bad[] = { 0x05, 0x01 };
+    uint8_t bad[] = {0x05, 0x01};
     uint8_t out[16];
     size_t n = syn_cobs_decode(bad, sizeof(bad), out);
     TEST_ASSERT_EQUAL_size_t(0, n);
@@ -103,7 +103,12 @@ static void test_cobs_decode_malformed(void)
 /** Streaming decoder buffer overflow — exercises line 126 (discard frame) */
 static int cobs_overflow_rx = 0;
 static void on_cobs_overflow(const uint8_t *d, size_t l, void *c)
-{ (void)d; (void)l; (void)c; cobs_overflow_rx++; }
+{
+    (void)d;
+    (void)l;
+    (void)c;
+    cobs_overflow_rx++;
+}
 
 static void test_cobs_decoder_overflow(void)
 {

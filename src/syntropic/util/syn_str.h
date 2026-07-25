@@ -8,9 +8,10 @@
 #define SYN_STR_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

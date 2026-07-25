@@ -8,18 +8,18 @@
  * ordering, and full-duplex data exchange across all 4 SPI modes.
  */
 
-#include "unity/unity.h"
-#include "syntropic/drivers/syn_soft_spi.h"
 #include "mocks/mock_port.h"
+#include "syntropic/drivers/syn_soft_spi.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
 /* ── Pin assignments ────────────────────────────────────────────────────── */
 
-#define PIN_SCK   10
-#define PIN_MOSI  11
-#define PIN_MISO  12
-#define PIN_CS    13
+#define PIN_SCK 10
+#define PIN_MOSI 11
+#define PIN_MISO 12
+#define PIN_CS 13
 
 /* ── Virtual SPI slave ──────────────────────────────────────────────────── */
 
@@ -28,19 +28,19 @@ typedef struct {
     uint16_t sck_pin;
     uint16_t mosi_pin;
     uint16_t miso_pin;
-    bool     cpha;       /* false = sample on first edge, true = second edge */
-    bool     cpol;       /* false = idle low, true = idle high */
+    bool cpha; /* false = sample on first edge, true = second edge */
+    bool cpol; /* false = idle low, true = idle high */
 
     /* Shift register state */
-    uint8_t  tx_byte;    /* byte slave is shifting out */
-    uint8_t  rx_byte;    /* byte slave is shifting in  */
-    uint8_t  tx_mask;    /* current bit position for output */
-    uint8_t  rx_mask;    /* current bit position for input  */
-    uint8_t  bit_count;  /* bits shifted so far */
+    uint8_t tx_byte;   /* byte slave is shifting out */
+    uint8_t rx_byte;   /* byte slave is shifting in  */
+    uint8_t tx_mask;   /* current bit position for output */
+    uint8_t rx_mask;   /* current bit position for input  */
+    uint8_t bit_count; /* bits shifted so far */
 
     /* Results */
-    uint8_t  received;   /* last fully received byte */
-    uint8_t  rx_count;   /* number of complete bytes received */
+    uint8_t received; /* last fully received byte */
+    uint8_t rx_count; /* number of complete bytes received */
 } VirtualSPISlave;
 
 static VirtualSPISlave s_slave;
@@ -52,7 +52,8 @@ static VirtualSPISlave s_slave;
 static void spi_slave_gpio_callback(uint16_t pin, uint8_t state, void *ctx)
 {
     VirtualSPISlave *slave = (VirtualSPISlave *)ctx;
-    if (pin != slave->sck_pin) return;
+    if (pin != slave->sck_pin)
+        return;
 
     bool clk_went_active;
     if (slave->cpol) {
@@ -116,20 +117,19 @@ static void spi_slave_gpio_callback(uint16_t pin, uint8_t state, void *ctx)
 static void slave_init(VirtualSPISlave *slave, SYN_SPIMode mode, uint8_t tx_byte)
 {
     memset(slave, 0, sizeof(*slave));
-    slave->sck_pin  = PIN_SCK;
+    slave->sck_pin = PIN_SCK;
     slave->mosi_pin = PIN_MOSI;
     slave->miso_pin = PIN_MISO;
-    slave->cpol     = (mode == SYN_SPI_MODE_2 || mode == SYN_SPI_MODE_3);
-    slave->cpha     = (mode == SYN_SPI_MODE_1 || mode == SYN_SPI_MODE_3);
-    slave->tx_byte  = tx_byte;
-    slave->tx_mask  = 0x80;
-    slave->rx_mask  = 0x80;
-    slave->rx_byte  = 0;
+    slave->cpol = (mode == SYN_SPI_MODE_2 || mode == SYN_SPI_MODE_3);
+    slave->cpha = (mode == SYN_SPI_MODE_1 || mode == SYN_SPI_MODE_3);
+    slave->tx_byte = tx_byte;
+    slave->tx_mask = 0x80;
+    slave->rx_mask = 0x80;
+    slave->rx_byte = 0;
 
     /* Set initial MISO state for CPHA=0 (data valid before first clock edge) */
     if (!slave->cpha) {
-        mock_gpio_read_overrides[PIN_MISO] =
-            (tx_byte & 0x80) ? SYN_GPIO_HIGH : SYN_GPIO_LOW;
+        mock_gpio_read_overrides[PIN_MISO] = (tx_byte & 0x80) ? SYN_GPIO_HIGH : SYN_GPIO_LOW;
     }
 
     mock_gpio_set_write_callback(spi_slave_gpio_callback, slave);
@@ -145,8 +145,7 @@ static void slave_teardown(void)
 
 static SYN_SoftSPI spi;
 
-static void do_full_duplex_test(SYN_SPIMode mode, uint8_t master_tx,
-                                uint8_t slave_tx)
+static void do_full_duplex_test(SYN_SPIMode mode, uint8_t master_tx, uint8_t slave_tx)
 {
     mock_port_reset();
     syn_soft_spi_init(&spi, PIN_SCK, PIN_MOSI, PIN_MISO, mode, 0);
@@ -156,14 +155,13 @@ static void do_full_duplex_test(SYN_SPIMode mode, uint8_t master_tx,
 
     /* Master should have received the slave's TX byte */
     TEST_ASSERT_EQUAL_HEX8_MESSAGE(slave_tx, master_rx,
-        "Master did not receive correct data from slave");
+                                   "Master did not receive correct data from slave");
 
     /* Slave should have received the master's TX byte */
     TEST_ASSERT_EQUAL_HEX8_MESSAGE(master_tx, s_slave.received,
-        "Slave did not receive correct data from master");
+                                   "Slave did not receive correct data from master");
 
-    TEST_ASSERT_EQUAL_MESSAGE(1, s_slave.rx_count,
-        "Slave should have received exactly 1 byte");
+    TEST_ASSERT_EQUAL_MESSAGE(1, s_slave.rx_count, "Slave should have received exactly 1 byte");
 
     slave_teardown();
 }
@@ -216,8 +214,8 @@ void test_soft_spi_slave_bulk(void)
 
     /* Transfer byte-by-byte so the slave can verify each */
     for (int i = 0; i < 4; i++) {
-        s_slave.tx_byte  = (uint8_t)(0x42 + i);
-        s_slave.tx_mask  = 0x80;
+        s_slave.tx_byte = (uint8_t)(0x42 + i);
+        s_slave.tx_mask = 0x80;
         /* Pre-set MISO for CPHA=0 */
         mock_gpio_read_overrides[PIN_MISO] =
             (s_slave.tx_byte & 0x80) ? SYN_GPIO_HIGH : SYN_GPIO_LOW;

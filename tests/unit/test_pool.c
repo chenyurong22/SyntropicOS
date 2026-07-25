@@ -3,9 +3,9 @@
  * @brief Unity tests for syn_pool — fixed-size block memory pool.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/util/syn_pool.h"
+#include "unity/unity.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -111,10 +111,10 @@ static void test_pool_high_watermark(void)
 
     syn_pool_free(&pool, b3);
     syn_pool_free(&pool, b2);
-    TEST_ASSERT_EQUAL(3, syn_pool_high_watermark(&pool));  /* doesn't decrease */
+    TEST_ASSERT_EQUAL(3, syn_pool_high_watermark(&pool)); /* doesn't decrease */
 
     syn_pool_free(&pool, b1);
-    TEST_ASSERT_EQUAL(3, syn_pool_high_watermark(&pool));  /* still 3 */
+    TEST_ASSERT_EQUAL(3, syn_pool_high_watermark(&pool)); /* still 3 */
 }
 
 /** Free(NULL) is a safe no-op. */
@@ -124,7 +124,7 @@ static void test_pool_free_null(void)
     SYN_Pool pool;
     syn_pool_init(&pool, buf, sizeof(buf), 16);
 
-    syn_pool_free(&pool, NULL);  /* should not crash */
+    syn_pool_free(&pool, NULL); /* should not crash */
     TEST_ASSERT_EQUAL(0, syn_pool_used(&pool));
 }
 

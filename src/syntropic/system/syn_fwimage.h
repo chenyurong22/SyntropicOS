@@ -26,8 +26,8 @@
 #include "../common/syn_defs.h"
 #include "../util/syn_crc.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,18 +36,18 @@ extern "C" {
 /* ── Magic number ───────────────────────────────────────────────────────── */
 
 /** @brief Magic number identifying a SyntropicOS firmware image header ("SYNF"). */
-#define SYN_FW_MAGIC  0x53594E46u  /* "SYNF" in little-endian */
+#define SYN_FW_MAGIC 0x53594E46u /* "SYNF" in little-endian */
 
 /* ── Image state ────────────────────────────────────────────────────────── */
 
 /** @brief Firmware image lifecycle state. */
 typedef enum {
-    SYN_FW_STATE_EMPTY     = 0xFF,  /**< Erased flash (no image)           */
-    SYN_FW_STATE_WRITING   = 0x01,  /**< Partially written (update in progress) */
-    SYN_FW_STATE_NEW       = 0x02,  /**< Fully written + CRC valid         */
-    SYN_FW_STATE_TESTING   = 0x03,  /**< Booted but not yet confirmed      */
-    SYN_FW_STATE_CONFIRMED = 0x04,  /**< Confirmed good                    */
-    SYN_FW_STATE_INVALID   = 0x00,  /**< Failed validation or rollback     */
+    SYN_FW_STATE_EMPTY = 0xFF,     /**< Erased flash (no image)           */
+    SYN_FW_STATE_WRITING = 0x01,   /**< Partially written (update in progress) */
+    SYN_FW_STATE_NEW = 0x02,       /**< Fully written + CRC valid         */
+    SYN_FW_STATE_TESTING = 0x03,   /**< Booted but not yet confirmed      */
+    SYN_FW_STATE_CONFIRMED = 0x04, /**< Confirmed good                    */
+    SYN_FW_STATE_INVALID = 0x00,   /**< Failed validation or rollback     */
 } SYN_FwState;
 
 /* ── Image header ───────────────────────────────────────────────────────── */
@@ -59,16 +59,16 @@ typedef enum {
  * HMAC field for a total of 56 bytes.
  */
 typedef struct {
-    uint32_t  magic;            /**< SYN_FW_MAGIC                          */
-    uint32_t  version_code;     /**< Packed version (SYN_VERSION_CODE fmt) */
-    uint32_t  image_size;       /**< Firmware binary size (excl. header)   */
-    uint32_t  image_crc;        /**< CRC-32 over the firmware binary       */
-    uint8_t   state;            /**< SYN_FwState                           */
-    uint8_t   reserved[3];      /**< Pad to 4-byte alignment               */
+    uint32_t magic;        /**< SYN_FW_MAGIC                          */
+    uint32_t version_code; /**< Packed version (SYN_VERSION_CODE fmt) */
+    uint32_t image_size;   /**< Firmware binary size (excl. header)   */
+    uint32_t image_crc;    /**< CRC-32 over the firmware binary       */
+    uint8_t state;         /**< SYN_FwState                           */
+    uint8_t reserved[3];   /**< Pad to 4-byte alignment               */
 #if defined(SYN_FW_USE_HMAC) && SYN_FW_USE_HMAC
-    uint8_t   image_hmac[32];   /**< HMAC-SHA256 over the firmware binary  */
+    uint8_t image_hmac[32]; /**< HMAC-SHA256 over the firmware binary  */
 #endif
-    uint32_t  header_crc;       /**< CRC-32 over all preceding fields      */
+    uint32_t header_crc; /**< CRC-32 over all preceding fields      */
 } SYN_FwImageHeader;
 
 /* ── Validation ─────────────────────────────────────────────────────────── */
@@ -84,7 +84,8 @@ typedef struct {
  */
 static inline bool syn_fwimage_header_valid(const SYN_FwImageHeader *hdr)
 {
-    if (hdr->magic != SYN_FW_MAGIC) return false;
+    if (hdr->magic != SYN_FW_MAGIC)
+        return false;
 
     /* CRC-32 over all fields before header_crc, including padding and HMAC (if present).
      * offsetof correctly accounts for struct layout and padding. */
@@ -115,9 +116,9 @@ static inline void syn_fwimage_seal_header(SYN_FwImageHeader *hdr)
  */
 static inline bool syn_fwimage_is_bootable(const SYN_FwImageHeader *hdr)
 {
-    if (!syn_fwimage_header_valid(hdr)) return false;
-    return (hdr->state == SYN_FW_STATE_NEW ||
-            hdr->state == SYN_FW_STATE_TESTING ||
+    if (!syn_fwimage_header_valid(hdr))
+        return false;
+    return (hdr->state == SYN_FW_STATE_NEW || hdr->state == SYN_FW_STATE_TESTING ||
             hdr->state == SYN_FW_STATE_CONFIRMED);
 }
 

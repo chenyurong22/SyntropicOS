@@ -29,8 +29,8 @@
 #ifndef SYN_LUT_H
 #define SYN_LUT_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,8 +40,8 @@ extern "C" {
 
 /** @brief Lookup table entry (x, y pair). */
 typedef struct {
-    int32_t x;  /**< Input (independent) value.  */
-    int32_t y;  /**< Output (dependent) value.   */
+    int32_t x; /**< Input (independent) value.  */
+    int32_t y; /**< Output (dependent) value.   */
 } SYN_LUT_Entry;
 
 /* ── Forward lookup: x → y (interpolated) ───────────────────────────────── */
@@ -57,25 +57,29 @@ typedef struct {
  * @param x      Input value.
  * @return Interpolated y.
  */
-static inline int32_t syn_lut_forward(const SYN_LUT_Entry *table,
-                                       size_t count, int32_t x)
+static inline int32_t syn_lut_forward(const SYN_LUT_Entry *table, size_t count, int32_t x)
 {
-    if (count == 0) return 0;
-    if (count == 1 || x <= table[0].x) return table[0].y;
-    if (x >= table[count - 1].x)       return table[count - 1].y;
+    if (count == 0)
+        return 0;
+    if (count == 1 || x <= table[0].x)
+        return table[0].y;
+    if (x >= table[count - 1].x)
+        return table[count - 1].y;
 
     /* Find the bracketing interval */
     size_t i;
     for (i = 1; i < count; i++) {
-        if (x <= table[i].x) break;
+        if (x <= table[i].x)
+            break;
     }
 
     /* Linear interpolation */
     int32_t x0 = table[i - 1].x, y0 = table[i - 1].y;
-    int32_t x1 = table[i].x,     y1 = table[i].y;
+    int32_t x1 = table[i].x, y1 = table[i].y;
     int32_t dx = x1 - x0;
 
-    if (dx == 0) return y0;
+    if (dx == 0)
+        return y0;
 
     return y0 + ((y1 - y0) * (x - x0)) / dx;
 }
@@ -93,11 +97,12 @@ static inline int32_t syn_lut_forward(const SYN_LUT_Entry *table,
  * @param y      Input value (in the y domain).
  * @return Interpolated x.
  */
-static inline int32_t syn_lut_reverse(const SYN_LUT_Entry *table,
-                                       size_t count, int32_t y)
+static inline int32_t syn_lut_reverse(const SYN_LUT_Entry *table, size_t count, int32_t y)
 {
-    if (count == 0) return 0;
-    if (count == 1) return table[0].x;
+    if (count == 0)
+        return 0;
+    if (count == 1)
+        return table[0].x;
 
     /* Detect direction (is y ascending or descending?) */
     int ascending = (table[count - 1].y >= table[0].y) ? 1 : 0;
@@ -106,19 +111,23 @@ static inline int32_t syn_lut_reverse(const SYN_LUT_Entry *table,
     size_t i;
     for (i = 1; i < count; i++) {
         if (ascending) {
-            if (y <= table[i].y) break;
+            if (y <= table[i].y)
+                break;
         } else {
-            if (y >= table[i].y) break;
+            if (y >= table[i].y)
+                break;
         }
     }
 
-    if (i >= count) i = count - 1;
+    if (i >= count)
+        i = count - 1;
 
     int32_t x0 = table[i - 1].x, y0 = table[i - 1].y;
-    int32_t x1 = table[i].x,     y1 = table[i].y;
+    int32_t x1 = table[i].x, y1 = table[i].y;
     int32_t dy = y1 - y0;
 
-    if (dy == 0) return x0;
+    if (dy == 0)
+        return x0;
 
     return x0 + ((x1 - x0) * (y - y0)) / dy;
 }

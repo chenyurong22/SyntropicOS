@@ -10,12 +10,12 @@
  *   - Read bit: override = 0 -> each bit = 0 -> read_byte() = 0x00.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/drivers/syn_soft_onewire.h"
+#include "unity/unity.h"
 
-#define OW_PIN  ((SYN_GPIO_Pin)5)
-#define OW_DLY  1u   /* minimal delay — no real timing in tests */
+#define OW_PIN ((SYN_GPIO_Pin)5)
+#define OW_DLY 1u /* minimal delay — no real timing in tests */
 
 /* ── test 1: init configures pin ────────────────────────────────────────── */
 
@@ -60,9 +60,9 @@ static void test_onewire_write_byte(void)
     SYN_SoftOneWire ow;
     syn_soft_onewire_init(&ow, OW_PIN, OW_DLY);
     /* Should not assert/crash; GPIO transitions happen silently in mock */
-    syn_soft_onewire_write_byte(&ow, 0xCCu);  /* SKIP ROM */
-    syn_soft_onewire_write_byte(&ow, 0x44u);  /* CONVERT T */
-    TEST_PASS();  /* no crash = pass */
+    syn_soft_onewire_write_byte(&ow, 0xCCu); /* SKIP ROM */
+    syn_soft_onewire_write_byte(&ow, 0x44u); /* CONVERT T */
+    TEST_PASS();                             /* no crash = pass */
 }
 
 /* ── test 5: read_byte returns 0xFF when line held high ─────────────────── */
@@ -71,7 +71,7 @@ static void test_onewire_read_byte_ones(void)
 {
     SYN_SoftOneWire ow;
     syn_soft_onewire_init(&ow, OW_PIN, OW_DLY);
-    mock_gpio_read_overrides[OW_PIN] = 1;  /* all bits = 1 */
+    mock_gpio_read_overrides[OW_PIN] = 1; /* all bits = 1 */
     TEST_ASSERT_EQUAL_HEX8(0xFF, syn_soft_onewire_read_byte(&ow));
 }
 
@@ -81,7 +81,7 @@ static void test_onewire_read_byte_zeros(void)
 {
     SYN_SoftOneWire ow;
     syn_soft_onewire_init(&ow, OW_PIN, OW_DLY);
-    mock_gpio_read_overrides[OW_PIN] = 0;  /* all bits = 0 */
+    mock_gpio_read_overrides[OW_PIN] = 0; /* all bits = 0 */
     TEST_ASSERT_EQUAL_HEX8(0x00, syn_soft_onewire_read_byte(&ow));
 }
 
@@ -91,7 +91,7 @@ static void test_onewire_read_rom(void)
 {
     SYN_SoftOneWire ow;
     syn_soft_onewire_init(&ow, OW_PIN, OW_DLY);
-    mock_gpio_read_overrides[OW_PIN] = 1;  /* all bits = 1 -> all bytes = 0xFF */
+    mock_gpio_read_overrides[OW_PIN] = 1; /* all bits = 1 -> all bytes = 0xFF */
     uint8_t rom[8] = {0};
     syn_soft_onewire_read_rom(&ow, rom);
     uint8_t i;

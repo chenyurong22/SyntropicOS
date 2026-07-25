@@ -8,9 +8,10 @@
 #define SYN_PORT_DMA_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,14 +19,14 @@ extern "C" {
 
 /** @brief DMA transfer direction */
 typedef enum {
-    SYN_DMA_DIR_MEM_TO_MEM = 0, /**< Memory to Memory transfer */
+    SYN_DMA_DIR_MEM_TO_MEM = 0,    /**< Memory to Memory transfer */
     SYN_DMA_DIR_MEM_TO_PERIPH = 1, /**< Memory to Peripheral transfer */
     SYN_DMA_DIR_PERIPH_TO_MEM = 2  /**< Peripheral to Memory transfer */
 } SYN_DMA_Direction;
 
 /** @brief DMA transfer data element size */
 typedef enum {
-    SYN_DMA_SIZE_8BIT  = 1, /**< 8-bit byte transfers */
+    SYN_DMA_SIZE_8BIT = 1,  /**< 8-bit byte transfers */
     SYN_DMA_SIZE_16BIT = 2, /**< 16-bit halfword transfers */
     SYN_DMA_SIZE_32BIT = 4  /**< 32-bit word transfers */
 } SYN_DMA_Size;
@@ -34,14 +35,14 @@ typedef enum {
  * @brief Hardware DMA transfer hardware request parameters.
  */
 typedef struct {
-    uint8_t           channel_id;   /**< Hardware DMA channel index */
-    SYN_DMA_Direction dir;          /**< Transfer direction */
-    SYN_DMA_Size      data_size;    /**< Data element size (1, 2, 4) */
-    bool              src_inc;      /**< Auto-increment source address */
-    bool              dst_inc;      /**< Auto-increment destination address */
-    const void       *src;          /**< Source address */
-    void             *dst;          /**< Destination address */
-    size_t            count;        /**< Transfer count (elements) */
+    uint8_t channel_id;     /**< Hardware DMA channel index */
+    SYN_DMA_Direction dir;  /**< Transfer direction */
+    SYN_DMA_Size data_size; /**< Data element size (1, 2, 4) */
+    bool src_inc;           /**< Auto-increment source address */
+    bool dst_inc;           /**< Auto-increment destination address */
+    const void *src;        /**< Source address */
+    void *dst;              /**< Destination address */
+    size_t count;           /**< Transfer count (elements) */
 } SYN_PortDmaTransfer;
 
 /**

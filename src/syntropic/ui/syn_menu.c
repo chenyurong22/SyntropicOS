@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_MENU) || SYN_USE_MENU
@@ -9,24 +9,23 @@
  * @brief Menu system implementation.
  */
 
-#include "syn_menu.h"
 #include "../util/syn_assert.h"
+#include "syn_menu.h"
 
 #include <string.h>
 
-void syn_menu_init(SYN_Menu *menu, const SYN_MenuItem *root,
-                     SYN_MenuRenderFn render, void *ctx)
+void syn_menu_init(SYN_Menu *menu, const SYN_MenuItem *root, SYN_MenuRenderFn render, void *ctx)
 {
     SYN_ASSERT(menu != NULL);
     SYN_ASSERT(root != NULL);
     SYN_ASSERT(root->action == SYN_MENU_ACTION_SUBMENU);
 
     memset(menu, 0, sizeof(*menu));
-    menu->root       = root;
-    menu->current    = root;
-    menu->selected   = 0;
-    menu->depth      = 0;
-    menu->render     = render;
+    menu->root = root;
+    menu->current = root;
+    menu->selected = 0;
+    menu->depth = 0;
+    menu->render = render;
     menu->render_ctx = ctx;
 }
 
@@ -37,10 +36,12 @@ void syn_menu_up(SYN_Menu *menu)
     if (menu->editing) {
         /* Increment value */
         const SYN_MenuItem *item = syn_menu_selected_item(menu);
-        if (item != NULL && item->action == SYN_MENU_ACTION_VALUE && item->u.value_cfg.value != NULL) {
+        if (item != NULL && item->action == SYN_MENU_ACTION_VALUE &&
+            item->u.value_cfg.value != NULL) {
             int32_t *val = item->u.value_cfg.value;
             *val += item->u.value_cfg.step;
-            if (*val > item->u.value_cfg.max) *val = item->u.value_cfg.max;
+            if (*val > item->u.value_cfg.max)
+                *val = item->u.value_cfg.max;
         }
     } else {
         /* Move selection up (with wrap) */
@@ -61,10 +62,12 @@ void syn_menu_down(SYN_Menu *menu)
     if (menu->editing) {
         /* Decrement value */
         const SYN_MenuItem *item = syn_menu_selected_item(menu);
-        if (item != NULL && item->action == SYN_MENU_ACTION_VALUE && item->u.value_cfg.value != NULL) {
+        if (item != NULL && item->action == SYN_MENU_ACTION_VALUE &&
+            item->u.value_cfg.value != NULL) {
             int32_t *val = item->u.value_cfg.value;
             *val -= item->u.value_cfg.step;
-            if (*val < item->u.value_cfg.min) *val = item->u.value_cfg.min;
+            if (*val < item->u.value_cfg.min)
+                *val = item->u.value_cfg.min;
         }
     } else {
         /* Move selection down (with wrap) */
@@ -94,10 +97,10 @@ void syn_menu_enter(SYN_Menu *menu)
     case SYN_MENU_ACTION_SUBMENU:
         if (menu->depth < SYN_MENU_MAX_DEPTH - 1) {
             /* Push current onto stack */
-            menu->stack[menu->depth]     = menu->current;
+            menu->stack[menu->depth] = menu->current;
             menu->stack_sel[menu->depth] = menu->selected;
             menu->depth++;
-            menu->current  = item;
+            menu->current = item;
             menu->selected = 0;
         }
         break;
@@ -134,7 +137,7 @@ void syn_menu_back(SYN_Menu *menu)
 
     if (menu->depth > 0) {
         menu->depth--;
-        menu->current  = menu->stack[menu->depth];
+        menu->current = menu->stack[menu->depth];
         menu->selected = menu->stack_sel[menu->depth];
     }
 

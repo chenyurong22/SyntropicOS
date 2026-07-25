@@ -9,43 +9,44 @@
 #ifndef SYN_CIA401_H
 #define SYN_CIA401_H
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
 #include "../common/syn_defs.h"
 #include "syn_canopen.h"
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** @brief CiA 401 Standard Object Dictionary Indices */
-#define SYN_CIA401_OD_DIGITAL_INPUT_8BIT   0x6000U /**< Read 8-bit Digital Inputs */
-#define SYN_CIA401_OD_DIGITAL_OUTPUT_8BIT  0x6200U /**< Write 8-bit Digital Outputs */
-#define SYN_CIA401_OD_ANALOG_INPUT_16BIT   0x6401U /**< Read 16-bit Analog Inputs */
-#define SYN_CIA401_OD_ANALOG_OUTPUT_16BIT  0x6411U /**< Write 16-bit Analog Outputs */
-#define SYN_CIA401_OD_ANALOG_INPUT_DELTA   0x6421U /**< Analog Input Delta Interrupt Threshold */
+#define SYN_CIA401_OD_DIGITAL_INPUT_8BIT 0x6000U   /**< Read 8-bit Digital Inputs */
+#define SYN_CIA401_OD_DIGITAL_OUTPUT_8BIT 0x6200U  /**< Write 8-bit Digital Outputs */
+#define SYN_CIA401_OD_ANALOG_INPUT_16BIT 0x6401U   /**< Read 16-bit Analog Inputs */
+#define SYN_CIA401_OD_ANALOG_OUTPUT_16BIT 0x6411U  /**< Write 16-bit Analog Outputs */
+#define SYN_CIA401_OD_ANALOG_INPUT_DELTA 0x6421U   /**< Analog Input Delta Interrupt Threshold */
 #define SYN_CIA401_OD_ANALOG_INPUT_LIMIT_L 0x6424U /**< Analog Input Low Limit Alarm */
 #define SYN_CIA401_OD_ANALOG_INPUT_LIMIT_H 0x6425U /**< Analog Input High Limit Alarm */
 
 /** @brief Maximum channel capacities for CiA 401 instance */
-#define SYN_CIA401_MAX_DIGITAL_8BIT 4  /**< Maximum 8-bit digital I/O ports */
-#define SYN_CIA401_MAX_ANALOG_16BIT 8  /**< Maximum 16-bit analog I/O channels */
+#define SYN_CIA401_MAX_DIGITAL_8BIT 4 /**< Maximum 8-bit digital I/O ports */
+#define SYN_CIA401_MAX_ANALOG_16BIT 8 /**< Maximum 16-bit analog I/O channels */
 
 /**
  * @brief CiA 401 Generic I/O Device State Instance.
  */
 typedef struct {
-    uint8_t  digital_in[SYN_CIA401_MAX_DIGITAL_8BIT];   /**< Digital input bytes (channels 1..4) */
-    uint8_t  digital_out[SYN_CIA401_MAX_DIGITAL_8BIT];  /**< Digital output bytes (channels 1..4) */
-    int16_t  analog_in[SYN_CIA401_MAX_ANALOG_16BIT];    /**< Analog input 16-bit values */
-    int16_t  analog_out[SYN_CIA401_MAX_ANALOG_16BIT];   /**< Analog output 16-bit values */
-    int16_t  analog_delta[SYN_CIA401_MAX_ANALOG_16BIT]; /**< Change threshold for event PDO */
-    int16_t  prev_analog_in[SYN_CIA401_MAX_ANALOG_16BIT]; /**< Saved previous analog values */
-    uint8_t  digital_in_count;                          /**< Configured digital input byte count */
-    uint8_t  digital_out_count;                         /**< Configured digital output byte count */
-    uint8_t  analog_in_count;                           /**< Configured analog input channel count */
-    uint8_t  analog_out_count;                          /**< Configured analog output channel count */
+    uint8_t digital_in[SYN_CIA401_MAX_DIGITAL_8BIT];   /**< Digital input bytes (channels 1..4) */
+    uint8_t digital_out[SYN_CIA401_MAX_DIGITAL_8BIT];  /**< Digital output bytes (channels 1..4) */
+    int16_t analog_in[SYN_CIA401_MAX_ANALOG_16BIT];    /**< Analog input 16-bit values */
+    int16_t analog_out[SYN_CIA401_MAX_ANALOG_16BIT];   /**< Analog output 16-bit values */
+    int16_t analog_delta[SYN_CIA401_MAX_ANALOG_16BIT]; /**< Change threshold for event PDO */
+    int16_t prev_analog_in[SYN_CIA401_MAX_ANALOG_16BIT]; /**< Saved previous analog values */
+    uint8_t digital_in_count;                            /**< Configured digital input byte count */
+    uint8_t digital_out_count; /**< Configured digital output byte count */
+    uint8_t analog_in_count;   /**< Configured analog input channel count */
+    uint8_t analog_out_count;  /**< Configured analog output channel count */
 } SYN_CiA401_Device;
 
 /**
@@ -66,7 +67,8 @@ void syn_cia401_init(SYN_CiA401_Device *dev, uint8_t dig_in_bytes, uint8_t dig_o
  * @param max_entries Capacity of od_table array.
  * @return Number of OD entries populated.
  */
-size_t syn_cia401_populate_od(SYN_CiA401_Device *dev, SYN_CANOpenODEntry *od_table, size_t max_entries);
+size_t syn_cia401_populate_od(SYN_CiA401_Device *dev, SYN_CANOpenODEntry *od_table,
+                              size_t max_entries);
 
 /**
  * @brief Check if any analog input has exceeded its delta threshold for event-driven TPDO.

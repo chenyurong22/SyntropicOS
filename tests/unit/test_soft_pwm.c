@@ -3,25 +3,25 @@
  * @brief Unity tests for syn_soft_pwm.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/output/syn_soft_pwm.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_soft_pwm(void)
 {
-
     mock_gpio_states[2] = 0;
 
     SYN_SoftPWM pwm;
     syn_soft_pwm_init(&pwm, 2, 10); /* resolution = 10 steps */
-    syn_soft_pwm_set_duty(&pwm, 3);  /* 30% duty */
+    syn_soft_pwm_set_duty(&pwm, 3); /* 30% duty */
 
     int on_count = 0;
     int i;
     for (i = 0; i < 10; i++) {
         syn_soft_pwm_tick(&pwm);
-        if (mock_gpio_states[2] == SYN_GPIO_HIGH) on_count++;
+        if (mock_gpio_states[2] == SYN_GPIO_HIGH)
+            on_count++;
     }
     TEST_ASSERT_EQUAL_INT(3, on_count);
 
@@ -30,7 +30,8 @@ static void test_soft_pwm(void)
     on_count = 0;
     for (i = 0; i < 10; i++) {
         syn_soft_pwm_tick(&pwm);
-        if (mock_gpio_states[2] == SYN_GPIO_HIGH) on_count++;
+        if (mock_gpio_states[2] == SYN_GPIO_HIGH)
+            on_count++;
     }
     TEST_ASSERT_EQUAL_INT(0, on_count);
 
@@ -39,7 +40,8 @@ static void test_soft_pwm(void)
     on_count = 0;
     for (i = 0; i < 10; i++) {
         syn_soft_pwm_tick(&pwm);
-        if (mock_gpio_states[2] == SYN_GPIO_HIGH) on_count++;
+        if (mock_gpio_states[2] == SYN_GPIO_HIGH)
+            on_count++;
     }
     TEST_ASSERT_EQUAL_INT(10, on_count);
 
@@ -53,7 +55,7 @@ static void test_soft_pwm_duty_clamp(void)
 {
     SYN_SoftPWM pwm;
     syn_soft_pwm_init(&pwm, 2, 10);
-    syn_soft_pwm_set_duty(&pwm, 99); /* way over resolution */
+    syn_soft_pwm_set_duty(&pwm, 99);     /* way over resolution */
     TEST_ASSERT_EQUAL_INT(10, pwm.duty); /* clamped to resolution */
 }
 
@@ -62,7 +64,7 @@ static void test_soft_pwm_active_low(void)
 {
     SYN_SoftPWM pwm;
     syn_soft_pwm_init(&pwm, 3, 10);
-    pwm.active_high = false; /* active-low mode */
+    pwm.active_high = false;        /* active-low mode */
     syn_soft_pwm_set_duty(&pwm, 5); /* 50% */
 
     /* At counter=0: counter(0) < duty(5) → on=true → active_low → GPIO_LOW */
@@ -70,7 +72,8 @@ static void test_soft_pwm_active_low(void)
     TEST_ASSERT_EQUAL_INT(SYN_GPIO_LOW, mock_gpio_states[3]);
 
     /* Advance past duty */
-    for (int i = 0; i < 5; i++) syn_soft_pwm_tick(&pwm);
+    for (int i = 0; i < 5; i++)
+        syn_soft_pwm_tick(&pwm);
     /* counter(5) >= duty(5) → on=false → active_low → GPIO_HIGH */
     TEST_ASSERT_EQUAL_INT(SYN_GPIO_HIGH, mock_gpio_states[3]);
 }

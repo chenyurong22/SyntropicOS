@@ -33,8 +33,8 @@
 #ifndef SYN_FOC_H
 #define SYN_FOC_H
 
-#include "../util/syn_qmath.h"
 #include "../common/syn_defs.h"
+#include "../util/syn_qmath.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,21 +44,21 @@ extern "C" {
 
 /** @brief 3-phase values (a, b, c). */
 typedef struct {
-    q16_t a;   /**< Phase A (Q16.16)  */
-    q16_t b;   /**< Phase B (Q16.16)  */
-    q16_t c;   /**< Phase C (Q16.16)  */
+    q16_t a; /**< Phase A (Q16.16)  */
+    q16_t b; /**< Phase B (Q16.16)  */
+    q16_t c; /**< Phase C (Q16.16)  */
 } SYN_FOC_ABC;
 
 /** @brief 2-phase stationary frame (α, β). */
 typedef struct {
-    q16_t alpha;  /**< Alpha component (Q16.16)  */
-    q16_t beta;   /**< Beta component (Q16.16)   */
+    q16_t alpha; /**< Alpha component (Q16.16)  */
+    q16_t beta;  /**< Beta component (Q16.16)   */
 } SYN_FOC_AB;
 
 /** @brief 2-phase rotating frame (d, q). */
 typedef struct {
-    q16_t d;   /**< Direct-axis component (Q16.16)     */
-    q16_t q;   /**< Quadrature-axis component (Q16.16) */
+    q16_t d; /**< Direct-axis component (Q16.16)     */
+    q16_t q; /**< Quadrature-axis component (Q16.16) */
 } SYN_FOC_DQ;
 
 /* ── Clarke transform ───────────────────────────────────────────────────── */
@@ -125,8 +125,7 @@ void syn_foc_inv_park(const SYN_FOC_DQ *dq, q16_t theta, SYN_FOC_AB *ab);
  * @param duty_b   Output duty cycle for phase B [0, Q16_ONE].
  * @param duty_c   Output duty cycle for phase C [0, Q16_ONE].
  */
-void syn_foc_svpwm(const SYN_FOC_AB *ab, q16_t v_bus,
-                   q16_t *duty_a, q16_t *duty_b, q16_t *duty_c);
+void syn_foc_svpwm(const SYN_FOC_AB *ab, q16_t v_bus, q16_t *duty_a, q16_t *duty_b, q16_t *duty_c);
 
 #ifdef __cplusplus
 }

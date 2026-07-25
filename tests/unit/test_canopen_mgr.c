@@ -3,8 +3,9 @@
  * @brief Unity unit tests for CANopen CiA 302 Manager, SDO Client & NMT Master.
  */
 
-#include "unity/unity.h"
 #include "syntropic/proto/syn_canopen_mgr.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 static SYN_CANOpenManager g_can_mgr;
@@ -63,7 +64,8 @@ void test_canopen_mgr_sdo_write(void)
 
     SYN_CAN_Frame req, resp;
     uint32_t val = 0x12345678;
-    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_mgr_sdo_write_init(&g_can_mgr, &req, 0x05, 0x6040, 0x00, &val, 4));
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_canopen_mgr_sdo_write_init(&g_can_mgr, &req, 0x05, 0x6040, 0x00, &val, 4));
     TEST_ASSERT_EQUAL(0x605, req.id);
     TEST_ASSERT_EQUAL(0x23, req.data[0]); /* CS=1, n=0, e=1, s=1 */
 
@@ -107,16 +109,22 @@ void test_canopen_mgr_extra_coverage(void)
     uint32_t val = 42;
 
     /* Invalid parameters */
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_mgr_sdo_read_init(&g_can_mgr, &req, 0, 0x1000, 0));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_mgr_sdo_read_init(&g_can_mgr, &req, 128, 0x1000, 0));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_mgr_sdo_write_init(&g_can_mgr, &req, 0, 0x1000, 0, &val, 4));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_mgr_sdo_write_init(&g_can_mgr, &req, 1, 0x1000, 0, &val, 0));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_mgr_sdo_write_init(&g_can_mgr, &req, 1, 0x1000, 0, &val, 5));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_canopen_mgr_sdo_read_init(&g_can_mgr, &req, 0, 0x1000, 0));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_canopen_mgr_sdo_read_init(&g_can_mgr, &req, 128, 0x1000, 0));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_canopen_mgr_sdo_write_init(&g_can_mgr, &req, 0, 0x1000, 0, &val, 4));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_canopen_mgr_sdo_write_init(&g_can_mgr, &req, 1, 0x1000, 0, &val, 0));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_canopen_mgr_sdo_write_init(&g_can_mgr, &req, 1, 0x1000, 0, &val, 5));
 
     /* Initiate SDO Read and verify BUSY on subsequent calls */
     TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_mgr_sdo_read_init(&g_can_mgr, &req, 10, 0x1000, 0));
     TEST_ASSERT_EQUAL(SYN_BUSY, syn_canopen_mgr_sdo_read_init(&g_can_mgr, &req, 10, 0x1000, 0));
-    TEST_ASSERT_EQUAL(SYN_BUSY, syn_canopen_mgr_sdo_write_init(&g_can_mgr, &req, 10, 0x1000, 0, &val, 4));
+    TEST_ASSERT_EQUAL(SYN_BUSY,
+                      syn_canopen_mgr_sdo_write_init(&g_can_mgr, &req, 10, 0x1000, 0, &val, 4));
 
     /* SDO Abort Domain Transfer Response */
     memset(&resp, 0, sizeof(resp));

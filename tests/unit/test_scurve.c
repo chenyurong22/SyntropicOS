@@ -1,9 +1,10 @@
-#include "unity/unity.h"
 #include "syntropic/util/syn_scurve.h"
+#include "unity/unity.h"
 
 static SYN_SCurve sc;
 
-void test_scurve_init(void) {
+void test_scurve_init(void)
+{
     syn_scurve_init(&sc, 100);
     TEST_ASSERT_EQUAL(100, sc.p);
     TEST_ASSERT_EQUAL(0, sc.v);
@@ -11,23 +12,23 @@ void test_scurve_init(void) {
     TEST_ASSERT_TRUE(sc.done);
 }
 
-void test_scurve_motion(void) {
+void test_scurve_motion(void)
+{
     syn_scurve_init(&sc, 0);
     syn_scurve_set_constraints(&sc, 100, 10, 2);
     syn_scurve_set_target(&sc, 1000);
-    
+
     TEST_ASSERT_FALSE(sc.done);
-    
+
     /* Simulate motion */
     int ticks = 0;
     while (!sc.done && ticks < 2000) {
         syn_scurve_update(&sc);
         ticks++;
     }
-    
+
     if (!sc.done) {
-        printf("Failed to finish! p=%d, v=%d, a=%d, target=%d\n",
-               sc.p, sc.v, sc.a, sc.target_p);
+        printf("Failed to finish! p=%d, v=%d, a=%d, target=%d\n", sc.p, sc.v, sc.a, sc.target_p);
     }
     TEST_ASSERT_TRUE(sc.done);
     TEST_ASSERT_EQUAL(1000, sc.p);
@@ -36,24 +37,26 @@ void test_scurve_motion(void) {
     TEST_ASSERT_TRUE(ticks > 0 && ticks < 2000);
 }
 
-void test_scurve_reverse(void) {
+void test_scurve_reverse(void)
+{
     syn_scurve_init(&sc, 500);
     syn_scurve_set_constraints(&sc, 50, 5, 1);
     syn_scurve_set_target(&sc, 0);
-    
+
     int ticks = 0;
     while (!sc.done && ticks < 2000) {
         syn_scurve_update(&sc);
         ticks++;
     }
-    
+
     TEST_ASSERT_TRUE(sc.done);
     TEST_ASSERT_EQUAL(0, sc.p);
     TEST_ASSERT_EQUAL(0, sc.v);
 }
 
 /** set_target with dist==0 — exercises early-return done=true path */
-void test_scurve_target_same(void) {
+void test_scurve_target_same(void)
+{
     syn_scurve_init(&sc, 42);
     syn_scurve_set_constraints(&sc, 100, 10, 2);
     /* Set target to current position */
@@ -67,7 +70,8 @@ void test_scurve_target_same(void) {
 }
 
 /** Long motion with cruise phase — exercises syn_isqrt, Tv>0, case 3 in switch */
-void test_scurve_cruise_phase(void) {
+void test_scurve_cruise_phase(void)
+{
     /* Use large target so D_ad < d → Tv > 0 (cruise phase executes) */
     syn_scurve_init(&sc, 0);
     syn_scurve_set_constraints(&sc, 100, 10, 2);
@@ -79,7 +83,8 @@ void test_scurve_cruise_phase(void) {
     int ticks = 0;
     bool cruise_seen = false;
     while (!sc.done && ticks < 10000) {
-        if (sc.current_phase == 3) cruise_seen = true;
+        if (sc.current_phase == 3)
+            cruise_seen = true;
         syn_scurve_update(&sc);
         ticks++;
     }
@@ -89,7 +94,8 @@ void test_scurve_cruise_phase(void) {
 }
 
 /** Small v_max relative to j_max — forces syn_isqrt branch (v_max <= vj) */
-void test_scurve_isqrt_branch(void) {
+void test_scurve_isqrt_branch(void)
+{
     /* j_max=10, a_max=100, v_max=5 → Tj=a_max/j_max=10, vj=j_max*10^2=1000 >> v_max=5
      * So v_max < vj → Tj = isqrt(v_max/j_max) = isqrt(0) → forced to 1.
      * BUT for isqrt to exercise the loop body (lines 33-35), we need n>0.
@@ -110,7 +116,8 @@ void test_scurve_isqrt_branch(void) {
 }
 
 /** Short motion that forces Tj-- reduction (Tj > 1, Ta == 0 path) */
-void test_scurve_tj_reduction(void) {
+void test_scurve_tj_reduction(void)
+{
     /* Small distance — D_ad > d, so reduction loop runs.
      * With v_max=100, a_max=10, j_max=2, d=10:
      *   Tj=5, Ta=5, D_ad = 100 * 15 = 1500 >> 10 → loops many times
@@ -129,7 +136,8 @@ void test_scurve_tj_reduction(void) {
     TEST_ASSERT_EQUAL(10, sc.p);
 }
 
-void run_scurve_tests(void) {
+void run_scurve_tests(void)
+{
     RUN_TEST(test_scurve_init);
     RUN_TEST(test_scurve_motion);
     RUN_TEST(test_scurve_reverse);

@@ -11,9 +11,9 @@
 #define SYN_AO_H
 
 #include "../common/syn_defs.h"
-#include "../sched/syn_task.h"
 #include "../pt/syn_pt.h"
 #include "../sched/syn_mailbox.h"
+#include "../sched/syn_task.h"
 #include "../util/syn_fsm.h"
 
 #ifdef __cplusplus
@@ -24,19 +24,20 @@ extern "C" {
  * @brief Active Object Event.
  */
 typedef struct {
-    uint16_t sig;   /**< Signal identifier                        */
-    void    *data;  /**< Optional pointer to signal payload       */
+    uint16_t sig; /**< Signal identifier                        */
+    void *data;   /**< Optional pointer to signal payload       */
 } SYN_AO_Event;
 
 /**
  * @brief Active Object structure.
  */
 typedef struct {
-    SYN_Task         task;     /**< Scheduler task handle                */
-    SYN_PT           pt;       /**< Task protothread state               */
-    SYN_Mailbox      mailbox;  /**< Event mailbox                        */
-    SYN_FSM          fsm;      /**< State machine                        */
-    SYN_AO_Event     last_event; /**< Most recent dispatched event (access in actions via ao->last_event) */
+    SYN_Task task;       /**< Scheduler task handle                */
+    SYN_PT pt;           /**< Task protothread state               */
+    SYN_Mailbox mailbox; /**< Event mailbox                        */
+    SYN_FSM fsm;         /**< State machine                        */
+    SYN_AO_Event
+        last_event; /**< Most recent dispatched event (access in actions via ao->last_event) */
 } SYN_ActiveObject;
 
 /**
@@ -49,12 +50,8 @@ typedef struct {
  * @param mailbox_buf    Buffer backing the mailbox event queue.
  * @param mailbox_cap    Capacity (number of elements) of the buffer.
  */
-void syn_ao_init(SYN_ActiveObject *ao,
-                 const char *name,
-                 const SYN_FSM_Transition *transitions,
-                 SYN_FSM_State initial_state,
-                 void *mailbox_buf,
-                 size_t mailbox_cap);
+void syn_ao_init(SYN_ActiveObject *ao, const char *name, const SYN_FSM_Transition *transitions,
+                 SYN_FSM_State initial_state, void *mailbox_buf, size_t mailbox_cap);
 
 /**
  * @brief Post an event to the Active Object's mailbox.

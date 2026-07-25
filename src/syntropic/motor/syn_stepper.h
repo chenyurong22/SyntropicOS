@@ -39,16 +39,16 @@ extern "C" {
  * @brief Stepper motor operational states for the ramp generator.
  */
 typedef enum {
-    SYN_STEPPER_IDLE    = 0,         /**< Motor is stopped */
-    SYN_STEPPER_ACCEL   = 1,         /**< Motor is accelerating */
-    SYN_STEPPER_CRUISE  = 2,         /**< Motor is running at maximum velocity */
-    SYN_STEPPER_DECEL   = 3,         /**< Motor is decelerating to stop */
+    SYN_STEPPER_IDLE = 0,   /**< Motor is stopped */
+    SYN_STEPPER_ACCEL = 1,  /**< Motor is accelerating */
+    SYN_STEPPER_CRUISE = 2, /**< Motor is running at maximum velocity */
+    SYN_STEPPER_DECEL = 3,  /**< Motor is decelerating to stop */
 } SYN_StepperState;
 
 /** @brief Stepper motor direction. */
 typedef enum {
-    SYN_STEPPER_CW  = 0,  /**< Clockwise / forward   */
-    SYN_STEPPER_CCW = 1,  /**< Counter-clockwise / reverse */
+    SYN_STEPPER_CW = 0,  /**< Clockwise / forward   */
+    SYN_STEPPER_CCW = 1, /**< Counter-clockwise / reverse */
 } SYN_StepperDir;
 
 /* ── Stepper descriptor ─────────────────────────────────────────────────── */
@@ -58,26 +58,26 @@ typedef enum {
  */
 typedef struct {
     /* Configuration */
-    SYN_GPIO_Pin  step_pin;        /**< Step signal GPIO pin */
-    SYN_GPIO_Pin  dir_pin;         /**< Direction control GPIO pin */
-    SYN_GPIO_Pin  enable_pin;     /**< Optional enable pin (set to -1 if unused) */
-    bool           dir_invert;     /**< Invert direction logic                     */
-    bool           enable_invert;  /**< Enable active-low                          */
+    SYN_GPIO_Pin step_pin;   /**< Step signal GPIO pin */
+    SYN_GPIO_Pin dir_pin;    /**< Direction control GPIO pin */
+    SYN_GPIO_Pin enable_pin; /**< Optional enable pin (set to -1 if unused) */
+    bool dir_invert;         /**< Invert direction logic                     */
+    bool enable_invert;      /**< Enable active-low                          */
 
     /* Motion parameters */
-    uint32_t       max_speed;      /**< Maximum speed in steps/sec                 */
-    uint32_t       accel;          /**< Acceleration in steps/sec²                 */
+    uint32_t max_speed; /**< Maximum speed in steps/sec                 */
+    uint32_t accel;     /**< Acceleration in steps/sec²                 */
 
     /* Internal state */
-    uint8_t        state;          /**< SYN_StepperState                          */
-    int32_t        position;       /**< Current position (steps, signed)           */
-    int32_t        target;         /**< Target position                            */
-    uint32_t       speed;          /**< Current speed (steps/sec, fixed-point Q16) */
-    uint32_t       step_interval;  /**< Current step interval (µs)                 */
-    uint32_t       last_step_tick; /**< Tick (µs) of last step                     */
-    int32_t        steps_to_go;    /**< Remaining steps in current move            */
-    int32_t        decel_start;    /**< Step count at which to start decelerating  */
-    bool           step_state;     /**< Current step pin level (for pulse gen)     */
+    uint8_t state;           /**< SYN_StepperState                          */
+    int32_t position;        /**< Current position (steps, signed)           */
+    int32_t target;          /**< Target position                            */
+    uint32_t speed;          /**< Current speed (steps/sec, fixed-point Q16) */
+    uint32_t step_interval;  /**< Current step interval (µs)                 */
+    uint32_t last_step_tick; /**< Tick (µs) of last step                     */
+    int32_t steps_to_go;     /**< Remaining steps in current move            */
+    int32_t decel_start;     /**< Step count at which to start decelerating  */
+    bool step_state;         /**< Current step pin level (for pulse gen)     */
 } SYN_Stepper;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -89,9 +89,7 @@ typedef struct {
  * @param step_pin  Step pulse GPIO.
  * @param dir_pin   Direction GPIO.
  */
-void syn_stepper_init(SYN_Stepper *s,
-                       SYN_GPIO_Pin step_pin,
-                       SYN_GPIO_Pin dir_pin);
+void syn_stepper_init(SYN_Stepper *s, SYN_GPIO_Pin step_pin, SYN_GPIO_Pin dir_pin);
 
 /**
  * @brief Set optional enable pin.
@@ -100,8 +98,7 @@ void syn_stepper_init(SYN_Stepper *s,
  * @param pin         Enable signal GPIO pin.
  * @param active_low  True if enabling requires driving pin LOW.
  */
-void syn_stepper_set_enable_pin(SYN_Stepper *s, SYN_GPIO_Pin pin,
-                                 bool active_low);
+void syn_stepper_set_enable_pin(SYN_Stepper *s, SYN_GPIO_Pin pin, bool active_low);
 
 /**
  * @brief Set maximum speed and acceleration.
@@ -110,8 +107,7 @@ void syn_stepper_set_enable_pin(SYN_Stepper *s, SYN_GPIO_Pin pin,
  * @param max_sps    Maximum speed in steps per second.
  * @param accel_sps2 Acceleration in steps per second².
  */
-void syn_stepper_set_speed(SYN_Stepper *s, uint32_t max_sps,
-                            uint32_t accel_sps2);
+void syn_stepper_set_speed(SYN_Stepper *s, uint32_t max_sps, uint32_t accel_sps2);
 
 /**
  * @brief Start a relative move.

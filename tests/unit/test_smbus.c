@@ -3,23 +3,23 @@
  * @brief Unit tests for SMBus protocol engine and PEC CRC-8 calculation.
  */
 
-#include "unity/unity.h"
 #include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 void test_smbus_pec_calculation(void)
 {
     /* Test PEC CRC-8 with standard vectors */
-    uint8_t data1[] = { 0x5A };
+    uint8_t data1[] = {0x5A};
     uint8_t pec1 = syn_smbus_calc_pec(0, data1, sizeof(data1));
     TEST_ASSERT_NOT_EQUAL(0, pec1);
 
     /* Incremental PEC calculation */
-    uint8_t data2_part1[] = { 0x5A, 0x01 };
-    uint8_t data2_part2[] = { 0x02, 0x03 };
+    uint8_t data2_part1[] = {0x5A, 0x01};
+    uint8_t data2_part2[] = {0x02, 0x03};
     uint8_t pec_full = syn_smbus_calc_pec(0, data2_part1, 2);
     pec_full = syn_smbus_calc_pec(pec_full, data2_part2, 2);
 
-    uint8_t data2_all[] = { 0x5A, 0x01, 0x02, 0x03 };
+    uint8_t data2_all[] = {0x5A, 0x01, 0x02, 0x03};
     uint8_t pec_direct = syn_smbus_calc_pec(0, data2_all, 4);
     TEST_ASSERT_EQUAL_HEX8(pec_direct, pec_full);
 
@@ -42,7 +42,7 @@ void test_smbus_encode_decode_write_word(void)
     SYN_Status status = syn_smbus_encode_packet(&tx_pkt, buf, sizeof(buf), &out_len);
 
     TEST_ASSERT_EQUAL(SYN_OK, status);
-    TEST_ASSERT_EQUAL(5, out_len); /* Addr(W) + Cmd + Data[0] + Data[1] + PEC */
+    TEST_ASSERT_EQUAL(5, out_len);        /* Addr(W) + Cmd + Data[0] + Data[1] + PEC */
     TEST_ASSERT_EQUAL_HEX8(0x96, buf[0]); /* (0x4B << 1) | 0 */
     TEST_ASSERT_EQUAL_HEX8(0x21, buf[1]);
     TEST_ASSERT_EQUAL_HEX8(0xAB, buf[2]);
@@ -60,9 +60,10 @@ void test_smbus_encode_decode_write_word(void)
 
 void test_smbus_decode_invalid_pec(void)
 {
-    uint8_t bad_buf[] = { 0x96, 0x21, 0xAB, 0xCD, 0x00 }; /* Bad PEC byte */
+    uint8_t bad_buf[] = {0x96, 0x21, 0xAB, 0xCD, 0x00}; /* Bad PEC byte */
     SYN_SMBUS_Packet rx_pkt;
-    SYN_Status status = syn_smbus_decode_packet(&rx_pkt, bad_buf, sizeof(bad_buf), SYN_SMBUS_PROTO_WRITE_WORD, true);
+    SYN_Status status = syn_smbus_decode_packet(&rx_pkt, bad_buf, sizeof(bad_buf),
+                                                SYN_SMBUS_PROTO_WRITE_WORD, true);
     TEST_ASSERT_EQUAL(SYN_ERROR, status);
     TEST_ASSERT_FALSE(rx_pkt.pec_valid);
 }
@@ -179,7 +180,8 @@ void test_smbus_quick_and_byte_protocols(void)
     /* Write Block with length > max block len (truncation) */
     pkt.proto = SYN_SMBUS_PROTO_WRITE_BLOCK;
     pkt.length = 50; /* > 32 */
-    for (int i = 0; i < 32; i++) pkt.data[i] = (uint8_t)i;
+    for (int i = 0; i < 32; i++)
+        pkt.data[i] = (uint8_t)i;
     TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_encode_packet(&pkt, buf, sizeof(buf), &out_len));
     TEST_ASSERT_EQUAL(35, out_len);
     TEST_ASSERT_EQUAL_HEX8(32, buf[2]);
@@ -205,61 +207,70 @@ void test_smbus_decoding_variations(void)
     SYN_SMBUS_Packet rx_pkt;
 
     /* Receive Byte response */
-    uint8_t byte_resp[] = { 0x42 };
-    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, byte_resp, 1, SYN_SMBUS_PROTO_RECEIVE_BYTE, false));
+    uint8_t byte_resp[] = {0x42};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, byte_resp, 1,
+                                                      SYN_SMBUS_PROTO_RECEIVE_BYTE, false));
     TEST_ASSERT_EQUAL(1, rx_pkt.length);
     TEST_ASSERT_EQUAL_HEX8(0x42, rx_pkt.data[0]);
 
     /* Receive/Read Byte full frame decoding (data_len >= 3) */
-    uint8_t byte_full_frame[] = { 0x50, 0x10, 0x77 };
-    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, byte_full_frame, 3, SYN_SMBUS_PROTO_READ_BYTE, false));
+    uint8_t byte_full_frame[] = {0x50, 0x10, 0x77};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, byte_full_frame, 3,
+                                                      SYN_SMBUS_PROTO_READ_BYTE, false));
     TEST_ASSERT_EQUAL(1, rx_pkt.length);
     TEST_ASSERT_EQUAL_HEX8(0x77, rx_pkt.data[0]);
 
     /* Write Byte full frame decoding (data_len >= 3) */
-    uint8_t write_byte_raw[] = { 0x4E, 0x10, 0x99 };
-    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, write_byte_raw, 3, SYN_SMBUS_PROTO_WRITE_BYTE, false));
+    uint8_t write_byte_raw[] = {0x4E, 0x10, 0x99};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, write_byte_raw, 3,
+                                                      SYN_SMBUS_PROTO_WRITE_BYTE, false));
     TEST_ASSERT_EQUAL(1, rx_pkt.length);
     TEST_ASSERT_EQUAL_HEX8(0x99, rx_pkt.data[0]);
 
     /* Write Byte response only decoding (data_len == 1) */
-    uint8_t write_byte_resp[] = { 0x88 };
-    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, write_byte_resp, 1, SYN_SMBUS_PROTO_WRITE_BYTE, false));
+    uint8_t write_byte_resp[] = {0x88};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, write_byte_resp, 1,
+                                                      SYN_SMBUS_PROTO_WRITE_BYTE, false));
     TEST_ASSERT_EQUAL(1, rx_pkt.length);
     TEST_ASSERT_EQUAL_HEX8(0x88, rx_pkt.data[0]);
 
     /* Write Word response only decoding (data_len == 2) */
-    uint8_t write_word_resp[] = { 0x11, 0x22 };
-    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, write_word_resp, 2, SYN_SMBUS_PROTO_WRITE_WORD, false));
+    uint8_t write_word_resp[] = {0x11, 0x22};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, write_word_resp, 2,
+                                                      SYN_SMBUS_PROTO_WRITE_WORD, false));
     TEST_ASSERT_EQUAL(2, rx_pkt.length);
     TEST_ASSERT_EQUAL_HEX8(0x11, rx_pkt.data[0]);
     TEST_ASSERT_EQUAL_HEX8(0x22, rx_pkt.data[1]);
 
     /* Read Word response only decoding (data_len == 2) */
-    uint8_t read_word_resp[] = { 0x33, 0x44 };
-    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, read_word_resp, 2, SYN_SMBUS_PROTO_READ_WORD, false));
+    uint8_t read_word_resp[] = {0x33, 0x44};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, read_word_resp, 2,
+                                                      SYN_SMBUS_PROTO_READ_WORD, false));
     TEST_ASSERT_EQUAL(2, rx_pkt.length);
     TEST_ASSERT_EQUAL_HEX8(0x33, rx_pkt.data[0]);
     TEST_ASSERT_EQUAL_HEX8(0x44, rx_pkt.data[1]);
 
     /* Read Block response decoding */
-    uint8_t block_raw[] = { 0x03, 0xDE, 0xAD, 0xBE };
-    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, block_raw, 4, SYN_SMBUS_PROTO_READ_BLOCK, false));
+    uint8_t block_raw[] = {0x03, 0xDE, 0xAD, 0xBE};
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_smbus_decode_packet(&rx_pkt, block_raw, 4, SYN_SMBUS_PROTO_READ_BLOCK, false));
     TEST_ASSERT_EQUAL(3, rx_pkt.length);
     TEST_ASSERT_EQUAL_HEX8(0xDE, rx_pkt.data[0]);
     TEST_ASSERT_EQUAL_HEX8(0xAD, rx_pkt.data[1]);
     TEST_ASSERT_EQUAL_HEX8(0xBE, rx_pkt.data[2]);
 
     /* Full Block frame decoding (header_len = 2) */
-    uint8_t block_full_frame[] = { 0x50, 0x20, 0x02, 0x55, 0xAA };
-    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, block_full_frame, 5, SYN_SMBUS_PROTO_WRITE_BLOCK, false));
+    uint8_t block_full_frame[] = {0x50, 0x20, 0x02, 0x55, 0xAA};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, block_full_frame, 5,
+                                                      SYN_SMBUS_PROTO_WRITE_BLOCK, false));
     TEST_ASSERT_EQUAL(2, rx_pkt.length);
     TEST_ASSERT_EQUAL_HEX8(0x55, rx_pkt.data[0]);
     TEST_ASSERT_EQUAL_HEX8(0xAA, rx_pkt.data[1]);
 
     /* Default case decoding */
-    uint8_t custom_raw[] = { 0xAA, 0xBB };
-    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&rx_pkt, custom_raw, 2, (SYN_SMBUS_Protocol)99, false));
+    uint8_t custom_raw[] = {0xAA, 0xBB};
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_smbus_decode_packet(&rx_pkt, custom_raw, 2, (SYN_SMBUS_Protocol)99, false));
     TEST_ASSERT_EQUAL(2, rx_pkt.length);
 }
 
@@ -270,16 +281,24 @@ void test_smbus_invalid_params_and_overflow(void)
     size_t out_len = 0;
 
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_smbus_encode_packet(NULL, buf, sizeof(buf), &out_len));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_smbus_decode_packet(NULL, buf, 1, SYN_SMBUS_PROTO_READ_BYTE, false));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_smbus_decode_packet(&pkt, buf, 0, SYN_SMBUS_PROTO_READ_BYTE, true));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_smbus_decode_packet(&pkt, buf, 0, SYN_SMBUS_PROTO_WRITE_BYTE, false));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_smbus_decode_packet(&pkt, buf, 1, SYN_SMBUS_PROTO_WRITE_WORD, false));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_smbus_decode_packet(&pkt, buf, 0, SYN_SMBUS_PROTO_READ_BYTE, false));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_smbus_decode_packet(&pkt, buf, 1, SYN_SMBUS_PROTO_READ_WORD, false));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_smbus_decode_packet(NULL, buf, 1, SYN_SMBUS_PROTO_READ_BYTE, false));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_smbus_decode_packet(&pkt, buf, 0, SYN_SMBUS_PROTO_READ_BYTE, true));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_smbus_decode_packet(&pkt, buf, 0, SYN_SMBUS_PROTO_WRITE_BYTE, false));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_smbus_decode_packet(&pkt, buf, 1, SYN_SMBUS_PROTO_WRITE_WORD, false));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_smbus_decode_packet(&pkt, buf, 0, SYN_SMBUS_PROTO_READ_BYTE, false));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_smbus_decode_packet(&pkt, buf, 1, SYN_SMBUS_PROTO_READ_WORD, false));
 
     /* Block invalid length check */
-    uint8_t invalid_block[] = { 0x05, 0x01 }; /* Count is 5, but len is 2 */
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_smbus_decode_packet(&pkt, invalid_block, 2, SYN_SMBUS_PROTO_READ_BLOCK, false));
+    uint8_t invalid_block[] = {0x05, 0x01}; /* Count is 5, but len is 2 */
+    TEST_ASSERT_EQUAL(
+        SYN_INVALID_PARAM,
+        syn_smbus_decode_packet(&pkt, invalid_block, 2, SYN_SMBUS_PROTO_READ_BLOCK, false));
 
     /* Buffer overflow checks for all protocol variants */
     pkt.slave_addr = 0x10;
@@ -339,12 +358,13 @@ void test_smbus_alert_and_host_notify(void)
     TEST_ASSERT_EQUAL_HEX8(0x19, buf[0]); /* (0x0C << 1) | 1 (Read bit) */
 
     /* Simulate slave response with device address 0x5A + PEC */
-    uint8_t rx_alert[] = { (0x5A << 1), 0x00 }; /* Addr 0x5A, PEC */
+    uint8_t rx_alert[] = {(0x5A << 1), 0x00}; /* Addr 0x5A, PEC */
     uint8_t expected_pec = syn_smbus_calc_pec(0, rx_alert, 1);
     rx_alert[1] = expected_pec;
 
     SYN_SMBUS_Packet decoded;
-    TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_decode_packet(&decoded, rx_alert, 2, SYN_SMBUS_PROTO_RECEIVE_BYTE, true));
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_smbus_decode_packet(&decoded, rx_alert, 2, SYN_SMBUS_PROTO_RECEIVE_BYTE, true));
     TEST_ASSERT_EQUAL_HEX8(0x5A << 1, decoded.data[0]);
     TEST_ASSERT_TRUE(decoded.pec_valid);
 }

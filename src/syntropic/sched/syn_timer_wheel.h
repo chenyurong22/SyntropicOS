@@ -11,9 +11,10 @@
 #define SYN_TIMER_WHEEL_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,11 +30,11 @@ typedef void (*SYN_TimerWheelCb)(void *arg);
 typedef struct SYN_TimerWheelNode {
     struct SYN_TimerWheelNode *next; /**< Pointer to next node in bucket      */
     struct SYN_TimerWheelNode *prev; /**< Pointer to previous node in bucket  */
-    uint32_t         expires_tick;   /**< Target expiration tick              */
-    uint32_t         rotation_count; /**< Rounds remaining before firing     */
+    uint32_t expires_tick;           /**< Target expiration tick              */
+    uint32_t rotation_count;         /**< Rounds remaining before firing     */
     SYN_TimerWheelCb cb;             /**< Callback function pointer           */
-    void            *arg;            /**< Callback user argument              */
-    bool             active;         /**< Timer active flag                   */
+    void *arg;                       /**< Callback user argument              */
+    bool active;                     /**< Timer active flag                   */
 } SYN_TimerWheelNode;
 
 /**
@@ -41,7 +42,7 @@ typedef struct SYN_TimerWheelNode {
  */
 typedef struct {
     SYN_TimerWheelNode *buckets[SYN_TIMER_WHEEL_BUCKETS]; /**< Bucket list array */
-    uint32_t current_tick;                                 /**< Current wheel tick */
+    uint32_t current_tick;                                /**< Current wheel tick */
 } SYN_TimerWheel;
 
 /**
@@ -60,7 +61,8 @@ SYN_Status syn_timer_wheel_init(SYN_TimerWheel *wheel);
  * @param arg Callback user argument.
  * @return SYN_OK on success.
  */
-SYN_Status syn_timer_wheel_add(SYN_TimerWheel *wheel, SYN_TimerWheelNode *node, uint32_t delay_ticks, SYN_TimerWheelCb cb, void *arg);
+SYN_Status syn_timer_wheel_add(SYN_TimerWheel *wheel, SYN_TimerWheelNode *node,
+                               uint32_t delay_ticks, SYN_TimerWheelCb cb, void *arg);
 
 /**
  * @brief Cancel a scheduled timer node.

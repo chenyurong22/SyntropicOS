@@ -32,9 +32,9 @@
 #ifndef SYN_PINGPONG_H
 #define SYN_PINGPONG_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,9 +42,9 @@ extern "C" {
 
 /** @brief Ping-pong (double) buffer — zero-copy DMA pattern. */
 typedef struct {
-    uint8_t  *buf[2];       /**< Two buffer pointers                      */
-    size_t    size;          /**< Size of each buffer                      */
-    uint8_t   active_idx;   /**< Index (0 or 1) of the active buffer      */
+    uint8_t *buf[2];          /**< Two buffer pointers                      */
+    size_t size;              /**< Size of each buffer                      */
+    uint8_t active_idx;       /**< Index (0 or 1) of the active buffer      */
     volatile bool data_ready; /**< True when ready buffer has data         */
 } SYN_PingPong;
 
@@ -55,14 +55,11 @@ typedef struct {
  * @param buf_b  Second buffer.
  * @param size   Size of each buffer in bytes.
  */
-static inline void syn_pingpong_init(SYN_PingPong *pp,
-                                      uint8_t *buf_a,
-                                      uint8_t *buf_b,
-                                      size_t size)
+static inline void syn_pingpong_init(SYN_PingPong *pp, uint8_t *buf_a, uint8_t *buf_b, size_t size)
 {
-    pp->buf[0]     = buf_a;
-    pp->buf[1]     = buf_b;
-    pp->size       = size;
+    pp->buf[0] = buf_a;
+    pp->buf[1] = buf_b;
+    pp->size = size;
     pp->active_idx = 0;
     pp->data_ready = false;
 }

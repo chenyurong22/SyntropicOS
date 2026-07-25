@@ -35,11 +35,11 @@ extern "C" {
 
 /** @brief Software PWM channel descriptor. */
 typedef struct {
-    SYN_GPIO_Pin  pin;           /**< Target GPIO pin identifier */
-    uint16_t       resolution;   /**< Total steps per period (e.g., 100)  */
-    uint16_t       duty;         /**< Duty cycle (0 to resolution)        */
-    uint16_t       counter;      /**< Current phase counter               */
-    bool           active_high;  /**< true = GPIO high during on-phase    */
+    SYN_GPIO_Pin pin;    /**< Target GPIO pin identifier */
+    uint16_t resolution; /**< Total steps per period (e.g., 100)  */
+    uint16_t duty;       /**< Duty cycle (0 to resolution)        */
+    uint16_t counter;    /**< Current phase counter               */
+    bool active_high;    /**< true = GPIO high during on-phase    */
 } SYN_SoftPWM;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -52,8 +52,7 @@ typedef struct {
  * @param resolution  Number of steps per PWM period (e.g., 100 or 256).
  *                    Higher = finer duty control, but requires faster tick.
  */
-void syn_soft_pwm_init(SYN_SoftPWM *pwm, SYN_GPIO_Pin pin,
-                        uint16_t resolution);
+void syn_soft_pwm_init(SYN_SoftPWM *pwm, SYN_GPIO_Pin pin, uint16_t resolution);
 
 /**
  * @brief Set the duty cycle.

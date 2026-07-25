@@ -53,12 +53,12 @@
 
 #include "../common/syn_defs.h"
 #include "../drivers/syn_uart.h"
-#include "../util/syn_crc.h"
 #include "../port/syn_port_system.h"
+#include "../util/syn_crc.h"
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,35 +67,35 @@ extern "C" {
 /** @name Modbus function codes
  * @{
  */
-#define SYN_MB_FC_READ_COILS            0x01  /**< Read coils (bits)            */
-#define SYN_MB_FC_READ_DISCRETE_INPUTS  0x02  /**< Read discrete inputs (bits)  */
-#define SYN_MB_FC_READ_HOLDING          0x03  /**< Read holding registers       */
-#define SYN_MB_FC_READ_INPUT            0x04  /**< Read input registers         */
-#define SYN_MB_FC_WRITE_SINGLE_COIL     0x05  /**< Write single coil (bit)      */
-#define SYN_MB_FC_WRITE_SINGLE          0x06  /**< Write single register        */
-#define SYN_MB_FC_READ_EXCEPTION_STATUS 0x07  /**< Read exception status        */
-#define SYN_MB_FC_DIAGNOSTICS           0x08  /**< Serial line diagnostics      */
-#define SYN_MB_FC_GET_COMM_EVENT_CNT    0x0B  /**< Get comm event counter       */
-#define SYN_MB_FC_GET_COMM_EVENT_LOG    0x0C  /**< Get comm event log           */
-#define SYN_MB_FC_WRITE_MULTIPLE_COILS  0x0F  /**< Write multiple coils (bits)  */
-#define SYN_MB_FC_WRITE_MULTIPLE        0x10  /**< Write multiple registers     */
-#define SYN_MB_FC_REPORT_SERVER_ID      0x11  /**< Report server ID             */
-#define SYN_MB_FC_READ_FILE_RECORD      0x14  /**< Read file record             */
-#define SYN_MB_FC_WRITE_FILE_RECORD     0x15  /**< Write file record            */
-#define SYN_MB_FC_MASK_WRITE_REGISTER   0x16  /**< Mask write register          */
-#define SYN_MB_FC_READ_WRITE_MULTIPLE   0x17  /**< Read/Write multiple regs     */
-#define SYN_MB_FC_READ_FIFO_QUEUE       0x18  /**< Read FIFO queue              */
-#define SYN_MB_FC_READ_DEVICE_INFO      0x2B  /**< Encapsulated interface trans */
-#define SYN_MB_MEI_TYPE_READ_DEVICE_ID  0x0E  /**< Read Device Identification   */
+#define SYN_MB_FC_READ_COILS 0x01            /**< Read coils (bits)            */
+#define SYN_MB_FC_READ_DISCRETE_INPUTS 0x02  /**< Read discrete inputs (bits)  */
+#define SYN_MB_FC_READ_HOLDING 0x03          /**< Read holding registers       */
+#define SYN_MB_FC_READ_INPUT 0x04            /**< Read input registers         */
+#define SYN_MB_FC_WRITE_SINGLE_COIL 0x05     /**< Write single coil (bit)      */
+#define SYN_MB_FC_WRITE_SINGLE 0x06          /**< Write single register        */
+#define SYN_MB_FC_READ_EXCEPTION_STATUS 0x07 /**< Read exception status        */
+#define SYN_MB_FC_DIAGNOSTICS 0x08           /**< Serial line diagnostics      */
+#define SYN_MB_FC_GET_COMM_EVENT_CNT 0x0B    /**< Get comm event counter       */
+#define SYN_MB_FC_GET_COMM_EVENT_LOG 0x0C    /**< Get comm event log           */
+#define SYN_MB_FC_WRITE_MULTIPLE_COILS 0x0F  /**< Write multiple coils (bits)  */
+#define SYN_MB_FC_WRITE_MULTIPLE 0x10        /**< Write multiple registers     */
+#define SYN_MB_FC_REPORT_SERVER_ID 0x11      /**< Report server ID             */
+#define SYN_MB_FC_READ_FILE_RECORD 0x14      /**< Read file record             */
+#define SYN_MB_FC_WRITE_FILE_RECORD 0x15     /**< Write file record            */
+#define SYN_MB_FC_MASK_WRITE_REGISTER 0x16   /**< Mask write register          */
+#define SYN_MB_FC_READ_WRITE_MULTIPLE 0x17   /**< Read/Write multiple regs     */
+#define SYN_MB_FC_READ_FIFO_QUEUE 0x18       /**< Read FIFO queue              */
+#define SYN_MB_FC_READ_DEVICE_INFO 0x2B      /**< Encapsulated interface trans */
+#define SYN_MB_MEI_TYPE_READ_DEVICE_ID 0x0E  /**< Read Device Identification   */
 /** @} */
 
 /** @name Modbus exception codes
  * @{
  */
-#define SYN_MB_EX_ILLEGAL_FUNC    0x01  /**< Illegal function code        */
-#define SYN_MB_EX_ILLEGAL_ADDR    0x02  /**< Illegal data address         */
-#define SYN_MB_EX_ILLEGAL_VALUE   0x03  /**< Illegal data value           */
-#define SYN_MB_EX_DEVICE_FAILURE  0x04  /**< Device failure               */
+#define SYN_MB_EX_ILLEGAL_FUNC 0x01   /**< Illegal function code        */
+#define SYN_MB_EX_ILLEGAL_ADDR 0x02   /**< Illegal data address         */
+#define SYN_MB_EX_ILLEGAL_VALUE 0x03  /**< Illegal data value           */
+#define SYN_MB_EX_DEVICE_FAILURE 0x04 /**< Device failure               */
 /** @} */
 
 /* ── Callbacks & Structures ─────────────────────────────────────────────── */
@@ -104,13 +104,13 @@ struct SYN_Modbus;
 
 /** @brief Device Information structure for FC 0x2B / 0x0E. */
 typedef struct {
-    const char *vendor_name;     /**< Object ID 0x00 */
-    const char *product_code;    /**< Object ID 0x01 */
-    const char *revision;        /**< Object ID 0x02 */
-    const char *vendor_url;      /**< Object ID 0x03 */
-    const char *product_name;    /**< Object ID 0x04 */
-    const char *model_name;      /**< Object ID 0x05 */
-    const char *user_app_name;   /**< Object ID 0x06 */
+    const char *vendor_name;   /**< Object ID 0x00 */
+    const char *product_code;  /**< Object ID 0x01 */
+    const char *revision;      /**< Object ID 0x02 */
+    const char *vendor_url;    /**< Object ID 0x03 */
+    const char *product_name;  /**< Object ID 0x04 */
+    const char *model_name;    /**< Object ID 0x05 */
+    const char *user_app_name; /**< Object ID 0x06 */
 } SYN_Modbus_DeviceInfo;
 
 /**
@@ -122,85 +122,78 @@ typedef struct {
  * @param ctx    User context.
  * @return true to allow the write, false to reject (exception 0x03).
  */
-typedef bool (*SYN_Modbus_WriteCallback)(struct SYN_Modbus *mb,
-                                         uint16_t addr, uint16_t count,
+typedef bool (*SYN_Modbus_WriteCallback)(struct SYN_Modbus *mb, uint16_t addr, uint16_t count,
                                          void *ctx);
 
 /**
  * @brief Callback for reading file records (FC 0x14).
  */
-typedef bool (*SYN_Modbus_ReadFileRecordCallback)(struct SYN_Modbus *mb,
-                                                   uint16_t file_num,
-                                                   uint16_t record_num,
-                                                   uint16_t record_len,
-                                                   uint16_t *record_data,
-                                                   void *ctx);
+typedef bool (*SYN_Modbus_ReadFileRecordCallback)(struct SYN_Modbus *mb, uint16_t file_num,
+                                                  uint16_t record_num, uint16_t record_len,
+                                                  uint16_t *record_data, void *ctx);
 
 /**
  * @brief Callback for writing file records (FC 0x15).
  */
-typedef bool (*SYN_Modbus_WriteFileRecordCallback)(struct SYN_Modbus *mb,
-                                                    uint16_t file_num,
-                                                    uint16_t record_num,
-                                                    uint16_t record_len,
-                                                    const uint16_t *record_data,
-                                                    void *ctx);
+typedef bool (*SYN_Modbus_WriteFileRecordCallback)(struct SYN_Modbus *mb, uint16_t file_num,
+                                                   uint16_t record_num, uint16_t record_len,
+                                                   const uint16_t *record_data, void *ctx);
 
 /* ── Configuration ──────────────────────────────────────────────────────── */
 
 /** @brief Modbus RTU slave configuration. */
 typedef struct {
-    uint8_t          slave_addr;     /**< Modbus slave address (1–247)    */
-    SYN_UARTInstance uart;          /**< UART instance to use            */
+    uint8_t slave_addr;    /**< Modbus slave address (1–247)    */
+    SYN_UARTInstance uart; /**< UART instance to use            */
 
     /* Register maps (application-owned) */
-    uint16_t        *holding_regs;   /**< Read/write holding registers    */
-    uint16_t         holding_count;  /**< Number of holding registers     */
-    uint16_t        *input_regs;     /**< Read-only input registers       */
-    uint16_t         input_count;    /**< Number of input registers       */
+    uint16_t *holding_regs; /**< Read/write holding registers    */
+    uint16_t holding_count; /**< Number of holding registers     */
+    uint16_t *input_regs;   /**< Read-only input registers       */
+    uint16_t input_count;   /**< Number of input registers       */
 
     /* Discrete bit maps (coils & discrete inputs) */
-    uint8_t         *coils;          /**< Read/write coils (1 byte = 8 bits) */
-    uint16_t         coils_count;    /**< Total number of coil bits       */
-    uint8_t         *discrete_inputs;/**< Read-only discrete inputs (1 byte = 8 bits) */
-    uint16_t         discrete_count; /**< Total discrete input bits       */
+    uint8_t *coils;           /**< Read/write coils (1 byte = 8 bits) */
+    uint16_t coils_count;     /**< Total number of coil bits       */
+    uint8_t *discrete_inputs; /**< Read-only discrete inputs (1 byte = 8 bits) */
+    uint16_t discrete_count;  /**< Total discrete input bits       */
 
     /* FIFO Queue map */
-    const uint16_t  *fifo_queue;     /**< Pointer to FIFO queue elements  */
-    uint16_t         fifo_count;     /**< Number of elements in FIFO      */
+    const uint16_t *fifo_queue; /**< Pointer to FIFO queue elements  */
+    uint16_t fifo_count;        /**< Number of elements in FIFO      */
 
     /* Optional */
-    SYN_Modbus_WriteCallback on_write;    /**< Write pre-check callback   */
-    void            *on_write_ctx;        /**< Context for on_write       */
-    uint32_t         silence_ms;          /**< Custom inter-frame silence gap in ms (0 = default 5ms) */
-    uint8_t          exception_status;    /**< Status byte for FC 0x07    */
+    SYN_Modbus_WriteCallback on_write; /**< Write pre-check callback   */
+    void *on_write_ctx;                /**< Context for on_write       */
+    uint32_t silence_ms;      /**< Custom inter-frame silence gap in ms (0 = default 5ms) */
+    uint8_t exception_status; /**< Status byte for FC 0x07    */
     const SYN_Modbus_DeviceInfo *device_info; /**< Device Info for FC 0x2B/0x0E */
-    const uint8_t   *server_id;           /**< Server ID bytes for FC 0x11 (NULL = "SYN-MB") */
-    uint8_t          server_id_len;       /**< Length of server_id bytes (max 240) */
-    SYN_Modbus_ReadFileRecordCallback  on_read_file;  /**< File read callback FC 0x14 */
+    const uint8_t *server_id;                 /**< Server ID bytes for FC 0x11 (NULL = "SYN-MB") */
+    uint8_t server_id_len;                    /**< Length of server_id bytes (max 240) */
+    SYN_Modbus_ReadFileRecordCallback on_read_file;   /**< File read callback FC 0x14 */
     SYN_Modbus_WriteFileRecordCallback on_write_file; /**< File write callback FC 0x15 */
-    void            *file_cb_ctx;         /**< Context for file callbacks */
+    void *file_cb_ctx;                                /**< Context for file callbacks */
 } SYN_Modbus_Config;
 
 /* ── Modbus instance ────────────────────────────────────────────────────── */
 
 /** @brief Modbus RTU slave instance — frame buffer, config, and statistics. */
 typedef struct SYN_Modbus {
-    SYN_Modbus_Config cfg;           /**< Configuration snapshot          */
+    SYN_Modbus_Config cfg; /**< Configuration snapshot          */
 
     /* Frame buffer */
-    uint8_t     *buf;            /**< RX/TX buffer                       */
-    uint16_t     buf_size;       /**< Buffer capacity                    */
-    uint16_t     rx_len;         /**< Bytes received in current frame    */
-    uint32_t     last_byte_tick; /**< Tick of last received byte         */
-    bool         frame_ready;    /**< Complete frame available?           */
+    uint8_t *buf;            /**< RX/TX buffer                       */
+    uint16_t buf_size;       /**< Buffer capacity                    */
+    uint16_t rx_len;         /**< Bytes received in current frame    */
+    uint32_t last_byte_tick; /**< Tick of last received byte         */
+    bool frame_ready;        /**< Complete frame available?           */
 
     /* Stats */
-    uint32_t     frames_rx;      /**< Total frames received              */
-    uint32_t     frames_tx;      /**< Total frames sent                  */
-    uint32_t     errors;         /**< CRC/framing error count            */
-    uint16_t     comm_event_counter; /**< Event counter for FC 0x0B/0x0C */
-    uint16_t     bus_message_count;   /**< Bus message count for FC 0x0C   */
+    uint32_t frames_rx;          /**< Total frames received              */
+    uint32_t frames_tx;          /**< Total frames sent                  */
+    uint32_t errors;             /**< CRC/framing error count            */
+    uint16_t comm_event_counter; /**< Event counter for FC 0x0B/0x0C */
+    uint16_t bus_message_count;  /**< Bus message count for FC 0x0C   */
 } SYN_Modbus;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -213,8 +206,7 @@ typedef struct SYN_Modbus {
  * @param buf      Frame buffer (must be at least 256 bytes).
  * @param buf_size Buffer capacity.
  */
-void syn_modbus_init(SYN_Modbus *mb, const SYN_Modbus_Config *cfg,
-                      uint8_t *buf, uint16_t buf_size);
+void syn_modbus_init(SYN_Modbus *mb, const SYN_Modbus_Config *cfg, uint8_t *buf, uint16_t buf_size);
 
 /**
  * @brief Poll for incoming Modbus requests and process them.

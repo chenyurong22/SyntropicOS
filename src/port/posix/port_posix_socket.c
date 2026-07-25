@@ -10,20 +10,20 @@
  * (e.g. port_esp32.c for GPIO/timer/UART) to get full networking support.
  */
 
-#if defined(__unix__) || defined(__APPLE__) || defined(ESP_PLATFORM) || \
-    defined(__ZEPHYR__) || defined(_POSIX_VERSION)
+#if defined(__unix__) || defined(__APPLE__) || defined(ESP_PLATFORM) || defined(__ZEPHYR__) || \
+    defined(_POSIX_VERSION)
 
 #include "syntropic/port/syn_port_socket.h"
 
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <netdb.h>
-#include <string.h>
+#include <netinet/in.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
@@ -42,7 +42,8 @@ static struct sockaddr_in addr_to_sockaddr(const SYN_SockAddr *addr)
 SYN_Socket syn_port_udp_open(uint16_t port)
 {
     int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (fd < 0) return SYN_SOCKET_INVALID;
+    if (fd < 0)
+        return SYN_SOCKET_INVALID;
 
     if (port != 0) {
         struct sockaddr_in bind_addr;
@@ -59,15 +60,14 @@ SYN_Socket syn_port_udp_open(uint16_t port)
     return (SYN_Socket)fd;
 }
 
-int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len,
-                        const SYN_SockAddr *to)
+int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len, const SYN_SockAddr *to)
 {
     struct sockaddr_in sa = addr_to_sockaddr(to);
     return sendto(sock, data, len, 0, (struct sockaddr *)&sa, sizeof(sa));
 }
 
-int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len,
-                          SYN_SockAddr *from, uint32_t timeout_ms)
+int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len, SYN_SockAddr *from,
+                          uint32_t timeout_ms)
 {
     int flags = 0;
 
@@ -77,7 +77,7 @@ int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len,
         flags = MSG_DONTWAIT;
     } else {
         struct timeval tv;
-        tv.tv_sec  = timeout_ms / 1000;
+        tv.tv_sec = timeout_ms / 1000;
         tv.tv_usec = (timeout_ms % 1000) * 1000;
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     }
@@ -111,11 +111,12 @@ SYN_Status syn_port_udp_join_multicast(SYN_Socket sock, const char *multicast_ip
 SYN_Socket syn_port_sock_connect(const SYN_SockAddr *addr)
 {
     int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (fd < 0) return SYN_SOCKET_INVALID;
+    if (fd < 0)
+        return SYN_SOCKET_INVALID;
 
     struct sockaddr_in sa = addr_to_sockaddr(addr);
 
-    struct timeval tv = { .tv_sec = 10, .tv_usec = 0 };
+    struct timeval tv = {.tv_sec = 10, .tv_usec = 0};
     setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
 
     if (connect(fd, (struct sockaddr *)&sa, sizeof(sa)) != 0) {
@@ -130,7 +131,7 @@ SYN_Socket syn_port_sock_connect_host(const char *host, uint16_t port)
 {
     struct addrinfo hints, *res = NULL;
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family   = AF_INET;
+    hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
     char port_str[6];
@@ -145,7 +146,7 @@ SYN_Socket syn_port_sock_connect_host(const char *host, uint16_t port)
         return SYN_SOCKET_INVALID;
     }
 
-    struct timeval tv = { .tv_sec = 10, .tv_usec = 0 };
+    struct timeval tv = {.tv_sec = 10, .tv_usec = 0};
     setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
 
     if (connect(fd, res->ai_addr, res->ai_addrlen) != 0) {
@@ -169,27 +170,25 @@ int syn_port_sock_send_all(SYN_Socket sock, const void *data, size_t len)
     size_t sent = 0;
     while (sent < len) {
         int n = send(sock, p + sent, len - sent, 0);
-        if (n <= 0) return -1;
+        if (n <= 0)
+            return -1;
         sent += (size_t)n;
     }
     return (int)sent;
 }
 
-int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len,
-                       uint32_t timeout_ms)
+int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len, uint32_t timeout_ms)
 {
     int flags = 0;
     if (timeout_ms == 0) {
         flags = MSG_DONTWAIT;
     } else {
-        struct timeval tv = {
-            .tv_sec  = timeout_ms / 1000,
-            .tv_usec = (timeout_ms % 1000) * 1000
-        };
+        struct timeval tv = {.tv_sec = timeout_ms / 1000, .tv_usec = (timeout_ms % 1000) * 1000};
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     }
     int n = recv(sock, buf, max_len, flags);
-    if (n < 0) return -1;
+    if (n < 0)
+        return -1;
     return n;
 }
 
@@ -197,21 +196,23 @@ int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len,
 
 void syn_port_sock_close(SYN_Socket sock)
 {
-    if (sock >= 0) close(sock);
+    if (sock >= 0)
+        close(sock);
 }
 
 SYN_Socket syn_port_sock_listen(uint16_t port, int backlog)
 {
     int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (fd < 0) return SYN_SOCKET_INVALID;
+    if (fd < 0)
+        return SYN_SOCKET_INVALID;
 
     int opt = 1;
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
-    addr.sin_family      = AF_INET;
-    addr.sin_port        = htons(port);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
     addr.sin_addr.s_addr = INADDR_ANY;
 
     if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
@@ -229,16 +230,14 @@ SYN_Socket syn_port_sock_listen(uint16_t port, int backlog)
 
 SYN_Socket syn_port_sock_accept(SYN_Socket listener, uint32_t timeout_ms)
 {
-    struct timeval tv = {
-        .tv_sec  = timeout_ms / 1000,
-        .tv_usec = (timeout_ms % 1000) * 1000
-    };
+    struct timeval tv = {.tv_sec = timeout_ms / 1000, .tv_usec = (timeout_ms % 1000) * 1000};
     setsockopt(listener, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
     struct sockaddr_in client_addr;
     socklen_t addr_len = sizeof(client_addr);
     int fd = accept(listener, (struct sockaddr *)&client_addr, &addr_len);
-    if (fd < 0) return SYN_SOCKET_INVALID;
+    if (fd < 0)
+        return SYN_SOCKET_INVALID;
     return (SYN_Socket)fd;
 }
 

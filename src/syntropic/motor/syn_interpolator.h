@@ -14,9 +14,9 @@
 #include "../common/syn_defs.h"
 #include "../util/syn_scurve.h"
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,27 +39,27 @@ typedef struct {
 
 /** @brief Multi-Axis Interpolator configuration and state machine */
 typedef struct {
-    SYN_Interp_Mode mode;       /**< Active interpolation mode */
+    SYN_Interp_Mode mode; /**< Active interpolation mode */
 
     /* Endpoints & Geometry */
-    SYN_Vector3F start_pos;      /**< Segment start point (X, Y, Z) */
-    SYN_Vector3F target_pos;     /**< Segment target point (X, Y, Z) */
-    SYN_Vector3F center_offset;  /**< Circle center offset relative to start (I, J, K) */
+    SYN_Vector3F start_pos;     /**< Segment start point (X, Y, Z) */
+    SYN_Vector3F target_pos;    /**< Segment target point (X, Y, Z) */
+    SYN_Vector3F center_offset; /**< Circle center offset relative to start (I, J, K) */
 
     /* Current State */
-    SYN_Vector3F current_pos;   /**< Calculated current position */
-    float        total_length;  /**< Total path length in units */
-    float        current_dist;  /**< Current traveled distance along path */
-    float        radius;        /**< Arc radius (for circular mode) */
-    float        start_angle;   /**< Arc start angle in radians */
-    float        sweep_angle;   /**< Arc total sweep angle in radians */
+    SYN_Vector3F current_pos; /**< Calculated current position */
+    float total_length;       /**< Total path length in units */
+    float current_dist;       /**< Current traveled distance along path */
+    float radius;             /**< Arc radius (for circular mode) */
+    float start_angle;        /**< Arc start angle in radians */
+    float sweep_angle;        /**< Arc total sweep angle in radians */
 
     /* Speed & Acceleration Profiling */
-    SYN_SCurve   scurve;        /**< S-Curve velocity profile generator */
-    float        target_feedrate; /**< Max velocity along path (units/sec) */
+    SYN_SCurve scurve;     /**< S-Curve velocity profile generator */
+    float target_feedrate; /**< Max velocity along path (units/sec) */
 
-    uint32_t     total_steps;   /**< Number of discrete steps in move */
-    uint32_t     step_index;    /**< Current step index (0 .. total_steps) */
+    uint32_t total_steps; /**< Number of discrete steps in move */
+    uint32_t step_index;  /**< Current step index (0 .. total_steps) */
 } SYN_Interpolator;
 
 /**
@@ -80,10 +80,9 @@ void syn_interpolator_init(SYN_Interpolator *interp);
  * @param step_res    Spatial resolution per step (units per step, e.g. 0.001mm).
  * @return SYN_OK on success.
  */
-SYN_Status syn_interpolator_plan_linear(SYN_Interpolator *interp,
-                                         SYN_Vector3F start, SYN_Vector3F target,
-                                         float feedrate, float max_accel, float max_jerk,
-                                         float step_res);
+SYN_Status syn_interpolator_plan_linear(SYN_Interpolator *interp, SYN_Vector3F start,
+                                        SYN_Vector3F target, float feedrate, float max_accel,
+                                        float max_jerk, float step_res);
 
 /**
  * @brief Plan a Circular 2D arc move in XY plane.
@@ -91,7 +90,8 @@ SYN_Status syn_interpolator_plan_linear(SYN_Interpolator *interp,
  * @param interp      Pointer to interpolator struct.
  * @param start       Start position (X, Y).
  * @param target      Target position (X, Y).
- * @param center_offset Center offset relative to start (I = center.x - start.x, J = center.y - start.y).
+ * @param center_offset Center offset relative to start (I = center.x - start.x, J = center.y -
+ * start.y).
  * @param is_cw       true for Clockwise, false for Counter-Clockwise.
  * @param feedrate    Desired tangential speed (units/sec).
  * @param max_accel   Max acceleration (units/sec^2).
@@ -99,11 +99,10 @@ SYN_Status syn_interpolator_plan_linear(SYN_Interpolator *interp,
  * @param step_res    Spatial resolution per step (units per step).
  * @return SYN_OK on success.
  */
-SYN_Status syn_interpolator_plan_circular(SYN_Interpolator *interp,
-                                           SYN_Vector3F start, SYN_Vector3F target,
-                                           SYN_Vector3F center_offset, bool is_cw,
-                                           float feedrate, float max_accel, float max_jerk,
-                                           float step_res);
+SYN_Status syn_interpolator_plan_circular(SYN_Interpolator *interp, SYN_Vector3F start,
+                                          SYN_Vector3F target, SYN_Vector3F center_offset,
+                                          bool is_cw, float feedrate, float max_accel,
+                                          float max_jerk, float step_res);
 
 /**
  * @brief Advance the interpolator by one discrete step.
@@ -123,8 +122,8 @@ bool syn_interpolator_step(SYN_Interpolator *interp, SYN_Vector3F *out_pos);
  * @param out_vel  Out: Velocity vector at time t (optional, can be NULL).
  * @return true if t <= move total time.
  */
-bool syn_interpolator_eval_at_time(SYN_Interpolator *interp, float t_sec,
-                                   SYN_Vector3F *out_pos, SYN_Vector3F *out_vel);
+bool syn_interpolator_eval_at_time(SYN_Interpolator *interp, float t_sec, SYN_Vector3F *out_pos,
+                                   SYN_Vector3F *out_vel);
 
 #ifdef __cplusplus
 }

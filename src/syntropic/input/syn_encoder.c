@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_ENCODER) || SYN_USE_ENCODER
@@ -12,9 +12,9 @@
  * Handles all four quadrature transitions correctly with no missed steps.
  */
 
-#include "syn_encoder.h"
 #include "../drivers/syn_gpio.h"
 #include "../util/syn_assert.h"
+#include "syn_encoder.h"
 
 #include <string.h>
 
@@ -27,10 +27,10 @@
  */
 static const int8_t quad_table[16] = {
     /*          new: 00  01  10  11 */
-    /* prev 00 */  0, -1, +1,  0,
-    /* prev 01 */ +1,  0,  0, -1,
-    /* prev 10 */ -1,  0,  0, +1,
-    /* prev 11 */  0, +1, -1,  0,
+    /* prev 00 */ 0,  -1, +1, 0,
+    /* prev 01 */ +1, 0,  0,  -1,
+    /* prev 10 */ -1, 0,  0,  +1,
+    /* prev 11 */ 0,  +1, -1, 0,
 };
 
 void syn_encoder_init(SYN_Encoder *enc, SYN_GPIO_Pin pin_a, SYN_GPIO_Pin pin_b)
@@ -64,20 +64,22 @@ void syn_encoder_update(SYN_Encoder *enc)
     uint8_t b = (syn_gpio_read(enc->pin_b) == SYN_GPIO_HIGH) ? 1 : 0;
     uint8_t new_state = (uint8_t)((a << 1) | b);
 
-    if (new_state == enc->last_state) return;
+    if (new_state == enc->last_state)
+        return;
 
     uint8_t idx = (uint8_t)((enc->last_state << 2) | new_state);
     int8_t dir = quad_table[idx];
 
     enc->last_state = new_state;
 
-    if (dir == 0) return; /* invalid transition (noise) — ignore */
+    if (dir == 0)
+        return; /* invalid transition (noise) — ignore */
 
     enc->last_dir = dir;
 
     if (enc->steps_per_detent <= 1) {
         enc->position += dir;
-        enc->delta    += dir;
+        enc->delta += dir;
     } else {
         enc->sub_count += dir;
         if (enc->sub_count >= (int8_t)enc->steps_per_detent) {

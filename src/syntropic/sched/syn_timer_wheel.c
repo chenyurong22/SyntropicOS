@@ -4,11 +4,13 @@
  */
 
 #include "syn_timer_wheel.h"
+
 #include <string.h>
 
 SYN_Status syn_timer_wheel_init(SYN_TimerWheel *wheel)
 {
-    if (!wheel) return SYN_INVALID_PARAM;
+    if (!wheel)
+        return SYN_INVALID_PARAM;
 
     memset(wheel, 0, sizeof(*wheel));
     wheel->current_tick = 0;
@@ -16,25 +18,27 @@ SYN_Status syn_timer_wheel_init(SYN_TimerWheel *wheel)
     return SYN_OK;
 }
 
-SYN_Status syn_timer_wheel_add(SYN_TimerWheel *wheel, SYN_TimerWheelNode *node, uint32_t delay_ticks, SYN_TimerWheelCb cb, void *arg)
+SYN_Status syn_timer_wheel_add(SYN_TimerWheel *wheel, SYN_TimerWheelNode *node,
+                               uint32_t delay_ticks, SYN_TimerWheelCb cb, void *arg)
 {
-    if (!wheel || !node || !cb || delay_ticks == 0) return SYN_INVALID_PARAM;
+    if (!wheel || !node || !cb || delay_ticks == 0)
+        return SYN_INVALID_PARAM;
 
     if (node->active) {
         syn_timer_wheel_cancel(wheel, node);
     }
 
     uint32_t target_tick = wheel->current_tick + delay_ticks;
-    uint32_t bucket_idx  = target_tick % SYN_TIMER_WHEEL_BUCKETS;
-    uint32_t rotations   = delay_ticks / SYN_TIMER_WHEEL_BUCKETS;
+    uint32_t bucket_idx = target_tick % SYN_TIMER_WHEEL_BUCKETS;
+    uint32_t rotations = delay_ticks / SYN_TIMER_WHEEL_BUCKETS;
 
-    node->expires_tick   = target_tick;
+    node->expires_tick = target_tick;
     node->rotation_count = rotations;
-    node->cb             = cb;
-    node->arg            = arg;
-    node->active         = true;
-    node->next           = wheel->buckets[bucket_idx];
-    node->prev           = NULL;
+    node->cb = cb;
+    node->arg = arg;
+    node->active = true;
+    node->next = wheel->buckets[bucket_idx];
+    node->prev = NULL;
 
     if (wheel->buckets[bucket_idx]) {
         wheel->buckets[bucket_idx]->prev = node;
@@ -46,7 +50,8 @@ SYN_Status syn_timer_wheel_add(SYN_TimerWheel *wheel, SYN_TimerWheelNode *node, 
 
 SYN_Status syn_timer_wheel_cancel(SYN_TimerWheel *wheel, SYN_TimerWheelNode *node)
 {
-    if (!wheel || !node || !node->active) return SYN_INVALID_PARAM;
+    if (!wheel || !node || !node->active)
+        return SYN_INVALID_PARAM;
 
     uint32_t bucket_idx = node->expires_tick % SYN_TIMER_WHEEL_BUCKETS;
 
@@ -60,8 +65,8 @@ SYN_Status syn_timer_wheel_cancel(SYN_TimerWheel *wheel, SYN_TimerWheelNode *nod
         node->next->prev = node->prev;
     }
 
-    node->next   = NULL;
-    node->prev   = NULL;
+    node->next = NULL;
+    node->prev = NULL;
     node->active = false;
 
     return SYN_OK;
@@ -69,7 +74,8 @@ SYN_Status syn_timer_wheel_cancel(SYN_TimerWheel *wheel, SYN_TimerWheelNode *nod
 
 size_t syn_timer_wheel_step(SYN_TimerWheel *wheel)
 {
-    if (!wheel) return 0;
+    if (!wheel)
+        return 0;
 
     wheel->current_tick++;
     uint32_t bucket_idx = wheel->current_tick % SYN_TIMER_WHEEL_BUCKETS;
@@ -91,8 +97,8 @@ size_t syn_timer_wheel_step(SYN_TimerWheel *wheel)
                 curr->next->prev = curr->prev;
             }
 
-            curr->next   = NULL;
-            curr->prev   = NULL;
+            curr->next = NULL;
+            curr->prev = NULL;
             curr->active = false;
 
             /* Invoke callback */

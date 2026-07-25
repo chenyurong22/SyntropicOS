@@ -10,8 +10,9 @@
 #ifndef SYN_PORT_DAC_H
 #define SYN_PORT_DAC_H
 
-#include <stdint.h>
 #include "../common/syn_defs.h"
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

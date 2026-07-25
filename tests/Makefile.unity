@@ -68,7 +68,6 @@ SYN_SRCS := \
 	src/syntropic/storage/syn_vfs.c \
 	src/syntropic/storage/syn_lfs.c \
 	src/syntropic/net/syn_coap.c \
-	src/syntropic/dsp/syn_biquad.c \
 	src/syntropic/dsp/syn_fft.c \
 	src/syntropic/system/syn_fault.c \
 	src/syntropic/util/syn_sha256.c \
@@ -86,8 +85,6 @@ SYN_SRCS := \
 	src/syntropic/dsp/syn_kalman.c src/syntropic/motor/syn_foc.c \
 	src/syntropic/motor/syn_foc_observer.c \
 	src/syntropic/proto/syn_modbus_tcp.c src/syntropic/proto/syn_nmea.c \
-	src/syntropic/proto/syn_dmx512.c \
-	tests/unit/test_isotp.c \
 	src/syntropic/motor/syn_interpolator.c
 
 # Unity framework

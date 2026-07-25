@@ -1,18 +1,23 @@
+#include "mock_port.h"
+#include "syntropic/storage/syn_param.h"
+#include "unity/unity.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "syntropic/storage/syn_param.h"
-#include "mock_port.h"
-#include "unity/unity.h"
 
 typedef struct {
     uint16_t brightness;
-    int16_t  offset;
-    uint8_t  mode;
+    int16_t offset;
+    uint8_t mode;
 } AppParams;
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_renode_param_wear_leveling(void)
 {
@@ -24,7 +29,7 @@ void test_renode_param_wear_leveling(void)
 
     /* Initialize ParamStore at Flash Base 0x00 */
     SYN_Status status = syn_param_init(&store, 0x00, 2 /* sector count */, sizeof(AppParams));
-    
+
     /* Save parameters */
     params.brightness = 85;
     params.offset = -12;

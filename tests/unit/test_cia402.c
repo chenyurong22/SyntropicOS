@@ -3,22 +3,20 @@
  * @brief Unity unit tests for CANopen CiA 402 Servo Drive Profile Engine.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/proto/syn_canopen.h"
 #include "syntropic/proto/syn_cia402.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_cia402_init_and_state_transitions(void)
 {
     SYN_CiA402Drive drive;
-    SYN_CiA402Config cfg = {
-        .max_profile_velocity = 2000,
-        .profile_acceleration = 5000,
-        .profile_deceleration = 5000,
-        .quick_stop_deceleration = 10000,
-        .max_torque = 1000
-    };
+    SYN_CiA402Config cfg = {.max_profile_velocity = 2000,
+                            .profile_acceleration = 5000,
+                            .profile_deceleration = 5000,
+                            .quick_stop_deceleration = 10000,
+                            .max_torque = 1000};
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_cia402_init(&drive, &cfg));
     TEST_ASSERT_EQUAL(SYN_CIA402_STATE_SWITCH_ON_DISABLED, drive.state);
@@ -50,13 +48,11 @@ static void test_cia402_init_and_state_transitions(void)
 static void test_cia402_profile_position_mode(void)
 {
     SYN_CiA402Drive drive;
-    SYN_CiA402Config cfg = {
-        .max_profile_velocity = 1000,
-        .profile_acceleration = 2000,
-        .profile_deceleration = 2000,
-        .quick_stop_deceleration = 5000,
-        .max_torque = 1000
-    };
+    SYN_CiA402Config cfg = {.max_profile_velocity = 1000,
+                            .profile_acceleration = 2000,
+                            .profile_deceleration = 2000,
+                            .quick_stop_deceleration = 5000,
+                            .max_torque = 1000};
 
     syn_cia402_init(&drive, &cfg);
     syn_cia402_set_controlword(&drive, 0x000FU); /* Enable Operation */
@@ -92,13 +88,11 @@ static void test_cia402_profile_position_mode(void)
 static void test_cia402_profile_velocity_mode(void)
 {
     SYN_CiA402Drive drive;
-    SYN_CiA402Config cfg = {
-        .max_profile_velocity = 2000,
-        .profile_acceleration = 1000,
-        .profile_deceleration = 1000,
-        .quick_stop_deceleration = 5000,
-        .max_torque = 1000
-    };
+    SYN_CiA402Config cfg = {.max_profile_velocity = 2000,
+                            .profile_acceleration = 1000,
+                            .profile_deceleration = 1000,
+                            .quick_stop_deceleration = 5000,
+                            .max_torque = 1000};
 
     syn_cia402_init(&drive, &cfg);
     syn_cia402_set_controlword(&drive, 0x000FU); /* Enable Operation */
@@ -125,7 +119,7 @@ static void test_cia402_profile_velocity_mode(void)
 static void test_cia402_profile_torque_mode(void)
 {
     SYN_CiA402Drive drive;
-    SYN_CiA402Config cfg = { .max_torque = 1000 };
+    SYN_CiA402Config cfg = {.max_torque = 1000};
 
     syn_cia402_init(&drive, &cfg);
     syn_cia402_set_controlword(&drive, 0x000FU); /* Enable Operation */
@@ -141,7 +135,7 @@ static void test_cia402_profile_torque_mode(void)
 static void test_cia402_csp_csv_modes(void)
 {
     SYN_CiA402Drive drive;
-    SYN_CiA402Config cfg = { .max_profile_velocity = 2000 };
+    SYN_CiA402Config cfg = {.max_profile_velocity = 2000};
 
     syn_cia402_init(&drive, &cfg);
     syn_cia402_set_controlword(&drive, 0x000FU);
@@ -168,7 +162,7 @@ static void test_cia402_csp_csv_modes(void)
 static void test_cia402_fault_handling_and_reset(void)
 {
     SYN_CiA402Drive drive;
-    SYN_CiA402Config cfg = { .max_profile_velocity = 1000 };
+    SYN_CiA402Config cfg = {.max_profile_velocity = 1000};
 
     syn_cia402_init(&drive, &cfg);
     syn_cia402_set_controlword(&drive, 0x000FU);
@@ -194,7 +188,7 @@ static void test_cia402_fault_handling_and_reset(void)
 static void test_cia402_canopen_od_binding(void)
 {
     SYN_CiA402Drive drive;
-    SYN_CiA402Config drive_cfg = { .max_profile_velocity = 1000 };
+    SYN_CiA402Config drive_cfg = {.max_profile_velocity = 1000};
     syn_cia402_init(&drive, &drive_cfg);
 
     SYN_CANOpenODEntry od_table[16];
@@ -202,16 +196,17 @@ static void test_cia402_canopen_od_binding(void)
     TEST_ASSERT_EQUAL(10, od_count);
 
     SYN_CANOpenNode node;
-    SYN_CANOpenNodeConfig node_cfg = { .node_id = 1, .heartbeat_ms = 0 };
+    SYN_CANOpenNodeConfig node_cfg = {.node_id = 1, .heartbeat_ms = 0};
     syn_cia402_set_controlword(&drive, 0x0000U);
     syn_canopen_init(&node, &node_cfg, od_table, od_count);
 
     /* Flush bootup Tx */
-    uint32_t dummy_id; uint8_t dummy_buf[8], dummy_len;
+    uint32_t dummy_id;
+    uint8_t dummy_buf[8], dummy_len;
     syn_canopen_get_tx(&node, &dummy_id, dummy_buf, &dummy_len);
 
     /* SDO Download: Write 0x000F to 0x6040:0x00 (Controlword) */
-    uint8_t sdo_write_cw[8] = { 0x2BU, 0x40U, 0x60U, 0x00U, 0x0FU, 0x00U, 0x00U, 0x00U };
+    uint8_t sdo_write_cw[8] = {0x2BU, 0x40U, 0x60U, 0x00U, 0x0FU, 0x00U, 0x00U, 0x00U};
     TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x601U, sdo_write_cw, 8));
 
     /* Trigger Drive Controlword Update */
@@ -219,10 +214,11 @@ static void test_cia402_canopen_od_binding(void)
     TEST_ASSERT_EQUAL(SYN_CIA402_STATE_OPERATION_ENABLED, drive.state);
 
     /* SDO Upload: Read 0x6041:0x00 (Statusword) */
-    uint8_t sdo_read_sw[8] = { 0x40U, 0x41U, 0x60U, 0x00U, 0, 0, 0, 0 };
+    uint8_t sdo_read_sw[8] = {0x40U, 0x41U, 0x60U, 0x00U, 0, 0, 0, 0};
     TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x601U, sdo_read_sw, 8));
 
-    uint32_t tx_id = 0; uint8_t tx_buf[8] = { 0 }, tx_len = 0;
+    uint32_t tx_id = 0;
+    uint8_t tx_buf[8] = {0}, tx_len = 0;
     TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
     TEST_ASSERT_EQUAL(0x581U, tx_id);
     TEST_ASSERT_EQUAL(0x4BU, tx_buf[0]);
@@ -233,7 +229,7 @@ static void test_cia402_canopen_od_binding(void)
 static void test_cia402_invalid_params(void)
 {
     SYN_CiA402Drive drive;
-    SYN_CiA402Config cfg = { .max_profile_velocity = 1000 };
+    SYN_CiA402Config cfg = {.max_profile_velocity = 1000};
 
     syn_cia402_init(&drive, &cfg);
 

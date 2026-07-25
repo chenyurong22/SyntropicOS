@@ -41,27 +41,27 @@ extern "C" {
 
 /** @brief Button polarity selector. */
 typedef enum {
-    SYN_BUTTON_ACTIVE_HIGH = 0,  /**< Pressed = GPIO high */
-    SYN_BUTTON_ACTIVE_LOW  = 1,  /**< Pressed = GPIO low (pull-up) */
+    SYN_BUTTON_ACTIVE_HIGH = 0, /**< Pressed = GPIO high */
+    SYN_BUTTON_ACTIVE_LOW = 1,  /**< Pressed = GPIO low (pull-up) */
 } SYN_ButtonPolarity;
 
 /* ── Button state ───────────────────────────────────────────────────────── */
 
 /** @brief Button FSM states. */
 typedef enum {
-    SYN_BUTTON_STATE_IDLE       = 0,  /**< Not pressed.         */
-    SYN_BUTTON_STATE_DEBOUNCING = 1,  /**< Waiting for stable.  */
-    SYN_BUTTON_STATE_PRESSED    = 2,  /**< Confirmed pressed.   */
-    SYN_BUTTON_STATE_HELD       = 3,  /**< Held past threshold. */
+    SYN_BUTTON_STATE_IDLE = 0,       /**< Not pressed.         */
+    SYN_BUTTON_STATE_DEBOUNCING = 1, /**< Waiting for stable.  */
+    SYN_BUTTON_STATE_PRESSED = 2,    /**< Confirmed pressed.   */
+    SYN_BUTTON_STATE_HELD = 3,       /**< Held past threshold. */
 } SYN_ButtonState;
 
 /** @name Button event flags (bitmask)
  * @{
  */
-#define SYN_BUTTON_EVT_PRESS       ((uint8_t)(1u << 0))  /**< Button pressed     */
-#define SYN_BUTTON_EVT_RELEASE     ((uint8_t)(1u << 1))  /**< Button released    */
-#define SYN_BUTTON_EVT_LONG_PRESS  ((uint8_t)(1u << 2))  /**< Long press detected */
-#define SYN_BUTTON_EVT_REPEAT      ((uint8_t)(1u << 3))  /**< Auto-repeat fire   */
+#define SYN_BUTTON_EVT_PRESS ((uint8_t)(1u << 0))      /**< Button pressed     */
+#define SYN_BUTTON_EVT_RELEASE ((uint8_t)(1u << 1))    /**< Button released    */
+#define SYN_BUTTON_EVT_LONG_PRESS ((uint8_t)(1u << 2)) /**< Long press detected */
+#define SYN_BUTTON_EVT_REPEAT ((uint8_t)(1u << 3))     /**< Auto-repeat fire   */
 /** @} */
 
 /* ── Callback type ──────────────────────────────────────────────────────── */
@@ -81,29 +81,29 @@ typedef void (*SYN_ButtonCallback)(struct SYN_Button *btn, void *user_data);
 /** @brief Button descriptor — owns the FSM, debounce, and callback state. */
 typedef struct SYN_Button {
     /* Configuration */
-    SYN_GPIO_Pin         pin;            /**< GPIO pin number               */
-    uint8_t               polarity;       /**< SYN_ButtonPolarity            */
-    uint16_t              debounce_ms;    /**< Debounce window (ms)          */
-    uint16_t              long_press_ms;  /**< Long-press threshold (ms)     */
-    uint16_t              repeat_ms;      /**< Auto-repeat interval (ms)     */
+    SYN_GPIO_Pin pin;       /**< GPIO pin number               */
+    uint8_t polarity;       /**< SYN_ButtonPolarity            */
+    uint16_t debounce_ms;   /**< Debounce window (ms)          */
+    uint16_t long_press_ms; /**< Long-press threshold (ms)     */
+    uint16_t repeat_ms;     /**< Auto-repeat interval (ms)     */
 
     /* State */
-    SYN_FSM               fsm;            /**< Button FSM (uses syn_fsm)     */
-    uint8_t               events;         /**< Pending events bitmask        */
-    bool                  raw_pressed;    /**< Last raw GPIO reading         */
-    bool                  pressed;        /**< Debounced pressed state       */
-    uint32_t              state_tick;     /**< Tick when state was entered    */
-    uint32_t              repeat_tick;    /**< Tick of last repeat event      */
+    SYN_FSM fsm;          /**< Button FSM (uses syn_fsm)     */
+    uint8_t events;       /**< Pending events bitmask        */
+    bool raw_pressed;     /**< Last raw GPIO reading         */
+    bool pressed;         /**< Debounced pressed state       */
+    uint32_t state_tick;  /**< Tick when state was entered    */
+    uint32_t repeat_tick; /**< Tick of last repeat event      */
 
     /* Callbacks */
-    SYN_ButtonCallback   on_press;        /**< Press callback                */
-    void                 *on_press_ctx;   /**< Press callback context        */
-    SYN_ButtonCallback   on_release;      /**< Release callback              */
-    void                 *on_release_ctx; /**< Release callback context      */
-    SYN_ButtonCallback   on_long_press;   /**< Long-press callback           */
-    void                 *on_long_press_ctx; /**< Long-press context         */
-    SYN_ButtonCallback   on_repeat;       /**< Repeat callback               */
-    void                 *on_repeat_ctx;  /**< Repeat callback context       */
+    SYN_ButtonCallback on_press;      /**< Press callback                */
+    void *on_press_ctx;               /**< Press callback context        */
+    SYN_ButtonCallback on_release;    /**< Release callback              */
+    void *on_release_ctx;             /**< Release callback context      */
+    SYN_ButtonCallback on_long_press; /**< Long-press callback           */
+    void *on_long_press_ctx;          /**< Long-press context         */
+    SYN_ButtonCallback on_repeat;     /**< Repeat callback               */
+    void *on_repeat_ctx;              /**< Repeat callback context       */
 } SYN_Button;
 
 /* ── Initialization ─────────────────────────────────────────────────────── */
@@ -116,10 +116,8 @@ typedef struct SYN_Button {
  * @param polarity     Active-high or active-low.
  * @param debounce_ms  Debounce window in milliseconds (e.g., 50).
  */
-void syn_button_init(SYN_Button *btn,
-                      SYN_GPIO_Pin pin,
-                      SYN_ButtonPolarity polarity,
-                      uint16_t debounce_ms);
+void syn_button_init(SYN_Button *btn, SYN_GPIO_Pin pin, SYN_ButtonPolarity polarity,
+                     uint16_t debounce_ms);
 
 /* ── Callback registration ──────────────────────────────────────────────── */
 
@@ -129,8 +127,7 @@ void syn_button_init(SYN_Button *btn,
  * @param cb   Callback (or NULL to disable).
  * @param ctx  User context.
  */
-void syn_button_on_press(SYN_Button *btn,
-                          SYN_ButtonCallback cb, void *ctx);
+void syn_button_on_press(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx);
 
 /**
  * @brief Register a release callback.
@@ -138,8 +135,7 @@ void syn_button_on_press(SYN_Button *btn,
  * @param cb   Callback (or NULL to disable).
  * @param ctx  User context.
  */
-void syn_button_on_release(SYN_Button *btn,
-                            SYN_ButtonCallback cb, void *ctx);
+void syn_button_on_release(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx);
 
 /**
  * @brief Register a long-press callback.
@@ -149,10 +145,7 @@ void syn_button_on_release(SYN_Button *btn,
  * @param hold_ms  Time the button must be held before firing (ms).
  * @param ctx      User context.
  */
-void syn_button_on_long_press(SYN_Button *btn,
-                               SYN_ButtonCallback cb,
-                               uint16_t hold_ms,
-                               void *ctx);
+void syn_button_on_long_press(SYN_Button *btn, SYN_ButtonCallback cb, uint16_t hold_ms, void *ctx);
 
 /**
  * @brief Register an auto-repeat callback.
@@ -164,10 +157,7 @@ void syn_button_on_long_press(SYN_Button *btn,
  * @param interval_ms  Repeat interval in milliseconds.
  * @param ctx          User context.
  */
-void syn_button_on_repeat(SYN_Button *btn,
-                           SYN_ButtonCallback cb,
-                           uint16_t interval_ms,
-                           void *ctx);
+void syn_button_on_repeat(SYN_Button *btn, SYN_ButtonCallback cb, uint16_t interval_ms, void *ctx);
 
 /* ── Update / service ───────────────────────────────────────────────────── */
 
@@ -228,13 +218,13 @@ static inline uint8_t syn_button_poll_events(SYN_Button *btn)
 /* ── Protothread integration ────────────────────────────────────────────── */
 
 /** Block until the button is pressed (debounced). */
-#define PT_WAIT_BUTTON_PRESS(pt, btn) \
-    PT_WAIT_UNTIL(pt, (btn)->events & SYN_BUTTON_EVT_PRESS); \
+#define PT_WAIT_BUTTON_PRESS(pt, btn)                       \
+    PT_WAIT_UNTIL(pt, (btn)->events &SYN_BUTTON_EVT_PRESS); \
     (btn)->events &= (uint8_t)~SYN_BUTTON_EVT_PRESS
 
 /** Block until the button is released. */
-#define PT_WAIT_BUTTON_RELEASE(pt, btn) \
-    PT_WAIT_UNTIL(pt, (btn)->events & SYN_BUTTON_EVT_RELEASE); \
+#define PT_WAIT_BUTTON_RELEASE(pt, btn)                       \
+    PT_WAIT_UNTIL(pt, (btn)->events &SYN_BUTTON_EVT_RELEASE); \
     (btn)->events &= (uint8_t)~SYN_BUTTON_EVT_RELEASE
 
 #ifdef __cplusplus

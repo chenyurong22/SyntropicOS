@@ -10,8 +10,9 @@
 #ifndef SYN_PORT_RTC_H
 #define SYN_PORT_RTC_H
 
-#include <stdint.h>
 #include "../common/syn_defs.h"
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,12 +24,12 @@ extern "C" {
  * All fields are in natural units (year = 4-digit, month 1-12, etc.).
  */
 typedef struct {
-    uint16_t year;    /**< Full year, e.g. 2025              */
-    uint8_t  month;   /**< Month: 1 = January, 12 = December */
-    uint8_t  day;     /**< Day of month: 1 – 31              */
-    uint8_t  hour;    /**< Hour: 0 – 23                      */
-    uint8_t  minute;  /**< Minute: 0 – 59                    */
-    uint8_t  second;  /**< Second: 0 – 59                    */
+    uint16_t year;  /**< Full year, e.g. 2025              */
+    uint8_t month;  /**< Month: 1 = January, 12 = December */
+    uint8_t day;    /**< Day of month: 1 – 31              */
+    uint8_t hour;   /**< Hour: 0 – 23                      */
+    uint8_t minute; /**< Minute: 0 – 59                    */
+    uint8_t second; /**< Second: 0 – 59                    */
 } SYN_RTC_DateTime;
 
 /**

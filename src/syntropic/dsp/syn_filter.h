@@ -15,10 +15,11 @@
 #ifndef SYN_FILTER_H
 #define SYN_FILTER_H
 
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
 #include "../util/syn_qmath.h"
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,18 +29,18 @@ extern "C" {
 
 /** Maximum window size for moving average and median filters. */
 #ifndef SYN_FILTER_MAX_WINDOW
-  #define SYN_FILTER_MAX_WINDOW  32
+#define SYN_FILTER_MAX_WINDOW 32
 #endif
 
 /* ── Moving Average ─────────────────────────────────────────────────────── */
 
 /** @brief Moving average filter state. */
 typedef struct {
-    int16_t   buf[SYN_FILTER_MAX_WINDOW]; /**< Sample buffer              */
-    int32_t   sum;      /**< Running sum                 */
-    uint8_t   window;   /**< Configured window size      */
-    uint8_t   count;    /**< Samples inserted so far     */
-    uint8_t   idx;      /**< Circular write index        */
+    int16_t buf[SYN_FILTER_MAX_WINDOW]; /**< Sample buffer              */
+    int32_t sum;                        /**< Running sum                 */
+    uint8_t window;                     /**< Configured window size      */
+    uint8_t count;                      /**< Samples inserted so far     */
+    uint8_t idx;                        /**< Circular write index        */
 } SYN_FilterMA;
 
 /**
@@ -69,9 +70,9 @@ void syn_filter_ma_reset(SYN_FilterMA *f);
 
 /** @brief Exponential moving average filter state. */
 typedef struct {
-    int32_t   value;    /**< Current filtered value (Q8 fixed-point)     */
-    uint8_t   alpha;    /**< Smoothing factor (0–255), higher = faster   */
-    bool      primed;   /**< Has received at least one sample            */
+    int32_t value; /**< Current filtered value (Q8 fixed-point)     */
+    uint8_t alpha; /**< Smoothing factor (0–255), higher = faster   */
+    bool primed;   /**< Has received at least one sample            */
 } SYN_FilterEMA;
 
 /**
@@ -102,10 +103,10 @@ void syn_filter_ema_reset(SYN_FilterEMA *f);
 
 /** @brief Median filter state. */
 typedef struct {
-    int16_t   buf[SYN_FILTER_MAX_WINDOW]; /**< Sample buffer              */
-    uint8_t   window;   /**< Configured window size      */
-    uint8_t   count;    /**< Samples inserted so far     */
-    uint8_t   idx;      /**< Circular write index        */
+    int16_t buf[SYN_FILTER_MAX_WINDOW]; /**< Sample buffer              */
+    uint8_t window;                     /**< Configured window size      */
+    uint8_t count;                      /**< Samples inserted so far     */
+    uint8_t idx;                        /**< Circular write index        */
 } SYN_FilterMedian;
 
 /**
@@ -136,10 +137,10 @@ void syn_filter_median_reset(SYN_FilterMedian *f);
 
 /** @brief FIR filter state (Q16 fixed-point). */
 typedef struct {
-    const q16_t *taps;     /**< Filter coefficient array (length num_taps) */
-    q16_t       *history;  /**< Sample history buffer (length num_taps)    */
-    uint16_t     num_taps; /**< Number of taps / filter length            */
-    uint16_t     head;     /**< Circular history write index              */
+    const q16_t *taps; /**< Filter coefficient array (length num_taps) */
+    q16_t *history;    /**< Sample history buffer (length num_taps)    */
+    uint16_t num_taps; /**< Number of taps / filter length            */
+    uint16_t head;     /**< Circular history write index              */
 } SYN_FilterFIR;
 
 /**

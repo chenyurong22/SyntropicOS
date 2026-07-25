@@ -3,16 +3,16 @@
  * @brief Unity tests for syn_log.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/log/syn_log.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 /* Log now writes directly to syn_port_serial_write, which is mocked
  * by mock_port.c into mock_serial_tx_buf. Alias for test readability. */
 
-#define log_capture_buf  ((char *)mock_serial_tx_buf)
-#define log_capture_pos  mock_serial_tx_len
+#define log_capture_buf ((char *)mock_serial_tx_buf)
+#define log_capture_pos mock_serial_tx_len
 
 static void test_logging_basic(void)
 {
@@ -124,4 +124,3 @@ void run_log_tests(void)
     RUN_TEST(test_log_invalid_level);
     RUN_TEST(test_log_null_tag);
 }
-

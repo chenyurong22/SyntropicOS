@@ -29,9 +29,10 @@
 #define SYN_ERRLOG_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,35 +42,35 @@ extern "C" {
 
 /** @brief Error severity levels. */
 typedef enum {
-    SYN_ERR_INFO    = 0,   /**< Informational (logged but not critical)  */
-    SYN_ERR_WARNING = 1,   /**< Warning (degraded but operational)       */
-    SYN_ERR_ERROR   = 2,   /**< Error (feature failed)                   */
-    SYN_ERR_FATAL   = 3,   /**< Fatal (system will reset/halt)           */
+    SYN_ERR_INFO = 0,    /**< Informational (logged but not critical)  */
+    SYN_ERR_WARNING = 1, /**< Warning (degraded but operational)       */
+    SYN_ERR_ERROR = 2,   /**< Error (feature failed)                   */
+    SYN_ERR_FATAL = 3,   /**< Fatal (system will reset/halt)           */
 } SYN_ErrSeverity;
 
 /* ── Error entry ────────────────────────────────────────────────────────── */
 
 /** @brief Error log entry — code + severity + context + timestamps. */
 typedef struct {
-    uint16_t  code;         /**< Application-defined error code           */
-    uint8_t   severity;     /**< SYN_ErrSeverity                         */
-    uint8_t   _pad;         /**< Padding for alignment                   */
-    uint32_t  context;      /**< Application-defined context value        */
-    uint32_t  timestamp;    /**< Tick at time of error                    */
-    uint32_t  boot_count;   /**< Boot number when error occurred          */
+    uint16_t code;       /**< Application-defined error code           */
+    uint8_t severity;    /**< SYN_ErrSeverity                         */
+    uint8_t _pad;        /**< Padding for alignment                   */
+    uint32_t context;    /**< Application-defined context value        */
+    uint32_t timestamp;  /**< Tick at time of error                    */
+    uint32_t boot_count; /**< Boot number when error occurred          */
 } SYN_ErrEntry;
 
 /* ── Error log instance ─────────────────────────────────────────────────── */
 
 /** @brief Error log instance — circular buffer of error entries. */
 typedef struct SYN_ErrLog {
-    SYN_ErrEntry  *entries;     /**< Circular buffer of entries          */
-    size_t          capacity;    /**< Max entries                         */
-    size_t          head;        /**< Next write position                 */
-    size_t          total_count; /**< Total errors ever recorded          */
+    SYN_ErrEntry *entries; /**< Circular buffer of entries          */
+    size_t capacity;       /**< Max entries                         */
+    size_t head;           /**< Next write position                 */
+    size_t total_count;    /**< Total errors ever recorded          */
 
-    uint32_t        boot_count;  /**< Current boot number                 */
-    bool            enabled;     /**< Recording enabled                   */
+    uint32_t boot_count; /**< Current boot number                 */
+    bool enabled;        /**< Recording enabled                   */
 } SYN_ErrLog;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -82,8 +83,7 @@ typedef struct SYN_ErrLog {
  * @param capacity   Number of entries in buffer.
  * @param boot_count Current boot count (from boot manager or 0).
  */
-void syn_errlog_init(SYN_ErrLog *log, SYN_ErrEntry *entries,
-                      size_t capacity, uint32_t boot_count);
+void syn_errlog_init(SYN_ErrLog *log, SYN_ErrEntry *entries, size_t capacity, uint32_t boot_count);
 
 /**
  * @brief Record an error.
@@ -92,8 +92,7 @@ void syn_errlog_init(SYN_ErrLog *log, SYN_ErrEntry *entries,
  * @param severity  Severity level.
  * @param context   Application-defined context value.
  */
-void syn_errlog_record(SYN_ErrLog *log, uint16_t code,
-                        SYN_ErrSeverity severity, uint32_t context);
+void syn_errlog_record(SYN_ErrLog *log, uint16_t code, SYN_ErrSeverity severity, uint32_t context);
 
 /**
  * @brief Read an error entry by index (0 = oldest available).
@@ -102,8 +101,7 @@ void syn_errlog_record(SYN_ErrLog *log, uint16_t code,
  * @param out    Output entry.
  * @return true if entry exists.
  */
-bool syn_errlog_read(const SYN_ErrLog *log, size_t index,
-                      SYN_ErrEntry *out);
+bool syn_errlog_read(const SYN_ErrLog *log, size_t index, SYN_ErrEntry *out);
 
 /**
  * @brief Total errors ever recorded (including overwritten).
@@ -122,9 +120,7 @@ static inline size_t syn_errlog_count(const SYN_ErrLog *log)
  */
 static inline size_t syn_errlog_available(const SYN_ErrLog *log)
 {
-    return (log->total_count < log->capacity)
-         ? log->total_count
-         : log->capacity;
+    return (log->total_count < log->capacity) ? log->total_count : log->capacity;
 }
 
 /**
@@ -156,8 +152,7 @@ const SYN_ErrEntry *syn_errlog_latest(const SYN_ErrLog *log);
  * @param severity  Severity to count.
  * @return Number of matching entries.
  */
-size_t syn_errlog_count_severity(const SYN_ErrLog *log,
-                                  SYN_ErrSeverity severity);
+size_t syn_errlog_count_severity(const SYN_ErrLog *log, SYN_ErrSeverity severity);
 
 #ifdef __cplusplus
 }

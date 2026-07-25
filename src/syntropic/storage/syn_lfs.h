@@ -17,9 +17,9 @@ extern "C" {
  * @brief LittleFS partition configuration.
  */
 typedef struct {
-    uint32_t start_addr;  /**< Partition start address in flash          */
-    uint32_t size;        /**< Partition size in bytes                   */
-    uint32_t block_size;  /**< Erase block size in bytes                 */
+    uint32_t start_addr; /**< Partition start address in flash          */
+    uint32_t size;       /**< Partition size in bytes                   */
+    uint32_t block_size; /**< Erase block size in bytes                 */
 } SYN_LfsConfig;
 
 /**

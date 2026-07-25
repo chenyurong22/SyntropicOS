@@ -3,33 +3,37 @@
  * @brief Unity tests for syn_sequencer.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/sched/syn_sequencer.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int seq_action_count = 0;
-static void seq_action_a(void *ctx) { (void)ctx; seq_action_count++; }
+static void seq_action_a(void *ctx)
+{
+    (void)ctx;
+    seq_action_count++;
+}
 
 static int seq_complete_count = 0;
 static void seq_on_done(SYN_Sequencer *seq, void *ctx)
 {
-    (void)seq; (void)ctx;
+    (void)seq;
+    (void)ctx;
     seq_complete_count++;
 }
 
 static void test_sequencer(void)
 {
-
     mock_tick_ms = 0;
     seq_action_count = 0;
     seq_complete_count = 0;
 
     static const SYN_SeqStep steps[] = {
-        { seq_action_a, NULL, 0 },     /* step 0: action, no delay */
-        { NULL,         NULL, 100 },   /* step 1: delay 100ms      */
-        { seq_action_a, NULL, 50 },    /* step 2: action + 50ms    */
-        { seq_action_a, NULL, 0 },     /* step 3: action, finish   */
+        {seq_action_a, NULL, 0},  /* step 0: action, no delay */
+        {NULL, NULL, 100},        /* step 1: delay 100ms      */
+        {seq_action_a, NULL, 50}, /* step 2: action + 50ms    */
+        {seq_action_a, NULL, 0},  /* step 3: action, finish   */
     };
 
     SYN_Sequencer seq;
@@ -84,7 +88,7 @@ static void test_sequencer_update_when_done(void)
 {
     mock_tick_ms = 0;
     static const SYN_SeqStep steps[] = {
-        { seq_action_a, NULL, 0 },
+        {seq_action_a, NULL, 0},
     };
     SYN_Sequencer seq;
     syn_seq_init(&seq, steps, 1);

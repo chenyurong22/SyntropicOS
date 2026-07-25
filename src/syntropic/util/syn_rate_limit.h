@@ -21,8 +21,9 @@
 #define SYN_RATE_LIMIT_H
 
 #include "../port/syn_port_system.h"
-#include <stdint.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,10 +31,10 @@ extern "C" {
 
 /** @brief Token bucket rate limiter instance. */
 typedef struct {
-    uint32_t  tokens;       /**< Current token count                     */
-    uint32_t  max_tokens;   /**< Maximum (burst) capacity                */
-    uint32_t  interval_ms;  /**< Refill interval (tokens refill to max)  */
-    uint32_t  last_refill;  /**< Tick of last refill                     */
+    uint32_t tokens;      /**< Current token count                     */
+    uint32_t max_tokens;  /**< Maximum (burst) capacity                */
+    uint32_t interval_ms; /**< Refill interval (tokens refill to max)  */
+    uint32_t last_refill; /**< Tick of last refill                     */
 } SYN_RateLimit;
 
 /**
@@ -43,12 +44,10 @@ typedef struct {
  * @param max_tokens   Maximum tokens (burst capacity).
  * @param interval_ms  Interval over which tokens refill to max.
  */
-static inline void syn_rate_limit_init(SYN_RateLimit *rl,
-                                        uint32_t max_tokens,
-                                        uint32_t interval_ms)
+static inline void syn_rate_limit_init(SYN_RateLimit *rl, uint32_t max_tokens, uint32_t interval_ms)
 {
-    rl->tokens      = max_tokens;
-    rl->max_tokens  = max_tokens;
+    rl->tokens = max_tokens;
+    rl->max_tokens = max_tokens;
     rl->interval_ms = interval_ms;
     rl->last_refill = syn_port_get_tick_ms();
 }
@@ -73,7 +72,8 @@ static inline bool syn_rate_limit_allow(SYN_RateLimit *rl)
         uint32_t new_tokens = (rl->max_tokens * elapsed) / rl->interval_ms;
         if (new_tokens > 0) {
             rl->tokens += new_tokens;
-            if (rl->tokens > rl->max_tokens) rl->tokens = rl->max_tokens;
+            if (rl->tokens > rl->max_tokens)
+                rl->tokens = rl->max_tokens;
             rl->last_refill = now;
         }
     }
@@ -101,7 +101,7 @@ static inline uint32_t syn_rate_limit_remaining(const SYN_RateLimit *rl)
  */
 static inline void syn_rate_limit_reset(SYN_RateLimit *rl)
 {
-    rl->tokens      = rl->max_tokens;
+    rl->tokens = rl->max_tokens;
     rl->last_refill = syn_port_get_tick_ms();
 }
 

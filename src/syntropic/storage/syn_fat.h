@@ -7,8 +7,8 @@
 #ifndef SYN_FAT_H
 #define SYN_FAT_H
 
-#include "syn_vfs.h"
 #include "../drivers/syn_sd.h"
+#include "syn_vfs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +22,7 @@ const SYN_VfsOps *syn_fat_get_ops(void);
 
 /**
  * @brief Initialize the SD card and mount the FAT filesystem in VFS at /sd.
- * 
+ *
  * @param spi_bus  SPI bus index.
  * @param cs       GPIO CS pin index.
  * @return SYN_OK on success, SYN_ERROR on failure.

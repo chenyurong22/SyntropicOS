@@ -1,14 +1,17 @@
-#include <stdint.h>
-#include <stddef.h>
-#include <string.h>
 #include "syntropic/proto/syn_dmx512.h"
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    if (size == 0 || size > 4096) return 0;
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+{
+    if (size == 0 || size > 4096)
+        return 0;
 
     SYN_DMX512_Slave slave;
     uint16_t start_addr = (data[0] % 512) + 1;
-    uint16_t footprint  = (data[0] % 64) + 1;
+    uint16_t footprint = (data[0] % 64) + 1;
     syn_dmx512_slave_init(&slave, start_addr, footprint);
 
     for (size_t i = 1; i < size; i++) {

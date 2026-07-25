@@ -27,9 +27,10 @@
 #define SYN_PROFILER_H
 
 #include "../port/syn_port_system.h"
-#include <stdint.h>
+
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,25 +40,25 @@ extern "C" {
 
 /** @brief Per-task profile entry — timing stats and CPU usage. */
 typedef struct {
-    const char *name;           /**< Task name                            */
-    uint32_t    total_us;       /**< Total time in current period (µs)    */
-    uint32_t    peak_us;        /**< Peak single-run time (µs)            */
-    uint32_t    run_count;      /**< Number of runs in current period     */
-    uint16_t    cpu_percent_x10; /**< CPU% × 10 (e.g., 125 = 12.5%)      */
+    const char *name;         /**< Task name                            */
+    uint32_t total_us;        /**< Total time in current period (µs)    */
+    uint32_t peak_us;         /**< Peak single-run time (µs)            */
+    uint32_t run_count;       /**< Number of runs in current period     */
+    uint16_t cpu_percent_x10; /**< CPU% × 10 (e.g., 125 = 12.5%)      */
 
     /* Internal */
-    uint32_t    _start_tick;    /**< Internal: tick at task_begin()       */
+    uint32_t _start_tick; /**< Internal: tick at task_begin()       */
 } SYN_ProfileEntry;
 
 /* ── Profiler ───────────────────────────────────────────────────────────── */
 
 /** @brief Task profiler instance. */
 typedef struct {
-    SYN_ProfileEntry *entries;     /**< Profile entry array               */
-    uint8_t            capacity;    /**< Number of entries                  */
-    uint32_t           period_start; /**< Tick at start of current period  */
-    uint32_t           period_ms;    /**< Measurement period (ms)          */
-    bool               enabled;      /**< Profiling active                 */
+    SYN_ProfileEntry *entries; /**< Profile entry array               */
+    uint8_t capacity;          /**< Number of entries                  */
+    uint32_t period_start;     /**< Tick at start of current period  */
+    uint32_t period_ms;        /**< Measurement period (ms)          */
+    bool enabled;              /**< Profiling active                 */
 } SYN_Profiler;
 
 /**
@@ -75,9 +76,7 @@ typedef void (*SYN_ProfilerPrintFunc)(const char *str);
  * @param entries    Array of profile entries (one per task).
  * @param capacity   Number of entries.
  */
-void syn_profiler_init(SYN_Profiler *prof,
-                        SYN_ProfileEntry *entries,
-                        uint8_t capacity);
+void syn_profiler_init(SYN_Profiler *prof, SYN_ProfileEntry *entries, uint8_t capacity);
 
 /**
  * @brief Register a task for profiling.
@@ -86,8 +85,7 @@ void syn_profiler_init(SYN_Profiler *prof,
  * @param index  Task index (must match scheduler task index).
  * @param name   Task name for display.
  */
-void syn_profiler_register(SYN_Profiler *prof, uint8_t index,
-                            const char *name);
+void syn_profiler_register(SYN_Profiler *prof, uint8_t index, const char *name);
 
 /**
  * @brief Mark the start of a task's execution.
@@ -117,8 +115,7 @@ void syn_profiler_update(SYN_Profiler *prof);
  * @param prof   Profiler.
  * @param print  Print function.
  */
-void syn_profiler_dump(const SYN_Profiler *prof,
-                        SYN_ProfilerPrintFunc print);
+void syn_profiler_dump(const SYN_Profiler *prof, SYN_ProfilerPrintFunc print);
 
 /**
  * @brief Enable/disable profiling.
@@ -133,8 +130,7 @@ void syn_profiler_enable(SYN_Profiler *prof, bool enable);
  * @param index  Task index.
  * @return Profile entry, or NULL if index out of range.
  */
-static inline const SYN_ProfileEntry *
-syn_profiler_get(const SYN_Profiler *prof, uint8_t index)
+static inline const SYN_ProfileEntry *syn_profiler_get(const SYN_Profiler *prof, uint8_t index)
 {
     return (index < prof->capacity) ? &prof->entries[index] : (const SYN_ProfileEntry *)0;
 }

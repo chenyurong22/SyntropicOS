@@ -1,6 +1,7 @@
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/drivers/syn_uart.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 static SYN_UART uart;
@@ -58,7 +59,7 @@ static void test_uart_write(void)
 {
     syn_uart_init(&uart, 0, 115200);
     mock_uart_tx_len = 0;
-    uint8_t data[] = { 0xAA, 0xBB, 0xCC };
+    uint8_t data[] = {0xAA, 0xBB, 0xCC};
     SYN_Status st = syn_uart_write(&uart, data, sizeof(data), 1000);
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL(3, mock_uart_tx_len);

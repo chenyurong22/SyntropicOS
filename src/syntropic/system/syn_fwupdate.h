@@ -38,9 +38,9 @@
 #include "../util/syn_hmac.h"
 #endif
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,22 +50,22 @@ extern "C" {
 
 /** @brief Firmware update context - manages streaming writes to flash. */
 typedef struct {
-    uint32_t  slot_addr;        /**< Flash base address of target slot     */
-    uint32_t  data_addr;        /**< Flash address for image data (after hdr) */
-    uint32_t  max_size;         /**< Maximum image size (excl. header)     */
-    uint32_t  bytes_written;    /**< Total bytes written so far            */
-    uint32_t  crc_state;        /**< Running CRC-32 state                  */
+    uint32_t slot_addr;     /**< Flash base address of target slot     */
+    uint32_t data_addr;     /**< Flash address for image data (after hdr) */
+    uint32_t max_size;      /**< Maximum image size (excl. header)     */
+    uint32_t bytes_written; /**< Total bytes written so far            */
+    uint32_t crc_state;     /**< Running CRC-32 state                  */
 
-    uint8_t  *page_buf;         /**< Caller-provided write buffer          */
-    uint16_t  page_buf_size;    /**< Buffer size (flash page granularity)  */
-    uint16_t  page_buf_used;    /**< Bytes currently buffered              */
+    uint8_t *page_buf;      /**< Caller-provided write buffer          */
+    uint16_t page_buf_size; /**< Buffer size (flash page granularity)  */
+    uint16_t page_buf_used; /**< Bytes currently buffered              */
 
-    bool      active;           /**< Update in progress?                   */
-    bool      error;            /**< Error occurred?                       */
+    bool active; /**< Update in progress?                   */
+    bool error;  /**< Error occurred?                       */
 
 #if defined(SYN_FW_USE_HMAC) && SYN_FW_USE_HMAC
-    SYN_HMAC_SHA256 hmac_ctx;   /**< Running HMAC-SHA256 context           */
-    bool      key_set;          /**< HMAC key was provided?                */
+    SYN_HMAC_SHA256 hmac_ctx; /**< Running HMAC-SHA256 context           */
+    bool key_set;             /**< HMAC key was provided?                */
 #endif
 } SYN_FwUpdate;
 
@@ -85,9 +85,8 @@ typedef struct {
  * @param page_buf_size Buffer size (should match flash write granularity).
  * @return SYN_OK on success, SYN_ERROR on flash erase failure.
  */
-SYN_Status syn_fwupdate_begin(SYN_FwUpdate *upd,
-                               uint32_t slot_addr, uint32_t max_size,
-                               uint8_t *page_buf, uint16_t page_buf_size);
+SYN_Status syn_fwupdate_begin(SYN_FwUpdate *upd, uint32_t slot_addr, uint32_t max_size,
+                              uint8_t *page_buf, uint16_t page_buf_size);
 
 /**
  * @brief Write a chunk of firmware data.
@@ -100,8 +99,7 @@ SYN_Status syn_fwupdate_begin(SYN_FwUpdate *upd,
  * @param len   Chunk length.
  * @return SYN_OK on success, SYN_ERROR on flash write failure or overflow.
  */
-SYN_Status syn_fwupdate_write(SYN_FwUpdate *upd,
-                               const uint8_t *data, size_t len);
+SYN_Status syn_fwupdate_write(SYN_FwUpdate *upd, const uint8_t *data, size_t len);
 
 /**
  * @brief Finalize the update.
@@ -115,12 +113,11 @@ SYN_Status syn_fwupdate_write(SYN_FwUpdate *upd,
  * @return SYN_OK if verification passes and header written,
  *         SYN_ERROR on mismatch or flash failure.
  */
-SYN_Status syn_fwupdate_finish(SYN_FwUpdate *upd,
-                                uint32_t expected_crc,
+SYN_Status syn_fwupdate_finish(SYN_FwUpdate *upd, uint32_t expected_crc,
 #if defined(SYN_FW_USE_HMAC) && SYN_FW_USE_HMAC
-                                const uint8_t *expected_hmac,
+                               const uint8_t *expected_hmac,
 #endif
-                                uint32_t version_code);
+                               uint32_t version_code);
 
 /**
  * @brief Abort the update.
@@ -163,8 +160,7 @@ static inline bool syn_fwupdate_active(const SYN_FwUpdate *upd)
  * @param key      HMAC key.
  * @param key_len  Key length in bytes.
  */
-void syn_fwupdate_set_key(SYN_FwUpdate *upd,
-                           const void *key, size_t key_len);
+void syn_fwupdate_set_key(SYN_FwUpdate *upd, const void *key, size_t key_len);
 #endif
 
 #ifdef __cplusplus

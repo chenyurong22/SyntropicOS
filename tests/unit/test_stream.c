@@ -3,15 +3,15 @@
  * @brief Unit tests for SYN_Stream — cooperative byte stream.
  */
 
-#include "unity/unity.h"
 #include "syntropic/util/syn_stream.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
-static uint8_t        s_buf[32];
-static SYN_Stream     s_stream;
+static uint8_t s_buf[32];
+static SYN_Stream s_stream;
 
 static void stream_setup(void)
 {
@@ -31,7 +31,7 @@ void test_stream_init(void)
 void test_stream_write_read(void)
 {
     stream_setup();
-    const uint8_t data[] = { 0xAA, 0xBB, 0xCC };
+    const uint8_t data[] = {0xAA, 0xBB, 0xCC};
     uint8_t out[8];
 
     size_t w = syn_stream_write(&s_stream, data, sizeof(data));
@@ -54,7 +54,7 @@ void test_stream_partial_write(void)
     memset(big, 0x55, sizeof(big));
 
     size_t w = syn_stream_write(&s_stream, big, sizeof(big));
-    TEST_ASSERT_EQUAL(sizeof(s_buf) - 1, w);  /* Only capacity fits */
+    TEST_ASSERT_EQUAL(sizeof(s_buf) - 1, w); /* Only capacity fits */
     TEST_ASSERT_EQUAL(0, syn_stream_free(&s_stream));
 }
 
@@ -158,7 +158,7 @@ void test_stream_read_line(void)
     syn_stream_set_delimiter(&s_stream, '\n');
 
     const uint8_t input[] = "hello\nworld\n";
-    syn_stream_write(&s_stream, input, sizeof(input) - 1);  /* no NUL */
+    syn_stream_write(&s_stream, input, sizeof(input) - 1); /* no NUL */
 
     uint8_t line[32];
 
@@ -216,22 +216,22 @@ void test_stream_read_line_max_len(void)
     /* Read with small buffer — should cap at max_len */
     uint8_t line[6];
     size_t n = syn_stream_read_line(&s_stream, line, sizeof(line));
-    TEST_ASSERT_EQUAL(6, n);  /* Capped */
+    TEST_ASSERT_EQUAL(6, n); /* Capped */
     TEST_ASSERT_EQUAL_MEMORY("long l", line, 6);
 
     /* Remaining bytes still in buffer */
-    TEST_ASSERT_EQUAL(9, syn_stream_count(&s_stream));  /* "ine here\n" */
+    TEST_ASSERT_EQUAL(9, syn_stream_count(&s_stream)); /* "ine here\n" */
 }
 
 void test_stream_delimiter_overrides_threshold(void)
 {
     stream_setup();
     syn_stream_set_threshold(&s_stream, 100);  /* Very high threshold */
-    syn_stream_set_delimiter(&s_stream, '\n');  /* Delimiter takes precedence */
+    syn_stream_set_delimiter(&s_stream, '\n'); /* Delimiter takes precedence */
 
     const uint8_t input[] = "hi\n";
     syn_stream_write(&s_stream, input, 3);
-    TEST_ASSERT_TRUE(syn_stream_readable(&s_stream));  /* Delimiter wins */
+    TEST_ASSERT_TRUE(syn_stream_readable(&s_stream)); /* Delimiter wins */
 }
 
 void test_stream_flush(void)

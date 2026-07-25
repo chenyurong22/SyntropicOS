@@ -3,19 +3,21 @@
  * @brief Unity tests for syn_pid.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/control/syn_pid.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_pid(void)
 {
-
     SYN_PID pid;
     SYN_PID_Config cfg = {
-        .kp = 100, .ki = 10, .kd = 50,
+        .kp = 100,
+        .ki = 10,
+        .kd = 50,
         .scale = 100,
-        .out_min = -1000, .out_max = 1000,
+        .out_min = -1000,
+        .out_max = 1000,
         .integral_max = 0,
         .d_filter_alpha = 0,
     };
@@ -54,9 +56,12 @@ static void test_pid_edge_cases(void)
     /* 1. Limits setter (syn_pid_set_limits) */
     SYN_PID pid;
     SYN_PID_Config cfg = {
-        .kp = 100, .ki = 10, .kd = 50,
+        .kp = 100,
+        .ki = 10,
+        .kd = 50,
         .scale = 100,
-        .out_min = -1000, .out_max = 1000,
+        .out_min = -1000,
+        .out_max = 1000,
         .integral_max = 0,
         .d_filter_alpha = 0,
     };
@@ -84,9 +89,12 @@ static void test_pid_edge_cases(void)
     /* 3. Anti-windup saturation branch coverage */
     SYN_PID pid_aw;
     SYN_PID_Config cfg_aw = {
-        .kp = 100, .ki = 100, .kd = 0,
+        .kp = 100,
+        .ki = 100,
+        .kd = 0,
         .scale = 100,
-        .out_min = -10, .out_max = 10,
+        .out_min = -10,
+        .out_max = 10,
         .integral_max = 50000,
         .d_filter_alpha = 0,
     };

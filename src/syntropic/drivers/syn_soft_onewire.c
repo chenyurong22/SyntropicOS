@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_ONEWIRE) || SYN_USE_ONEWIRE
@@ -19,8 +19,8 @@
  * All I/O uses syn_port_gpio: output = drive low, input = release/read.
  */
 
-#include "syn_soft_onewire.h"
 #include "../util/syn_assert.h"
+#include "syn_soft_onewire.h"
 
 /**
  * @brief NOP-loop delay.
@@ -94,12 +94,10 @@ static uint8_t ow_read_bit(const SYN_SoftOneWire *ow)
     return bit;
 }
 
-void syn_soft_onewire_init(SYN_SoftOneWire *ow,
-                           SYN_GPIO_Pin     pin,
-                           uint32_t         delay_loops)
+void syn_soft_onewire_init(SYN_SoftOneWire *ow, SYN_GPIO_Pin pin, uint32_t delay_loops)
 {
     SYN_ASSERT(ow != NULL);
-    ow->pin         = pin;
+    ow->pin = pin;
     ow->delay_loops = delay_loops;
     /* Configure as output, drive high (open-drain idle state) */
     syn_port_gpio_init(pin, SYN_GPIO_OUTPUT);
@@ -148,10 +146,9 @@ uint8_t syn_soft_onewire_read_byte(const SYN_SoftOneWire *ow)
     return byte;
 }
 
-void syn_soft_onewire_write_rom(const SYN_SoftOneWire *ow,
-                                const uint8_t          rom[8])
+void syn_soft_onewire_write_rom(const SYN_SoftOneWire *ow, const uint8_t rom[8])
 {
-    SYN_ASSERT(ow  != NULL);
+    SYN_ASSERT(ow != NULL);
     SYN_ASSERT(rom != NULL);
     uint8_t i;
     for (i = 0u; i < 8u; i++) {
@@ -159,10 +156,9 @@ void syn_soft_onewire_write_rom(const SYN_SoftOneWire *ow,
     }
 }
 
-void syn_soft_onewire_read_rom(const SYN_SoftOneWire *ow,
-                               uint8_t                rom[8])
+void syn_soft_onewire_read_rom(const SYN_SoftOneWire *ow, uint8_t rom[8])
 {
-    SYN_ASSERT(ow  != NULL);
+    SYN_ASSERT(ow != NULL);
     SYN_ASSERT(rom != NULL);
     uint8_t i;
     for (i = 0u; i < 8u; i++) {

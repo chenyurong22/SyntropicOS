@@ -44,7 +44,7 @@
 #define SYN_BARRIER_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #include "syn_compiler.h"
@@ -145,10 +145,10 @@ static inline size_t syn_load_acquire(const volatile size_t *ptr)
 /* ── Convenience macros ────────────────────────────────────────────────── */
 
 /** @brief Store with release semantics (macro form). */
-#define SYN_STORE_RELEASE(ptr, val)  syn_store_release((ptr), (val))
+#define SYN_STORE_RELEASE(ptr, val) syn_store_release((ptr), (val))
 
 /** @brief Load with acquire semantics (macro form). */
-#define SYN_LOAD_ACQUIRE(ptr)        syn_load_acquire((ptr))
+#define SYN_LOAD_ACQUIRE(ptr) syn_load_acquire((ptr))
 
 #ifdef __cplusplus
 }

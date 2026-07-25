@@ -3,14 +3,13 @@
  * @brief Unity tests for syn_sleep.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/system/syn_sleep.h"
+#include "unity/unity.h"
 
 static void test_sleep(void)
 {
-
     mock_sleep_count = 0;
 
     SYN_Sleep sl;

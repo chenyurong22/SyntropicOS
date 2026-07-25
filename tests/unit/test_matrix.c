@@ -3,32 +3,31 @@
  * @brief Unity tests for syn_matrix and extended syn_qmath.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
-#include "syntropic/util/syn_qmath.h"
 #include "syntropic/util/syn_matrix.h"
+#include "syntropic/util/syn_qmath.h"
+#include "unity/unity.h"
 
 /* ── Helper: assert Q16 value is within tolerance of expected ──────────── */
 
-#define ASSERT_Q16_NEAR(expected, actual, tol_q16)                       \
-    do {                                                                  \
-        q16_t _e = (expected), _a = (actual), _t = (tol_q16);           \
-        q16_t _d = (_a > _e) ? (_a - _e) : (_e - _a);                  \
-        if (_d > _t) {                                                    \
-            char _msg[80];                                                \
-            snprintf(_msg, sizeof(_msg),                                  \
-                "Expected %ld ± %ld, got %ld (delta %ld)",               \
-                (long)_e, (long)_t, (long)_a, (long)_d);                \
-            TEST_FAIL_MESSAGE(_msg);                                      \
-        }                                                                 \
+#define ASSERT_Q16_NEAR(expected, actual, tol_q16)                                            \
+    do {                                                                                      \
+        q16_t _e = (expected), _a = (actual), _t = (tol_q16);                                 \
+        q16_t _d = (_a > _e) ? (_a - _e) : (_e - _a);                                         \
+        if (_d > _t) {                                                                        \
+            char _msg[80];                                                                    \
+            snprintf(_msg, sizeof(_msg), "Expected %ld ± %ld, got %ld (delta %ld)", (long)_e, \
+                     (long)_t, (long)_a, (long)_d);                                           \
+            TEST_FAIL_MESSAGE(_msg);                                                          \
+        }                                                                                     \
     } while (0)
 
 /* Tolerance: ±0.002 in Q16 ≈ 131 LSBs */
-#define Q16_TOL  131
+#define Q16_TOL 131
 
 /* Tolerance for matrix roundtrip: ±0.02 ≈ 1311 LSBs */
-#define Q16_MAT_TOL  1311
+#define Q16_MAT_TOL 1311
 
 #include <stdio.h>
 
@@ -66,16 +65,13 @@ static void test_q16_sqrt(void)
 static void test_q16_hypot(void)
 {
     /* hypot(3, 4) = 5 */
-    ASSERT_Q16_NEAR(Q16_FROM_INT(5),
-                    q16_hypot(Q16_FROM_INT(3), Q16_FROM_INT(4)), Q16_TOL);
+    ASSERT_Q16_NEAR(Q16_FROM_INT(5), q16_hypot(Q16_FROM_INT(3), Q16_FROM_INT(4)), Q16_TOL);
 
     /* hypot(0, 5) = 5 */
-    ASSERT_Q16_NEAR(Q16_FROM_INT(5),
-                    q16_hypot(0, Q16_FROM_INT(5)), Q16_TOL);
+    ASSERT_Q16_NEAR(Q16_FROM_INT(5), q16_hypot(0, Q16_FROM_INT(5)), Q16_TOL);
 
     /* hypot(1, 1) ≈ 1.41421 */
-    ASSERT_Q16_NEAR(Q16_SQRT2,
-                    q16_hypot(Q16_ONE, Q16_ONE), Q16_TOL);
+    ASSERT_Q16_NEAR(Q16_SQRT2, q16_hypot(Q16_ONE, Q16_ONE), Q16_TOL);
 }
 
 static void test_q16_trig(void)
@@ -126,8 +122,7 @@ static void test_q16_atan2(void)
 
     /* atan2(-1, -1) = -3π/4 */
     q16_t expected_neg_3pi4 = -(q16_t)((int64_t)Q16_PI * 3 / 4);
-    ASSERT_Q16_NEAR(expected_neg_3pi4,
-                    q16_atan2(-Q16_ONE, -Q16_ONE), Q16_TOL * 4);
+    ASSERT_Q16_NEAR(expected_neg_3pi4, q16_atan2(-Q16_ONE, -Q16_ONE), Q16_TOL * 4);
 }
 
 static void test_q16_asin_acos(void)
@@ -186,12 +181,11 @@ static void test_q16_pow(void)
     ASSERT_Q16_NEAR(Q16_FROM_INT(2), q16_pow(Q16_FROM_INT(2), Q16_ONE), Q16_TOL * 2);
 
     /* 2^10 = 1024 */
-    ASSERT_Q16_NEAR(Q16_FROM_INT(1024),
-                    q16_pow(Q16_FROM_INT(2), Q16_FROM_INT(10)), Q16_FROM_INT(2));
+    ASSERT_Q16_NEAR(Q16_FROM_INT(1024), q16_pow(Q16_FROM_INT(2), Q16_FROM_INT(10)),
+                    Q16_FROM_INT(2));
 
     /* 4^0.5 = 2 (square root via pow) */
-    ASSERT_Q16_NEAR(Q16_FROM_INT(2),
-                    q16_pow(Q16_FROM_INT(4), Q16_HALF), Q16_TOL * 4);
+    ASSERT_Q16_NEAR(Q16_FROM_INT(2), q16_pow(Q16_FROM_INT(4), Q16_HALF), Q16_TOL * 4);
 }
 
 static void test_q16_str(void)
@@ -260,8 +254,12 @@ static void test_mat_transpose(void)
 
     /* A = [[1, 2, 3],
      *      [4, 5, 6]] */
-    A.data[0] = Q16_FROM_INT(1); A.data[1] = Q16_FROM_INT(2); A.data[2] = Q16_FROM_INT(3);
-    A.data[3] = Q16_FROM_INT(4); A.data[4] = Q16_FROM_INT(5); A.data[5] = Q16_FROM_INT(6);
+    A.data[0] = Q16_FROM_INT(1);
+    A.data[1] = Q16_FROM_INT(2);
+    A.data[2] = Q16_FROM_INT(3);
+    A.data[3] = Q16_FROM_INT(4);
+    A.data[4] = Q16_FROM_INT(5);
+    A.data[5] = Q16_FROM_INT(6);
 
     syn_matrix_transpose(&A, &AT);
 
@@ -280,8 +278,10 @@ static void test_mat_det_2x2(void)
 {
     /* A = [[3, 8], [4, 6]]  →  det = 3*6 - 8*4 = -14 */
     SYN_MAT2_DECL(A);
-    A.data[0] = Q16_FROM_INT(3); A.data[1] = Q16_FROM_INT(8);
-    A.data[2] = Q16_FROM_INT(4); A.data[3] = Q16_FROM_INT(6);
+    A.data[0] = Q16_FROM_INT(3);
+    A.data[1] = Q16_FROM_INT(8);
+    A.data[2] = Q16_FROM_INT(4);
+    A.data[3] = Q16_FROM_INT(6);
 
     ASSERT_Q16_NEAR(Q16_FROM_INT(-14), syn_matrix_det(&A), Q16_TOL);
 }
@@ -293,8 +293,10 @@ static void test_mat_inverse_2x2(void)
     SYN_MAT2_DECL(Ainv);
     SYN_MAT2_DECL(I_check);
 
-    A.data[0] = Q16_FROM_INT(4); A.data[1] = Q16_FROM_INT(7);
-    A.data[2] = Q16_FROM_INT(2); A.data[3] = Q16_FROM_INT(6);
+    A.data[0] = Q16_FROM_INT(4);
+    A.data[1] = Q16_FROM_INT(7);
+    A.data[2] = Q16_FROM_INT(2);
+    A.data[3] = Q16_FROM_INT(6);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_inv(&A, &Ainv));
 
@@ -302,8 +304,8 @@ static void test_mat_inverse_2x2(void)
     syn_matrix_mul(&A, &Ainv, &I_check);
 
     ASSERT_Q16_NEAR(Q16_ONE, SYN_MAT_AT(&I_check, 0, 0), Q16_MAT_TOL);
-    ASSERT_Q16_NEAR(0,       SYN_MAT_AT(&I_check, 0, 1), Q16_MAT_TOL);
-    ASSERT_Q16_NEAR(0,       SYN_MAT_AT(&I_check, 1, 0), Q16_MAT_TOL);
+    ASSERT_Q16_NEAR(0, SYN_MAT_AT(&I_check, 0, 1), Q16_MAT_TOL);
+    ASSERT_Q16_NEAR(0, SYN_MAT_AT(&I_check, 1, 0), Q16_MAT_TOL);
     ASSERT_Q16_NEAR(Q16_ONE, SYN_MAT_AT(&I_check, 1, 1), Q16_MAT_TOL);
 }
 
@@ -314,9 +316,15 @@ static void test_mat_inverse_3x3(void)
     SYN_MAT3_DECL(Ainv);
     SYN_MAT3_DECL(I_check);
 
-    A.data[0] = Q16_FROM_INT(1); A.data[1] = Q16_FROM_INT(2); A.data[2] = Q16_FROM_INT(3);
-    A.data[3] = Q16_FROM_INT(0); A.data[4] = Q16_FROM_INT(1); A.data[5] = Q16_FROM_INT(4);
-    A.data[6] = Q16_FROM_INT(5); A.data[7] = Q16_FROM_INT(6); A.data[8] = Q16_FROM_INT(0);
+    A.data[0] = Q16_FROM_INT(1);
+    A.data[1] = Q16_FROM_INT(2);
+    A.data[2] = Q16_FROM_INT(3);
+    A.data[3] = Q16_FROM_INT(0);
+    A.data[4] = Q16_FROM_INT(1);
+    A.data[5] = Q16_FROM_INT(4);
+    A.data[6] = Q16_FROM_INT(5);
+    A.data[7] = Q16_FROM_INT(6);
+    A.data[8] = Q16_FROM_INT(0);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_inv(&A, &Ainv));
 
@@ -338,8 +346,10 @@ static void test_mat_singular(void)
     SYN_MAT2_DECL(A);
     SYN_MAT2_DECL(Ainv);
 
-    A.data[0] = Q16_FROM_INT(1); A.data[1] = Q16_FROM_INT(2);
-    A.data[2] = Q16_FROM_INT(2); A.data[3] = Q16_FROM_INT(4);
+    A.data[0] = Q16_FROM_INT(1);
+    A.data[1] = Q16_FROM_INT(2);
+    A.data[2] = Q16_FROM_INT(2);
+    A.data[3] = Q16_FROM_INT(4);
 
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_matrix_inv(&A, &Ainv));
 }
@@ -351,12 +361,12 @@ static void test_mat_rotate_2d(void)
     syn_matrix_rotate_2d(&R, Q16_PI_2);
 
     /* Apply to homogeneous vector [1, 0, 1] */
-    q16_t v_in[3]  = { Q16_ONE, 0, Q16_ONE };
+    q16_t v_in[3] = {Q16_ONE, 0, Q16_ONE};
     q16_t v_out[3];
     syn_matrix_mul_vec(&R, v_in, v_out, 3);
 
     /* Expect ≈ (0, 1, 1) */
-    ASSERT_Q16_NEAR(0,       v_out[0], Q16_TOL);
+    ASSERT_Q16_NEAR(0, v_out[0], Q16_TOL);
     ASSERT_Q16_NEAR(Q16_ONE, v_out[1], Q16_TOL);
     ASSERT_Q16_NEAR(Q16_ONE, v_out[2], Q16_TOL);
 }
@@ -369,20 +379,27 @@ static void test_mat_nonsquare_mul(void)
     SYN_MAT_DECL(C, 2, 2);
 
     /* A = [[1, 2, 3], [4, 5, 6]] */
-    A.data[0] = Q16_FROM_INT(1); A.data[1] = Q16_FROM_INT(2); A.data[2] = Q16_FROM_INT(3);
-    A.data[3] = Q16_FROM_INT(4); A.data[4] = Q16_FROM_INT(5); A.data[5] = Q16_FROM_INT(6);
+    A.data[0] = Q16_FROM_INT(1);
+    A.data[1] = Q16_FROM_INT(2);
+    A.data[2] = Q16_FROM_INT(3);
+    A.data[3] = Q16_FROM_INT(4);
+    A.data[4] = Q16_FROM_INT(5);
+    A.data[5] = Q16_FROM_INT(6);
 
     /* B = [[7, 8], [9, 10], [11, 12]] */
-    B.data[0] = Q16_FROM_INT(7);  B.data[1] = Q16_FROM_INT(8);
-    B.data[2] = Q16_FROM_INT(9);  B.data[3] = Q16_FROM_INT(10);
-    B.data[4] = Q16_FROM_INT(11); B.data[5] = Q16_FROM_INT(12);
+    B.data[0] = Q16_FROM_INT(7);
+    B.data[1] = Q16_FROM_INT(8);
+    B.data[2] = Q16_FROM_INT(9);
+    B.data[3] = Q16_FROM_INT(10);
+    B.data[4] = Q16_FROM_INT(11);
+    B.data[5] = Q16_FROM_INT(12);
 
     syn_matrix_mul(&A, &B, &C);
 
     /* C = [[1*7+2*9+3*11, 1*8+2*10+3*12],  = [[58, 64],
      *      [4*7+5*9+6*11, 4*8+5*10+6*12]]     [139, 154]] */
-    ASSERT_Q16_NEAR(Q16_FROM_INT(58),  SYN_MAT_AT(&C, 0, 0), Q16_TOL);
-    ASSERT_Q16_NEAR(Q16_FROM_INT(64),  SYN_MAT_AT(&C, 0, 1), Q16_TOL);
+    ASSERT_Q16_NEAR(Q16_FROM_INT(58), SYN_MAT_AT(&C, 0, 0), Q16_TOL);
+    ASSERT_Q16_NEAR(Q16_FROM_INT(64), SYN_MAT_AT(&C, 0, 1), Q16_TOL);
     ASSERT_Q16_NEAR(Q16_FROM_INT(139), SYN_MAT_AT(&C, 1, 0), Q16_TOL);
     ASSERT_Q16_NEAR(Q16_FROM_INT(154), SYN_MAT_AT(&C, 1, 1), Q16_TOL);
 }
@@ -390,22 +407,22 @@ static void test_mat_nonsquare_mul(void)
 static void test_vec3_cross(void)
 {
     /* (1,0,0) × (0,1,0) = (0,0,1) */
-    q16_t a[3] = { Q16_ONE, 0, 0 };
-    q16_t b[3] = { 0, Q16_ONE, 0 };
+    q16_t a[3] = {Q16_ONE, 0, 0};
+    q16_t b[3] = {0, Q16_ONE, 0};
     q16_t out[3];
 
     syn_vec3_cross(a, b, out);
 
-    ASSERT_Q16_NEAR(0,       out[0], Q16_TOL);
-    ASSERT_Q16_NEAR(0,       out[1], Q16_TOL);
+    ASSERT_Q16_NEAR(0, out[0], Q16_TOL);
+    ASSERT_Q16_NEAR(0, out[1], Q16_TOL);
     ASSERT_Q16_NEAR(Q16_ONE, out[2], Q16_TOL);
 }
 
 static void test_vec_dot(void)
 {
     /* (1,2,3) · (4,5,6) = 4+10+18 = 32 */
-    q16_t a[3] = { Q16_FROM_INT(1), Q16_FROM_INT(2), Q16_FROM_INT(3) };
-    q16_t b[3] = { Q16_FROM_INT(4), Q16_FROM_INT(5), Q16_FROM_INT(6) };
+    q16_t a[3] = {Q16_FROM_INT(1), Q16_FROM_INT(2), Q16_FROM_INT(3)};
+    q16_t b[3] = {Q16_FROM_INT(4), Q16_FROM_INT(5), Q16_FROM_INT(6)};
 
     ASSERT_Q16_NEAR(Q16_FROM_INT(32), syn_vec_dot(a, b, 3), Q16_TOL);
 }
@@ -413,7 +430,7 @@ static void test_vec_dot(void)
 static void test_vec_normalize(void)
 {
     /* Normalize (3, 4, 0) → (0.6, 0.8, 0), magnitude = 5 */
-    q16_t v[3]   = { Q16_FROM_INT(3), Q16_FROM_INT(4), 0 };
+    q16_t v[3] = {Q16_FROM_INT(3), Q16_FROM_INT(4), 0};
     q16_t out[3];
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_vec_normalize(v, out, 3));
@@ -435,8 +452,10 @@ static void test_mat_solve_lu(void)
     SYN_MAT_DECL(x2, 2, 1);
     SYN_MAT_DECL(b2_check, 2, 1);
 
-    A2.data[0] = Q16_FROM_INT(2); A2.data[1] = Q16_FROM_INT(1);
-    A2.data[2] = Q16_FROM_INT(5); A2.data[3] = Q16_FROM_INT(7);
+    A2.data[0] = Q16_FROM_INT(2);
+    A2.data[1] = Q16_FROM_INT(1);
+    A2.data[2] = Q16_FROM_INT(5);
+    A2.data[3] = Q16_FROM_INT(7);
 
     b2.data[0] = Q16_FROM_INT(11);
     b2.data[1] = Q16_FROM_INT(13);
@@ -453,17 +472,23 @@ static void test_mat_solve_lu(void)
     SYN_MAT_DECL(b3, 3, 1);
     SYN_MAT_DECL(x3, 3, 1);
 
-    A3.data[0] = Q16_FROM_INT(2);  A3.data[1] = Q16_FROM_INT(1);  A3.data[2] = Q16_FROM_INT(-1);
-    A3.data[3] = Q16_FROM_INT(-3); A3.data[4] = Q16_FROM_INT(-1); A3.data[5] = Q16_FROM_INT(2);
-    A3.data[6] = Q16_FROM_INT(-2); A3.data[7] = Q16_FROM_INT(1);  A3.data[8] = Q16_FROM_INT(2);
+    A3.data[0] = Q16_FROM_INT(2);
+    A3.data[1] = Q16_FROM_INT(1);
+    A3.data[2] = Q16_FROM_INT(-1);
+    A3.data[3] = Q16_FROM_INT(-3);
+    A3.data[4] = Q16_FROM_INT(-1);
+    A3.data[5] = Q16_FROM_INT(2);
+    A3.data[6] = Q16_FROM_INT(-2);
+    A3.data[7] = Q16_FROM_INT(1);
+    A3.data[8] = Q16_FROM_INT(2);
 
     b3.data[0] = Q16_FROM_INT(8);
     b3.data[1] = Q16_FROM_INT(-11);
     b3.data[2] = Q16_FROM_INT(-3);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_solve_lu(&A3, &b3, &x3));
-    ASSERT_Q16_NEAR(Q16_FROM_INT(2),  x3.data[0], Q16_MAT_TOL);
-    ASSERT_Q16_NEAR(Q16_FROM_INT(3),  x3.data[1], Q16_MAT_TOL);
+    ASSERT_Q16_NEAR(Q16_FROM_INT(2), x3.data[0], Q16_MAT_TOL);
+    ASSERT_Q16_NEAR(Q16_FROM_INT(3), x3.data[1], Q16_MAT_TOL);
     ASSERT_Q16_NEAR(Q16_FROM_INT(-1), x3.data[2], Q16_MAT_TOL);
 
     /* Verify A3 · x3 = b3 explicitly */
@@ -478,10 +503,22 @@ static void test_mat_solve_lu(void)
     SYN_MAT_DECL(b4, 4, 1);
     SYN_MAT_DECL(x4, 4, 1);
 
-    A4.data[0]  = Q16_ONE; A4.data[1]  = Q16_ONE;          A4.data[2]  = Q16_ONE;           A4.data[3]  = Q16_ONE;
-    A4.data[4]  = Q16_ONE; A4.data[5]  = Q16_FROM_INT(2);  A4.data[6]  = Q16_FROM_INT(3);   A4.data[7]  = Q16_FROM_INT(4);
-    A4.data[8]  = Q16_ONE; A4.data[9]  = Q16_FROM_INT(3);  A4.data[10] = Q16_FROM_INT(6);   A4.data[11] = Q16_FROM_INT(10);
-    A4.data[12] = Q16_ONE; A4.data[13] = Q16_FROM_INT(4);  A4.data[14] = Q16_FROM_INT(10);  A4.data[15] = Q16_FROM_INT(20);
+    A4.data[0] = Q16_ONE;
+    A4.data[1] = Q16_ONE;
+    A4.data[2] = Q16_ONE;
+    A4.data[3] = Q16_ONE;
+    A4.data[4] = Q16_ONE;
+    A4.data[5] = Q16_FROM_INT(2);
+    A4.data[6] = Q16_FROM_INT(3);
+    A4.data[7] = Q16_FROM_INT(4);
+    A4.data[8] = Q16_ONE;
+    A4.data[9] = Q16_FROM_INT(3);
+    A4.data[10] = Q16_FROM_INT(6);
+    A4.data[11] = Q16_FROM_INT(10);
+    A4.data[12] = Q16_ONE;
+    A4.data[13] = Q16_FROM_INT(4);
+    A4.data[14] = Q16_FROM_INT(10);
+    A4.data[15] = Q16_FROM_INT(20);
 
     b4.data[0] = Q16_FROM_INT(4);
     b4.data[1] = Q16_FROM_INT(10);
@@ -504,8 +541,10 @@ static void test_mat_solve_lu(void)
 
     /* 4. Singular matrix error detection */
     SYN_MAT2_DECL(A_sing);
-    A_sing.data[0] = Q16_ONE; A_sing.data[1] = Q16_FROM_INT(2);
-    A_sing.data[2] = Q16_FROM_INT(2); A_sing.data[3] = Q16_FROM_INT(4);
+    A_sing.data[0] = Q16_ONE;
+    A_sing.data[1] = Q16_FROM_INT(2);
+    A_sing.data[2] = Q16_FROM_INT(2);
+    A_sing.data[3] = Q16_FROM_INT(4);
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_matrix_solve_lu(&A_sing, &b2, &x2));
 
     /* 5. Dimension mismatch validation */
@@ -520,8 +559,10 @@ static void test_mat_solve_cholesky(void)
     SYN_MAT_DECL(b2, 2, 1);
     SYN_MAT_DECL(x2, 2, 1);
 
-    A2.data[0] = Q16_FROM_INT(4);  A2.data[1] = Q16_FROM_INT(12);
-    A2.data[2] = Q16_FROM_INT(12); A2.data[3] = Q16_FROM_INT(45);
+    A2.data[0] = Q16_FROM_INT(4);
+    A2.data[1] = Q16_FROM_INT(12);
+    A2.data[2] = Q16_FROM_INT(12);
+    A2.data[3] = Q16_FROM_INT(45);
 
     b2.data[0] = Q16_FROM_INT(16);
     b2.data[1] = Q16_FROM_INT(57);
@@ -542,9 +583,15 @@ static void test_mat_solve_cholesky(void)
     SYN_MAT_DECL(b3, 3, 1);
     SYN_MAT_DECL(x3, 3, 1);
 
-    A3.data[0] = Q16_FROM_INT(4);   A3.data[1] = Q16_FROM_INT(12);  A3.data[2] = Q16_FROM_INT(-16);
-    A3.data[3] = Q16_FROM_INT(12);  A3.data[4] = Q16_FROM_INT(37);  A3.data[5] = Q16_FROM_INT(-43);
-    A3.data[6] = Q16_FROM_INT(-16); A3.data[7] = Q16_FROM_INT(-43); A3.data[8] = Q16_FROM_INT(98);
+    A3.data[0] = Q16_FROM_INT(4);
+    A3.data[1] = Q16_FROM_INT(12);
+    A3.data[2] = Q16_FROM_INT(-16);
+    A3.data[3] = Q16_FROM_INT(12);
+    A3.data[4] = Q16_FROM_INT(37);
+    A3.data[5] = Q16_FROM_INT(-43);
+    A3.data[6] = Q16_FROM_INT(-16);
+    A3.data[7] = Q16_FROM_INT(-43);
+    A3.data[8] = Q16_FROM_INT(98);
 
     b3.data[0] = Q16_FROM_INT(12);
     b3.data[1] = Q16_FROM_INT(43);
@@ -564,8 +611,10 @@ static void test_mat_solve_cholesky(void)
 
     /* 3. Non-positive definite matrix detection */
     SYN_MAT2_DECL(A_not_pd);
-    A_not_pd.data[0] = Q16_ONE; A_not_pd.data[1] = Q16_FROM_INT(2);
-    A_not_pd.data[2] = Q16_FROM_INT(2); A_not_pd.data[3] = Q16_ONE;
+    A_not_pd.data[0] = Q16_ONE;
+    A_not_pd.data[1] = Q16_FROM_INT(2);
+    A_not_pd.data[2] = Q16_FROM_INT(2);
+    A_not_pd.data[3] = Q16_ONE;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_matrix_solve_cholesky(&A_not_pd, &b2, &x2));
 
     /* 4. Dimension mismatch validation */
@@ -581,9 +630,12 @@ static void test_mat_least_squares(void)
     SYN_MAT_DECL(b3, 3, 1);
     SYN_MAT_DECL(x2, 2, 1);
 
-    A32.data[0] = Q16_ONE; A32.data[1] = 0;
-    A32.data[2] = Q16_ONE; A32.data[3] = Q16_ONE;
-    A32.data[4] = Q16_ONE; A32.data[5] = Q16_FROM_INT(2);
+    A32.data[0] = Q16_ONE;
+    A32.data[1] = 0;
+    A32.data[2] = Q16_ONE;
+    A32.data[3] = Q16_ONE;
+    A32.data[4] = Q16_ONE;
+    A32.data[5] = Q16_FROM_INT(2);
 
     b3.data[0] = Q16_FROM_INT(1);
     b3.data[1] = Q16_FROM_INT(2);
@@ -593,16 +645,24 @@ static void test_mat_least_squares(void)
     ASSERT_Q16_NEAR(Q16_FROM_FRAC(5, 6), x2.data[0], Q16_TOL * 2);
     ASSERT_Q16_NEAR(Q16_FROM_FRAC(3, 2), x2.data[1], Q16_TOL * 2);
 
-    /* 2. Overdetermined 4×3 system (quadratic fit y = c0 + c1*x + c2*x^2 to points (0,1), (1,3), (2,7), (3,13))
-     * Exact curve: y = 1 + x + x^2 -> x = [1, 1, 1] */
+    /* 2. Overdetermined 4×3 system (quadratic fit y = c0 + c1*x + c2*x^2 to points (0,1), (1,3),
+     * (2,7), (3,13)) Exact curve: y = 1 + x + x^2 -> x = [1, 1, 1] */
     SYN_MAT_DECL(A43, 4, 3);
     SYN_MAT_DECL(b4, 4, 1);
     SYN_MAT_DECL(x3, 3, 1);
 
-    A43.data[0] = Q16_ONE; A43.data[1] = 0;                 A43.data[2] = 0;
-    A43.data[3] = Q16_ONE; A43.data[4] = Q16_ONE;          A43.data[5] = Q16_ONE;
-    A43.data[6] = Q16_ONE; A43.data[7] = Q16_FROM_INT(2);  A43.data[8] = Q16_FROM_INT(4);
-    A43.data[9] = Q16_ONE; A43.data[10] = Q16_FROM_INT(3); A43.data[11] = Q16_FROM_INT(9);
+    A43.data[0] = Q16_ONE;
+    A43.data[1] = 0;
+    A43.data[2] = 0;
+    A43.data[3] = Q16_ONE;
+    A43.data[4] = Q16_ONE;
+    A43.data[5] = Q16_ONE;
+    A43.data[6] = Q16_ONE;
+    A43.data[7] = Q16_FROM_INT(2);
+    A43.data[8] = Q16_FROM_INT(4);
+    A43.data[9] = Q16_ONE;
+    A43.data[10] = Q16_FROM_INT(3);
+    A43.data[11] = Q16_FROM_INT(9);
 
     b4.data[0] = Q16_FROM_INT(1);
     b4.data[1] = Q16_FROM_INT(3);
@@ -641,8 +701,10 @@ static void test_mat_blocks(void)
     syn_matrix_zero(&M);
 
     SYN_MAT2_DECL(sub);
-    sub.data[0] = Q16_FROM_INT(1); sub.data[1] = Q16_FROM_INT(2);
-    sub.data[2] = Q16_FROM_INT(3); sub.data[3] = Q16_FROM_INT(4);
+    sub.data[0] = Q16_FROM_INT(1);
+    sub.data[1] = Q16_FROM_INT(2);
+    sub.data[2] = Q16_FROM_INT(3);
+    sub.data[3] = Q16_FROM_INT(4);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_set_block(&M, 1, 1, &sub));
     TEST_ASSERT_EQUAL(Q16_FROM_INT(1), SYN_MAT_AT(&M, 1, 1));
@@ -659,17 +721,17 @@ static void test_mat_blocks(void)
 
 static void test_mat_outer_product(void)
 {
-    q16_t u[2] = { Q16_FROM_INT(1), Q16_FROM_INT(2) };
-    q16_t v[3] = { Q16_FROM_INT(3), Q16_FROM_INT(4), Q16_FROM_INT(5) };
+    q16_t u[2] = {Q16_FROM_INT(1), Q16_FROM_INT(2)};
+    q16_t v[3] = {Q16_FROM_INT(3), Q16_FROM_INT(4), Q16_FROM_INT(5)};
 
     SYN_MAT_DECL(M, 2, 3);
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_outer_product(u, 2, v, 3, &M));
 
-    TEST_ASSERT_EQUAL(Q16_FROM_INT(3),  SYN_MAT_AT(&M, 0, 0));
-    TEST_ASSERT_EQUAL(Q16_FROM_INT(4),  SYN_MAT_AT(&M, 0, 1));
-    TEST_ASSERT_EQUAL(Q16_FROM_INT(5),  SYN_MAT_AT(&M, 0, 2));
-    TEST_ASSERT_EQUAL(Q16_FROM_INT(6),  SYN_MAT_AT(&M, 1, 0));
-    TEST_ASSERT_EQUAL(Q16_FROM_INT(8),  SYN_MAT_AT(&M, 1, 1));
+    TEST_ASSERT_EQUAL(Q16_FROM_INT(3), SYN_MAT_AT(&M, 0, 0));
+    TEST_ASSERT_EQUAL(Q16_FROM_INT(4), SYN_MAT_AT(&M, 0, 1));
+    TEST_ASSERT_EQUAL(Q16_FROM_INT(5), SYN_MAT_AT(&M, 0, 2));
+    TEST_ASSERT_EQUAL(Q16_FROM_INT(6), SYN_MAT_AT(&M, 1, 0));
+    TEST_ASSERT_EQUAL(Q16_FROM_INT(8), SYN_MAT_AT(&M, 1, 1));
     TEST_ASSERT_EQUAL(Q16_FROM_INT(10), SYN_MAT_AT(&M, 1, 2));
 }
 
@@ -680,9 +742,12 @@ static void test_mat_qr(void)
     SYN_MAT_DECL(Q, 3, 2);
     SYN_MAT_DECL(R, 2, 2);
 
-    A.data[0] = Q16_ONE; A.data[1] = Q16_ONE;
-    A.data[2] = Q16_ONE; A.data[3] = 0;
-    A.data[4] = Q16_ONE; A.data[5] = Q16_FROM_INT(2);
+    A.data[0] = Q16_ONE;
+    A.data[1] = Q16_ONE;
+    A.data[2] = Q16_ONE;
+    A.data[3] = 0;
+    A.data[4] = Q16_ONE;
+    A.data[5] = Q16_FROM_INT(2);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_qr(&A, &Q, &R));
 
@@ -696,8 +761,8 @@ static void test_mat_qr(void)
     syn_matrix_mul(&QT, &Q, &QTQ);
 
     ASSERT_Q16_NEAR(Q16_ONE, SYN_MAT_AT(&QTQ, 0, 0), Q16_MAT_TOL);
-    ASSERT_Q16_NEAR(0,       SYN_MAT_AT(&QTQ, 0, 1), Q16_MAT_TOL);
-    ASSERT_Q16_NEAR(0,       SYN_MAT_AT(&QTQ, 1, 0), Q16_MAT_TOL);
+    ASSERT_Q16_NEAR(0, SYN_MAT_AT(&QTQ, 0, 1), Q16_MAT_TOL);
+    ASSERT_Q16_NEAR(0, SYN_MAT_AT(&QTQ, 1, 0), Q16_MAT_TOL);
     ASSERT_Q16_NEAR(Q16_ONE, SYN_MAT_AT(&QTQ, 1, 1), Q16_MAT_TOL);
 
     /* 3. Reconstruction: Q · R == A */
@@ -722,13 +787,15 @@ static void test_mat_eigen_sym2(void)
     SYN_MAT2_DECL(E);
     q16_t evals[2];
 
-    A.data[0] = Q16_FROM_INT(4); A.data[1] = Q16_FROM_INT(2);
-    A.data[2] = Q16_FROM_INT(2); A.data[3] = Q16_FROM_INT(1);
+    A.data[0] = Q16_FROM_INT(4);
+    A.data[1] = Q16_FROM_INT(2);
+    A.data[2] = Q16_FROM_INT(2);
+    A.data[3] = Q16_FROM_INT(1);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_eigen_sym2(&A, evals, &E));
 
     ASSERT_Q16_NEAR(Q16_FROM_INT(5), evals[0], Q16_MAT_TOL);
-    ASSERT_Q16_NEAR(0,               evals[1], Q16_MAT_TOL);
+    ASSERT_Q16_NEAR(0, evals[1], Q16_MAT_TOL);
 
     /* Verify A · e0 == λ0 * e0 */
     SYN_MAT_DECL(e0, 2, 1);
@@ -753,14 +820,16 @@ static void test_mat_eigen_sym2(void)
     SYN_MAT2_DECL(E_diag);
     q16_t evals_diag[2];
 
-    A_diag.data[0] = Q16_FROM_INT(3); A_diag.data[1] = 0;
-    A_diag.data[2] = 0;               A_diag.data[3] = Q16_FROM_INT(1);
+    A_diag.data[0] = Q16_FROM_INT(3);
+    A_diag.data[1] = 0;
+    A_diag.data[2] = 0;
+    A_diag.data[3] = Q16_FROM_INT(1);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_eigen_sym2(&A_diag, evals_diag, &E_diag));
     ASSERT_Q16_NEAR(Q16_FROM_INT(3), evals_diag[0], Q16_MAT_TOL);
     ASSERT_Q16_NEAR(Q16_FROM_INT(1), evals_diag[1], Q16_MAT_TOL);
     TEST_ASSERT_EQUAL(Q16_ONE, SYN_MAT_AT(&E_diag, 0, 0));
-    TEST_ASSERT_EQUAL(0,       SYN_MAT_AT(&E_diag, 0, 1));
+    TEST_ASSERT_EQUAL(0, SYN_MAT_AT(&E_diag, 0, 1));
 }
 
 static void test_mat_eigen_sym3(void)
@@ -770,9 +839,15 @@ static void test_mat_eigen_sym3(void)
     SYN_MAT3_DECL(E);
     q16_t evals[3];
 
-    A.data[0] = Q16_FROM_INT(3); A.data[1] = Q16_FROM_INT(1); A.data[2] = Q16_FROM_INT(1);
-    A.data[3] = Q16_FROM_INT(1); A.data[4] = Q16_FROM_INT(3); A.data[5] = Q16_FROM_INT(1);
-    A.data[6] = Q16_FROM_INT(1); A.data[7] = Q16_FROM_INT(1); A.data[8] = Q16_FROM_INT(3);
+    A.data[0] = Q16_FROM_INT(3);
+    A.data[1] = Q16_FROM_INT(1);
+    A.data[2] = Q16_FROM_INT(1);
+    A.data[3] = Q16_FROM_INT(1);
+    A.data[4] = Q16_FROM_INT(3);
+    A.data[5] = Q16_FROM_INT(1);
+    A.data[6] = Q16_FROM_INT(1);
+    A.data[7] = Q16_FROM_INT(1);
+    A.data[8] = Q16_FROM_INT(3);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_eigen_sym3(&A, evals, &E));
 
@@ -809,9 +884,15 @@ static void test_mat_eigen_sym3(void)
     SYN_MAT3_DECL(E2);
     q16_t evals2[3];
 
-    A2.data[0] = Q16_FROM_INT(2); A2.data[1] = Q16_FROM_INT(1); A2.data[2] = 0;
-    A2.data[3] = Q16_FROM_INT(1); A2.data[4] = Q16_FROM_INT(2); A2.data[5] = Q16_FROM_INT(1);
-    A2.data[6] = 0;               A2.data[7] = Q16_FROM_INT(1); A2.data[8] = Q16_FROM_INT(2);
+    A2.data[0] = Q16_FROM_INT(2);
+    A2.data[1] = Q16_FROM_INT(1);
+    A2.data[2] = 0;
+    A2.data[3] = Q16_FROM_INT(1);
+    A2.data[4] = Q16_FROM_INT(2);
+    A2.data[5] = Q16_FROM_INT(1);
+    A2.data[6] = 0;
+    A2.data[7] = Q16_FROM_INT(1);
+    A2.data[8] = Q16_FROM_INT(2);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_eigen_sym3(&A2, evals2, &E2));
 
@@ -856,13 +937,13 @@ static void test_matrix_transforms_and_errors(void)
     TEST_ASSERT_EQUAL(Q16_FROM_INT(3), SYN_MAT_AT(&T3D, 2, 3));
 
     /* Error paths */
-    q16_t sing_store[4] = { 0, 0, 0, 0 };
+    q16_t sing_store[4] = {0, 0, 0, 0};
     SYN_MAT_INIT(Sing, sing_store, 2, 2);
     q16_t out_store[4];
     SYN_MAT_INIT(Out, out_store, 2, 2);
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_matrix_inv(&Sing, &Out));
 
-    q16_t m5_store[25] = { 0 };
+    q16_t m5_store[25] = {0};
     SYN_MAT_INIT(M5, m5_store, 5, 5);
     SYN_MAT_INIT(Out5, m5_store, 5, 5);
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_matrix_inv(&M5, &Out5));
@@ -872,8 +953,8 @@ static void test_matrix_transforms_and_errors(void)
 static void test_matrix_extra_coverage(void)
 {
     /* 1x1 matrix det and inv */
-    q16_t d1[1] = { Q16_FROM_INT(5) };
-    q16_t inv1[1] = { 0 };
+    q16_t d1[1] = {Q16_FROM_INT(5)};
+    q16_t inv1[1] = {0};
     SYN_MAT_INIT(M1, d1, 1, 1);
     SYN_MAT_INIT(Inv1, inv1, 1, 1);
     TEST_ASSERT_EQUAL(Q16_FROM_INT(5), syn_matrix_det(&M1));
@@ -881,7 +962,7 @@ static void test_matrix_extra_coverage(void)
     TEST_ASSERT_INT_WITHIN(Q16_TOL, Q16_FROM_FRAC(1, 5), inv1[0]);
 
     /* Trace */
-    q16_t d2[4] = { Q16_FROM_INT(3), Q16_ONE, Q16_FROM_INT(2), Q16_FROM_INT(4) };
+    q16_t d2[4] = {Q16_FROM_INT(3), Q16_ONE, Q16_FROM_INT(2), Q16_FROM_INT(4)};
     SYN_MAT_INIT(M2, d2, 2, 2);
     TEST_ASSERT_EQUAL(Q16_FROM_INT(7), syn_matrix_trace(&M2));
 
@@ -889,13 +970,9 @@ static void test_matrix_extra_coverage(void)
     TEST_ASSERT_TRUE(syn_vec_norm(d2, 4) > 0);
 
     /* 4x4 matrix det & inverse */
-    q16_t d4[16] = {
-        Q16_ONE, 0, 0, 0,
-        0, Q16_FROM_INT(2), 0, 0,
-        0, 0, Q16_FROM_INT(3), 0,
-        0, 0, 0, Q16_FROM_INT(4)
-    };
-    q16_t inv4[16] = { 0 };
+    q16_t d4[16] = {Q16_ONE,         0, 0, 0, 0, Q16_FROM_INT(2), 0, 0, 0, 0,
+                    Q16_FROM_INT(3), 0, 0, 0, 0, Q16_FROM_INT(4)};
+    q16_t inv4[16] = {0};
     SYN_MAT_INIT(M4, d4, 4, 4);
     SYN_MAT_INIT(Inv4, inv4, 4, 4);
     TEST_ASSERT_EQUAL(Q16_FROM_INT(24), syn_matrix_det(&M4));
@@ -943,6 +1020,3 @@ void run_matrix_tests(void)
     RUN_TEST(test_matrix_extra_coverage);
     RUN_TEST(test_matrix_transforms_and_errors);
 }
-
-
-

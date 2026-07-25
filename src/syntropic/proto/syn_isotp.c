@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_ISOTP) || SYN_USE_ISOTP
@@ -9,9 +9,9 @@
  * @brief ISO 15765-2 (ISO-TP) Multi-Frame CAN Transport implementation.
  */
 
-#include "syn_isotp.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
+#include "syn_isotp.h"
 
 #include <string.h>
 
@@ -19,13 +19,20 @@
 /* ── CAN FD length padding helper (ISO 11898-1 valid lengths) ───────────── */
 static uint8_t syn_can_fd_pad_len(uint8_t len)
 {
-    if (len <= 8)  return len;
-    if (len <= 12) return 12;
-    if (len <= 16) return 16;
-    if (len <= 20) return 20;
-    if (len <= 24) return 24;
-    if (len <= 32) return 32;
-    if (len <= 48) return 48;
+    if (len <= 8)
+        return len;
+    if (len <= 12)
+        return 12;
+    if (len <= 16)
+        return 16;
+    if (len <= 20)
+        return 20;
+    if (len <= 24)
+        return 24;
+    if (len <= 32)
+        return 32;
+    if (len <= 48)
+        return 48;
     return 64;
 }
 #endif
@@ -44,14 +51,14 @@ static uint32_t syn_isotp_decode_stmin_us(uint8_t st_min)
 
 void syn_isotp_set_timeouts(SYN_ISOTP_Link *link, uint32_t n_bs_ms, uint32_t n_cr_ms)
 {
-    if (link == NULL) return;
+    if (link == NULL)
+        return;
     link->n_bs_timeout_us = (n_bs_ms > 0) ? (n_bs_ms * 1000U) : (SYN_ISOTP_DEFAULT_N_BS_MS * 1000U);
     link->n_cr_timeout_us = (n_cr_ms > 0) ? (n_cr_ms * 1000U) : (SYN_ISOTP_DEFAULT_N_CR_MS * 1000U);
 }
 
-void syn_isotp_init(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id,
-                    uint8_t *rx_buf, size_t rx_buf_size,
-                    uint8_t *tx_buf, size_t tx_buf_size)
+void syn_isotp_init(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id, uint8_t *rx_buf,
+                    size_t rx_buf_size, uint8_t *tx_buf, size_t tx_buf_size)
 {
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
     syn_isotp_init_fd(link, rx_id, tx_id, rx_buf, rx_buf_size, tx_buf, tx_buf_size, false);
@@ -59,36 +66,35 @@ void syn_isotp_init(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id,
     SYN_ASSERT(link != NULL);
 
     memset(link, 0, sizeof(*link));
-    link->rx_id        = rx_id;
-    link->tx_id        = tx_id;
-    link->rx_buf       = rx_buf;
-    link->rx_buf_size  = rx_buf_size;
-    link->tx_buf       = tx_buf;
-    link->tx_buf_size  = tx_buf_size;
-    link->tx_state     = SYN_ISOTP_TX_IDLE;
-    link->rx_state     = SYN_ISOTP_RX_IDLE;
+    link->rx_id = rx_id;
+    link->tx_id = tx_id;
+    link->rx_buf = rx_buf;
+    link->rx_buf_size = rx_buf_size;
+    link->tx_buf = tx_buf;
+    link->tx_buf_size = tx_buf_size;
+    link->tx_state = SYN_ISOTP_TX_IDLE;
+    link->rx_state = SYN_ISOTP_RX_IDLE;
     link->n_bs_timeout_us = SYN_ISOTP_DEFAULT_N_BS_MS * 1000U;
     link->n_cr_timeout_us = SYN_ISOTP_DEFAULT_N_CR_MS * 1000U;
 #endif
 }
 
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
-void syn_isotp_init_fd(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id,
-                       uint8_t *rx_buf, size_t rx_buf_size,
-                       uint8_t *tx_buf, size_t tx_buf_size, bool is_fd)
+void syn_isotp_init_fd(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id, uint8_t *rx_buf,
+                       size_t rx_buf_size, uint8_t *tx_buf, size_t tx_buf_size, bool is_fd)
 {
     SYN_ASSERT(link != NULL);
 
     memset(link, 0, sizeof(*link));
-    link->rx_id        = rx_id;
-    link->tx_id        = tx_id;
-    link->is_fd        = is_fd;
-    link->rx_buf       = rx_buf;
-    link->rx_buf_size  = rx_buf_size;
-    link->tx_buf       = tx_buf;
-    link->tx_buf_size  = tx_buf_size;
-    link->tx_state     = SYN_ISOTP_TX_IDLE;
-    link->rx_state     = SYN_ISOTP_RX_IDLE;
+    link->rx_id = rx_id;
+    link->tx_id = tx_id;
+    link->is_fd = is_fd;
+    link->rx_buf = rx_buf;
+    link->rx_buf_size = rx_buf_size;
+    link->tx_buf = tx_buf;
+    link->tx_buf_size = tx_buf_size;
+    link->tx_state = SYN_ISOTP_TX_IDLE;
+    link->rx_state = SYN_ISOTP_RX_IDLE;
     link->n_bs_timeout_us = SYN_ISOTP_DEFAULT_N_BS_MS * 1000U;
     link->n_cr_timeout_us = SYN_ISOTP_DEFAULT_N_CR_MS * 1000U;
 }
@@ -107,9 +113,9 @@ SYN_Status syn_isotp_send(SYN_ISOTP_Link *link, const uint8_t *payload, size_t p
     }
 
     memcpy(link->tx_buf, payload, payload_len);
-    link->tx_len     = payload_len;
-    link->tx_offset  = 0;
-    link->tx_seq     = 1;
+    link->tx_len = payload_len;
+    link->tx_offset = 0;
+    link->tx_seq = 1;
     link->tx_bs_count = 0;
 
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
@@ -129,7 +135,8 @@ SYN_Status syn_isotp_send(SYN_ISOTP_Link *link, const uint8_t *payload, size_t p
 
 bool syn_isotp_get_tx_frame(SYN_ISOTP_Link *link, SYN_CAN_Frame *frame)
 {
-    if (link == NULL || frame == NULL) return false;
+    if (link == NULL || frame == NULL)
+        return false;
 
     memset(frame, 0, sizeof(*frame));
     frame->id = link->tx_id;
@@ -143,7 +150,7 @@ bool syn_isotp_get_tx_frame(SYN_ISOTP_Link *link, SYN_CAN_Frame *frame)
         frame->data[0] = SYN_ISOTP_PCI_FC | link->rx_fc_status;
         frame->data[1] = 0; /* BS = 0 (unlimited) */
         frame->data[2] = 0; /* STmin = 0 ms */
-        frame->dlc     = 8;
+        frame->dlc = 8;
         return true;
     }
 
@@ -208,7 +215,7 @@ bool syn_isotp_get_tx_frame(SYN_ISOTP_Link *link, SYN_CAN_Frame *frame)
         frame->dlc = 8;
 #endif
         link->tx_offset = payload_in_ff;
-        link->tx_state  = SYN_ISOTP_TX_WAIT_FC;
+        link->tx_state = SYN_ISOTP_TX_WAIT_FC;
         link->tx_timeout_timer_us = link->n_bs_timeout_us;
         return true;
     }
@@ -254,7 +261,7 @@ bool syn_isotp_get_tx_frame(SYN_ISOTP_Link *link, SYN_CAN_Frame *frame)
             link->tx_bs_count++;
             if (link->tx_bs_count >= link->tx_bs && link->tx_offset < link->tx_len) {
                 link->tx_bs_count = 0;
-                link->tx_state    = SYN_ISOTP_TX_WAIT_FC;
+                link->tx_state = SYN_ISOTP_TX_WAIT_FC;
                 link->tx_timeout_timer_us = link->n_bs_timeout_us;
             }
         }
@@ -274,8 +281,10 @@ bool syn_isotp_get_tx_frame(SYN_ISOTP_Link *link, SYN_CAN_Frame *frame)
 
 void syn_isotp_process_rx_frame(SYN_ISOTP_Link *link, const SYN_CAN_Frame *frame)
 {
-    if (link == NULL || frame == NULL) return;
-    if (frame->id != link->rx_id) return;
+    if (link == NULL || frame == NULL)
+        return;
+    if (frame->id != link->rx_id)
+        return;
 
     uint8_t pci_type = frame->data[0] & 0xF0U;
 
@@ -292,7 +301,7 @@ void syn_isotp_process_rx_frame(SYN_ISOTP_Link *link, const SYN_CAN_Frame *frame
 
         if (sf_len >= 1 && sf_len <= link->rx_buf_size && link->rx_buf != NULL) {
             memcpy(link->rx_buf, &frame->data[data_offset], sf_len);
-            link->rx_len   = sf_len;
+            link->rx_len = sf_len;
             link->rx_state = SYN_ISOTP_RX_COMPLETE;
         }
         break;
@@ -315,20 +324,21 @@ void syn_isotp_process_rx_frame(SYN_ISOTP_Link *link, const SYN_CAN_Frame *frame
         if (ff_len > 7 && link->rx_buf != NULL) {
             if (ff_len > link->rx_buf_size) {
                 link->rx_fc_pending = true;
-                link->rx_fc_status  = SYN_ISOTP_FC_OVERFLOW;
-                link->rx_state      = SYN_ISOTP_RX_IDLE;
+                link->rx_fc_status = SYN_ISOTP_FC_OVERFLOW;
+                link->rx_state = SYN_ISOTP_RX_IDLE;
             } else {
                 size_t frame_len = (frame->dlc > 0) ? frame->dlc : 8;
                 size_t payload_in_ff = (frame_len > data_offset) ? (frame_len - data_offset) : 0;
-                if (payload_in_ff > ff_len) payload_in_ff = ff_len;
+                if (payload_in_ff > ff_len)
+                    payload_in_ff = ff_len;
 
                 memcpy(link->rx_buf, &frame->data[data_offset], payload_in_ff);
-                link->rx_len        = payload_in_ff;
-                link->rx_expected   = ff_len;
-                link->rx_seq        = 1;
+                link->rx_len = payload_in_ff;
+                link->rx_expected = ff_len;
+                link->rx_seq = 1;
                 link->rx_fc_pending = true;
-                link->rx_fc_status  = SYN_ISOTP_FC_CTS;
-                link->rx_state      = SYN_ISOTP_RX_WAIT_CF;
+                link->rx_fc_status = SYN_ISOTP_FC_CTS;
+                link->rx_state = SYN_ISOTP_RX_WAIT_CF;
                 link->rx_timeout_timer_us = link->n_cr_timeout_us;
             }
         }
@@ -342,7 +352,8 @@ void syn_isotp_process_rx_frame(SYN_ISOTP_Link *link, const SYN_CAN_Frame *frame
                 size_t frame_len = (frame->dlc > 0) ? frame->dlc : 8;
                 size_t rem = link->rx_expected - link->rx_len;
                 size_t cf_payload = (frame_len > 1) ? (frame_len - 1) : 0;
-                if (cf_payload > rem) cf_payload = rem;
+                if (cf_payload > rem)
+                    cf_payload = rem;
 
                 memcpy(&link->rx_buf[link->rx_len], &frame->data[1], cf_payload);
 
@@ -368,13 +379,13 @@ void syn_isotp_process_rx_frame(SYN_ISOTP_Link *link, const SYN_CAN_Frame *frame
         if (link->tx_state == SYN_ISOTP_TX_WAIT_FC) {
             uint8_t fc_status = frame->data[0] & 0x0FU;
             if (fc_status == SYN_ISOTP_FC_CTS) {
-                link->tx_bs          = frame->data[1];
-                link->tx_st_min      = frame->data[2];
+                link->tx_bs = frame->data[1];
+                link->tx_st_min = frame->data[2];
                 link->tx_st_timer_us = 0;
                 link->tx_timeout_timer_us = 0;
-                link->tx_state       = SYN_ISOTP_TX_SEND_CF;
+                link->tx_state = SYN_ISOTP_TX_SEND_CF;
             } else if (fc_status == SYN_ISOTP_FC_OVERFLOW) {
-                link->tx_state       = SYN_ISOTP_TX_IDLE;
+                link->tx_state = SYN_ISOTP_TX_IDLE;
                 link->tx_timeout_timer_us = 0;
             }
         }
@@ -396,7 +407,8 @@ ssize_t syn_isotp_receive(SYN_ISOTP_Link *link, uint8_t *out_buf, size_t max_len
         size_t copy_len = (link->rx_len > max_len) ? max_len : link->rx_len;
         memcpy(out_buf, link->rx_buf, copy_len);
         link->rx_state = SYN_ISOTP_RX_IDLE;
-        if (copy_len > 32767U) copy_len = 32767U;
+        if (copy_len > 32767U)
+            copy_len = 32767U;
         return (ssize_t)copy_len;
     }
 
@@ -410,7 +422,8 @@ void syn_isotp_step(SYN_ISOTP_Link *link, uint32_t dt_ms)
 
 void syn_isotp_step_us(SYN_ISOTP_Link *link, uint32_t dt_us)
 {
-    if (link == NULL) return;
+    if (link == NULL)
+        return;
 
     if (link->tx_st_timer_us > 0) {
         if (dt_us >= link->tx_st_timer_us) {

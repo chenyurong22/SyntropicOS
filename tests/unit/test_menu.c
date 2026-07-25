@@ -3,16 +3,24 @@
  * @brief Unity tests for syn_menu.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
-
 #include "syntropic/ui/syn_menu.h"
+#include "unity/unity.h"
 
 static int mnu_render_n = 0;
-static void mnu_render(const SYN_Menu *m, void *c) { (void)m; (void)c; mnu_render_n++; }
+static void mnu_render(const SYN_Menu *m, void *c)
+{
+    (void)m;
+    (void)c;
+    mnu_render_n++;
+}
 static int mnu_cb_n = 0;
-static void mnu_cb(void *c) { (void)c; mnu_cb_n++; }
+static void mnu_cb(void *c)
+{
+    (void)c;
+    mnu_cb_n++;
+}
 
 static void test_menu(void)
 {
@@ -29,7 +37,10 @@ static void test_menu(void)
     };
     SYN_MENU_ROOT(root, r_items);
     SYN_Menu menu;
-    mnu_render_n = 0; mnu_cb_n = 0; mnu_led = false; mnu_bright = 50;
+    mnu_render_n = 0;
+    mnu_cb_n = 0;
+    mnu_led = false;
+    mnu_bright = 50;
     syn_menu_init(&menu, &root, mnu_render, NULL);
     TEST_ASSERT_TRUE(menu.selected == 0);
     syn_menu_down(&menu);
@@ -48,7 +59,8 @@ static void test_menu(void)
     TEST_ASSERT_TRUE(menu.editing);
     syn_menu_up(&menu);
     TEST_ASSERT_EQUAL_INT(60, mnu_bright);
-    for (int i = 0; i < 5; i++) syn_menu_up(&menu);
+    for (int i = 0; i < 5; i++)
+        syn_menu_up(&menu);
     TEST_ASSERT_EQUAL_INT(100, mnu_bright);
     syn_menu_down(&menu);
     TEST_ASSERT_EQUAL_INT(90, mnu_bright);
@@ -111,15 +123,15 @@ static void test_menu_back_while_editing(void)
     syn_menu_init(&menu3, &root3, mnu_render, NULL);
 
     /* Enter submenu, move to Value item, enter edit mode */
-    syn_menu_enter(&menu3);                    /* into Settings submenu */
-    syn_menu_down(&menu3);                     /* select Bright (index 1) */
-    syn_menu_enter(&menu3);                    /* start editing */
+    syn_menu_enter(&menu3); /* into Settings submenu */
+    syn_menu_down(&menu3);  /* select Bright (index 1) */
+    syn_menu_enter(&menu3); /* start editing */
     TEST_ASSERT_TRUE(menu3.editing);
 
     /* Back while editing — should cancel edit but stay in submenu */
     syn_menu_back(&menu3);
     TEST_ASSERT_FALSE(menu3.editing);
-    TEST_ASSERT_EQUAL_INT(1, menu3.depth);    /* still in submenu */
+    TEST_ASSERT_EQUAL_INT(1, menu3.depth); /* still in submenu */
 }
 
 void run_menu_tests(void)

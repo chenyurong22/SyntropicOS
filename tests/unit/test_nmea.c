@@ -1,8 +1,8 @@
-#include "unity/unity.h"
 #include "syntropic/proto/syn_nmea.h"
+#include "unity/unity.h"
 
-#include <string.h>
 #include <math.h>
+#include <string.h>
 
 void test_nmea_checksum_and_validate(void)
 {
@@ -119,7 +119,8 @@ void test_nmea_streaming_parser(void)
     }
 
     TEST_ASSERT_TRUE(got_frame);
-    TEST_ASSERT_EQUAL_STRING("$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47", out_sentence);
+    TEST_ASSERT_EQUAL_STRING("$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47",
+                             out_sentence);
 }
 
 static void format_nmea(const char *payload, char *out, size_t out_size)

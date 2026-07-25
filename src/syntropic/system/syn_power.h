@@ -32,9 +32,9 @@
 
 #include "../common/syn_defs.h"
 #include "../drivers/syn_adc.h"
-#include "../util/syn_hysteresis.h"
 #include "../dsp/syn_signal.h"
 #include "../system/syn_errlog.h"
+#include "../util/syn_hysteresis.h"
 
 #include <stdbool.h>
 
@@ -57,33 +57,33 @@ typedef void (*SYN_PowerCallback)(struct SYN_Power *pwr, void *ctx);
 
 /** @brief Power monitor configuration. */
 typedef struct {
-    SYN_ADC            *adc;            /**< ADC channel for voltage       */
-    int32_t              brownout_mv;    /**< Low-voltage threshold (mV)    */
-    int32_t              restore_mv;     /**< Voltage restore threshold (mV)*/
-    SYN_PowerCallback   on_brownout;    /**< Called on low-voltage event   */
-    SYN_PowerCallback   on_restore;     /**< Called when voltage restores  */
-    void                *ctx;            /**< User context for callbacks    */
+    SYN_ADC *adc;                  /**< ADC channel for voltage       */
+    int32_t brownout_mv;           /**< Low-voltage threshold (mV)    */
+    int32_t restore_mv;            /**< Voltage restore threshold (mV)*/
+    SYN_PowerCallback on_brownout; /**< Called on low-voltage event   */
+    SYN_PowerCallback on_restore;  /**< Called when voltage restores  */
+    void *ctx;                     /**< User context for callbacks    */
 } SYN_Power_Config;
 
 /* ── Power monitor instance ─────────────────────────────────────────────── */
 
 /** @brief Power monitor instance — ADC + hysteresis + brownout state. */
 typedef struct SYN_Power {
-    SYN_ADC           *adc;              /**< ADC channel                   */
-    SYN_Hysteresis     hyst;            /**< Brownout hysteresis state     */
-    int32_t             voltage_mv;      /**< Last reading in millivolts   */
-    bool                brownout;        /**< Currently in brownout?       */
-    SYN_PowerCallback  on_brownout;     /**< Brownout callback             */
-    SYN_PowerCallback  on_restore;      /**< Restore callback              */
-    void               *ctx;            /**< Callback context              */
-    SYN_Signal        *stats;           /**< Optional noise stats         */
-    SYN_ErrLog        *errlog;          /**< Optional error logging       */
+    SYN_ADC *adc;                  /**< ADC channel                   */
+    SYN_Hysteresis hyst;           /**< Brownout hysteresis state     */
+    int32_t voltage_mv;            /**< Last reading in millivolts   */
+    bool brownout;                 /**< Currently in brownout?       */
+    SYN_PowerCallback on_brownout; /**< Brownout callback             */
+    SYN_PowerCallback on_restore;  /**< Restore callback              */
+    void *ctx;                     /**< Callback context              */
+    SYN_Signal *stats;             /**< Optional noise stats         */
+    SYN_ErrLog *errlog;            /**< Optional error logging       */
 } SYN_Power;
 
 /* ── Error codes ────────────────────────────────────────────────────────── */
 
 /** @brief Brownout voltage detected (errlog code). */
-#define SYN_POWER_ERR_BROWNOUT  0x0400
+#define SYN_POWER_ERR_BROWNOUT 0x0400
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 

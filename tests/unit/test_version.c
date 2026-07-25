@@ -3,14 +3,13 @@
  * @brief Unity tests for syn_version.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/system/syn_version.h"
+#include "unity/unity.h"
 
 static void test_version(void)
 {
-
     const SYN_Version *v = syn_version();
     TEST_ASSERT_TRUE(v != NULL);
     TEST_ASSERT_EQUAL(SYN_VERSION_YEAR, v->year);

@@ -3,15 +3,15 @@
  * @brief Unity tests for syn_hysteresis.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/util/syn_hysteresis.h"
+#include "unity/unity.h"
 
 static void test_hysteresis(void)
 {
     SYN_Hysteresis h;
-    syn_hyst_init(&h, 1000, 50, false);  /* threshold=1000, band=±50 */
+    syn_hyst_init(&h, 1000, 50, false); /* threshold=1000, band=±50 */
 
     TEST_ASSERT_FALSE(syn_hyst_state(&h));
 

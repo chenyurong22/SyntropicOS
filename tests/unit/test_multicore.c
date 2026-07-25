@@ -8,14 +8,13 @@
  * every state transition in the SPSC ring buffer.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-
 #include "syntropic/common/syn_barrier.h"
 #include "syntropic/common/syn_compiler.h"
 #include "syntropic/port/syn_port_spinlock.h"
-#include "syntropic/util/syn_spinlock.h"
 #include "syntropic/sched/syn_mailbox.h"
+#include "syntropic/util/syn_spinlock.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
@@ -135,7 +134,7 @@ void test_spinlock_try_acquire_free(void)
 
 void test_spinlock_try_acquire_contended(void)
 {
-    mock_spinlock_held[2] = true;  /* simulate other core holding it */
+    mock_spinlock_held[2] = true; /* simulate other core holding it */
     TEST_ASSERT_FALSE(syn_port_spinlock_try_acquire(2));
     TEST_ASSERT_EQUAL(0, mock_spinlock_acquire_count[2]);
     mock_spinlock_held[2] = false;
@@ -223,7 +222,8 @@ void test_spinlock_ipc_notify_count(void)
 void test_guard_acquires_and_releases(void)
 {
     TEST_ASSERT_FALSE(mock_spinlock_held[SYN_SPINLOCK_UART]);
-    SYN_SPINLOCK_GUARD(SYN_SPINLOCK_UART) {
+    SYN_SPINLOCK_GUARD(SYN_SPINLOCK_UART)
+    {
         TEST_ASSERT_TRUE(mock_spinlock_held[SYN_SPINLOCK_UART]);
     }
     TEST_ASSERT_FALSE(mock_spinlock_held[SYN_SPINLOCK_UART]);
@@ -233,7 +233,8 @@ void test_guard_acquires_and_releases(void)
 void test_guard_executes_body(void)
 {
     int executed = 0;
-    SYN_SPINLOCK_GUARD(SYN_SPINLOCK_FLASH) {
+    SYN_SPINLOCK_GUARD(SYN_SPINLOCK_FLASH)
+    {
         executed = 1;
     }
     TEST_ASSERT_EQUAL(1, executed);
@@ -243,7 +244,8 @@ void test_guard_executes_body(void)
 void test_guard_body_modifies_external_state(void)
 {
     int counter = 0;
-    SYN_SPINLOCK_GUARD(0) {
+    SYN_SPINLOCK_GUARD(0)
+    {
         counter += 10;
         counter *= 2;
     }
@@ -252,9 +254,11 @@ void test_guard_body_modifies_external_state(void)
 
 void test_guard_nested_different_ids(void)
 {
-    SYN_SPINLOCK_GUARD(SYN_SPINLOCK_USER0) {
+    SYN_SPINLOCK_GUARD(SYN_SPINLOCK_USER0)
+    {
         TEST_ASSERT_TRUE(mock_spinlock_held[SYN_SPINLOCK_USER0]);
-        SYN_SPINLOCK_GUARD(SYN_SPINLOCK_USER1) {
+        SYN_SPINLOCK_GUARD(SYN_SPINLOCK_USER1)
+        {
             TEST_ASSERT_TRUE(mock_spinlock_held[SYN_SPINLOCK_USER0]);
             TEST_ASSERT_TRUE(mock_spinlock_held[SYN_SPINLOCK_USER1]);
         }
@@ -268,12 +272,14 @@ void test_guard_nested_different_ids(void)
 void test_guard_sequential_same_id(void)
 {
     /* Two sequential guards on the same lock */
-    SYN_SPINLOCK_GUARD(0) {
+    SYN_SPINLOCK_GUARD(0)
+    {
         TEST_ASSERT_TRUE(mock_spinlock_held[0]);
     }
     TEST_ASSERT_FALSE(mock_spinlock_held[0]);
 
-    SYN_SPINLOCK_GUARD(0) {
+    SYN_SPINLOCK_GUARD(0)
+    {
         TEST_ASSERT_TRUE(mock_spinlock_held[0]);
     }
     TEST_ASSERT_FALSE(mock_spinlock_held[0]);
@@ -283,7 +289,8 @@ void test_guard_sequential_same_id(void)
 void test_guard_empty_body(void)
 {
     /* Empty body: lock acquired and released, no crash */
-    SYN_SPINLOCK_GUARD(1) {
+    SYN_SPINLOCK_GUARD(1)
+    {
         /* intentionally empty */
     }
     TEST_ASSERT_FALSE(mock_spinlock_held[1]);
@@ -297,8 +304,10 @@ void test_guard_with_break(void)
      * guard macro itself), releasing the lock. */
     int i;
     for (i = 0; i < 5; i++) {
-        SYN_SPINLOCK_GUARD(0) {
-            if (i == 2) break;
+        SYN_SPINLOCK_GUARD(0)
+        {
+            if (i == 2)
+                break;
         }
     }
     /* Lock must be released regardless */
@@ -312,7 +321,7 @@ void test_guard_with_break(void)
 /* Small typed message for basic tests */
 typedef struct {
     uint32_t seq;
-    uint8_t  data[12];
+    uint8_t data[12];
 } TestMsg;
 
 /* Single-byte message for minimal size test */
@@ -323,7 +332,7 @@ typedef struct {
 /* Large message for alignment/copy stress */
 typedef struct {
     uint32_t id;
-    uint8_t  payload[60];
+    uint8_t payload[60];
 } LargeMsg;
 
 /* ── Basic operations ──────────────────────────────────────────────────── */
@@ -334,7 +343,7 @@ void test_mbox_post_receive_single(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 1, .data = {0xAA} };
+    TestMsg tx = {.seq = 1, .data = {0xAA}};
     TestMsg rx;
     TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx));
     TEST_ASSERT_TRUE(syn_mailbox_receive(&mb, &rx));
@@ -373,7 +382,7 @@ void test_mbox_fifo_order(void)
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 8);
 
     for (uint32_t i = 0; i < 7; i++) {
-        TestMsg tx = { .seq = i };
+        TestMsg tx = {.seq = i};
         TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx));
     }
     for (uint32_t i = 0; i < 7; i++) {
@@ -391,10 +400,10 @@ void test_mbox_fill_to_capacity(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 0 };
-    TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx));  /* 1/3 */
-    TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx));  /* 2/3 */
-    TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx));  /* 3/3 = full */
+    TestMsg tx = {.seq = 0};
+    TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx)); /* 1/3 */
+    TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx)); /* 2/3 */
+    TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx)); /* 3/3 = full */
 
     TEST_ASSERT_TRUE(syn_mailbox_full(&mb));
     TEST_ASSERT_EQUAL(3, syn_mailbox_pending(&mb));
@@ -407,7 +416,7 @@ void test_mbox_overflow_counted(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 0 };
+    TestMsg tx = {.seq = 0};
     syn_mailbox_post(&mb, &tx);
     syn_mailbox_post(&mb, &tx);
     syn_mailbox_post(&mb, &tx);
@@ -428,12 +437,12 @@ void test_mbox_overflow_no_data_corruption(void)
 
     /* Fill with known values */
     for (uint32_t i = 0; i < 3; i++) {
-        TestMsg tx = { .seq = i + 100 };
+        TestMsg tx = {.seq = i + 100};
         syn_mailbox_post(&mb, &tx);
     }
 
     /* Overflow attempt must NOT corrupt existing data */
-    TestMsg bad = { .seq = 999 };
+    TestMsg bad = {.seq = 999};
     syn_mailbox_post(&mb, &bad);
 
     /* Drain — original values intact */
@@ -451,7 +460,7 @@ void test_mbox_post_after_drain(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 0 };
+    TestMsg tx = {.seq = 0};
     syn_mailbox_post(&mb, &tx);
     syn_mailbox_post(&mb, &tx);
     syn_mailbox_post(&mb, &tx);
@@ -480,7 +489,7 @@ void test_mbox_wraparound_single_slot(void)
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 2);
 
     for (uint32_t i = 0; i < 50; i++) {
-        TestMsg tx = { .seq = i };
+        TestMsg tx = {.seq = i};
         TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx));
         TEST_ASSERT_TRUE(syn_mailbox_full(&mb));
 
@@ -499,7 +508,7 @@ void test_mbox_wraparound_multi_round(void)
 
     for (int round = 0; round < 10; round++) {
         for (uint32_t i = 0; i < 3; i++) {
-            TestMsg tx = { .seq = (uint32_t)(round * 3 + i) };
+            TestMsg tx = {.seq = (uint32_t)(round * 3 + i)};
             TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx));
         }
         for (uint32_t i = 0; i < 3; i++) {
@@ -520,7 +529,7 @@ void test_mbox_interleaved_one_at_a_time(void)
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
     for (uint32_t i = 0; i < 100; i++) {
-        TestMsg tx = { .seq = i };
+        TestMsg tx = {.seq = i};
         TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx));
         TestMsg rx;
         TEST_ASSERT_TRUE(syn_mailbox_receive(&mb, &rx));
@@ -540,7 +549,7 @@ void test_mbox_interleaved_burst(void)
 
     /* Burst 1: post 3 */
     for (int i = 0; i < 3; i++) {
-        TestMsg tx = { .seq = produced++ };
+        TestMsg tx = {.seq = produced++};
         syn_mailbox_post(&mb, &tx);
     }
     TEST_ASSERT_EQUAL(3, syn_mailbox_pending(&mb));
@@ -555,7 +564,7 @@ void test_mbox_interleaved_burst(void)
 
     /* Post 4 more */
     for (int i = 0; i < 4; i++) {
-        TestMsg tx = { .seq = produced++ };
+        TestMsg tx = {.seq = produced++};
         syn_mailbox_post(&mb, &tx);
     }
     TEST_ASSERT_EQUAL(5, syn_mailbox_pending(&mb));
@@ -577,7 +586,7 @@ void test_mbox_struct_integrity(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 0xDEADBEEF };
+    TestMsg tx = {.seq = 0xDEADBEEF};
     memset(tx.data, 0x42, sizeof(tx.data));
     syn_mailbox_post(&mb, &tx);
 
@@ -595,7 +604,7 @@ void test_mbox_tiny_message(void)
     syn_mailbox_init(&mb, buf, sizeof(TinyMsg), 8);
 
     for (uint8_t i = 0; i < 7; i++) {
-        TinyMsg tx = { .val = i };
+        TinyMsg tx = {.val = i};
         TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx));
     }
     for (uint8_t i = 0; i < 7; i++) {
@@ -611,8 +620,9 @@ void test_mbox_large_message(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(LargeMsg), 4);
 
-    LargeMsg tx = { .id = 0xCAFE };
-    for (int i = 0; i < 60; i++) tx.payload[i] = (uint8_t)i;
+    LargeMsg tx = {.id = 0xCAFE};
+    for (int i = 0; i < 60; i++)
+        tx.payload[i] = (uint8_t)i;
 
     TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &tx));
 
@@ -653,7 +663,7 @@ void test_mbox_peek_returns_data(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 77 };
+    TestMsg tx = {.seq = 77};
     syn_mailbox_post(&mb, &tx);
 
     const TestMsg *p = (const TestMsg *)syn_mailbox_peek(&mb);
@@ -679,7 +689,7 @@ void test_mbox_peek_then_receive(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 88 };
+    TestMsg tx = {.seq = 88};
     syn_mailbox_post(&mb, &tx);
 
     /* Peek, then receive — must get same data */
@@ -746,7 +756,7 @@ void test_mbox_flush(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 1 };
+    TestMsg tx = {.seq = 1};
     syn_mailbox_post(&mb, &tx);
     syn_mailbox_post(&mb, &tx);
     TEST_ASSERT_EQUAL(2, syn_mailbox_pending(&mb));
@@ -762,7 +772,7 @@ void test_mbox_flush_then_reuse(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 1 };
+    TestMsg tx = {.seq = 1};
     syn_mailbox_post(&mb, &tx);
     syn_mailbox_flush(&mb);
 
@@ -784,7 +794,7 @@ void test_mbox_notify_fires_on_post(void)
     syn_mailbox_set_notify(&mb, true);
     mock_ipc_notify_count = 0;
 
-    TestMsg tx = { .seq = 1 };
+    TestMsg tx = {.seq = 1};
     syn_mailbox_post(&mb, &tx);
     TEST_ASSERT_EQUAL(1, mock_ipc_notify_count);
     syn_mailbox_post(&mb, &tx);
@@ -798,7 +808,7 @@ void test_mbox_notify_disabled_by_default(void)
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
     mock_ipc_notify_count = 0;
 
-    TestMsg tx = { .seq = 1 };
+    TestMsg tx = {.seq = 1};
     syn_mailbox_post(&mb, &tx);
     TEST_ASSERT_EQUAL(0, mock_ipc_notify_count);
 }
@@ -810,7 +820,7 @@ void test_mbox_notify_not_on_overflow(void)
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
     syn_mailbox_set_notify(&mb, true);
 
-    TestMsg tx = { .seq = 0 };
+    TestMsg tx = {.seq = 0};
     syn_mailbox_post(&mb, &tx);
     syn_mailbox_post(&mb, &tx);
     syn_mailbox_post(&mb, &tx);
@@ -827,7 +837,7 @@ void test_mbox_notify_toggle(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 0 };
+    TestMsg tx = {.seq = 0};
     mock_ipc_notify_count = 0;
 
     /* Enable notify */
@@ -853,7 +863,7 @@ void test_mbox_barriers_on_post(void)
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
     mock_barrier_count = 0;
-    TestMsg tx = { .seq = 1 };
+    TestMsg tx = {.seq = 1};
     syn_mailbox_post(&mb, &tx);
     /* LOAD_ACQUIRE(tail) + STORE_RELEASE(head) = at least 2 barriers */
     TEST_ASSERT_TRUE(mock_barrier_count >= 2);
@@ -865,7 +875,7 @@ void test_mbox_barriers_on_receive(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 1 };
+    TestMsg tx = {.seq = 1};
     syn_mailbox_post(&mb, &tx);
 
     mock_barrier_count = 0;
@@ -894,7 +904,7 @@ void test_mbox_barriers_on_peek(void)
     SYN_Mailbox mb;
     syn_mailbox_init(&mb, buf, sizeof(TestMsg), 4);
 
-    TestMsg tx = { .seq = 1 };
+    TestMsg tx = {.seq = 1};
     syn_mailbox_post(&mb, &tx);
 
     mock_barrier_count = 0;
@@ -932,8 +942,8 @@ void test_mbox_two_independent(void)
     syn_mailbox_init(&mb_a, buf_a, sizeof(TestMsg), 4);
     syn_mailbox_init(&mb_b, buf_b, sizeof(TestMsg), 4);
 
-    TestMsg tx_a = { .seq = 100 };
-    TestMsg tx_b = { .seq = 200 };
+    TestMsg tx_a = {.seq = 100};
+    TestMsg tx_b = {.seq = 200};
     syn_mailbox_post(&mb_a, &tx_a);
     syn_mailbox_post(&mb_b, &tx_b);
 
@@ -956,7 +966,7 @@ void test_mbox_define_macro(void)
     test_static_mbox.tail = 0;
     test_static_mbox.overflow = 0;
 
-    TestMsg tx = { .seq = 42 };
+    TestMsg tx = {.seq = 42};
     TEST_ASSERT_TRUE(syn_mailbox_post(&test_static_mbox, &tx));
 
     TestMsg rx;

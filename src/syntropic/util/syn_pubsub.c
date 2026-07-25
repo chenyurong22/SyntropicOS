@@ -1,13 +1,14 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_PUBSUB) || SYN_USE_PUBSUB
 
-#include "syn_pubsub.h"
 #include "syn_assert.h"
+#include "syn_pubsub.h"
 
-void syn_pubsub_init(SYN_PubSubBroker *broker, SYN_PubSubSub *sub_array, size_t capacity) {
+void syn_pubsub_init(SYN_PubSubBroker *broker, SYN_PubSubSub *sub_array, size_t capacity)
+{
     SYN_ASSERT(broker != NULL);
     SYN_ASSERT(sub_array != NULL || capacity == 0);
     broker->subs = sub_array;
@@ -15,18 +16,19 @@ void syn_pubsub_init(SYN_PubSubBroker *broker, SYN_PubSubSub *sub_array, size_t 
     broker->count = 0;
 }
 
-bool syn_pubsub_subscribe(SYN_PubSubBroker *broker, uint16_t topic, SYN_PubSubHandler handler, void *ctx) {
+bool syn_pubsub_subscribe(SYN_PubSubBroker *broker, uint16_t topic, SYN_PubSubHandler handler,
+                          void *ctx)
+{
     SYN_ASSERT(broker != NULL);
     SYN_ASSERT(handler != NULL);
 
     if (broker->count >= broker->capacity) {
         return false;
     }
-    
+
     // Avoid exact duplicates
     for (size_t i = 0; i < broker->count; i++) {
-        if (broker->subs[i].topic == topic && 
-            broker->subs[i].handler == handler && 
+        if (broker->subs[i].topic == topic && broker->subs[i].handler == handler &&
             broker->subs[i].ctx == ctx) {
             return true; // Already subscribed
         }
@@ -39,7 +41,8 @@ bool syn_pubsub_subscribe(SYN_PubSubBroker *broker, uint16_t topic, SYN_PubSubHa
     return true;
 }
 
-bool syn_pubsub_unsubscribe(SYN_PubSubBroker *broker, uint16_t topic, SYN_PubSubHandler handler) {
+bool syn_pubsub_unsubscribe(SYN_PubSubBroker *broker, uint16_t topic, SYN_PubSubHandler handler)
+{
     SYN_ASSERT(broker != NULL);
     SYN_ASSERT(handler != NULL);
 
@@ -56,7 +59,8 @@ bool syn_pubsub_unsubscribe(SYN_PubSubBroker *broker, uint16_t topic, SYN_PubSub
     return false;
 }
 
-void syn_pubsub_publish(SYN_PubSubBroker *broker, uint16_t topic, const void *payload, size_t len) {
+void syn_pubsub_publish(SYN_PubSubBroker *broker, uint16_t topic, const void *payload, size_t len)
+{
     SYN_ASSERT(broker != NULL);
 
     for (size_t i = 0; i < broker->count; i++) {

@@ -3,13 +3,16 @@
  * @brief Unity tests for syn_workqueue.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/sched/syn_workqueue.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int wq_sum = 0;
-static void wq_handler(void *ctx) { wq_sum += *(int *)ctx; }
+static void wq_handler(void *ctx)
+{
+    wq_sum += *(int *)ctx;
+}
 
 static void test_workqueue(void)
 {

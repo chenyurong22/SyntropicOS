@@ -1,17 +1,21 @@
-#include <stdint.h>
-#include <stddef.h>
-#include <string.h>
 #include "syntropic/proto/syn_cobs.h"
 
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
 // Dummy callback for streaming decoder
-static void cobs_callback(const uint8_t *data, size_t len, void *ctx) {
+static void cobs_callback(const uint8_t *data, size_t len, void *ctx)
+{
     (void)data;
     (void)len;
     (void)ctx;
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    if (size == 0 || size > 4096) return 0;
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+{
+    if (size == 0 || size > 4096)
+        return 0;
 
     // 1. One-shot decode
     uint8_t out_buf[4096];

@@ -24,8 +24,9 @@
 #define SYN_PORT_SERIAL_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -3,9 +3,9 @@
  * @brief Unity tests for Virtual File System (VFS).
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int mock_open_called = 0;
 static int mock_read_called = 0;
@@ -55,13 +55,11 @@ static int32_t mock_seek(SYN_VfsFile *file, int32_t offset, int whence)
     return offset;
 }
 
-static const SYN_VfsOps mock_ops = {
-    .open  = mock_open,
-    .close = mock_close,
-    .read  = mock_read,
-    .write = mock_write,
-    .seek  = mock_seek
-};
+static const SYN_VfsOps mock_ops = {.open = mock_open,
+                                    .close = mock_close,
+                                    .read = mock_read,
+                                    .write = mock_write,
+                                    .seek = mock_seek};
 
 static void test_vfs_basic(void)
 {
@@ -211,28 +209,21 @@ static int mock_opendir_fail(SYN_VfsDir *dir, const char *path, void *fs_data)
     return -6;
 }
 
-static const SYN_VfsOps mock_full_ops = {
-    .open     = mock_open,
-    .close    = mock_close,
-    .read     = mock_read,
-    .write    = mock_write,
-    .seek     = mock_seek,
-    .tell     = mock_tell,
-    .unlink   = mock_unlink,
-    .mkdir    = mock_mkdir,
-    .opendir  = mock_opendir,
-    .readdir  = mock_readdir,
-    .closedir = mock_closedir
-};
+static const SYN_VfsOps mock_full_ops = {.open = mock_open,
+                                         .close = mock_close,
+                                         .read = mock_read,
+                                         .write = mock_write,
+                                         .seek = mock_seek,
+                                         .tell = mock_tell,
+                                         .unlink = mock_unlink,
+                                         .mkdir = mock_mkdir,
+                                         .opendir = mock_opendir,
+                                         .readdir = mock_readdir,
+                                         .closedir = mock_closedir};
 
-static const SYN_VfsOps mock_minimal_ops = {
-    .open = mock_open
-};
+static const SYN_VfsOps mock_minimal_ops = {.open = mock_open};
 
-static const SYN_VfsOps mock_fail_ops = {
-    .open    = mock_open_fail,
-    .opendir = mock_opendir_fail
-};
+static const SYN_VfsOps mock_fail_ops = {.open = mock_open_fail, .opendir = mock_opendir_fail};
 
 static void test_vfs_edge_cases(void)
 {
@@ -357,15 +348,13 @@ static void test_vfs_edge_cases(void)
     /* 6. Fail-to-open and fail-to-opendir callback scenarios */
     syn_vfs_init();
     TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/fail", &mock_fail_ops, NULL));
-    
+
     TEST_ASSERT_EQUAL_INT(-5, syn_vfs_open("/fail/file.txt", SYN_O_RDONLY));
     TEST_ASSERT_EQUAL_INT(-6, syn_vfs_opendir("/fail/dir"));
 
     /* 7. Directory operations with missing readdir and closedir callbacks */
     syn_vfs_init();
-    static const SYN_VfsOps mock_no_dir_callbacks_ops = {
-        .opendir = mock_opendir
-    };
+    static const SYN_VfsOps mock_no_dir_callbacks_ops = {.opendir = mock_opendir};
     TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/nocb", &mock_no_dir_callbacks_ops, NULL));
     int dd_nocb = syn_vfs_opendir("/nocb/dir");
     TEST_ASSERT_TRUE(dd_nocb >= 0);

@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_FILTER) || SYN_USE_FILTER
@@ -9,8 +9,8 @@
  * @brief Digital filter implementations.
  */
 
-#include "syn_filter.h"
 #include "../util/syn_assert.h"
+#include "syn_filter.h"
 
 #include <string.h>
 
@@ -62,8 +62,8 @@ void syn_filter_ema_init(SYN_FilterEMA *f, uint8_t alpha)
 {
     SYN_ASSERT(f != NULL);
 
-    f->value  = 0;
-    f->alpha  = alpha;
+    f->value = 0;
+    f->alpha = alpha;
     f->primed = false;
 }
 
@@ -73,7 +73,7 @@ int16_t syn_filter_ema_update(SYN_FilterEMA *f, int16_t sample)
 
     if (!f->primed) {
         /* First sample — initialize directly */
-        f->value  = (int32_t)sample << 8;
+        f->value = (int32_t)sample << 8;
         f->primed = true;
         return sample;
     }
@@ -89,9 +89,9 @@ void syn_filter_ema_reset(SYN_FilterEMA *f)
 {
     SYN_ASSERT(f != NULL);
     uint8_t a = f->alpha;
-    f->value  = 0;
+    f->value = 0;
     f->primed = false;
-    f->alpha  = a;
+    f->alpha = a;
 }
 
 /* ════════════════════════════════════════════════════════════════════════ */
@@ -153,10 +153,10 @@ void syn_filter_fir_init(SYN_FilterFIR *f, const q16_t *taps, q16_t *history, ui
 {
     SYN_ASSERT(f != NULL && taps != NULL && history != NULL && num_taps > 0);
 
-    f->taps     = taps;
-    f->history  = history;
+    f->taps = taps;
+    f->history = history;
     f->num_taps = num_taps;
-    f->head     = 0;
+    f->head = 0;
     memset(history, 0, (size_t)num_taps * sizeof(q16_t));
 }
 
@@ -178,7 +178,9 @@ q16_t syn_filter_fir_update(SYN_FilterFIR *f, q16_t sample)
         }
     }
 
-    f->head = (uint16_t)((f->head + 1) % f->num_taps);
+    if (f->num_taps > 0) {
+        f->head = (uint16_t)((f->head + 1) % f->num_taps);
+    }
     return (q16_t)(acc >> Q16_SHIFT);
 }
 

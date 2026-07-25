@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SENSOR) || SYN_USE_SENSOR
@@ -9,30 +9,29 @@
  * @brief Sensor polling framework implementation.
  */
 
-#include "syn_sensor.h"
 #include "../util/syn_assert.h"
+#include "syn_sensor.h"
 
 #include <string.h>
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
-void syn_sensor_init(SYN_Sensor *sensor, const char *name,
-                      SYN_SensorReadFunc read_func, void *ctx)
+void syn_sensor_init(SYN_Sensor *sensor, const char *name, SYN_SensorReadFunc read_func, void *ctx)
 {
     SYN_ASSERT(sensor != NULL);
     SYN_ASSERT(read_func != NULL);
 
     memset(sensor, 0, sizeof(*sensor));
-    sensor->name      = name;
+    sensor->name = name;
     sensor->read_func = read_func;
-    sensor->read_ctx  = ctx;
-    sensor->enabled   = true;
+    sensor->read_ctx = ctx;
+    sensor->enabled = true;
 }
 
 void syn_sensor_set_interval(SYN_Sensor *sensor, uint32_t interval_ms)
 {
     SYN_ASSERT(sensor != NULL);
-    sensor->interval_ms    = interval_ms;
+    sensor->interval_ms = interval_ms;
     sensor->last_poll_tick = syn_port_get_tick_ms();
 }
 
@@ -51,43 +50,41 @@ void syn_sensor_set_filter_ma(SYN_Sensor *sensor, SYN_FilterMA *f)
 {
     SYN_ASSERT(sensor != NULL);
     sensor->filter_type = (uint8_t)SYN_SENSOR_FILTER_MA;
-    sensor->filter      = f;
+    sensor->filter = f;
 }
 
 void syn_sensor_set_filter_ema(SYN_Sensor *sensor, SYN_FilterEMA *f)
 {
     SYN_ASSERT(sensor != NULL);
     sensor->filter_type = (uint8_t)SYN_SENSOR_FILTER_EMA;
-    sensor->filter      = f;
+    sensor->filter = f;
 }
 
 void syn_sensor_set_filter_median(SYN_Sensor *sensor, SYN_FilterMedian *f)
 {
     SYN_ASSERT(sensor != NULL);
     sensor->filter_type = (uint8_t)SYN_SENSOR_FILTER_MEDIAN;
-    sensor->filter      = f;
+    sensor->filter = f;
 }
 
 void syn_sensor_clear_filter(SYN_Sensor *sensor)
 {
     SYN_ASSERT(sensor != NULL);
     sensor->filter_type = (uint8_t)SYN_SENSOR_FILTER_NONE;
-    sensor->filter      = NULL;
+    sensor->filter = NULL;
 }
 
 /* ── Threshold setup ────────────────────────────────────────────────────── */
 
-void syn_sensor_set_threshold(SYN_Sensor *sensor,
-                               int32_t threshold, int32_t band,
-                               SYN_SensorThresholdCallback on_high,
-                               SYN_SensorThresholdCallback on_low,
-                               void *ctx)
+void syn_sensor_set_threshold(SYN_Sensor *sensor, int32_t threshold, int32_t band,
+                              SYN_SensorThresholdCallback on_high,
+                              SYN_SensorThresholdCallback on_low, void *ctx)
 {
     SYN_ASSERT(sensor != NULL);
     sensor->threshold_enabled = true;
     syn_hyst_init(&sensor->hyst, threshold, band, false);
-    sensor->on_high       = on_high;
-    sensor->on_low        = on_low;
+    sensor->on_high = on_high;
+    sensor->on_low = on_low;
     sensor->threshold_ctx = ctx;
 }
 
@@ -141,13 +138,11 @@ static void do_read(SYN_Sensor *sensor)
 
         if (now_high && !was_high) {
             if (sensor->on_high != NULL) {
-                sensor->on_high(sensor, sensor->filtered,
-                                sensor->threshold_ctx);
+                sensor->on_high(sensor, sensor->filtered, sensor->threshold_ctx);
             }
         } else if (!now_high && was_high) {
             if (sensor->on_low != NULL) {
-                sensor->on_low(sensor, sensor->filtered,
-                               sensor->threshold_ctx);
+                sensor->on_low(sensor, sensor->filtered, sensor->threshold_ctx);
             }
         }
     }
@@ -162,7 +157,8 @@ bool syn_sensor_update(SYN_Sensor *sensor)
 {
     SYN_ASSERT(sensor != NULL);
 
-    if (!sensor->enabled) return false;
+    if (!sensor->enabled)
+        return false;
 
     uint32_t now = syn_port_get_tick_ms();
     if ((now - sensor->last_poll_tick) < sensor->interval_ms) {

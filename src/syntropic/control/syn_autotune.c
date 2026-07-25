@@ -1,12 +1,12 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_AUTOTUNE) || SYN_USE_AUTOTUNE
 
-#include "syn_autotune.h"
-#include "../util/syn_assert.h"
 #include "../port/syn_port_system.h"
+#include "../util/syn_assert.h"
+#include "syn_autotune.h"
 
 #include <string.h>
 
@@ -24,7 +24,8 @@ static void apply_raw_output(SYN_AutoTune *at, int32_t output)
 
 static void emergency_stop(SYN_AutoTune *at, SYN_AutoTune_AbortReason reason)
 {
-    if (at == NULL) return;
+    if (at == NULL)
+        return;
     at->current_output = 0;
     syn_motor_ctrl_stop(at->ctrl);
     at->state = SYN_ATUNE_ABORTED;
@@ -35,20 +36,20 @@ static void emergency_stop(SYN_AutoTune *at, SYN_AutoTune_AbortReason reason)
 static int32_t ramp_output(SYN_AutoTune *at, int32_t target, uint32_t elapsed)
 {
     uint32_t ramp = at->cfg.ramp_ms;
-    if (ramp == 0 || elapsed >= ramp) return target;
+    if (ramp == 0 || elapsed >= ramp)
+        return target;
     return (target * (int32_t)elapsed) / (int32_t)ramp;
 }
 
 static void write_log(SYN_AutoTune *at)
 {
-    if (at->cfg.datalog == NULL) return;
+    if (at->cfg.datalog == NULL)
+        return;
 
-    SYN_AutoTune_LogFrame frame = {
-        .state    = (uint8_t)at->state,
-        .output   = (int16_t)at->current_output,
-        .position = at->ctrl->measured_position,
-        .velocity = at->ctrl->measured_velocity
-    };
+    SYN_AutoTune_LogFrame frame = {.state = (uint8_t)at->state,
+                                   .output = (int16_t)at->current_output,
+                                   .position = at->ctrl->measured_position,
+                                   .velocity = at->ctrl->measured_velocity};
 
     syn_datalog_write(at->cfg.datalog, SYN_ATUNE_LOG_ID, &frame, sizeof(frame));
 }
@@ -60,8 +61,10 @@ static bool safety_ok(SYN_AutoTune *at, int32_t pos, int32_t velocity)
 
     /* Watchdog: update() must be called regularly */
     uint32_t watchdog = at->cfg.watchdog_ms;
-    if (watchdog == 0) watchdog = at->cfg.limits.watchdog_ms;
-    if (watchdog == 0) watchdog = 500;
+    if (watchdog == 0)
+        watchdog = at->cfg.limits.watchdog_ms;
+    if (watchdog == 0)
+        watchdog = 500;
 
     if (at->last_update_tick > 0) {
         if ((now - at->last_update_tick) > watchdog) {
@@ -72,8 +75,7 @@ static bool safety_ok(SYN_AutoTune *at, int32_t pos, int32_t velocity)
 
     /* Track limits */
     if (at->cfg.limits.position_min != 0 || at->cfg.limits.position_max != 0) {
-        if (pos < at->cfg.limits.position_min ||
-            pos > at->cfg.limits.position_max) {
+        if (pos < at->cfg.limits.position_min || pos > at->cfg.limits.position_max) {
             emergency_stop(at, SYN_ATUNE_ABORT_POSITION);
             return false;
         }
@@ -90,8 +92,7 @@ static bool safety_ok(SYN_AutoTune *at, int32_t pos, int32_t velocity)
 
     /* Respect motor controller soft limits */
     if (at->ctrl->cfg.position_min != 0 || at->ctrl->cfg.position_max != 0) {
-        if (pos <= at->ctrl->cfg.position_min ||
-            pos >= at->ctrl->cfg.position_max) {
+        if (pos <= at->ctrl->cfg.position_min || pos >= at->ctrl->cfg.position_max) {
             emergency_stop(at, SYN_ATUNE_ABORT_SOFT_LIMIT);
             return false;
         }
@@ -102,24 +103,29 @@ static bool safety_ok(SYN_AutoTune *at, int32_t pos, int32_t velocity)
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
-SYN_Status syn_autotune_init(SYN_AutoTune *at, SYN_MotorCtrl *ctrl,
-                               const SYN_AutoTune_Config *cfg)
+SYN_Status syn_autotune_init(SYN_AutoTune *at, SYN_MotorCtrl *ctrl, const SYN_AutoTune_Config *cfg)
 {
     SYN_ASSERT(at != NULL);
     SYN_ASSERT(ctrl != NULL);
     SYN_ASSERT(cfg != NULL);
 
     memset(at, 0, sizeof(*at));
-    at->cfg  = *cfg;
+    at->cfg = *cfg;
     at->ctrl = ctrl;
 
     /* Apply defaults */
-    if (at->cfg.settle_ms == 0)    at->cfg.settle_ms = 2000;
-    if (at->cfg.measure_ms == 0)   at->cfg.measure_ms = 2000;
-    if (at->cfg.relay_cycles == 0) at->cfg.relay_cycles = 3;
-    if (at->cfg.watchdog_ms == 0)  at->cfg.watchdog_ms = 500;
-    if (at->cfg.ramp_ms == 0)      at->cfg.ramp_ms = 500;
-    if (at->cfg.gain_multiplier_pct == 0) at->cfg.gain_multiplier_pct = 100;
+    if (at->cfg.settle_ms == 0)
+        at->cfg.settle_ms = 2000;
+    if (at->cfg.measure_ms == 0)
+        at->cfg.measure_ms = 2000;
+    if (at->cfg.relay_cycles == 0)
+        at->cfg.relay_cycles = 3;
+    if (at->cfg.watchdog_ms == 0)
+        at->cfg.watchdog_ms = 500;
+    if (at->cfg.ramp_ms == 0)
+        at->cfg.ramp_ms = 500;
+    if (at->cfg.gain_multiplier_pct == 0)
+        at->cfg.gain_multiplier_pct = 100;
 
     /* Snapshot starting position and set default setpoint if 0 */
     at->start_position = ctrl->measured_position;
@@ -129,9 +135,11 @@ SYN_Status syn_autotune_init(SYN_AutoTune *at, SYN_MotorCtrl *ctrl,
     at->phase_start_tick = syn_port_get_tick_ms();
     at->last_update_tick = at->phase_start_tick;
     at->result.pid_scale = ctrl->cfg.pid_scale;
-    if (at->result.pid_scale == 0) at->result.pid_scale = 8;
+    if (at->result.pid_scale == 0)
+        at->result.pid_scale = 8;
     at->result.ff_scale = ctrl->cfg.ff_scale;
-    if (at->result.ff_scale == 0) at->result.ff_scale = 8;
+    if (at->result.ff_scale == 0)
+        at->result.ff_scale = 8;
 
     /* Stop the motor controller — we're taking over */
     syn_motor_ctrl_stop(ctrl);
@@ -188,12 +196,12 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
     uint32_t elapsed = now - at->phase_start_tick;
 
     switch (at->state) {
-
     /* ── Probe for minimum motion output ────────────────────────── */
     case SYN_ATUNE_PROBE: {
         apply_raw_output(at, at->current_output);
         int32_t drift = pos - at->start_position;
-        if (drift < 0) drift = -drift;
+        if (drift < 0)
+            drift = -drift;
 
         /* If moved significantly, we found the motion threshold.
          * Using 50 counts to be sure it's not just noise/slack. */
@@ -236,9 +244,7 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
                         (at->cfg.mode == SYN_ATUNE_MODE_AUTO && at->result.ff_kv != 0);
 
         if (is_relay) {
-            target = at->above_setpoint
-                   ? -at->cfg.test_output
-                   :  at->cfg.test_output;
+            target = at->above_setpoint ? -at->cfg.test_output : at->cfg.test_output;
         } else {
             target = at->cfg.test_output;
         }
@@ -283,10 +289,11 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
         /* Wait for steady-state: compare velocity with previous check */
         if (at->ka_p2_captured) {
             if (now - at->last_check_tick >= 500) {
-                int32_t dv = (velocity > at->history_v) ? (velocity - at->history_v) : (at->history_v - velocity);
+                int32_t dv = (velocity > at->history_v) ? (velocity - at->history_v)
+                                                        : (at->history_v - velocity);
                 at->history_v = velocity;
                 at->last_check_tick = now;
-                
+
                 /* Steady-state reached when dv < 5 over 500ms */
                 if (dv < 5 || elapsed >= at->cfg.settle_ms * 10) {
                     at->state = SYN_ATUNE_MEASURING;
@@ -307,9 +314,10 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
 
         if (elapsed >= at->cfg.measure_ms) {
             if (at->velocity_samples > 0) {
-                at->result.steady_velocity_1 = (int32_t)(at->velocity_sum / (int64_t)at->velocity_samples);
+                at->result.steady_velocity_1 =
+                    (int32_t)(at->velocity_sum / (int64_t)at->velocity_samples);
             }
-            
+
             /* Transition to second measurement point (2x output) */
             at->state = SYN_ATUNE_SETTLING_2;
             at->phase_start_tick = now;
@@ -326,10 +334,11 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
         /* Wait for new steady-state after 2x output */
         if (elapsed >= 200) {
             if (now - at->last_check_tick >= 500) {
-                int32_t dv = (velocity > at->history_v) ? (velocity - at->history_v) : (at->history_v - velocity);
+                int32_t dv = (velocity > at->history_v) ? (velocity - at->history_v)
+                                                        : (at->history_v - velocity);
                 at->history_v = velocity;
                 at->last_check_tick = now;
-                
+
                 if (dv < 5 || elapsed >= at->cfg.settle_ms * 10) {
                     at->state = SYN_ATUNE_MEASURING_2;
                     at->phase_start_tick = now;
@@ -346,8 +355,9 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
 
         if (elapsed >= at->cfg.measure_ms) {
             if (at->velocity_samples > 0) {
-                at->result.steady_velocity_2 = (int32_t)(at->velocity_sum / (int64_t)at->velocity_samples);
-                
+                at->result.steady_velocity_2 =
+                    (int32_t)(at->velocity_sum / (int64_t)at->velocity_samples);
+
                 int32_t v1 = at->result.steady_velocity_1;
                 int32_t v2 = at->result.steady_velocity_2;
                 int32_t dv = (v2 > v1) ? (v2 - v1) : (v1 - v2);
@@ -355,7 +365,8 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
                     /* Slope kv = (Out2 - Out1) / (V2 - V1) */
                     int32_t dout = at->cfg.test_output; /* (2x - 1x) = 1x */
                     uint8_t ff_scale = at->ctrl->cfg.ff_scale;
-                    if (ff_scale == 0) ff_scale = 12;
+                    if (ff_scale == 0)
+                        ff_scale = 12;
 
                     while (ff_scale < 24 && (((int64_t)dout << ff_scale) / dv) < 100) {
                         ff_scale++;
@@ -374,14 +385,16 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
                     if (dt_ms > 0 && dv > 10) {
                         int32_t accel = (dv * 1000) / dt_ms; /* units/s^2 */
                         int32_t v_avg = (at->ka_v1 + at->ka_v2) / 2;
-                        
+
                         /* Use the identified slope to find friction offset at 0 speed */
                         /* Out = kv * v + offset → offset = Out - kv * v */
-                        int32_t kv_out = (int32_t)(((int64_t)v_avg * at->result.ff_kv) >> at->result.ff_scale);
+                        int32_t kv_out =
+                            (int32_t)(((int64_t)v_avg * at->result.ff_kv) >> at->result.ff_scale);
                         int32_t accel_out = at->cfg.test_output - kv_out;
-                        
+
                         if (accel_out > 0) {
-                            at->result.ff_ka = (int32_t)(((int64_t)accel_out << at->result.ff_scale) / accel);
+                            at->result.ff_ka =
+                                (int32_t)(((int64_t)accel_out << at->result.ff_scale) / accel);
                         }
                     }
                 }
@@ -404,18 +417,23 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
          * before registering a zero-crossing. Prevents encoder noise from
          * creating fake crossings on heavy/slow systems. */
         int32_t hysteresis = at->ctrl->cfg.position_deadband * 2;
-        if (hysteresis < 10) hysteresis = 10;  /* minimum 10 counts */
+        if (hysteresis < 10)
+            hysteresis = 10; /* minimum 10 counts */
 
         bool now_above = at->above_setpoint;
         if (at->above_setpoint) {
-            if (pos < at->cfg.setpoint - hysteresis) now_above = false;
+            if (pos < at->cfg.setpoint - hysteresis)
+                now_above = false;
         } else {
-            if (pos > at->cfg.setpoint + hysteresis) now_above = true;
+            if (pos > at->cfg.setpoint + hysteresis)
+                now_above = true;
         }
 
         /* Track peaks */
-        if (pos > at->osc_peak_pos) at->osc_peak_pos = pos;
-        if (pos < at->osc_peak_neg) at->osc_peak_neg = pos;
+        if (pos > at->osc_peak_pos)
+            at->osc_peak_pos = pos;
+        if (pos < at->osc_peak_neg)
+            at->osc_peak_neg = pos;
 
         /* Detect zero-crossing (with hysteresis) */
         if (now_above != at->above_setpoint) {
@@ -423,7 +441,8 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
 
             if (at->half_cycles >= 2) {
                 int32_t amp = at->osc_peak_pos - at->osc_peak_neg;
-                if (amp < 0) amp = -amp;
+                if (amp < 0)
+                    amp = -amp;
                 at->amplitude_sum += amp;
                 at->amplitude_count++;
             }
@@ -440,9 +459,7 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
             at->osc_peak_neg = pos;
             at->above_setpoint = now_above;
 
-            at->relay_output = now_above
-                             ? -at->cfg.test_output
-                             :  at->cfg.test_output;
+            at->relay_output = now_above ? -at->cfg.test_output : at->cfg.test_output;
         }
 
         apply_raw_output(at, at->relay_output);
@@ -454,30 +471,31 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
 
             /* Compute PID gains */
             uint32_t Tu = at->period_sum / at->period_count;
-            int32_t avg_amp = (at->amplitude_count > 0)
-                            ? at->amplitude_sum / at->amplitude_count
-                            : 1;
+            int32_t avg_amp =
+                (at->amplitude_count > 0) ? at->amplitude_sum / at->amplitude_count : 1;
             int32_t half_amp = avg_amp / 2;
-            if (half_amp == 0) half_amp = 1;
-
+            if (half_amp == 0)
+                half_amp = 1;
 
             at->result.Tu_ms = Tu;
             uint8_t scale = at->ctrl->cfg.pid_scale;
-            if (scale == 0) scale = 8;
+            if (scale == 0)
+                scale = 8;
 
             /* Auto-scale Ku to avoid underflow */
             int32_t Ku = 0;
             while (scale < 24) {
                 int64_t Ku_num = (int64_t)4 * at->cfg.test_output * 113 * ((int64_t)1 << scale);
                 int64_t Ku_den = (int64_t)355 * half_amp;
-                if (Ku_den == 0) Ku_den = 1;
+                if (Ku_den == 0)
+                    Ku_den = 1;
                 Ku = (int32_t)(Ku_num / Ku_den);
-                if (Ku >= 100 || scale >= 20) break;
+                if (Ku >= 100 || scale >= 20)
+                    break;
                 scale++;
             }
             at->result.pid_scale = scale;
             at->result.Ku = Ku;
-            
 
             int32_t Tu_i = (int32_t)Tu;
             switch (at->cfg.method) {
@@ -497,8 +515,7 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
                  * For Ki with large Tu: multiply first to avoid truncation */
                 at->result.kp = (int32_t)((int64_t)Ku * 100 / 220);
                 if (Tu_i > 0) {
-                    at->result.ki = (int32_t)((int64_t)Ku * 10000
-                                           / ((int64_t)220 * Tu_i));
+                    at->result.ki = (int32_t)((int64_t)Ku * 10000 / ((int64_t)220 * Tu_i));
                 }
                 at->result.kd = (int32_t)((int64_t)Ku * Tu_i / 6300);
                 break;
@@ -506,9 +523,12 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
 
             /* Apply safety multiplier */
             if (at->cfg.gain_multiplier_pct != 100) {
-                at->result.kp = (int32_t)((int64_t)at->result.kp * at->cfg.gain_multiplier_pct / 100);
-                at->result.ki = (int32_t)((int64_t)at->result.ki * at->cfg.gain_multiplier_pct / 100);
-                at->result.kd = (int32_t)((int64_t)at->result.kd * at->cfg.gain_multiplier_pct / 100);
+                at->result.kp =
+                    (int32_t)((int64_t)at->result.kp * at->cfg.gain_multiplier_pct / 100);
+                at->result.ki =
+                    (int32_t)((int64_t)at->result.ki * at->cfg.gain_multiplier_pct / 100);
+                at->result.kd =
+                    (int32_t)((int64_t)at->result.kd * at->cfg.gain_multiplier_pct / 100);
             }
         }
         break;
@@ -523,11 +543,12 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
             at->state = SYN_ATUNE_DONE;
             break;
         }
-        
+
         uint32_t e = (elapsed > ramp) ? ramp : elapsed;
         int32_t out = (at->start_output * (int32_t)(ramp - e)) / (int32_t)ramp;
-        
-        if (elapsed >= ramp || (at->start_output > 0 && out <= 0) || (at->start_output < 0 && out >= 0)) {
+
+        if (elapsed >= ramp || (at->start_output > 0 && out <= 0) ||
+            (at->start_output < 0 && out >= 0)) {
             apply_raw_output(at, 0);
             syn_motor_ctrl_stop(at->ctrl);
             at->state = SYN_ATUNE_DONE;
@@ -549,40 +570,41 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
 void syn_autotune_apply(SYN_AutoTune *at)
 {
     SYN_ASSERT(at != NULL);
-    if (at->state != SYN_ATUNE_DONE) return;
+    if (at->state != SYN_ATUNE_DONE)
+        return;
 
     at->ctrl->cfg.pid_kp = at->result.kp;
     at->ctrl->cfg.pid_ki = at->result.ki;
     at->ctrl->cfg.pid_kd = at->result.kd;
-    at->ctrl->cfg.ff_kv  = at->result.ff_kv;
-    at->ctrl->cfg.ff_ka  = at->result.ff_ka;
+    at->ctrl->cfg.ff_kv = at->result.ff_kv;
+    at->ctrl->cfg.ff_ka = at->result.ff_ka;
     at->ctrl->cfg.pid_scale = at->result.pid_scale;
 }
 
 void syn_autotune_abort(SYN_AutoTune *at)
 {
-    if (at == NULL) return;
+    if (at == NULL)
+        return;
     SYN_ASSERT(at != NULL);
     emergency_stop(at, SYN_ATUNE_ABORT_USER);
 }
 
 SYN_Status syn_autotune_start(SYN_AutoTune *at, SYN_MotorCtrl *ctrl,
-                               const SYN_AutoTune_Limits *limits,
-                               SYN_AutoTune_Flags flags,
-                               uint16_t gain_multiplier)
+                              const SYN_AutoTune_Limits *limits, SYN_AutoTune_Flags flags,
+                              uint16_t gain_multiplier)
 {
     SYN_ASSERT(at != NULL);
     SYN_ASSERT(ctrl != NULL);
     SYN_ASSERT(limits != NULL);
 
     SYN_AutoTune_Config cfg = {
-        .mode           = SYN_ATUNE_MODE_AUTO,
-        .flags          = flags,
-        .test_output    = 0, /* Auto-probe */
-        .limits         = *limits,
-        .relay_cycles   = 4,
-        .method         = SYN_ATUNE_TYREUS_LUYBEN,
-        .watchdog_ms    = limits->watchdog_ms,
+        .mode = SYN_ATUNE_MODE_AUTO,
+        .flags = flags,
+        .test_output = 0, /* Auto-probe */
+        .limits = *limits,
+        .relay_cycles = 4,
+        .method = SYN_ATUNE_TYREUS_LUYBEN,
+        .watchdog_ms = limits->watchdog_ms,
         .gain_multiplier_pct = gain_multiplier,
     };
 

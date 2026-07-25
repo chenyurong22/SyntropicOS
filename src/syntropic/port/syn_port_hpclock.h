@@ -73,7 +73,7 @@ extern volatile uint32_t syn_hpclock_msb;
  * Call this from your timer update/overflow interrupt handler.
  * Do not add any other logic before this macro in the ISR.
  */
-#define SYN_HPCLOCK_OVERFLOW_TICK()   (syn_hpclock_msb++)
+#define SYN_HPCLOCK_OVERFLOW_TICK() (syn_hpclock_msb++)
 
 /* ── Port functions ────────────────────────────────────────────────────── */
 

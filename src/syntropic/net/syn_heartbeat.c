@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_HEARTBEAT) || SYN_USE_HEARTBEAT
@@ -9,8 +9,8 @@
  * @brief Heartbeat / keep-alive implementation.
  */
 
-#include "syn_heartbeat.h"
 #include "../util/syn_assert.h"
+#include "syn_heartbeat.h"
 
 #include <string.h>
 
@@ -32,13 +32,13 @@ static void hb_rx_handler(const SYN_Packet *pkt, void *ctx)
         if (p->used && p->node_id == pkt->src) {
             bool was_dead = !p->alive;
             p->last_seen = now;
-            p->alive     = true;
+            p->alive = true;
 
             if (was_dead) {
                 /* Peer came back! */
                 if (hb->errlog != NULL) {
-                    syn_errlog_record(hb->errlog, SYN_HB_ERR_PEER_FOUND,
-                                       SYN_ERR_INFO, (uint32_t)pkt->src);
+                    syn_errlog_record(hb->errlog, SYN_HB_ERR_PEER_FOUND, SYN_ERR_INFO,
+                                      (uint32_t)pkt->src);
                 }
                 if (hb->on_peer_found != NULL) {
                     hb->on_peer_found(pkt->src, hb->cb_ctx);
@@ -51,21 +51,20 @@ static void hb_rx_handler(const SYN_Packet *pkt, void *ctx)
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
-void syn_heartbeat_init(SYN_Heartbeat *hb, SYN_Router *router,
-                           SYN_HB_Peer *peers, uint8_t peer_cap,
-                           uint32_t interval_ms, uint32_t timeout_ms)
+void syn_heartbeat_init(SYN_Heartbeat *hb, SYN_Router *router, SYN_HB_Peer *peers, uint8_t peer_cap,
+                        uint32_t interval_ms, uint32_t timeout_ms)
 {
     SYN_ASSERT(hb != NULL);
     SYN_ASSERT(router != NULL);
     SYN_ASSERT(peers != NULL);
 
     memset(hb, 0, sizeof(*hb));
-    hb->router        = router;
-    hb->peers         = peers;
+    hb->router = router;
+    hb->peers = peers;
     hb->peer_capacity = peer_cap;
-    hb->interval_ms   = interval_ms;
-    hb->timeout_ms    = timeout_ms;
-    hb->last_tx_tick  = syn_port_get_tick_ms();
+    hb->interval_ms = interval_ms;
+    hb->timeout_ms = timeout_ms;
+    hb->last_tx_tick = syn_port_get_tick_ms();
 
     memset(peers, 0, sizeof(SYN_HB_Peer) * peer_cap);
 
@@ -80,23 +79,23 @@ bool syn_heartbeat_add_peer(SYN_Heartbeat *hb, uint8_t node_id)
     /* Check for duplicate */
     for (uint8_t i = 0; i < hb->peer_capacity; i++) {
         if (hb->peers[i].used && hb->peers[i].node_id == node_id) {
-            return true;  /* already tracked */
+            return true; /* already tracked */
         }
     }
 
     /* Find empty slot */
     for (uint8_t i = 0; i < hb->peer_capacity; i++) {
         if (!hb->peers[i].used) {
-            hb->peers[i].node_id   = node_id;
+            hb->peers[i].node_id = node_id;
             hb->peers[i].last_seen = syn_port_get_tick_ms();
-            hb->peers[i].alive     = true;
-            hb->peers[i].used      = true;
+            hb->peers[i].alive = true;
+            hb->peers[i].used = true;
             hb->peer_count++;
             return true;
         }
     }
 
-    return false;  /* table full */
+    return false; /* table full */
 }
 
 void syn_heartbeat_update(SYN_Heartbeat *hb)
@@ -107,23 +106,23 @@ void syn_heartbeat_update(SYN_Heartbeat *hb)
 
     /* Send our heartbeat (broadcast) */
     if ((now - hb->last_tx_tick) >= hb->interval_ms) {
-        syn_router_send(hb->router, 0xFF, SYN_MSG_HEARTBEAT,
-                          NULL, 0, false);
+        syn_router_send(hb->router, 0xFF, SYN_MSG_HEARTBEAT, NULL, 0, false);
         hb->last_tx_tick = now;
     }
 
     /* Check peer timeouts */
     for (uint8_t i = 0; i < hb->peer_capacity; i++) {
         SYN_HB_Peer *p = &hb->peers[i];
-        if (!p->used) continue;
+        if (!p->used)
+            continue;
 
         uint32_t elapsed = now - p->last_seen;
         if (p->alive && elapsed >= hb->timeout_ms) {
             p->alive = false;
 
             if (hb->errlog != NULL) {
-                syn_errlog_record(hb->errlog, SYN_HB_ERR_PEER_LOST,
-                                   SYN_ERR_WARNING, (uint32_t)p->node_id);
+                syn_errlog_record(hb->errlog, SYN_HB_ERR_PEER_LOST, SYN_ERR_WARNING,
+                                  (uint32_t)p->node_id);
             }
             if (hb->on_peer_lost != NULL) {
                 hb->on_peer_lost(p->node_id, hb->cb_ctx);
@@ -132,16 +131,14 @@ void syn_heartbeat_update(SYN_Heartbeat *hb)
     }
 }
 
-void syn_heartbeat_on_peer_lost(SYN_Heartbeat *hb,
-                                   SYN_HB_Callback cb, void *ctx)
+void syn_heartbeat_on_peer_lost(SYN_Heartbeat *hb, SYN_HB_Callback cb, void *ctx)
 {
     SYN_ASSERT(hb != NULL);
     hb->on_peer_lost = cb;
-    hb->cb_ctx       = ctx;
+    hb->cb_ctx = ctx;
 }
 
-void syn_heartbeat_on_peer_found(SYN_Heartbeat *hb,
-                                    SYN_HB_Callback cb, void *ctx)
+void syn_heartbeat_on_peer_found(SYN_Heartbeat *hb, SYN_HB_Callback cb, void *ctx)
 {
     SYN_ASSERT(hb != NULL);
     hb->on_peer_found = cb;

@@ -4,8 +4,10 @@
  */
 
 #include "syn_ringbuf.h"
-#include "../util/syn_assert.h"
+
 #include "../common/syn_barrier.h"
+#include "../util/syn_assert.h"
+
 #include <string.h>
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
@@ -30,7 +32,7 @@ void syn_ringbuf_init(SYN_RingBuf *rb, uint8_t *buf, size_t size)
     SYN_ASSERT(buf != NULL);
     SYN_ASSERT(size > 1); /* need at least 2 bytes (1 usable + 1 sentinel) */
 
-    rb->buf  = buf;
+    rb->buf = buf;
     rb->size = size;
     SYN_STORE_RELEASE(&rb->head, 0);
     SYN_STORE_RELEASE(&rb->tail, 0);

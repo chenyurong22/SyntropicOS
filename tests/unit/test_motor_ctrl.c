@@ -3,12 +3,12 @@
  * @brief Unity tests for syn_motor_ctrl.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
-#include "syntropic/motor/syn_motor_ctrl.h"
 #include "syntropic/motor/syn_dc_motor.h"
+#include "syntropic/motor/syn_motor_ctrl.h"
 #include "syntropic/motor/syn_stepper.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int32_t mock_ctrl_position = 0;
 
@@ -30,20 +30,21 @@ static int32_t mock_pot_feedback(void *ctx)
 static int mock_stall_count = 0;
 static void mock_stall_cb(SYN_MotorCtrl *c, void *ctx)
 {
-    (void)c; (void)ctx;
+    (void)c;
+    (void)ctx;
     mock_stall_count++;
 }
 
 static int mock_target_count = 0;
 static void mock_target_cb(SYN_MotorCtrl *c, void *ctx)
 {
-    (void)c; (void)ctx;
+    (void)c;
+    (void)ctx;
     mock_target_count++;
 }
 
 static void test_motor_ctrl(void)
 {
-
     mock_tick_ms = 0;
     mock_ctrl_position = 0;
     mock_stall_count = 0;
@@ -57,16 +58,16 @@ static void test_motor_ctrl(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.read_pos      = mock_encoder_feedback;
-    cfg.read_pos_ctx  = NULL;
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.pid_kp        = 100;
-    cfg.pid_ki        = 10;
-    cfg.pid_kd        = 5;
-    cfg.pid_scale     = 6;
-    cfg.update_hz      = 1000;
-    cfg.output_min    = -255;
-    cfg.output_max    = 255;
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.read_pos_ctx = NULL;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.pid_kp = 100;
+    cfg.pid_ki = 10;
+    cfg.pid_kd = 5;
+    cfg.pid_scale = 6;
+    cfg.update_hz = 1000;
+    cfg.output_min = -255;
+    cfg.output_max = 255;
 
     syn_motor_ctrl_init(&ctrl, &cfg);
     TEST_ASSERT_EQUAL(SYN_MCTRL_STOPPED, syn_motor_ctrl_state(&ctrl));
@@ -96,19 +97,19 @@ static void test_motor_ctrl(void)
     SYN_MotorCtrl act;
     SYN_MotorCtrl_Config acfg;
     memset(&acfg, 0, sizeof(acfg));
-    acfg.read_pos          = mock_pot_feedback;
-    acfg.read_pos_ctx      = NULL;
-    acfg.motor          = syn_dc_motor_output(&dc);
-    acfg.pid_kp            = 50;
-    acfg.pid_ki            = 5;
-    acfg.pid_kd            = 10;
-    acfg.pid_scale         = 6;
-    acfg.update_hz         = 50;
-    acfg.output_min        = -255;
-    acfg.output_max        = 255;
+    acfg.read_pos = mock_pot_feedback;
+    acfg.read_pos_ctx = NULL;
+    acfg.motor = syn_dc_motor_output(&dc);
+    acfg.pid_kp = 50;
+    acfg.pid_ki = 5;
+    acfg.pid_kd = 10;
+    acfg.pid_scale = 6;
+    acfg.update_hz = 50;
+    acfg.output_min = -255;
+    acfg.output_max = 255;
     acfg.position_deadband = 10;
-    acfg.position_min      = 100;
-    acfg.position_max      = 3900;
+    acfg.position_min = 100;
+    acfg.position_max = 3900;
 
     syn_motor_ctrl_init(&act, &acfg);
     syn_motor_ctrl_on_target(&act, mock_target_cb, NULL);
@@ -124,7 +125,7 @@ static void test_motor_ctrl(void)
     TEST_ASSERT_TRUE(syn_motor_ctrl_output(&act) > 0);
 
     /* Simulate: arrived at target */
-    mock_pot_position = 2050;  /* within deadband of 10 */
+    mock_pot_position = 2050; /* within deadband of 10 */
     mock_tick_advance(20);
     st = syn_motor_ctrl_update(&act);
     TEST_ASSERT_EQUAL(SYN_MCTRL_ON_TARGET, st);
@@ -132,7 +133,7 @@ static void test_motor_ctrl(void)
 
     /* ── Test 3: Soft position limits ───────────────────────── */
 
-    mock_pot_position = 50;  /* below position_min (100) */
+    mock_pot_position = 50; /* below position_min (100) */
     syn_motor_ctrl_set_position(&act, 500);
     mock_tick_advance(20);
     st = syn_motor_ctrl_update(&act);
@@ -151,18 +152,18 @@ static void test_motor_ctrl(void)
     SYN_MotorCtrl stctrl;
     SYN_MotorCtrl_Config scfg;
     memset(&scfg, 0, sizeof(scfg));
-    scfg.read_pos          = mock_encoder_feedback;
-    scfg.read_pos_ctx      = NULL;
-    scfg.motor          = syn_dc_motor_output(&dc);
-    scfg.pid_kp            = 200;
-    scfg.pid_ki            = 0;
-    scfg.pid_kd            = 0;
-    scfg.pid_scale         = 6;
-    scfg.update_hz      = 1000;
-    scfg.output_min        = -255;
-    scfg.output_max        = 255;
-    scfg.stall_timeout_ms  = 100;
-    scfg.stall_threshold   = 0;
+    scfg.read_pos = mock_encoder_feedback;
+    scfg.read_pos_ctx = NULL;
+    scfg.motor = syn_dc_motor_output(&dc);
+    scfg.pid_kp = 200;
+    scfg.pid_ki = 0;
+    scfg.pid_kd = 0;
+    scfg.pid_scale = 6;
+    scfg.update_hz = 1000;
+    scfg.output_min = -255;
+    scfg.output_max = 255;
+    scfg.stall_timeout_ms = 100;
+    scfg.stall_threshold = 0;
 
     syn_motor_ctrl_init(&stctrl, &scfg);
     syn_motor_ctrl_on_stall(&stctrl, mock_stall_cb, NULL);
@@ -194,9 +195,9 @@ static void test_motor_ctrl_stepper(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.motor    = syn_stepper_output(&stepper);
+    cfg.motor = syn_stepper_output(&stepper);
     cfg.read_pos = mock_encoder_feedback;
-    cfg.update_hz      = 1000;
+    cfg.update_hz = 1000;
 
     syn_motor_ctrl_init(&ctrl, &cfg);
     syn_motor_ctrl_set_velocity(&ctrl, 500);
@@ -217,7 +218,7 @@ static void test_motor_ctrl_stepper(void)
     /* Test NULL motor output (all callbacks NULL) returns safely */
     memset(&cfg, 0, sizeof(cfg));
     cfg.read_pos = mock_encoder_feedback;
-    cfg.update_hz      = 1000;
+    cfg.update_hz = 1000;
     syn_motor_ctrl_init(&ctrl, &cfg);
     syn_motor_ctrl_set_velocity(&ctrl, 500);
     st = syn_motor_ctrl_update(&ctrl);
@@ -234,23 +235,19 @@ static void test_motor_ctrl_trajectory(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.read_pos      = mock_encoder_feedback;
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.update_hz      = 1000;
-    cfg.output_min    = -100;
-    cfg.output_max    = 100;
-    cfg.ff_kv         = 10;
-    cfg.ff_ka         = 5;
-    cfg.ff_scale      = 3; // division by 8
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.update_hz = 1000;
+    cfg.output_min = -100;
+    cfg.output_max = 100;
+    cfg.ff_kv = 10;
+    cfg.ff_ka = 5;
+    cfg.ff_scale = 3; // division by 8
 
     syn_motor_ctrl_init(&ctrl, &cfg);
 
     /* 1. Test set_trajectory transitions when idle */
-    SYN_MotorCtrl_Trajectory traj = {
-        .position = 1000,
-        .velocity = 40,
-        .acceleration = 16
-    };
+    SYN_MotorCtrl_Trajectory traj = {.position = 1000, .velocity = 40, .acceleration = 16};
     syn_motor_ctrl_set_gains(&ctrl, 0, 0, 0); // No PID output, focus on FF
     syn_motor_ctrl_set_trajectory(&ctrl, &traj);
     TEST_ASSERT_EQUAL(SYN_MCTRL_MODE_POSITION, ctrl.mode);
@@ -301,68 +298,78 @@ static void test_motor_ctrl_saturation(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.read_pos      = mock_encoder_feedback;
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.update_hz      = 1000;
-    cfg.output_min    = -100;
-    cfg.output_max    = 100;
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.update_hz = 1000;
+    cfg.output_min = -100;
+    cfg.output_max = 100;
     /* kp = 0, ki = 300 so that integral builds up and clamps.
      * integral_max = (output_max * scale * 1000) / ki = (100 * 1 * 1000) / 300 = 333 */
-    cfg.pid_kp        = 0;
-    cfg.pid_ki        = 300; 
-    cfg.pid_scale     = 0; // scale = 1
+    cfg.pid_kp = 0;
+    cfg.pid_ki = 300;
+    cfg.pid_scale = 0; // scale = 1
 
     /* 1. Test positive saturation via integral_max clamping */
     syn_motor_ctrl_init(&ctrl, &cfg);
     syn_motor_ctrl_set_position(&ctrl, 10); // target = 10, error = 10, step = 100
     mock_ctrl_position = 0;
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = 100
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = 200
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = 300
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl); // integral = 100
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl); // integral = 200
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl); // integral = 300
     TEST_ASSERT_EQUAL_INT(300, ctrl.pid.integral);
 
     /* Update again: integral wants 400, clamped to integral_max (333) */
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl);
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl);
     TEST_ASSERT_EQUAL_INT(333, ctrl.pid.integral);
 
     /* 2. Test negative saturation via integral_max clamping */
     syn_motor_ctrl_init(&ctrl, &cfg);
     syn_motor_ctrl_set_position(&ctrl, -10);
     mock_ctrl_position = 0;
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = -100
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = -200
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = -300
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl); // integral = -100
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl); // integral = -200
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl); // integral = -300
     TEST_ASSERT_EQUAL_INT(-300, ctrl.pid.integral);
 
     /* Update again: integral wants -400, clamped to -integral_max (-333) */
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl);
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl);
     TEST_ASSERT_EQUAL_INT(-333, ctrl.pid.integral);
 
     /* 3. Test combined output saturation and anti-windup clamping with non-zero feedforward */
     /* 3a. Positive feedforward saturation (ff > 0), triggers line 356 */
     memset(&cfg, 0, sizeof(cfg));
-    cfg.read_pos      = mock_encoder_feedback;
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.update_hz      = 1000;
-    cfg.output_min    = -100;
-    cfg.output_max    = 100;
-    cfg.ff_kv         = 10;
-    cfg.ff_scale      = 0;
-    cfg.pid_kp        = 0;
-    cfg.pid_ki        = 300;
-    cfg.pid_scale     = 0;
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.update_hz = 1000;
+    cfg.output_min = -100;
+    cfg.output_max = 100;
+    cfg.ff_kv = 10;
+    cfg.ff_scale = 0;
+    cfg.pid_kp = 0;
+    cfg.pid_ki = 300;
+    cfg.pid_scale = 0;
 
     syn_motor_ctrl_init(&ctrl, &cfg);
-    SYN_MotorCtrl_Trajectory traj = {
-        .position = 10,
-        .velocity = 2, // ff = 20
-        .acceleration = 0
-    };
+    SYN_MotorCtrl_Trajectory traj = {.position = 10,
+                                     .velocity = 2, // ff = 20
+                                     .acceleration = 0};
     syn_motor_ctrl_set_trajectory(&ctrl, &traj);
     mock_ctrl_position = 0;
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = 100
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = 200
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = 300, pid_out = 90 > max_pid (80), takes line 356 subtraction
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl); // integral = 100
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl); // integral = 200
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(
+        &ctrl); // integral = 300, pid_out = 90 > max_pid (80), takes line 356 subtraction
     TEST_ASSERT_TRUE(ctrl.pid.integral < 300);
 
     /* 3b. Negative feedforward saturation (ff < 0), triggers line 359 */
@@ -371,23 +378,28 @@ static void test_motor_ctrl_saturation(void)
     traj.velocity = -2; // ff = -20
     syn_motor_ctrl_set_trajectory(&ctrl, &traj);
     mock_ctrl_position = 0;
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = -100
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = -200
-    mock_tick_advance(10); syn_motor_ctrl_update(&ctrl); // integral = -300, pid_out = -90 < min_pid (-80), takes line 359 subtraction
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl); // integral = -100
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(&ctrl); // integral = -200
+    mock_tick_advance(10);
+    syn_motor_ctrl_update(
+        &ctrl); // integral = -300, pid_out = -90 < min_pid (-80), takes line 359 subtraction
     TEST_ASSERT_TRUE(ctrl.pid.integral > -300);
 
-    /* 3c. Test integer underflow in ff to swap max_pid and min_pid, and huge negative ff to trigger line 345-346 */
+    /* 3c. Test integer underflow in ff to swap max_pid and min_pid, and huge negative ff to trigger
+     * line 345-346 */
     memset(&cfg, 0, sizeof(cfg));
-    cfg.read_pos      = mock_encoder_feedback;
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.update_hz      = 1000;
-    cfg.output_min    = -1000;
-    cfg.output_max    = 1000;
-    cfg.ff_kv         = 214748360; // will multiply by 10/(-10) below to make +/-2147483600
-    cfg.ff_scale      = 0;
-    cfg.pid_kp        = 10;
-    cfg.pid_ki        = 1000;
-    cfg.pid_scale     = 0;
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.update_hz = 1000;
+    cfg.output_min = -1000;
+    cfg.output_max = 1000;
+    cfg.ff_kv = 214748360; // will multiply by 10/(-10) below to make +/-2147483600
+    cfg.ff_scale = 0;
+    cfg.pid_kp = 10;
+    cfg.pid_ki = 1000;
+    cfg.pid_scale = 0;
 
     syn_motor_ctrl_init(&ctrl, &cfg);
     traj.position = 100;
@@ -414,11 +426,11 @@ static void test_motor_ctrl_datalog(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.read_pos      = mock_encoder_feedback;
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.update_hz      = 1000;
-    cfg.output_min    = -100;
-    cfg.output_max    = 100;
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.update_hz = 1000;
+    cfg.output_min = -100;
+    cfg.output_max = 100;
 
     syn_motor_ctrl_init(&ctrl, &cfg);
 
@@ -445,11 +457,11 @@ static void test_motor_ctrl_metrics(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.read_pos          = mock_encoder_feedback;
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.update_hz      = 1000;
-    cfg.output_min        = -100;
-    cfg.output_max        = 100;
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.update_hz = 1000;
+    cfg.output_min = -100;
+    cfg.output_max = 100;
     cfg.position_deadband = 10;
 
     mock_tick_ms = 1000;
@@ -508,15 +520,15 @@ static void test_motor_ctrl_stall_and_recovery(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.read_pos          = mock_encoder_feedback;
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.update_hz      = 1000;
-    cfg.output_min        = -100;
-    cfg.output_max        = 100;
-    cfg.stall_timeout_ms  = 50;
-    cfg.stall_threshold   = 1;
-    cfg.pid_kp            = 100;
-    cfg.pid_scale         = 0;
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.update_hz = 1000;
+    cfg.output_min = -100;
+    cfg.output_max = 100;
+    cfg.stall_timeout_ms = 50;
+    cfg.stall_threshold = 1;
+    cfg.pid_kp = 100;
+    cfg.pid_scale = 0;
 
     syn_motor_ctrl_init(&ctrl, &cfg);
 
@@ -546,7 +558,7 @@ static void test_motor_ctrl_stall_and_recovery(void)
     mock_ctrl_position = 0;
     mock_tick_advance(10);
     syn_motor_ctrl_update(&ctrl); // first update to set last_position
-    
+
     mock_ctrl_position = 2; // delta = 2 > stall_threshold
     mock_tick_advance(10);
     syn_motor_ctrl_update(&ctrl);
@@ -556,7 +568,7 @@ static void test_motor_ctrl_stall_and_recovery(void)
     mock_tick_advance(10);
     syn_motor_ctrl_update(&ctrl);
     TEST_ASSERT_TRUE(ctrl.stall_active);
-    
+
     /* Feedback moves again (delta = 2 > stall_threshold) -> stall_active goes false */
     mock_ctrl_position = 4;
     mock_tick_advance(10);
@@ -595,17 +607,17 @@ static void test_motor_ctrl_errors_and_setters(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.read_pos          = mock_encoder_feedback;
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.update_hz      = 1000;
-    cfg.output_min        = -100;
-    cfg.output_max        = 100;
-    cfg.position_min      = 100;
-    cfg.position_max      = 1000;
-    cfg.stall_timeout_ms  = 50;
-    cfg.stall_threshold   = 0;
-    cfg.pid_kp            = 100;
-    cfg.pid_scale         = 0;
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.update_hz = 1000;
+    cfg.output_min = -100;
+    cfg.output_max = 100;
+    cfg.position_min = 100;
+    cfg.position_max = 1000;
+    cfg.stall_timeout_ms = 50;
+    cfg.stall_threshold = 0;
+    cfg.pid_kp = 100;
+    cfg.pid_scale = 0;
 
     SYN_ErrEntry entries[4];
     SYN_ErrLog elog;
@@ -617,7 +629,7 @@ static void test_motor_ctrl_errors_and_setters(void)
     /* 1. Test limits error logging */
     syn_motor_ctrl_set_position(&ctrl, 500);
     ctrl.target_position = 50; // bypass clamp to force negative output
-    mock_ctrl_position = 100; // at min limit
+    mock_ctrl_position = 100;  // at min limit
     mock_tick_advance(10);
     SYN_MotorCtrl_State st = syn_motor_ctrl_update(&ctrl); // should hit limit
     TEST_ASSERT_EQUAL(SYN_MCTRL_LIMIT, st);
@@ -661,15 +673,15 @@ static void test_motor_ctrl_move_to(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.read_pos       = mock_encoder_feedback;
-    cfg.update_hz      = 1000;
-    cfg.pid_kp         = 200;
-    cfg.pid_ki         = 50;
-    cfg.pid_kd         = 10;
-    cfg.pid_scale      = 8;
-    cfg.output_min     = -dc.duty_max;
-    cfg.output_max     = dc.duty_max;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.update_hz = 1000;
+    cfg.pid_kp = 200;
+    cfg.pid_ki = 50;
+    cfg.pid_kd = 10;
+    cfg.pid_scale = 8;
+    cfg.output_min = -dc.duty_max;
+    cfg.output_max = dc.duty_max;
     cfg.position_deadband = 5;
 
     syn_motor_ctrl_init(&ctrl, &cfg);
@@ -710,7 +722,8 @@ static void test_ramp_trapezoid_fp(void)
     /* Run enough ticks to complete */
     for (int i = 0; i < 2000; i++) {
         syn_ramp_update(&ramp);
-        if (syn_ramp_done(&ramp)) break;
+        if (syn_ramp_done(&ramp))
+            break;
     }
 
     TEST_ASSERT_TRUE(syn_ramp_done(&ramp));
@@ -727,16 +740,16 @@ static void test_motor_ctrl_move_to_accel_ff(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.read_pos       = mock_encoder_feedback;
-    cfg.update_hz      = 1000;
-    cfg.pid_kp         = 100;
-    cfg.pid_scale      = 8;
-    cfg.ff_kv          = 10;
-    cfg.ff_ka          = 5;
-    cfg.ff_scale       = 4;
-    cfg.output_min     = -1000;
-    cfg.output_max     = 1000;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.update_hz = 1000;
+    cfg.pid_kp = 100;
+    cfg.pid_scale = 8;
+    cfg.ff_kv = 10;
+    cfg.ff_ka = 5;
+    cfg.ff_scale = 4;
+    cfg.output_min = -1000;
+    cfg.output_max = 1000;
     cfg.position_deadband = 5;
 
     syn_motor_ctrl_init(&ctrl, &cfg);
@@ -756,7 +769,7 @@ static void test_motor_ctrl_move_to_accel_ff(void)
     }
 
     TEST_ASSERT_TRUE_MESSAGE(saw_nonzero_accel,
-        "Expected nonzero acceleration during move_to accel phase");
+                             "Expected nonzero acceleration during move_to accel phase");
 }
 
 /* ── Test: defaults macro ──────────────────────────────────────────────── */
@@ -766,9 +779,8 @@ static void test_motor_ctrl_defaults(void)
     SYN_DCMotor dc;
     syn_dc_motor_init(&dc, 3, 4, SYN_DC_MODE_PWM_DIR);
 
-    SYN_MotorCtrl_Config cfg = SYN_MOTOR_CTRL_DEFAULTS(
-        syn_dc_motor_output(&dc), mock_encoder_feedback, NULL, 1000, 1000
-    );
+    SYN_MotorCtrl_Config cfg =
+        SYN_MOTOR_CTRL_DEFAULTS(syn_dc_motor_output(&dc), mock_encoder_feedback, NULL, 1000, 1000);
 
     /* Verify defaults are sane */
     TEST_ASSERT_EQUAL(1000, cfg.update_hz);
@@ -796,13 +808,13 @@ static void test_motor_ctrl_move_to_scurve(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.read_pos       = mock_encoder_feedback;
-    cfg.update_hz      = 1000;
-    cfg.pid_kp         = 200;
-    cfg.pid_scale      = 8;
-    cfg.output_min     = -1000;
-    cfg.output_max     = 1000;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.update_hz = 1000;
+    cfg.pid_kp = 200;
+    cfg.pid_scale = 8;
+    cfg.output_min = -1000;
+    cfg.output_max = 1000;
     cfg.position_deadband = 5;
 
     syn_motor_ctrl_init(&ctrl, &cfg);
@@ -838,13 +850,13 @@ static void test_motor_ctrl_open_loop(void)
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.motor          = syn_dc_motor_output(&dc);
-    cfg.read_pos       = mock_encoder_feedback;
-    cfg.update_hz      = 1000;
-    cfg.pid_kp         = 200;
-    cfg.pid_scale      = 8;
-    cfg.output_min     = -dc.duty_max;
-    cfg.output_max     = dc.duty_max;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.update_hz = 1000;
+    cfg.pid_kp = 200;
+    cfg.pid_scale = 8;
+    cfg.output_min = -dc.duty_max;
+    cfg.output_max = dc.duty_max;
     cfg.position_deadband = 5;
 
     syn_motor_ctrl_init(&ctrl, &cfg);

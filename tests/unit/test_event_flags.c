@@ -3,8 +3,8 @@
  * @brief Unit test suite for Event Flag Groups (syn_event_flags).
  */
 
-#include "unity/unity.h"
 #include "syntropic/sched/syn_event_flags.h"
+#include "unity/unity.h"
 
 void test_event_flags_set_clear_wait(void)
 {
@@ -18,15 +18,19 @@ void test_event_flags_set_clear_wait(void)
     uint32_t matched = 0;
 
     /* WAIT_ALL - unsatisfiable (requires 0x07U) */
-    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_event_flags_wait(&ef, 0x07U, SYN_EVENT_FLAGS_WAIT_ALL, &matched));
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY,
+                          syn_event_flags_wait(&ef, 0x07U, SYN_EVENT_FLAGS_WAIT_ALL, &matched));
 
     /* WAIT_ANY - satisfied (bit 0 or 2 present) */
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_event_flags_wait(&ef, 0x07U, SYN_EVENT_FLAGS_WAIT_ANY, &matched));
+    TEST_ASSERT_EQUAL_INT(SYN_OK,
+                          syn_event_flags_wait(&ef, 0x07U, SYN_EVENT_FLAGS_WAIT_ANY, &matched));
     TEST_ASSERT_EQUAL_UINT32(0x05U, matched);
 
     /* WAIT_ALL with AUTO_CLEAR */
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_event_flags_set(&ef, 0x02U)); /* Bit 1 set -> now 0x07U */
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_event_flags_wait(&ef, 0x07U, SYN_EVENT_FLAGS_WAIT_ALL | SYN_EVENT_FLAGS_AUTO_CLEAR, &matched));
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_event_flags_wait(
+                    &ef, 0x07U, SYN_EVENT_FLAGS_WAIT_ALL | SYN_EVENT_FLAGS_AUTO_CLEAR, &matched));
     TEST_ASSERT_EQUAL_UINT32(0x07U, matched);
     TEST_ASSERT_EQUAL_UINT32(0, syn_event_flags_get(&ef)); /* Flags auto-cleared */
 
@@ -45,8 +49,10 @@ void test_event_flags_null_and_invalid_params(void)
     TEST_ASSERT_EQUAL_UINT32(0, syn_event_flags_get(NULL));
 
     /* Wait with NULL context or wait_mask == 0 */
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_event_flags_wait(NULL, 0x01U, SYN_EVENT_FLAGS_WAIT_ANY, NULL));
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_event_flags_wait(&ef, 0, SYN_EVENT_FLAGS_WAIT_ANY, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_event_flags_wait(NULL, 0x01U, SYN_EVENT_FLAGS_WAIT_ANY, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_event_flags_wait(&ef, 0, SYN_EVENT_FLAGS_WAIT_ANY, NULL));
 
     /* Wait with out_flags == NULL (valid call) */
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_event_flags_wait(&ef, 0x01U, SYN_EVENT_FLAGS_WAIT_ANY, NULL));

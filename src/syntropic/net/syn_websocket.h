@@ -21,24 +21,24 @@ extern "C" {
  * @brief WebSocket connection states.
  */
 typedef enum {
-    SYN_WS_STATE_CLOSED,             /**< Connection is closed */
-    SYN_WS_STATE_CONNECTED,          /**< Handshake complete, active socket */
+    SYN_WS_STATE_CLOSED,    /**< Connection is closed */
+    SYN_WS_STATE_CONNECTED, /**< Handshake complete, active socket */
 } SYN_WebsocketState;
 
 /**
  * @brief WebSocket session context.
  */
 typedef struct {
-    SYN_Socket         sock;         /**< Network socket handle */
-    SYN_WebsocketState state;        /**< WebSocket connection state */
-    uint8_t            rx_buf[128];  /**< Payload receive packet storage */
-    uint8_t            rx_state;     /**< Frame parsing state: 0=header, 1=length, 2=mask, 3=payload */
-    uint32_t           payload_len;  /**< Size of the current incoming frame payload */
-    uint32_t           bytes_read;   /**< Accumulated payload bytes read so far */
-    uint8_t            mask_key[4];  /**< Client-to-server frame masking key */
-    bool               masked;       /**< True if the incoming frame is masked */
-    uint8_t            opcode;       /**< WebSocket opcode (e.g. text, binary, close, ping) */
-    
+    SYN_Socket sock;          /**< Network socket handle */
+    SYN_WebsocketState state; /**< WebSocket connection state */
+    uint8_t rx_buf[128];      /**< Payload receive packet storage */
+    uint8_t rx_state;         /**< Frame parsing state: 0=header, 1=length, 2=mask, 3=payload */
+    uint32_t payload_len;     /**< Size of the current incoming frame payload */
+    uint32_t bytes_read;      /**< Accumulated payload bytes read so far */
+    uint8_t mask_key[4];      /**< Client-to-server frame masking key */
+    bool masked;              /**< True if the incoming frame is masked */
+    uint8_t opcode;           /**< WebSocket opcode (e.g. text, binary, close, ping) */
+
     /**
      * @brief User callback invoked when a complete frame is received.
      * @param payload Received frame data.
@@ -47,7 +47,7 @@ typedef struct {
      * @param ctx     User context pointer.
      */
     void (*on_message)(const uint8_t *payload, size_t len, uint8_t opcode, void *ctx);
-    void              *ctx;          /**< User context pointer for message callback */
+    void *ctx; /**< User context pointer for message callback */
 } SYN_WebsocketSession;
 
 /**
@@ -62,10 +62,9 @@ typedef struct {
  * @param ctx        User context pointer passed through to callback.
  * @return SYN_OK on successful handshake, SYN_ERROR on negotiation failure.
  */
-SYN_Status syn_websocket_upgrade(const SYN_HttpdRequest *req, SYN_HttpdResponse *resp,
-                                 SYN_WebsocketSession *ws,
-                                 void (*on_message)(const uint8_t *payload, size_t len, uint8_t opcode, void *ctx),
-                                 void *ctx);
+SYN_Status syn_websocket_upgrade(
+    const SYN_HttpdRequest *req, SYN_HttpdResponse *resp, SYN_WebsocketSession *ws,
+    void (*on_message)(const uint8_t *payload, size_t len, uint8_t opcode, void *ctx), void *ctx);
 
 /**
  * @brief Send a frame over WebSocket.
@@ -78,8 +77,8 @@ SYN_Status syn_websocket_upgrade(const SYN_HttpdRequest *req, SYN_HttpdResponse 
  * @param len    Length of payload in bytes.
  * @return SYN_OK on success, or socket error code.
  */
-SYN_Status syn_websocket_send(SYN_WebsocketSession *ws, uint8_t opcode,
-                              const void *data, size_t len);
+SYN_Status syn_websocket_send(SYN_WebsocketSession *ws, uint8_t opcode, const void *data,
+                              size_t len);
 
 /**
  * @brief Background task for polling active WebSockets.

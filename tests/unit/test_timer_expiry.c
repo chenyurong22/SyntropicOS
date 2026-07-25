@@ -3,18 +3,19 @@
  * @brief Tests for syn_timer_next_expiry() and tickless+timer integration.
  */
 
-#include "unity/unity.h"
-#include "syntropic/sched/syn_timer.h"
 #include "mocks/mock_port.h"
+#include "syntropic/sched/syn_timer.h"
+#include "unity/unity.h"
 
-#include <string.h>
 #include <limits.h>
+#include <string.h>
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
 static void dummy_cb(SYN_Timer *t, void *ctx)
 {
-    (void)t; (void)ctx;
+    (void)t;
+    (void)ctx;
 }
 
 /* ── Tests ──────────────────────────────────────────────────────────────── */

@@ -3,18 +3,18 @@
  * @brief Tests for HMAC-signed firmware verification.
  */
 
-#include "unity/unity.h"
+#include "mocks/mock_port.h"
+#include "syntropic/port/syn_port_flash.h"
 #include "syntropic/system/syn_fwimage.h"
 #include "syntropic/system/syn_fwupdate.h"
 #include "syntropic/util/syn_crc.h"
 #include "syntropic/util/syn_hmac.h"
-#include "syntropic/port/syn_port_flash.h"
-#include "mocks/mock_port.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
-#define SLOT_ADDR  0x0000u
-#define SLOT_SIZE  (2048u - (uint32_t)sizeof(SYN_FwImageHeader))
+#define SLOT_ADDR 0x0000u
+#define SLOT_SIZE (2048u - (uint32_t)sizeof(SYN_FwImageHeader))
 
 static uint8_t page_buf[256];
 static SYN_FwUpdate upd;
@@ -23,8 +23,8 @@ static SYN_FwUpdate upd;
 
 static const uint8_t test_key[] = "SyntropicSecretKey1234567890ABCD"; /* 32 bytes */
 
-static void compute_crc_hmac(const uint8_t *data, size_t len,
-                              uint32_t *out_crc, uint8_t out_hmac[32])
+static void compute_crc_hmac(const uint8_t *data, size_t len, uint32_t *out_crc,
+                             uint8_t out_hmac[32])
 {
     *out_crc = syn_crc32_final(syn_crc32_update(SYN_CRC32_INIT, data, len));
 
@@ -49,8 +49,7 @@ void test_hmac_roundtrip(void)
     /* begin, then set key (begin zeroes the struct) */
     memset(&upd, 0, sizeof(upd));
 
-    SYN_Status st = syn_fwupdate_begin(&upd, SLOT_ADDR, SLOT_SIZE,
-                                        page_buf, sizeof(page_buf));
+    SYN_Status st = syn_fwupdate_begin(&upd, SLOT_ADDR, SLOT_SIZE, page_buf, sizeof(page_buf));
     TEST_ASSERT_EQUAL(SYN_OK, st);
 
     syn_fwupdate_set_key(&upd, test_key, sizeof(test_key));
@@ -85,8 +84,7 @@ void test_hmac_mismatch_fails(void)
     bad_hmac[0] ^= 0xFF;
 
     memset(&upd, 0, sizeof(upd));
-    syn_fwupdate_begin(&upd, SLOT_ADDR, SLOT_SIZE,
-                        page_buf, sizeof(page_buf));
+    syn_fwupdate_begin(&upd, SLOT_ADDR, SLOT_SIZE, page_buf, sizeof(page_buf));
     syn_fwupdate_set_key(&upd, test_key, sizeof(test_key));
     syn_fwupdate_write(&upd, firmware, sizeof(firmware));
 
@@ -106,12 +104,10 @@ void test_hmac_null_skips_verification(void)
     uint8_t firmware[64];
     memset(firmware, 0xBB, sizeof(firmware));
 
-    uint32_t crc = syn_crc32_final(
-        syn_crc32_update(SYN_CRC32_INIT, firmware, sizeof(firmware)));
+    uint32_t crc = syn_crc32_final(syn_crc32_update(SYN_CRC32_INIT, firmware, sizeof(firmware)));
 
     memset(&upd, 0, sizeof(upd));
-    syn_fwupdate_begin(&upd, SLOT_ADDR, SLOT_SIZE,
-                        page_buf, sizeof(page_buf));
+    syn_fwupdate_begin(&upd, SLOT_ADDR, SLOT_SIZE, page_buf, sizeof(page_buf));
     syn_fwupdate_set_key(&upd, test_key, sizeof(test_key));
     syn_fwupdate_write(&upd, firmware, sizeof(firmware));
 
@@ -126,13 +122,11 @@ void test_hmac_crc_only_without_key(void)
     uint8_t firmware[64];
     memset(firmware, 0xCC, sizeof(firmware));
 
-    uint32_t crc = syn_crc32_final(
-        syn_crc32_update(SYN_CRC32_INIT, firmware, sizeof(firmware)));
+    uint32_t crc = syn_crc32_final(syn_crc32_update(SYN_CRC32_INIT, firmware, sizeof(firmware)));
 
     memset(&upd, 0, sizeof(upd));
     /* No set_key call */
-    syn_fwupdate_begin(&upd, SLOT_ADDR, SLOT_SIZE,
-                        page_buf, sizeof(page_buf));
+    syn_fwupdate_begin(&upd, SLOT_ADDR, SLOT_SIZE, page_buf, sizeof(page_buf));
     syn_fwupdate_write(&upd, firmware, sizeof(firmware));
 
     /* Even with an expected_hmac provided, key_set is false so it passes */
@@ -145,15 +139,15 @@ void test_hmac_multi_chunk_write(void)
 {
     /* Verify that HMAC is correct when data is written in multiple chunks. */
     uint8_t firmware[256];
-    for (int i = 0; i < 256; i++) firmware[i] = (uint8_t)i;
+    for (int i = 0; i < 256; i++)
+        firmware[i] = (uint8_t)i;
 
     uint32_t crc;
     uint8_t hmac[32];
     compute_crc_hmac(firmware, sizeof(firmware), &crc, hmac);
 
     memset(&upd, 0, sizeof(upd));
-    syn_fwupdate_begin(&upd, SLOT_ADDR, SLOT_SIZE,
-                        page_buf, sizeof(page_buf));
+    syn_fwupdate_begin(&upd, SLOT_ADDR, SLOT_SIZE, page_buf, sizeof(page_buf));
     syn_fwupdate_set_key(&upd, test_key, sizeof(test_key));
 
     /* Write in 4 × 64-byte chunks */

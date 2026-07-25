@@ -35,9 +35,9 @@
 #ifndef SYN_CBOR_WRITE_H
 #define SYN_CBOR_WRITE_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,10 +47,10 @@ extern "C" {
 
 /** @brief CBOR encoder state.  Caller-allocated; zero heap. */
 typedef struct {
-    uint8_t *buf;       /**< Output buffer                 */
-    size_t   cap;       /**< Buffer capacity in bytes      */
-    size_t   len;       /**< Bytes encoded so far          */
-    bool     overflow;  /**< Set if buffer capacity exceeded */
+    uint8_t *buf;  /**< Output buffer                 */
+    size_t cap;    /**< Buffer capacity in bytes      */
+    size_t len;    /**< Bytes encoded so far          */
+    bool overflow; /**< Set if buffer capacity exceeded */
 } SYN_CborWriter;
 
 /* ── Init ────────────────────────────────────────────────────────────────── */

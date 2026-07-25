@@ -41,8 +41,8 @@
 #include "../common/syn_defs.h"
 #include "../port/syn_port_exti.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +51,7 @@ extern "C" {
 /* ── Configuration ──────────────────────────────────────────────────────── */
 
 #ifndef SYN_EXTI_MAX_PINS
-#define SYN_EXTI_MAX_PINS  16  /**< Max number of EXTI-enabled pins      */
+#define SYN_EXTI_MAX_PINS 16 /**< Max number of EXTI-enabled pins      */
 #endif
 
 /* ── Callback ───────────────────────────────────────────────────────────── */
@@ -73,8 +73,7 @@ void syn_exti_init(void);
  * @param ctx   User context passed to callback.
  * @return SYN_OK, or SYN_ERROR if table full.
  */
-SYN_Status syn_exti_register(SYN_GPIO_Pin pin, SYN_EXTI_Edge edge,
-                                SYN_EXTI_Callback cb, void *ctx);
+SYN_Status syn_exti_register(SYN_GPIO_Pin pin, SYN_EXTI_Edge edge, SYN_EXTI_Callback cb, void *ctx);
 
 /**
  * @brief Unregister a pin callback.

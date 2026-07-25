@@ -41,7 +41,7 @@
 #define SYN_TIMESYNC_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_TIMESYNC) || SYN_USE_TIMESYNC
@@ -50,14 +50,14 @@
 #include "syn_hpclock.h"
 
 #if defined(SYN_USE_RTC) && SYN_USE_RTC
-  #include "syn_rtc.h"
-  #define SYN_TIMESYNC_HAS_RTC 1
+#include "syn_rtc.h"
+#define SYN_TIMESYNC_HAS_RTC 1
 #else
-  #define SYN_TIMESYNC_HAS_RTC 0
+#define SYN_TIMESYNC_HAS_RTC 0
 #endif
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,10 +69,10 @@ extern "C" {
  * @brief Quality tier of a resolved UTC timestamp.
  */
 typedef enum {
-    SYN_TIME_SOURCE_UNSYNCED     = 0, /**< No time reference; arbitrary/monotonic epoch */
-    SYN_TIME_SOURCE_RTC_SYNCED   = 1, /**< Hardware RTC (coarse wall-clock date)        */
+    SYN_TIME_SOURCE_UNSYNCED = 0,     /**< No time reference; arbitrary/monotonic epoch */
+    SYN_TIME_SOURCE_RTC_SYNCED = 1,   /**< Hardware RTC (coarse wall-clock date)        */
     SYN_TIME_SOURCE_GPS_HOLDOVER = 2, /**< PPS lost; extrapolating with crystal drift PPM */
-    SYN_TIME_SOURCE_GPS_PPS      = 3, /**< Active PPS lock (sub-microsecond accuracy)   */
+    SYN_TIME_SOURCE_GPS_PPS = 3,      /**< Active PPS lock (sub-microsecond accuracy)   */
 } SYN_TimeSource;
 
 /* ── Structured UTC Output ──────────────────────────────────────────────── */
@@ -81,10 +81,10 @@ typedef enum {
  * @brief Universal UTC timestamp with error bound and quality tier.
  */
 typedef struct {
-    uint64_t       sec;            /**< UTC epoch seconds (1970 base)          */
-    uint32_t       nsec;           /**< Sub-second nanoseconds (0..999999999)  */
-    uint32_t       uncertainty_ns; /**< Quantified error bound (± nanoseconds) */
-    SYN_TimeSource source;         /**< Quality tier at resolution instant     */
+    uint64_t sec;            /**< UTC epoch seconds (1970 base)          */
+    uint32_t nsec;           /**< Sub-second nanoseconds (0..999999999)  */
+    uint32_t uncertainty_ns; /**< Quantified error bound (± nanoseconds) */
+    SYN_TimeSource source;   /**< Quality tier at resolution instant     */
 } SYN_UTCTimestamp;
 
 /* ── Context ────────────────────────────────────────────────────────────── */
@@ -94,34 +94,34 @@ typedef struct {
  */
 typedef struct {
     /* Anchors */
-    SYN_HPTimestamp last_pps_ts;     /**< Raw timestamp at last PPS pulse         */
-    uint64_t        last_pps_ticks;  /**< Resolved 64-bit ticks at last PPS       */
-    uint64_t        last_utc_sec;    /**< Universal UTC second at last PPS       */
+    SYN_HPTimestamp last_pps_ts; /**< Raw timestamp at last PPS pulse         */
+    uint64_t last_pps_ticks;     /**< Resolved 64-bit ticks at last PPS       */
+    uint64_t last_utc_sec;       /**< Universal UTC second at last PPS       */
 
     /* Drift calculation */
-    uint64_t        prev_pps_ticks;  /**< Ticks at previous PPS for PPM calculation */
-    int32_t         drift_ppm;       /**< Measured crystal drift in Parts-Per-Million */
-    uint32_t        pps_count;       /**< Total valid PPS updates received         */
+    uint64_t prev_pps_ticks; /**< Ticks at previous PPS for PPM calculation */
+    int32_t drift_ppm;       /**< Measured crystal drift in Parts-Per-Million */
+    uint32_t pps_count;      /**< Total valid PPS updates received         */
 
     /* Tuning / Config */
-    uint32_t        base_jitter_ns;  /**< Base reference jitter (default: 50 ns)  */
-    uint32_t        max_holdover_s;  /**< Max holdover before degrading to RTC    */
+    uint32_t base_jitter_ns; /**< Base reference jitter (default: 50 ns)  */
+    uint32_t max_holdover_s; /**< Max holdover before degrading to RTC    */
 
     /* Status flags */
-    bool            has_pps_lock;    /**< true if at least one PPS is bound       */
-    bool            rtc_synced;      /**< true if RTC was previously set by GPS   */
+    bool has_pps_lock; /**< true if at least one PPS is bound       */
+    bool rtc_synced;   /**< true if RTC was previously set by GPS   */
 } SYN_TimeSync;
 
 /* ── Default Configuration Constants ───────────────────────────────────── */
 
 /** Default assumed PPS reference jitter (50 nanoseconds). */
 #ifndef SYN_TIMESYNC_DEFAULT_JITTER_NS
-#define SYN_TIMESYNC_DEFAULT_JITTER_NS   50U
+#define SYN_TIMESYNC_DEFAULT_JITTER_NS 50U
 #endif
 
 /** Default max holdover duration before degrading to RTC (60 seconds). */
 #ifndef SYN_TIMESYNC_DEFAULT_HOLDOVER_S
-#define SYN_TIMESYNC_DEFAULT_HOLDOVER_S   60U
+#define SYN_TIMESYNC_DEFAULT_HOLDOVER_S 60U
 #endif
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -150,8 +150,7 @@ void syn_timesync_init(SYN_TimeSync *tsync);
  * @param utc_sec Universal UTC epoch second corresponding to this PPS pulse.
  * @return SYN_OK on success, SYN_INVALID_PARAM if pps_ts is NULL.
  */
-SYN_Status syn_timesync_bind_pps(SYN_TimeSync *tsync,
-                                 const SYN_HPTimestamp *pps_ts,
+SYN_Status syn_timesync_bind_pps(SYN_TimeSync *tsync, const SYN_HPTimestamp *pps_ts,
                                  uint64_t utc_sec);
 
 /**
@@ -168,9 +167,8 @@ SYN_Status syn_timesync_bind_pps(SYN_TimeSync *tsync,
  * @param out_utc   Output UTC timestamp. Must not be NULL.
  * @return SYN_OK on success, SYN_INVALID_PARAM if args are NULL.
  */
-SYN_Status syn_timesync_resolve_utc(const SYN_TimeSync *tsync,
-                                     const SYN_HPTimestamp *event_ts,
-                                     SYN_UTCTimestamp *out_utc);
+SYN_Status syn_timesync_resolve_utc(const SYN_TimeSync *tsync, const SYN_HPTimestamp *event_ts,
+                                    SYN_UTCTimestamp *out_utc);
 
 /**
  * @brief Helper: resolve event timestamp directly to total 64-bit UTC nanoseconds.
@@ -179,8 +177,7 @@ SYN_Status syn_timesync_resolve_utc(const SYN_TimeSync *tsync,
  * @param event_ts  Event timestamp to resolve.
  * @return Total nanoseconds since Unix epoch (1970-01-01 00:00:00 UTC).
  */
-uint64_t syn_timesync_to_epoch_ns(const SYN_TimeSync *tsync,
-                                  const SYN_HPTimestamp *event_ts);
+uint64_t syn_timesync_to_epoch_ns(const SYN_TimeSync *tsync, const SYN_HPTimestamp *event_ts);
 
 /**
  * @brief Check if active PPS lock is present.

@@ -39,7 +39,7 @@ extern "C" {
  * bugs, but normal operation keeps it >= 0.
  */
 typedef struct {
-    volatile int16_t count;  /**< Current semaphore count (>= 0 means available) */
+    volatile int16_t count; /**< Current semaphore count (>= 0 means available) */
 } SYN_PT_Sem;
 
 /* ── Initialization ─────────────────────────────────────────────────────── */
@@ -50,7 +50,7 @@ typedef struct {
  * @param sem      Pointer to the semaphore.
  * @param initial  Initial count (typically 0 or 1).
  */
-#define PT_SEM_INIT(sem, initial)   ((sem)->count = (int16_t)(initial))
+#define PT_SEM_INIT(sem, initial) ((sem)->count = (int16_t)(initial))
 
 /* ── Blocking wait (protothread context) ────────────────────────────────── */
 
@@ -63,10 +63,10 @@ typedef struct {
  * @param pt   Protothread.
  * @param sem  Semaphore to wait on.
  */
-#define PT_SEM_WAIT(pt, sem)                                  \
-    do {                                                       \
-        PT_WAIT_UNTIL(pt, (sem)->count > 0);                   \
-        (sem)->count--;                                        \
+#define PT_SEM_WAIT(pt, sem)                 \
+    do {                                     \
+        PT_WAIT_UNTIL(pt, (sem)->count > 0); \
+        (sem)->count--;                      \
     } while (0)
 
 /* ── Signal (any context) ───────────────────────────────────────────────── */
@@ -78,7 +78,7 @@ typedef struct {
  *
  * @param sem  Semaphore to signal.
  */
-#define PT_SEM_SIGNAL(sem)   ((sem)->count++)
+#define PT_SEM_SIGNAL(sem) ((sem)->count++)
 
 /* ── Non-blocking try ───────────────────────────────────────────────────── */
 
@@ -100,12 +100,12 @@ static inline int pt_sem_trywait(SYN_PT_Sem *sem)
 /**
  * @brief Macro wrapper for pt_sem_trywait.
  */
-#define PT_SEM_TRYWAIT(sem)   pt_sem_trywait(sem)
+#define PT_SEM_TRYWAIT(sem) pt_sem_trywait(sem)
 
 /* ── Query ──────────────────────────────────────────────────────────────── */
 
 /** Return the current count. */
-#define PT_SEM_COUNT(sem)     ((sem)->count)
+#define PT_SEM_COUNT(sem) ((sem)->count)
 
 #ifdef __cplusplus
 }

@@ -11,6 +11,7 @@
 #define SYN_PORT_PWM_H
 
 #include "../common/syn_defs.h"
+
 #include <stdint.h>
 
 #ifdef __cplusplus

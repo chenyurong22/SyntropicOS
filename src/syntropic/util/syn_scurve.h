@@ -11,8 +11,9 @@
 #define SYN_SCURVE_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,23 +23,23 @@ extern "C" {
  * @brief S-curve trajectory generator state.
  */
 typedef struct {
-    int32_t p;        /**< Current position */
-    int32_t v;        /**< Current velocity */
-    int32_t a;        /**< Current acceleration */
-    int32_t j;        /**< Current jerk */
+    int32_t p; /**< Current position */
+    int32_t v; /**< Current velocity */
+    int32_t a; /**< Current acceleration */
+    int32_t j; /**< Current jerk */
 
     int32_t target_p; /**< Target position */
-    
-    int32_t v_max;    /**< Maximum velocity magnitude */
-    int32_t a_max;    /**< Maximum acceleration magnitude */
-    int32_t j_max;    /**< Maximum jerk magnitude */
+
+    int32_t v_max; /**< Maximum velocity magnitude */
+    int32_t a_max; /**< Maximum acceleration magnitude */
+    int32_t j_max; /**< Maximum jerk magnitude */
 
     int32_t phase_ticks[7]; /**< Ticks to spend in each of the 7 phases */
     int32_t current_phase;  /**< Current phase (0-6), 7 = done */
     int32_t ticks_in_phase; /**< Ticks spent in current phase */
     int32_t dir;            /**< Direction of motion (1 or -1) */
 
-    bool done;        /**< True if target reached */
+    bool done; /**< True if target reached */
 } SYN_SCurve;
 
 /* ── Kinematic state getters ───────────────────────────────────────────── */
@@ -48,28 +49,40 @@ typedef struct {
  * @param sc  S-curve instance.
  * @return Current position value.
  */
-static inline int32_t syn_scurve_position(const SYN_SCurve *sc) { return sc->p; }
+static inline int32_t syn_scurve_position(const SYN_SCurve *sc)
+{
+    return sc->p;
+}
 
 /**
  * @brief Get current velocity.
  * @param sc  S-curve instance.
  * @return Current velocity value.
  */
-static inline int32_t syn_scurve_velocity(const SYN_SCurve *sc) { return sc->v; }
+static inline int32_t syn_scurve_velocity(const SYN_SCurve *sc)
+{
+    return sc->v;
+}
 
 /**
  * @brief Get current acceleration.
  * @param sc  S-curve instance.
  * @return Current acceleration value.
  */
-static inline int32_t syn_scurve_acceleration(const SYN_SCurve *sc) { return sc->a; }
+static inline int32_t syn_scurve_acceleration(const SYN_SCurve *sc)
+{
+    return sc->a;
+}
 
 /**
  * @brief Check if trajectory is complete.
  * @param sc  S-curve instance.
  * @return true if target reached.
  */
-static inline bool syn_scurve_done(const SYN_SCurve *sc) { return sc->done; }
+static inline bool syn_scurve_done(const SYN_SCurve *sc)
+{
+    return sc->done;
+}
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 

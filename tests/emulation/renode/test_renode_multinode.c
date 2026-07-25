@@ -1,12 +1,17 @@
+#include "mock_port.h"
+#include "syntropic/proto/syn_cobs.h"
+#include "unity/unity.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "syntropic/proto/syn_cobs.h"
-#include "mock_port.h"
-#include "unity/unity.h"
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_renode_multinode_cobs_transport(void)
 {

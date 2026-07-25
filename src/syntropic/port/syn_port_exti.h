@@ -14,8 +14,8 @@
 #include "../common/syn_defs.h"
 #include "../port/syn_port_gpio.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,9 +23,9 @@ extern "C" {
 
 /** Interrupt trigger edge. */
 typedef enum {
-    SYN_EXTI_RISING  = 0,   /**< Trigger on rising edge                 */
-    SYN_EXTI_FALLING = 1,   /**< Trigger on falling edge                */
-    SYN_EXTI_BOTH    = 2,   /**< Trigger on both edges                  */
+    SYN_EXTI_RISING = 0,  /**< Trigger on rising edge                 */
+    SYN_EXTI_FALLING = 1, /**< Trigger on falling edge                */
+    SYN_EXTI_BOTH = 2,    /**< Trigger on both edges                  */
 } SYN_EXTI_Edge;
 
 /**

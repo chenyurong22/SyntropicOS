@@ -12,8 +12,9 @@
 #define SYN_EVENT_FLAGS_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,9 +22,9 @@ extern "C" {
 
 /** Wait mode flags. */
 typedef enum {
-    SYN_EVENT_FLAGS_WAIT_ANY      = 0x01U, /**< Satisfied when ANY bit in mask is set */
-    SYN_EVENT_FLAGS_WAIT_ALL      = 0x02U, /**< Satisfied when ALL bits in mask are set */
-    SYN_EVENT_FLAGS_AUTO_CLEAR    = 0x04U  /**< Automatically clear matched bits on read */
+    SYN_EVENT_FLAGS_WAIT_ANY = 0x01U,  /**< Satisfied when ANY bit in mask is set */
+    SYN_EVENT_FLAGS_WAIT_ALL = 0x02U,  /**< Satisfied when ALL bits in mask are set */
+    SYN_EVENT_FLAGS_AUTO_CLEAR = 0x04U /**< Automatically clear matched bits on read */
 } SYN_EventFlagsMode;
 
 /**
@@ -71,7 +72,8 @@ uint32_t syn_event_flags_get(const SYN_EventFlags *ef);
  * @param out_flags Optional pointer receiving matched flags.
  * @return SYN_OK if condition is satisfied, or SYN_BUSY if not met.
  */
-SYN_Status syn_event_flags_wait(SYN_EventFlags *ef, uint32_t wait_mask, uint32_t mode, uint32_t *out_flags);
+SYN_Status syn_event_flags_wait(SYN_EventFlags *ef, uint32_t wait_mask, uint32_t mode,
+                                uint32_t *out_flags);
 
 #ifdef __cplusplus
 }

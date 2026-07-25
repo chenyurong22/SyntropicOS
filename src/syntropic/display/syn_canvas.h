@@ -26,9 +26,9 @@
 
 #include "../common/syn_defs.h"
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,11 +38,11 @@ extern "C" {
 
 /** @brief Font descriptor for text rendering. */
 typedef struct {
-    const uint8_t *data;        /**< Bitmap data (column-major per glyph)  */
-    uint8_t        width;       /**< Glyph width in pixels                 */
-    uint8_t        height;      /**< Glyph height in pixels                */
-    uint8_t        first_char;  /**< First ASCII code (usually 32)         */
-    uint8_t        char_count;  /**< Number of glyphs                      */
+    const uint8_t *data; /**< Bitmap data (column-major per glyph)  */
+    uint8_t width;       /**< Glyph width in pixels                 */
+    uint8_t height;      /**< Glyph height in pixels                */
+    uint8_t first_char;  /**< First ASCII code (usually 32)         */
+    uint8_t char_count;  /**< Number of glyphs                      */
 } SYN_Font;
 
 /** Built-in 5×7 font (ASCII 32-126). */
@@ -57,18 +57,18 @@ typedef void (*SYN_Canvas_FlushFn)(const uint8_t *buf, size_t len, void *ctx);
 
 /** @brief Canvas instance — framebuffer + drawing state. */
 typedef struct {
-    uint8_t             *framebuf;     /**< Caller-owned pixel buffer       */
-    size_t               buf_size;     /**< Total buffer size (bytes)       */
-    uint16_t             width;        /**< Display width in pixels         */
-    uint16_t             height;       /**< Display height in pixels        */
-    uint8_t              bpp;          /**< Bits per pixel (1 or 16)        */
-    const SYN_Font     *font;         /**< Active font                     */
-    SYN_Canvas_FlushFn  flush_fn;     /**< Push framebuf to display        */
-    void                *flush_ctx;    /**< Context for flush callback      */
-    int16_t              clip_x;       /**< Clip region left edge           */
-    int16_t              clip_y;       /**< Clip region top edge            */
-    int16_t              clip_w;       /**< Clip region width               */
-    int16_t              clip_h;       /**< Clip region height              */
+    uint8_t *framebuf;           /**< Caller-owned pixel buffer       */
+    size_t buf_size;             /**< Total buffer size (bytes)       */
+    uint16_t width;              /**< Display width in pixels         */
+    uint16_t height;             /**< Display height in pixels        */
+    uint8_t bpp;                 /**< Bits per pixel (1 or 16)        */
+    const SYN_Font *font;        /**< Active font                     */
+    SYN_Canvas_FlushFn flush_fn; /**< Push framebuf to display        */
+    void *flush_ctx;             /**< Context for flush callback      */
+    int16_t clip_x;              /**< Clip region left edge           */
+    int16_t clip_y;              /**< Clip region top edge            */
+    int16_t clip_w;              /**< Clip region width               */
+    int16_t clip_h;              /**< Clip region height              */
 } SYN_Canvas;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -84,9 +84,8 @@ typedef struct {
  * @param flush   Callback to push framebuf to display hardware.
  * @param ctx     Context for flush callback.
  */
-void syn_canvas_init(SYN_Canvas *c, uint8_t *buf,
-                       uint16_t w, uint16_t h, uint8_t bpp,
-                       SYN_Canvas_FlushFn flush, void *ctx);
+void syn_canvas_init(SYN_Canvas *c, uint8_t *buf, uint16_t w, uint16_t h, uint8_t bpp,
+                     SYN_Canvas_FlushFn flush, void *ctx);
 
 /**
  * @brief Set the clip rectangle. Drawing is restricted to this region.
@@ -142,10 +141,7 @@ void syn_canvas_pixel(SYN_Canvas *c, int16_t x, int16_t y, uint16_t color);
  * @param y1     End Y.
  * @param color  Line color.
  */
-void syn_canvas_line(SYN_Canvas *c,
-                       int16_t x0, int16_t y0,
-                       int16_t x1, int16_t y1,
-                       uint16_t color);
+void syn_canvas_line(SYN_Canvas *c, int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
 
 /**
  * @brief Draw a rectangle (outline only).
@@ -156,10 +152,7 @@ void syn_canvas_line(SYN_Canvas *c,
  * @param h      Height.
  * @param color  Outline color.
  */
-void syn_canvas_rect(SYN_Canvas *c,
-                       int16_t x, int16_t y,
-                       int16_t w, int16_t h,
-                       uint16_t color);
+void syn_canvas_rect(SYN_Canvas *c, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 
 /**
  * @brief Draw a filled rectangle.
@@ -170,10 +163,8 @@ void syn_canvas_rect(SYN_Canvas *c,
  * @param h      Height.
  * @param color  Fill color.
  */
-void syn_canvas_rect_fill(SYN_Canvas *c,
-                             int16_t x, int16_t y,
-                             int16_t w, int16_t h,
-                             uint16_t color);
+void syn_canvas_rect_fill(SYN_Canvas *c, int16_t x, int16_t y, int16_t w, int16_t h,
+                          uint16_t color);
 
 /**
  * @brief Draw a circle (Bresenham).
@@ -183,9 +174,7 @@ void syn_canvas_rect_fill(SYN_Canvas *c,
  * @param r      Radius.
  * @param color  Outline color.
  */
-void syn_canvas_circle(SYN_Canvas *c,
-                          int16_t cx, int16_t cy,
-                          int16_t r, uint16_t color);
+void syn_canvas_circle(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t r, uint16_t color);
 
 /**
  * @brief Draw a filled circle.
@@ -195,9 +184,7 @@ void syn_canvas_circle(SYN_Canvas *c,
  * @param r      Radius.
  * @param color  Fill color.
  */
-void syn_canvas_circle_fill(SYN_Canvas *c,
-                               int16_t cx, int16_t cy,
-                               int16_t r, uint16_t color);
+void syn_canvas_circle_fill(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t r, uint16_t color);
 
 /**
  * @brief Draw a rounded rectangle (outline only).
@@ -209,10 +196,8 @@ void syn_canvas_circle_fill(SYN_Canvas *c,
  * @param r      Corner radius.
  * @param color  Outline color.
  */
-void syn_canvas_rect_round(SYN_Canvas *c,
-                              int16_t x, int16_t y,
-                              int16_t w, int16_t h,
-                              int16_t r, uint16_t color);
+void syn_canvas_rect_round(SYN_Canvas *c, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r,
+                           uint16_t color);
 
 /**
  * @brief Draw a filled rounded rectangle.
@@ -224,10 +209,8 @@ void syn_canvas_rect_round(SYN_Canvas *c,
  * @param r      Corner radius.
  * @param color  Fill color.
  */
-void syn_canvas_rect_round_fill(SYN_Canvas *c,
-                                   int16_t x, int16_t y,
-                                   int16_t w, int16_t h,
-                                   int16_t r, uint16_t color);
+void syn_canvas_rect_round_fill(SYN_Canvas *c, int16_t x, int16_t y, int16_t w, int16_t h,
+                                int16_t r, uint16_t color);
 
 /**
  * @brief Draw a monochrome 1bpp bitmap.
@@ -239,11 +222,8 @@ void syn_canvas_rect_round_fill(SYN_Canvas *c,
  * @param h       Bitmap height in pixels.
  * @param color   Foreground color for set bits.
  */
-void syn_canvas_bitmap(SYN_Canvas *c,
-                          int16_t x, int16_t y,
-                          const uint8_t *bitmap,
-                          int16_t w, int16_t h,
-                          uint16_t color);
+void syn_canvas_bitmap(SYN_Canvas *c, int16_t x, int16_t y, const uint8_t *bitmap, int16_t w,
+                       int16_t h, uint16_t color);
 
 /**
  * @brief Draw a text string at (x,y) using the active font.
@@ -253,8 +233,7 @@ void syn_canvas_bitmap(SYN_Canvas *c,
  * @param str    Null-terminated string.
  * @param color  Text color.
  */
-void syn_canvas_text(SYN_Canvas *c, int16_t x, int16_t y,
-                       const char *str, uint16_t color);
+void syn_canvas_text(SYN_Canvas *c, int16_t x, int16_t y, const char *str, uint16_t color);
 
 /**
  * @brief Draw a single character.
@@ -265,8 +244,7 @@ void syn_canvas_text(SYN_Canvas *c, int16_t x, int16_t y,
  * @param color  Text color.
  * @return Advance width in pixels.
  */
-uint8_t syn_canvas_char(SYN_Canvas *c, int16_t x, int16_t y,
-                           char ch, uint16_t color);
+uint8_t syn_canvas_char(SYN_Canvas *c, int16_t x, int16_t y, char ch, uint16_t color);
 
 /**
  * @brief Measure text width in pixels (without drawing).
@@ -291,9 +269,7 @@ uint8_t syn_canvas_text_height(const SYN_Canvas *c);
  * @param w      Width in pixels.
  * @param color  Color.
  */
-void syn_canvas_hline(SYN_Canvas *c,
-                        int16_t x, int16_t y,
-                        int16_t w, uint16_t color);
+void syn_canvas_hline(SYN_Canvas *c, int16_t x, int16_t y, int16_t w, uint16_t color);
 
 /**
  * @brief Draw a fast vertical line.
@@ -303,9 +279,7 @@ void syn_canvas_hline(SYN_Canvas *c,
  * @param h      Height in pixels.
  * @param color  Color.
  */
-void syn_canvas_vline(SYN_Canvas *c,
-                        int16_t x, int16_t y,
-                        int16_t h, uint16_t color);
+void syn_canvas_vline(SYN_Canvas *c, int16_t x, int16_t y, int16_t h, uint16_t color);
 
 /**
  * @brief Push framebuffer to display via the flush callback.
@@ -364,11 +338,11 @@ static inline uint16_t syn_rgb565(uint8_t r, uint8_t g, uint8_t b)
 /** @name Predefined RGB565 colors
  * @{
  */
-#define SYN_COLOR_BLACK   0x0000  /**< Black   */
-#define SYN_COLOR_WHITE   0xFFFF  /**< White   */
-#define SYN_COLOR_RED     0xF800  /**< Red     */
-#define SYN_COLOR_GREEN   0x07E0  /**< Green   */
-#define SYN_COLOR_BLUE    0x001F  /**< Blue    */
+#define SYN_COLOR_BLACK 0x0000 /**< Black   */
+#define SYN_COLOR_WHITE 0xFFFF /**< White   */
+#define SYN_COLOR_RED 0xF800   /**< Red     */
+#define SYN_COLOR_GREEN 0x07E0 /**< Green   */
+#define SYN_COLOR_BLUE 0x001F  /**< Blue    */
 /** @} */
 
 #ifdef __cplusplus

@@ -12,8 +12,8 @@
 #include "../common/syn_defs.h"
 #include "../display/syn_gfx.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,8 +35,8 @@ typedef struct {
     uint16_t fg_inv;    /**< Text drawn on a highlighted background  */
     uint16_t accent;    /**< Slider fill, progress bar, gauge needle */
     uint16_t disabled;  /**< Disabled widget color                   */
-    int16_t  padding;   /**< Inner padding in pixels (default 2)     */
-    int16_t  spacing;   /**< Inter-widget gap for auto-layout (default 3) */
+    int16_t padding;    /**< Inner padding in pixels (default 2)     */
+    int16_t spacing;    /**< Inter-widget gap for auto-layout (default 3) */
 } SYN_IMGUI_Style;
 
 /* ── Layout cursor ───────────────────────────────────────────────────────── */
@@ -54,20 +54,20 @@ typedef struct {
  * Widgets that use the cursor advance it automatically.
  */
 typedef struct {
-    bool    in_layout; /**< True while between layout_begin / layout_end   */
-    int16_t cx;        /**< Cursor X (left edge of next widget)            */
-    int16_t cy;        /**< Cursor Y (top edge of next widget)             */
-    int16_t origin_x;  /**< Left margin for new rows                       */
-    int16_t width;     /**< Default widget width (set in layout_begin)     */
-    int16_t row_h;     /**< Height of tallest widget in the current row    */
-    bool    same_line; /**< True: next widget appends right, not new row   */
-    int16_t row_x;         /**< X position of end of last resolved widget + spacing */
-    int16_t row_y;         /**< Y position of current row start                     */
-    int16_t prev_row_h;    /**< Height of current row before layout advancement     */
+    bool in_layout;     /**< True while between layout_begin / layout_end   */
+    int16_t cx;         /**< Cursor X (left edge of next widget)            */
+    int16_t cy;         /**< Cursor Y (top edge of next widget)             */
+    int16_t origin_x;   /**< Left margin for new rows                       */
+    int16_t width;      /**< Default widget width (set in layout_begin)     */
+    int16_t row_h;      /**< Height of tallest widget in the current row    */
+    bool same_line;     /**< True: next widget appends right, not new row   */
+    int16_t row_x;      /**< X position of end of last resolved widget + spacing */
+    int16_t row_y;      /**< Y position of current row start                     */
+    int16_t prev_row_h; /**< Height of current row before layout advancement     */
     /* Multi-column layout row state */
-    int     row_items;     /**< Number of columns in current row (0 = default) */
-    int     row_item_idx;  /**< Index of next column to consume                */
-    int16_t row_height;    /**< Forced row height (0 = auto)                   */
+    int row_items;      /**< Number of columns in current row (0 = default) */
+    int row_item_idx;   /**< Index of next column to consume                */
+    int16_t row_height; /**< Forced row height (0 = auto)                   */
     int16_t row_widths[SYN_IMGUI_MAX_ROW_COLS]; /**< Column widths            */
 } SYN_IMGUI_Layout;
 
@@ -75,7 +75,7 @@ typedef struct {
 
 /** @brief Scroll region state for scrollable IMGUI panels. */
 typedef struct {
-    bool    in_scroll;     /**< True while between scroll_begin / scroll_end */
+    bool in_scroll;        /**< True while between scroll_begin / scroll_end */
     int16_t vp_x;          /**< Viewport left edge                          */
     int16_t vp_y;          /**< Viewport top edge                           */
     int16_t vp_w;          /**< Viewport width                              */
@@ -88,7 +88,7 @@ typedef struct {
 
 /** @brief Immediate-mode GUI context — inputs, navigation, style, layout. */
 typedef struct {
-    SYN_GfxContext gfx;  /**< Graphics context used for drawing */
+    SYN_GfxContext gfx; /**< Graphics context used for drawing */
 
     /* Physical button/encoder inputs for the current frame */
     bool btn_select;   /**< OK / Enter button pressed */
@@ -96,22 +96,22 @@ typedef struct {
     int32_t enc_delta; /**< Rotary encoder delta or +/- navigation count */
 
     /* Touch screen inputs for the current frame */
-    bool touch_down;   /**< True if screen is touched */
-    int16_t touch_x;   /**< Touched X coordinate */
-    int16_t touch_y;   /**< Touched Y coordinate */
+    bool touch_down; /**< True if screen is touched */
+    int16_t touch_x; /**< Touched X coordinate */
+    int16_t touch_y; /**< Touched Y coordinate */
 
     /* Internal Navigation State */
-    uint16_t next_id;       /**< Transient counter for widgets in current frame */
-    uint16_t focused_id;    /**< ID of currently highlighted/focused widget */
-    uint16_t active_id;     /**< ID of widget currently in "active/editing" mode */
-    uint16_t last_max_id;   /**< Total count of widgets from the previous frame */
+    uint16_t next_id;     /**< Transient counter for widgets in current frame */
+    uint16_t focused_id;  /**< ID of currently highlighted/focused widget */
+    uint16_t active_id;   /**< ID of widget currently in "active/editing" mode */
+    uint16_t last_max_id; /**< Total count of widgets from the previous frame */
 
     /* Style and layout */
-    SYN_IMGUI_Style  style;  /**< Visual style — set via syn_imgui_set_style() */
+    SYN_IMGUI_Style style;   /**< Visual style — set via syn_imgui_set_style() */
     SYN_IMGUI_Layout layout; /**< Auto-layout cursor state                     */
     SYN_IMGUI_Scroll scroll; /**< Scroll region state                          */
-    uint8_t          disabled_depth; /**< >0: widgets skip input, draw dimmed  */
-    bool             updated_focus;  /**< Set when focused widget is visited   */
+    uint8_t disabled_depth;  /**< >0: widgets skip input, draw dimmed  */
+    bool updated_focus;      /**< Set when focused widget is visited   */
 } SYN_IMGUI_Context;
 
 /**
@@ -153,9 +153,8 @@ SYN_IMGUI_Style syn_imgui_default_style(void);
  * @param touch_x     Touch X coordinate.
  * @param touch_y     Touch Y coordinate.
  */
-void syn_imgui_begin(SYN_IMGUI_Context *ctx, SYN_GfxContext gfx,
-                      bool select, bool back, int32_t enc_delta,
-                      bool touch_down, int16_t touch_x, int16_t touch_y);
+void syn_imgui_begin(SYN_IMGUI_Context *ctx, SYN_GfxContext gfx, bool select, bool back,
+                     int32_t enc_delta, bool touch_down, int16_t touch_x, int16_t touch_y);
 
 /**
  * @brief End the IMGUI frame.
@@ -180,8 +179,7 @@ void syn_imgui_end(SYN_IMGUI_Context *ctx);
  * @param y    Top edge.
  * @param w    Default widget width (used when widget's w parameter is 0).
  */
-void syn_imgui_layout_begin(SYN_IMGUI_Context *ctx,
-                             int16_t x, int16_t y, int16_t w);
+void syn_imgui_layout_begin(SYN_IMGUI_Context *ctx, int16_t x, int16_t y, int16_t w);
 
 /**
  * @brief End the auto-layout region.
@@ -221,8 +219,7 @@ void syn_imgui_spacing(SYN_IMGUI_Context *ctx, int16_t pixels);
  * @param x     X coordinate (0 = use layout cursor).
  * @param y     Y coordinate (0 = use layout cursor).
  */
-void syn_imgui_label(SYN_IMGUI_Context *ctx, const char *text,
-                      int16_t x, int16_t y);
+void syn_imgui_label(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y);
 
 /**
  * @brief Draw a horizontal separator line.
@@ -235,8 +232,7 @@ void syn_imgui_label(SYN_IMGUI_Context *ctx, const char *text,
  * @param y    Y position (0 = use layout cursor).
  * @param w    Width in pixels (0 = use layout width).
  */
-void syn_imgui_separator(SYN_IMGUI_Context *ctx,
-                          int16_t x, int16_t y, int16_t w);
+void syn_imgui_separator(SYN_IMGUI_Context *ctx, int16_t x, int16_t y, int16_t w);
 
 /**
  * @brief Integer numeric spinner widget.
@@ -256,9 +252,8 @@ void syn_imgui_separator(SYN_IMGUI_Context *ctx,
  * @param h      Height (0 = font height + 2*padding).
  * @return true if the value changed this frame.
  */
-bool syn_imgui_spinner(SYN_IMGUI_Context *ctx, const char *label,
-                        int32_t *value, int32_t min, int32_t max, int32_t step,
-                        int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_spinner(SYN_IMGUI_Context *ctx, const char *label, int32_t *value, int32_t min,
+                       int32_t max, int32_t step, int16_t x, int16_t y, int16_t w, int16_t h);
 
 /**
  * @brief Draw and handle a button.
@@ -271,8 +266,8 @@ bool syn_imgui_spinner(SYN_IMGUI_Context *ctx, const char *label,
  * @param h     Height.
  * @return true if the button was selected/clicked this frame.
  */
-bool syn_imgui_button(SYN_IMGUI_Context *ctx, const char *label,
-                       int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_button(SYN_IMGUI_Context *ctx, const char *label, int16_t x, int16_t y, int16_t w,
+                      int16_t h);
 
 /**
  * @brief Draw and handle a checkbox.
@@ -286,8 +281,8 @@ bool syn_imgui_button(SYN_IMGUI_Context *ctx, const char *label,
  * @param h       Height.
  * @return true if the checkbox state was toggled this frame.
  */
-bool syn_imgui_checkbox(SYN_IMGUI_Context *ctx, const char *label,
-                         bool *checked, int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_checkbox(SYN_IMGUI_Context *ctx, const char *label, bool *checked, int16_t x,
+                        int16_t y, int16_t w, int16_t h);
 
 /**
  * @brief Draw and handle an integer value slider.
@@ -306,9 +301,8 @@ bool syn_imgui_checkbox(SYN_IMGUI_Context *ctx, const char *label,
  * @param h     Height.
  * @return true if the value was modified this frame.
  */
-bool syn_imgui_slider(SYN_IMGUI_Context *ctx, const char *label,
-                       int32_t *value, int32_t min, int32_t max,
-                       int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_slider(SYN_IMGUI_Context *ctx, const char *label, int32_t *value, int32_t min,
+                      int32_t max, int16_t x, int16_t y, int16_t w, int16_t h);
 
 /**
  * @brief Draw and handle a radio button option.
@@ -325,9 +319,8 @@ bool syn_imgui_slider(SYN_IMGUI_Context *ctx, const char *label,
  * @param h         Height.
  * @return true if the selection changed to this button's value this frame.
  */
-bool syn_imgui_radio(SYN_IMGUI_Context *ctx, const char *label,
-                      int32_t *selection, int32_t button_val,
-                      int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_radio(SYN_IMGUI_Context *ctx, const char *label, int32_t *selection,
+                     int32_t button_val, int16_t x, int16_t y, int16_t w, int16_t h);
 
 /**
  * @brief Renders a non-interactive progress bar.
@@ -342,7 +335,7 @@ bool syn_imgui_radio(SYN_IMGUI_Context *ctx, const char *label,
  * @param h     Height.
  */
 void syn_imgui_progress_bar(SYN_IMGUI_Context *ctx, int32_t value, int32_t min, int32_t max,
-                             int16_t x, int16_t y, int16_t w, int16_t h);
+                            int16_t x, int16_t y, int16_t w, int16_t h);
 
 /**
  * @brief Renders and handles an inline option selection dropdown/selector.
@@ -358,9 +351,8 @@ void syn_imgui_progress_bar(SYN_IMGUI_Context *ctx, int32_t value, int32_t min, 
  * @param h            Height.
  * @return true if selection changed this frame.
  */
-bool syn_imgui_combo(SYN_IMGUI_Context *ctx, const char *label,
-                      const char **options, size_t count, int32_t *selected,
-                      int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_combo(SYN_IMGUI_Context *ctx, const char *label, const char **options, size_t count,
+                     int32_t *selected, int16_t x, int16_t y, int16_t w, int16_t h);
 
 /**
  * @brief Renders a line telemetry chart.
@@ -376,10 +368,8 @@ bool syn_imgui_combo(SYN_IMGUI_Context *ctx, const char *label,
  * @param w       Width.
  * @param h       Height.
  */
-void syn_imgui_graph(SYN_IMGUI_Context *ctx, const char *title,
-                      const int32_t *data, size_t count,
-                      int32_t min_val, int32_t max_val,
-                      int16_t x, int16_t y, int16_t w, int16_t h);
+void syn_imgui_graph(SYN_IMGUI_Context *ctx, const char *title, const int32_t *data, size_t count,
+                     int32_t min_val, int32_t max_val, int16_t x, int16_t y, int16_t w, int16_t h);
 
 /**
  * @brief Renders an analog meter gauge with a needle indicator.
@@ -395,9 +385,8 @@ void syn_imgui_graph(SYN_IMGUI_Context *ctx, const char *title,
  * @param cy     Center Y coordinate.
  * @param radius Radius of gauge boundary.
  */
-void syn_imgui_gauge(SYN_IMGUI_Context *ctx, const char *label,
-                      int32_t value, int32_t min, int32_t max,
-                      int16_t cx, int16_t cy, int16_t radius);
+void syn_imgui_gauge(SYN_IMGUI_Context *ctx, const char *label, int32_t value, int32_t min,
+                     int32_t max, int16_t cx, int16_t cy, int16_t radius);
 
 /**
  * @brief Renders a modal confirmation dialog overlay.
@@ -413,8 +402,8 @@ void syn_imgui_gauge(SYN_IMGUI_Context *ctx, const char *label,
  * @param h          Height.
  * @return true if the modal dialog has been dismissed (OK or CANCEL selected).
  */
-bool syn_imgui_dialog(SYN_IMGUI_Context *ctx, const char *message,
-                       bool *ok_clicked, int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_dialog(SYN_IMGUI_Context *ctx, const char *message, bool *ok_clicked, int16_t x,
+                      int16_t y, int16_t w, int16_t h);
 
 /* ── Scroll region ──────────────────────────────────────────────────────── */
 
@@ -432,9 +421,8 @@ bool syn_imgui_dialog(SYN_IMGUI_Context *ctx, const char *message,
  * @param h       Viewport height.
  * @param scroll  Pointer to user-owned scroll offset (persists between frames).
  */
-void syn_imgui_scroll_begin(SYN_IMGUI_Context *ctx,
-                             int16_t x, int16_t y, int16_t w, int16_t h,
-                             int16_t *scroll);
+void syn_imgui_scroll_begin(SYN_IMGUI_Context *ctx, int16_t x, int16_t y, int16_t w, int16_t h,
+                            int16_t *scroll);
 
 /**
  * @brief End the scrollable region and draw scroll indicator.
@@ -454,8 +442,8 @@ void syn_imgui_scroll_end(SYN_IMGUI_Context *ctx);
  * @param x,y,w,h  Bounds (0 = auto-layout).
  * @return true if state was toggled this frame.
  */
-bool syn_imgui_toggle(SYN_IMGUI_Context *ctx, const char *label,
-                       bool *state, int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_toggle(SYN_IMGUI_Context *ctx, const char *label, bool *state, int16_t x, int16_t y,
+                      int16_t w, int16_t h);
 
 /* ── Disabled state ─────────────────────────────────────────────────────── */
 
@@ -486,8 +474,8 @@ void syn_imgui_end_disabled(SYN_IMGUI_Context *ctx);
  * @param color  16-bit color value.
  * @param x,y    Position.
  */
-void syn_imgui_label_colored(SYN_IMGUI_Context *ctx, const char *text,
-                              uint16_t color, int16_t x, int16_t y);
+void syn_imgui_label_colored(SYN_IMGUI_Context *ctx, const char *text, uint16_t color, int16_t x,
+                             int16_t y);
 
 /**
  * @brief Draw a right-aligned label within a given width.
@@ -497,8 +485,8 @@ void syn_imgui_label_colored(SYN_IMGUI_Context *ctx, const char *text,
  * @param x,y   Left edge and vertical position.
  * @param w     Width to right-align within.
  */
-void syn_imgui_label_right(SYN_IMGUI_Context *ctx, const char *text,
-                            int16_t x, int16_t y, int16_t w);
+void syn_imgui_label_right(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y,
+                           int16_t w);
 
 /**
  * @brief Draw a centered label within a given width.
@@ -508,8 +496,8 @@ void syn_imgui_label_right(SYN_IMGUI_Context *ctx, const char *text,
  * @param x,y   Left edge and vertical position.
  * @param w     Width to center within.
  */
-void syn_imgui_label_centered(SYN_IMGUI_Context *ctx, const char *text,
-                               int16_t x, int16_t y, int16_t w);
+void syn_imgui_label_centered(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y,
+                              int16_t w);
 
 /* ── Group box ──────────────────────────────────────────────────────────── */
 
@@ -520,8 +508,8 @@ void syn_imgui_label_centered(SYN_IMGUI_Context *ctx, const char *text,
  * @param title  Title text (NULL for no title).
  * @param x,y,w,h  Bounds.
  */
-void syn_imgui_group_begin(SYN_IMGUI_Context *ctx, const char *title,
-                            int16_t x, int16_t y, int16_t w, int16_t h);
+void syn_imgui_group_begin(SYN_IMGUI_Context *ctx, const char *title, int16_t x, int16_t y,
+                           int16_t w, int16_t h);
 
 /**
  * @brief End the group box.
@@ -545,8 +533,7 @@ void syn_imgui_group_end(SYN_IMGUI_Context *ctx);
  * @param x,y,w   Position and total width.
  * @return true if the active tab changed.
  */
-bool syn_imgui_tabs(SYN_IMGUI_Context *ctx, const char **labels,
-                    size_t count, int32_t *active,
+bool syn_imgui_tabs(SYN_IMGUI_Context *ctx, const char **labels, size_t count, int32_t *active,
                     int16_t x, int16_t y, int16_t w);
 
 /* ── Bar chart ──────────────────────────────────────────────────────────── */
@@ -562,10 +549,9 @@ bool syn_imgui_tabs(SYN_IMGUI_Context *ctx, const char **labels,
  * @param max_val  Maximum axis value.
  * @param x,y,w,h  Bounds.
  */
-void syn_imgui_bar_chart(SYN_IMGUI_Context *ctx, const char *title,
-                          const int32_t *data, size_t count,
-                          int32_t min_val, int32_t max_val,
-                          int16_t x, int16_t y, int16_t w, int16_t h);
+void syn_imgui_bar_chart(SYN_IMGUI_Context *ctx, const char *title, const int32_t *data,
+                         size_t count, int32_t min_val, int32_t max_val, int16_t x, int16_t y,
+                         int16_t w, int16_t h);
 
 /* ── Icon button ────────────────────────────────────────────────────────── */
 
@@ -578,9 +564,8 @@ void syn_imgui_bar_chart(SYN_IMGUI_Context *ctx, const char *title,
  * @param x,y,w,h       Button bounds (0 = auto-layout).
  * @return true if clicked this frame.
  */
-bool syn_imgui_icon_button(SYN_IMGUI_Context *ctx,
-                            const uint8_t *icon, int16_t icon_w, int16_t icon_h,
-                            int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_icon_button(SYN_IMGUI_Context *ctx, const uint8_t *icon, int16_t icon_w,
+                           int16_t icon_h, int16_t x, int16_t y, int16_t w, int16_t h);
 
 /* ── Status bar ─────────────────────────────────────────────────────────── */
 
@@ -592,8 +577,8 @@ bool syn_imgui_icon_button(SYN_IMGUI_Context *ctx,
  * @param y     Y position.
  * @param w     Width in pixels.
  */
-void syn_imgui_status_bar(SYN_IMGUI_Context *ctx, const char *text,
-                           int16_t x, int16_t y, int16_t w);
+void syn_imgui_status_bar(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y,
+                          int16_t w);
 
 /* ── Separator text ─────────────────────────────────────────────────────── */
 
@@ -606,8 +591,8 @@ void syn_imgui_status_bar(SYN_IMGUI_Context *ctx, const char *text,
  * @param y     Y coordinate.
  * @param w     Total width.
  */
-void syn_imgui_separator_text(SYN_IMGUI_Context *ctx, const char *text,
-                                int16_t x, int16_t y, int16_t w);
+void syn_imgui_separator_text(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y,
+                              int16_t w);
 
 /* ── Checkbox flags ─────────────────────────────────────────────────────── */
 
@@ -621,9 +606,8 @@ void syn_imgui_separator_text(SYN_IMGUI_Context *ctx, const char *text,
  * @param x,y,w,h  Bounds (0 = auto-layout).
  * @return true if the value changed this frame.
  */
-bool syn_imgui_checkbox_flags(SYN_IMGUI_Context *ctx, const char *label,
-                                uint32_t *flags, uint32_t mask,
-                                int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_checkbox_flags(SYN_IMGUI_Context *ctx, const char *label, uint32_t *flags,
+                              uint32_t mask, int16_t x, int16_t y, int16_t w, int16_t h);
 
 /* ── Value display ──────────────────────────────────────────────────────── */
 
@@ -635,8 +619,8 @@ bool syn_imgui_checkbox_flags(SYN_IMGUI_Context *ctx, const char *label,
  * @param value  Integer value.
  * @param x,y    Position.
  */
-void syn_imgui_value_int(SYN_IMGUI_Context *ctx, const char *label,
-                           int32_t value, int16_t x, int16_t y);
+void syn_imgui_value_int(SYN_IMGUI_Context *ctx, const char *label, int32_t value, int16_t x,
+                         int16_t y);
 
 /* ── Progress bar with overlay text ─────────────────────────────────────── */
 
@@ -649,10 +633,8 @@ void syn_imgui_value_int(SYN_IMGUI_Context *ctx, const char *label,
  * @param overlay  Overlay text (NULL = auto "XX%", "" = no text).
  * @param x,y,w,h  Bounds.
  */
-void syn_imgui_progress_bar_ex(SYN_IMGUI_Context *ctx, int32_t value,
-                                 int32_t min, int32_t max,
-                                 const char *overlay,
-                                 int16_t x, int16_t y, int16_t w, int16_t h);
+void syn_imgui_progress_bar_ex(SYN_IMGUI_Context *ctx, int32_t value, int32_t min, int32_t max,
+                               const char *overlay, int16_t x, int16_t y, int16_t w, int16_t h);
 
 /* ── Selectable ─────────────────────────────────────────────────────────── */
 
@@ -665,9 +647,8 @@ void syn_imgui_progress_bar_ex(SYN_IMGUI_Context *ctx, int32_t value,
  * @param x,y,w,h   Bounds (0 = auto-layout).
  * @return true if clicked this frame.
  */
-bool syn_imgui_selectable(SYN_IMGUI_Context *ctx, const char *label,
-                            bool *selected,
-                            int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_selectable(SYN_IMGUI_Context *ctx, const char *label, bool *selected, int16_t x,
+                          int16_t y, int16_t w, int16_t h);
 
 /* ── Collapsing header ──────────────────────────────────────────────────── */
 
@@ -683,9 +664,8 @@ bool syn_imgui_selectable(SYN_IMGUI_Context *ctx, const char *label,
  * @param x,y,w,h   Bounds (0 = auto-layout).
  * @return true if the expanded state changed this frame.
  */
-bool syn_imgui_collapsing_header(SYN_IMGUI_Context *ctx, const char *label,
-                                   bool *expanded,
-                                   int16_t x, int16_t y, int16_t w, int16_t h);
+bool syn_imgui_collapsing_header(SYN_IMGUI_Context *ctx, const char *label, bool *expanded,
+                                 int16_t x, int16_t y, int16_t w, int16_t h);
 
 /* ── Text word-wrap ─────────────────────────────────────────────────────── */
 
@@ -697,8 +677,8 @@ bool syn_imgui_collapsing_header(SYN_IMGUI_Context *ctx, const char *label,
  * @param x,y   Top-left corner.
  * @param w     Maximum width (wraps at word boundaries).
  */
-void syn_imgui_text_wrapped(SYN_IMGUI_Context *ctx, const char *text,
-                              int16_t x, int16_t y, int16_t w);
+void syn_imgui_text_wrapped(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y,
+                            int16_t w);
 
 /* ── Layout row (multi-column) ──────────────────────────────────────────── */
 
@@ -713,8 +693,7 @@ void syn_imgui_text_wrapped(SYN_IMGUI_Context *ctx, const char *text,
  * @param widths   Array of column widths (NULL for equal split).
  * @param height   Row height (0 = auto).
  */
-void syn_imgui_layout_row(SYN_IMGUI_Context *ctx, int items,
-                            const int16_t *widths, int16_t height);
+void syn_imgui_layout_row(SYN_IMGUI_Context *ctx, int items, const int16_t *widths, int16_t height);
 
 /* ── Visibility culling ─────────────────────────────────────────────────── */
 
@@ -729,8 +708,7 @@ void syn_imgui_layout_row(SYN_IMGUI_Context *ctx, int items,
  * @param h    Widget height.
  * @return true if any part of the widget is visible (or no scroll active).
  */
-bool syn_imgui_widget_visible(const SYN_IMGUI_Context *ctx,
-                                int16_t y, int16_t h);
+bool syn_imgui_widget_visible(const SYN_IMGUI_Context *ctx, int16_t y, int16_t h);
 
 /* ── Text clipped ───────────────────────────────────────────────────────── */
 
@@ -744,10 +722,8 @@ bool syn_imgui_widget_visible(const SYN_IMGUI_Context *ctx,
  * @param x,y          Text draw position.
  * @param clip_x,clip_y,clip_w,clip_h  Clipping rectangle.
  */
-void syn_imgui_text_clipped(SYN_IMGUI_Context *ctx, const char *text,
-                              int16_t x, int16_t y,
-                              int16_t clip_x, int16_t clip_y,
-                              int16_t clip_w, int16_t clip_h);
+void syn_imgui_text_clipped(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_t y,
+                            int16_t clip_x, int16_t clip_y, int16_t clip_w, int16_t clip_h);
 
 /* ── Text marquee ───────────────────────────────────────────────────────── */
 
@@ -765,10 +741,8 @@ void syn_imgui_text_clipped(SYN_IMGUI_Context *ctx, const char *text,
  * @param w       Available width (clips text beyond this).
  * @param speed   Pixels per frame (1–2 typical).
  */
-void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text,
-                              int16_t *offset,
-                              int16_t x, int16_t y, int16_t w,
-                              int16_t speed);
+void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text, int16_t *offset, int16_t x,
+                            int16_t y, int16_t w, int16_t speed);
 
 #ifdef __cplusplus
 }

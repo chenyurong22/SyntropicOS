@@ -26,30 +26,30 @@
 #include "../common/syn_defs.h"
 #include "../port/syn_port_can.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
-#define SYN_CAN_MAX_DATA_LEN  64U  /**< Maximum CAN FD payload size (64 bytes) */
+#define SYN_CAN_MAX_DATA_LEN 64U /**< Maximum CAN FD payload size (64 bytes) */
 #else
-#define SYN_CAN_MAX_DATA_LEN  8U   /**< Standard CAN payload size (8 bytes)    */
+#define SYN_CAN_MAX_DATA_LEN 8U /**< Standard CAN payload size (8 bytes)    */
 #endif
 
 /** @brief CAN bus frame — standard/extended ID, classic CAN or CAN FD. */
 typedef struct {
     uint32_t id;                        /**< 11-bit or 29-bit identifier             */
-    uint8_t  data[SYN_CAN_MAX_DATA_LEN]; /**< Frame data                             */
-    uint8_t  dlc;                       /**< Data length in bytes                   */
-    bool     extended;                  /**< true = 29-bit ID                        */
-    bool     rtr;                       /**< Remote transmission request             */
+    uint8_t data[SYN_CAN_MAX_DATA_LEN]; /**< Frame data                             */
+    uint8_t dlc;                        /**< Data length in bytes                   */
+    bool extended;                      /**< true = 29-bit ID                        */
+    bool rtr;                           /**< Remote transmission request             */
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
-    bool     is_fd;                     /**< true = CAN FD frame                     */
-    bool     brs;                       /**< true = Bit Rate Switch (CAN FD)         */
-    bool     esi;                       /**< true = Error State Indicator (CAN FD)   */
+    bool is_fd; /**< true = CAN FD frame                     */
+    bool brs;   /**< true = Bit Rate Switch (CAN FD)         */
+    bool esi;   /**< true = Error State Indicator (CAN FD)   */
 #endif
 } SYN_CAN_Frame;
 
@@ -66,13 +66,13 @@ typedef void (*SYN_CAN_Callback)(const SYN_CAN_Frame *frame, void *ctx);
 
 /** @brief CAN bus instance — port, bitrate, callbacks, stats. */
 typedef struct {
-    uint8_t           port;        /**< CAN port number                   */
-    uint32_t          bitrate;     /**< Configured bitrate                */
-    SYN_CAN_Callback on_rx;       /**< Receive callback                  */
-    void             *on_rx_ctx;   /**< Receive callback context          */
-    uint32_t          tx_count;    /**< Frames transmitted                 */
-    uint32_t          rx_count;    /**< Frames received                    */
-    uint32_t          err_count;   /**< Transmission errors                */
+    uint8_t port;           /**< CAN port number                   */
+    uint32_t bitrate;       /**< Configured bitrate                */
+    SYN_CAN_Callback on_rx; /**< Receive callback                  */
+    void *on_rx_ctx;        /**< Receive callback context          */
+    uint32_t tx_count;      /**< Frames transmitted                 */
+    uint32_t rx_count;      /**< Frames received                    */
+    uint32_t err_count;     /**< Transmission errors                */
 } SYN_CAN;
 
 /* ── API ────────────────────────────────────────────────────────────────── */

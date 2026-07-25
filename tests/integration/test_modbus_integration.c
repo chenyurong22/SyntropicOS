@@ -1,22 +1,28 @@
+#include "mock_port.h"
+#include "syntropic/proto/syn_modbus.h"
+#include "syntropic/util/syn_pack.h"
+#include "unity/unity.h"
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include "syntropic/proto/syn_modbus.h"
-#include "syntropic/util/syn_pack.h"
-#include "mock_port.h"
-#include "unity/unity.h"
+#include <unistd.h>
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_modbus_tcp_integration(void)
 {
     const char *host = getenv("MODBUS_HOST");
-    if (!host) host = "127.0.0.1";
+    if (!host)
+        host = "127.0.0.1";
     uint16_t port = 5020;
 
     printf("[Integration Test] Connecting to Modbus TCP Server at %s:%d...\n", host, port);
@@ -38,13 +44,18 @@ void test_modbus_tcp_integration(void)
     /* MBAP: TxID=0x0001, ProtoID=0x0000, Length=6, UnitID=1 */
     /* PDU: FC=0x03, StartAddr=0x0000, RegCount=0x0002 */
     uint8_t req[12] = {
-        0x00, 0x01, /* TxID */
-        0x00, 0x00, /* ProtoID */
-        0x00, 0x06, /* Length */
-        0x01,       /* UnitID */
+        0x00,
+        0x01, /* TxID */
+        0x00,
+        0x00, /* ProtoID */
+        0x00,
+        0x06,                   /* Length */
+        0x01,                   /* UnitID */
         SYN_MB_FC_READ_HOLDING, /* FC 0x03 */
-        0x00, 0x00, /* Start Address */
-        0x00, 0x02  /* Count */
+        0x00,
+        0x00, /* Start Address */
+        0x00,
+        0x02 /* Count */
     };
 
     ssize_t sent = send(sock, req, sizeof(req), 0);
@@ -55,9 +66,9 @@ void test_modbus_tcp_integration(void)
     TEST_ASSERT_TRUE(recvd >= 11);
 
     /* Verify MBAP & FC */
-    TEST_ASSERT_EQUAL_UINT8(0x01, resp[6]); /* UnitID */
+    TEST_ASSERT_EQUAL_UINT8(0x01, resp[6]);                   /* UnitID */
     TEST_ASSERT_EQUAL_UINT8(SYN_MB_FC_READ_HOLDING, resp[7]); /* FC 0x03 */
-    TEST_ASSERT_EQUAL_UINT8(4, resp[8]); /* Byte count: 4 bytes for 2 regs */
+    TEST_ASSERT_EQUAL_UINT8(4, resp[8]);                      /* Byte count: 4 bytes for 2 regs */
 
     /* Reg 0 = 0x1234, Reg 1 = 0x5678 */
     uint16_t reg0 = (resp[9] << 8) | resp[10];

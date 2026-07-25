@@ -3,13 +3,15 @@
  * @brief Unit tests for PMBus Linear11/Linear16 format converters and command builders.
  */
 
-#include "unity/unity.h"
 #include "syntropic/syntropic.h"
+#include "unity/unity.h"
+
 #include <math.h>
 
 void test_pmbus_linear11_roundtrip(void)
 {
-    float test_vals[] = { 0.0f, 1.0f, 12.5f, 250.75f, -15.25f, 1024.0f, -50.0f, 0.0001f, -0.0001f, 50000.0f, -50000.0f };
+    float test_vals[] = {0.0f,   1.0f,    12.5f,    250.75f,  -15.25f,  1024.0f,
+                         -50.0f, 0.0001f, -0.0001f, 50000.0f, -50000.0f};
     size_t count = sizeof(test_vals) / sizeof(test_vals[0]);
 
     for (size_t i = 0; i < count; i++) {
@@ -35,7 +37,7 @@ void test_pmbus_linear16_roundtrip(void)
     /* VOUT_MODE = 0x18 -> Exponent N = -8 */
     uint8_t vout_mode = 0x18;
 
-    float test_volts[] = { 0.0f, 1.2f, 3.3f, 5.0f, 12.0f, 48.0f };
+    float test_volts[] = {0.0f, 1.2f, 3.3f, 5.0f, 12.0f, 48.0f};
     size_t count = sizeof(test_volts) / sizeof(test_volts[0]);
 
     for (size_t i = 0; i < count; i++) {
@@ -44,7 +46,8 @@ void test_pmbus_linear16_roundtrip(void)
         float decoded = syn_pmbus_linear16_to_float(encoded, vout_mode);
 
         float diff = fabsf(decoded - original);
-        TEST_ASSERT_TRUE_MESSAGE(diff < 0.01f, "Linear16 voltage conversion error exceeded tolerance");
+        TEST_ASSERT_TRUE_MESSAGE(diff < 0.01f,
+                                 "Linear16 voltage conversion error exceeded tolerance");
     }
 
     /* Negative voltage clamping to 0 */
@@ -77,7 +80,8 @@ void test_pmbus_encode_read_cmd(void)
 void test_pmbus_status_word_decoding(void)
 {
     /* Test PMBus status byte parsing (STATUS_BYTE bitmasks) */
-    uint8_t status_byte = SYN_PMBUS_STATUS_BYTE_OFF | SYN_PMBUS_STATUS_BYTE_VOUT_OV | SYN_PMBUS_STATUS_BYTE_IOUT_OC;
+    uint8_t status_byte =
+        SYN_PMBUS_STATUS_BYTE_OFF | SYN_PMBUS_STATUS_BYTE_VOUT_OV | SYN_PMBUS_STATUS_BYTE_IOUT_OC;
     TEST_ASSERT_TRUE(status_byte & SYN_PMBUS_STATUS_BYTE_OFF);
     TEST_ASSERT_TRUE(status_byte & SYN_PMBUS_STATUS_BYTE_VOUT_OV);
     TEST_ASSERT_TRUE(status_byte & SYN_PMBUS_STATUS_BYTE_IOUT_OC);

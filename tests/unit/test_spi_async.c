@@ -3,9 +3,9 @@
  * @brief Tests for async SPI port abstraction (mock-based).
  */
 
-#include "unity/unity.h"
-#include "syntropic/port/syn_port_spi_async.h"
 #include "mocks/mock_port.h"
+#include "syntropic/port/syn_port_spi_async.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
@@ -33,7 +33,9 @@ void test_spi_async_full_duplex(void)
     uint8_t rx[4] = {0};
     SYN_SPI_Xfer xfer = {
         .bus = 0,
-        .tx_buf = tx, .rx_buf = rx, .len = 4,
+        .tx_buf = tx,
+        .rx_buf = rx,
+        .len = 4,
         .callback = spi_done,
         .user_data = (void *)0xB2,
     };
@@ -56,7 +58,9 @@ void test_spi_async_tx_only(void)
     uint8_t tx[8] = {0};
     SYN_SPI_Xfer xfer = {
         .bus = 0,
-        .tx_buf = tx, .rx_buf = NULL, .len = 8,
+        .tx_buf = tx,
+        .rx_buf = NULL,
+        .len = 8,
         .callback = spi_done,
     };
 
@@ -71,7 +75,9 @@ void test_spi_async_rx_only(void)
     uint8_t rx[8] = {0};
     SYN_SPI_Xfer xfer = {
         .bus = 1,
-        .tx_buf = NULL, .rx_buf = rx, .len = 8,
+        .tx_buf = NULL,
+        .rx_buf = rx,
+        .len = 8,
         .callback = spi_done,
     };
 
@@ -86,7 +92,8 @@ void test_spi_async_busy_rejects(void)
     uint8_t tx = 0;
     SYN_SPI_Xfer xfer = {
         .bus = 0,
-        .tx_buf = &tx, .len = 1,
+        .tx_buf = &tx,
+        .len = 1,
         .callback = spi_done,
     };
 
@@ -101,7 +108,8 @@ void test_spi_async_cancel(void)
     uint8_t tx = 0;
     SYN_SPI_Xfer xfer = {
         .bus = 0,
-        .tx_buf = &tx, .len = 1,
+        .tx_buf = &tx,
+        .len = 1,
         .callback = spi_done,
     };
 
@@ -124,7 +132,8 @@ void test_spi_async_error_result(void)
     uint8_t tx = 0;
     SYN_SPI_Xfer xfer = {
         .bus = 0,
-        .tx_buf = &tx, .len = 1,
+        .tx_buf = &tx,
+        .len = 1,
         .callback = spi_done,
     };
 

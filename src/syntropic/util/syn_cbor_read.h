@@ -26,9 +26,9 @@
 #ifndef SYN_CBOR_READ_H
 #define SYN_CBOR_READ_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,26 +42,26 @@ extern "C" {
  * Returned by syn_cbor_peek_type() before consuming an item.
  */
 typedef enum {
-    SYN_CBOR_UINT   = 0,   /**< Unsigned integer (major type 0) */
-    SYN_CBOR_INT    = 1,   /**< Negative integer (major type 1) */
-    SYN_CBOR_BYTES  = 2,   /**< Byte string      (major type 2) */
-    SYN_CBOR_TEXT   = 3,   /**< Text string      (major type 3) */
-    SYN_CBOR_ARRAY  = 4,   /**< Array            (major type 4) */
-    SYN_CBOR_MAP    = 5,   /**< Map              (major type 5) */
-    SYN_CBOR_FLOAT  = 6,   /**< Float32/64       (major type 7, info 25-27) */
-    SYN_CBOR_BOOL   = 7,   /**< true / false     (major type 7, info 20-21) */
-    SYN_CBOR_NULL   = 8,   /**< null             (major type 7, info 22)    */
-    SYN_CBOR_ERROR  = 0xFF /**< Unknown or error                             */
+    SYN_CBOR_UINT = 0,    /**< Unsigned integer (major type 0) */
+    SYN_CBOR_INT = 1,     /**< Negative integer (major type 1) */
+    SYN_CBOR_BYTES = 2,   /**< Byte string      (major type 2) */
+    SYN_CBOR_TEXT = 3,    /**< Text string      (major type 3) */
+    SYN_CBOR_ARRAY = 4,   /**< Array            (major type 4) */
+    SYN_CBOR_MAP = 5,     /**< Map              (major type 5) */
+    SYN_CBOR_FLOAT = 6,   /**< Float32/64       (major type 7, info 25-27) */
+    SYN_CBOR_BOOL = 7,    /**< true / false     (major type 7, info 20-21) */
+    SYN_CBOR_NULL = 8,    /**< null             (major type 7, info 22)    */
+    SYN_CBOR_ERROR = 0xFF /**< Unknown or error                             */
 } SYN_CborType;
 
 /* ── Reader state ────────────────────────────────────────────────────────── */
 
 /** @brief CBOR decoder state.  Caller-allocated; zero heap. */
 typedef struct {
-    const uint8_t *buf;  /**< Input buffer                  */
-    size_t         len;  /**< Buffer length                 */
-    size_t         pos;  /**< Current read position         */
-    bool           ok;   /**< false after any decode error  */
+    const uint8_t *buf; /**< Input buffer                  */
+    size_t len;         /**< Buffer length                 */
+    size_t pos;         /**< Current read position         */
+    bool ok;            /**< false after any decode error  */
 } SYN_CborReader;
 
 /* ── Init ────────────────────────────────────────────────────────────────── */
@@ -72,9 +72,7 @@ typedef struct {
  * @param buf  Input buffer containing encoded CBOR.
  * @param len  Buffer length in bytes.
  */
-void syn_cbor_reader_init(SYN_CborReader *r,
-                          const uint8_t  *buf,
-                          size_t          len);
+void syn_cbor_reader_init(SYN_CborReader *r, const uint8_t *buf, size_t len);
 
 /* ── Navigation ──────────────────────────────────────────────────────────── */
 

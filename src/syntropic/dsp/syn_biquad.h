@@ -17,15 +17,15 @@ extern "C" {
  * @brief Fixed-point Q16.16 Biquad filter state (Direct Form I).
  */
 typedef struct {
-    q16_t b0;  /**< Feedforward coefficient b0 (Q16.16)   */
-    q16_t b1;  /**< Feedforward coefficient b1 (Q16.16)   */
-    q16_t b2;  /**< Feedforward coefficient b2 (Q16.16)   */
-    q16_t a1;  /**< Feedback coefficient a1 (Q16.16, a0 assumed 1.0) */
-    q16_t a2;  /**< Feedback coefficient a2 (Q16.16)      */
-    q16_t x1;  /**< Input delay line x[n-1]               */
-    q16_t x2;  /**< Input delay line x[n-2]               */
-    q16_t y1;  /**< Output delay line y[n-1]              */
-    q16_t y2;  /**< Output delay line y[n-2]              */
+    q16_t b0; /**< Feedforward coefficient b0 (Q16.16)   */
+    q16_t b1; /**< Feedforward coefficient b1 (Q16.16)   */
+    q16_t b2; /**< Feedforward coefficient b2 (Q16.16)   */
+    q16_t a1; /**< Feedback coefficient a1 (Q16.16, a0 assumed 1.0) */
+    q16_t a2; /**< Feedback coefficient a2 (Q16.16)      */
+    q16_t x1; /**< Input delay line x[n-1]               */
+    q16_t x2; /**< Input delay line x[n-2]               */
+    q16_t y1; /**< Output delay line y[n-1]              */
+    q16_t y2; /**< Output delay line y[n-2]              */
 } SYN_FilterBiquad;
 
 /**

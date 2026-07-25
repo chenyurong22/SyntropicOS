@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_MQTT) || SYN_USE_MQTT
@@ -9,14 +9,15 @@
  * @brief Lightweight MQTT 3.1.1 client implementation — fully non-blocking.
  */
 
-#include "syn_mqtt.h"
+#include "../port/syn_port_system.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
-#include "../port/syn_port_system.h"
+#include "syn_mqtt.h"
+
 #include <string.h>
 
-#define MQTT_RECV_TIMEOUT_MS  5000  /**< Timeout for incomplete packet reception (ms). */
-#define MQTT_ACK_TIMEOUT_MS   5000  /**< Timeout for ACK responses (ms). */
+#define MQTT_RECV_TIMEOUT_MS 5000 /**< Timeout for incomplete packet reception (ms). */
+#define MQTT_ACK_TIMEOUT_MS 5000  /**< Timeout for ACK responses (ms). */
 
 /* ── Remaining Length Helper ────────────────────────────────────────────── */
 
@@ -32,7 +33,8 @@ static size_t encode_remaining_len(uint8_t *buf, uint32_t len)
     do {
         uint8_t d = (uint8_t)(len % 128);
         len /= 128;
-        if (len > 0) d |= 128;
+        if (len > 0)
+            d |= 128;
         buf[bytes++] = d;
     } while (len > 0);
     return bytes;
@@ -48,43 +50,59 @@ static size_t encode_remaining_len(uint8_t *buf, uint32_t len)
 static bool send_mqtt_connect(SYN_MqttClient *c)
 {
     uint8_t *tx = c->tx_buf;
-    
+
     uint32_t rem_len = 2 + 4 + 1 + 1 + 2; /* protocol name, level, flags, keep_alive */
     rem_len += 2 + strlen(c->client_id);
-    if (c->username != NULL) rem_len += 2 + strlen(c->username);
-    if (c->password != NULL) rem_len += 2 + strlen(c->password);
+    if (c->username != NULL)
+        rem_len += 2 + strlen(c->username);
+    if (c->password != NULL)
+        rem_len += 2 + strlen(c->password);
 
-    if (1 + 4 + rem_len > c->tx_buf_size) return false;
+    if (1 + 4 + rem_len > c->tx_buf_size)
+        return false;
 
     tx[0] = 0x10; /* CONNECT */
     size_t pos = 1;
     pos += encode_remaining_len(tx + pos, rem_len);
 
-    syn_poke_u16(0x0004, tx, pos); pos += 2;
-    tx[pos++] = 'M'; tx[pos++] = 'Q'; tx[pos++] = 'T'; tx[pos++] = 'T';
+    syn_poke_u16(0x0004, tx, pos);
+    pos += 2;
+    tx[pos++] = 'M';
+    tx[pos++] = 'Q';
+    tx[pos++] = 'T';
+    tx[pos++] = 'T';
     tx[pos++] = 0x04; /* Level 3.1.1 */
 
     uint8_t flags = 0x02; /* Clean session */
-    if (c->username != NULL) flags |= 0x80;
-    if (c->password != NULL) flags |= 0x40;
+    if (c->username != NULL)
+        flags |= 0x80;
+    if (c->password != NULL)
+        flags |= 0x40;
     tx[pos++] = flags;
 
-    syn_poke_u16(c->keep_alive_s, tx, pos); pos += 2;
+    syn_poke_u16(c->keep_alive_s, tx, pos);
+    pos += 2;
 
     uint16_t cid_len = (uint16_t)strlen(c->client_id);
-    syn_poke_u16(cid_len, tx, pos); pos += 2;
-    memcpy(tx + pos, c->client_id, cid_len); pos += cid_len;
+    syn_poke_u16(cid_len, tx, pos);
+    pos += 2;
+    memcpy(tx + pos, c->client_id, cid_len);
+    pos += cid_len;
 
     if (c->username != NULL) {
         uint16_t u_len = (uint16_t)strlen(c->username);
-        syn_poke_u16(u_len, tx, pos); pos += 2;
-        memcpy(tx + pos, c->username, u_len); pos += u_len;
+        syn_poke_u16(u_len, tx, pos);
+        pos += 2;
+        memcpy(tx + pos, c->username, u_len);
+        pos += u_len;
     }
 
     if (c->password != NULL) {
         uint16_t p_len = (uint16_t)strlen(c->password);
-        syn_poke_u16(p_len, tx, pos); pos += 2;
-        memcpy(tx + pos, c->password, p_len); pos += p_len;
+        syn_poke_u16(p_len, tx, pos);
+        pos += 2;
+        memcpy(tx + pos, c->password, p_len);
+        pos += p_len;
     }
 
     return syn_port_sock_send_all(c->sock, tx, pos) == (int)pos;
@@ -97,7 +115,7 @@ static bool send_mqtt_connect(SYN_MqttClient *c)
  */
 static bool send_mqtt_ping(const SYN_MqttClient *c)
 {
-    static const uint8_t ping[] = { 0xC0, 0x00 };
+    static const uint8_t ping[] = {0xC0, 0x00};
     return syn_port_sock_send_all(c->sock, ping, 2) == 2;
 }
 
@@ -110,12 +128,15 @@ static bool send_mqtt_ping(const SYN_MqttClient *c)
  * @param len       Payload length.
  * @param qos_bits  QoS flags from the fixed header.
  */
-static void handle_publish(SYN_MqttClient *c, const uint8_t *payload, uint32_t len, uint8_t qos_bits)
+static void handle_publish(SYN_MqttClient *c, const uint8_t *payload, uint32_t len,
+                           uint8_t qos_bits)
 {
-    if (len < 2) return;
-    
+    if (len < 2)
+        return;
+
     uint16_t topic_len = syn_peek_u16(payload, 0);
-    if ((uint32_t)(2 + topic_len) > len) return;
+    if ((uint32_t)(2 + topic_len) > len)
+        return;
 
     /* Extract topic string dynamically */
     char topic[64];
@@ -128,7 +149,8 @@ static void handle_publish(SYN_MqttClient *c, const uint8_t *payload, uint32_t l
     uint8_t qos = (qos_bits >> 1) & 0x03;
 
     if (qos > 0) {
-        if (payload_offset + 2 > len) return;
+        if (payload_offset + 2 > len)
+            return;
         packet_id = syn_peek_u16(payload, payload_offset);
         payload_offset += 2;
     }
@@ -192,7 +214,8 @@ static void process_packet(SYN_MqttClient *c)
  */
 static void poll_rx(SYN_MqttClient *c)
 {
-    if (c->sock == SYN_SOCKET_INVALID) return;
+    if (c->sock == SYN_SOCKET_INVALID)
+        return;
 
     for (;;) {
         /* Non-blocking deadline check for mid-packet stalling */
@@ -210,7 +233,8 @@ static void poll_rx(SYN_MqttClient *c)
         case SYN_MQTT_RX_IDLE: {
             uint8_t hdr;
             int n = syn_port_sock_recv(c->sock, &hdr, 1, 0);
-            if (n < 0) return; /* No data ready */
+            if (n < 0)
+                return; /* No data ready */
             if (n == 0) {
                 /* Connection closed */
                 syn_port_sock_close(c->sock);
@@ -230,7 +254,8 @@ static void poll_rx(SYN_MqttClient *c)
         case SYN_MQTT_RX_REMAINING_LEN: {
             uint8_t b;
             int n = syn_port_sock_recv(c->sock, &b, 1, 0);
-            if (n < 0) return; /* No data ready */
+            if (n < 0)
+                return; /* No data ready */
             if (n == 0) {
                 /* Connection closed during header */
                 syn_port_sock_close(c->sock);
@@ -270,7 +295,8 @@ static void poll_rx(SYN_MqttClient *c)
         case SYN_MQTT_RX_PAYLOAD: {
             size_t space = c->rx_rem_len - c->rx_pos;
             int n = syn_port_sock_recv(c->sock, c->rx_buf + c->rx_pos, space, 0);
-            if (n < 0) return; /* No data ready */
+            if (n < 0)
+                return; /* No data ready */
             if (n == 0) {
                 /* Connection closed during payload */
                 syn_port_sock_close(c->sock);
@@ -291,10 +317,12 @@ static void poll_rx(SYN_MqttClient *c)
         case SYN_MQTT_RX_DISCARD: {
             uint8_t drop_buf[64];
             size_t space = c->rx_rem_len - c->rx_pos;
-            if (space > sizeof(drop_buf)) space = sizeof(drop_buf);
+            if (space > sizeof(drop_buf))
+                space = sizeof(drop_buf);
 
             int n = syn_port_sock_recv(c->sock, drop_buf, space, 0);
-            if (n < 0) return; /* No data ready */
+            if (n < 0)
+                return; /* No data ready */
             if (n == 0) {
                 /* Connection closed during discard */
                 syn_port_sock_close(c->sock);
@@ -318,8 +346,7 @@ static void poll_rx(SYN_MqttClient *c)
 
 SYN_Status syn_mqtt_init(SYN_MqttClient *client, const char *host, uint16_t port,
                          const char *client_id, const char *username, const char *password,
-                         uint16_t keep_alive_s,
-                         uint8_t *rx_buf, size_t rx_buf_size,
+                         uint16_t keep_alive_s, uint8_t *rx_buf, size_t rx_buf_size,
                          uint8_t *tx_buf, size_t tx_buf_size)
 {
     SYN_ASSERT(client != NULL);
@@ -346,17 +373,19 @@ SYN_Status syn_mqtt_init(SYN_MqttClient *client, const char *host, uint16_t port
     return SYN_OK;
 }
 
-SYN_Status syn_mqtt_publish(SYN_MqttClient *client, const char *topic,
-                            const void *payload, size_t len, uint8_t qos, bool retain)
+SYN_Status syn_mqtt_publish(SYN_MqttClient *client, const char *topic, const void *payload,
+                            size_t len, uint8_t qos, bool retain)
 {
     SYN_ASSERT(client != NULL);
     SYN_ASSERT(topic != NULL);
-    if (client->state != SYN_MQTT_CONNECTED) return SYN_ERROR;
+    if (client->state != SYN_MQTT_CONNECTED)
+        return SYN_ERROR;
 
     uint16_t pkt_id = 0;
     if (qos > 0) {
         pkt_id = ++client->next_packet_id;
-        if (pkt_id == 0) pkt_id = 1;
+        if (pkt_id == 0)
+            pkt_id = 1;
         client->pending_puback_id = pkt_id;
         client->pending_puback_ms = syn_port_get_tick_ms();
     }
@@ -369,14 +398,18 @@ SYN_Status syn_mqtt_publish(SYN_MqttClient *client, const char *topic,
     pos += encode_remaining_len(tx + pos, rem_len);
 
     uint16_t t_len = (uint16_t)strlen(topic);
-    syn_poke_u16(t_len, tx, pos); pos += 2;
-    memcpy(tx + pos, topic, t_len); pos += t_len;
+    syn_poke_u16(t_len, tx, pos);
+    pos += 2;
+    memcpy(tx + pos, topic, t_len);
+    pos += t_len;
 
     if (qos > 0) {
-        syn_poke_u16(pkt_id, tx, pos); pos += 2;
+        syn_poke_u16(pkt_id, tx, pos);
+        pos += 2;
     }
     if (len > 0 && payload != NULL) {
-        memcpy(tx + pos, payload, len); pos += len;
+        memcpy(tx + pos, payload, len);
+        pos += len;
     }
 
     if (qos > 0) {
@@ -396,23 +429,29 @@ SYN_Status syn_mqtt_subscribe(SYN_MqttClient *client, const char *topic, uint8_t
 {
     SYN_ASSERT(client != NULL);
     SYN_ASSERT(topic != NULL);
-    if (client->state != SYN_MQTT_CONNECTED) return SYN_ERROR;
+    if (client->state != SYN_MQTT_CONNECTED)
+        return SYN_ERROR;
 
     uint16_t pkt_id = ++client->next_packet_id;
-    if (pkt_id == 0) pkt_id = 1;
+    if (pkt_id == 0)
+        pkt_id = 1;
 
-    uint32_t rem_len = 2u + 2u + (uint32_t)strlen(topic) + 1u; /* packet id, topic len, topic, qos */
+    uint32_t rem_len =
+        2u + 2u + (uint32_t)strlen(topic) + 1u; /* packet id, topic len, topic, qos */
     uint8_t *tx = client->tx_buf;
 
     tx[0] = 0x82; /* SUBSCRIBE */
     size_t pos = 1;
     pos += encode_remaining_len(tx + pos, rem_len);
 
-    syn_poke_u16(pkt_id, tx, pos); pos += 2;
+    syn_poke_u16(pkt_id, tx, pos);
+    pos += 2;
 
     uint16_t t_len = (uint16_t)strlen(topic);
-    syn_poke_u16(t_len, tx, pos); pos += 2;
-    memcpy(tx + pos, topic, t_len); pos += t_len;
+    syn_poke_u16(t_len, tx, pos);
+    pos += 2;
+    memcpy(tx + pos, topic, t_len);
+    pos += t_len;
 
     tx[pos++] = qos;
 

@@ -47,10 +47,11 @@
 #ifndef SYN_SOFT_ONEWIRE_H
 #define SYN_SOFT_ONEWIRE_H
 
-#include <stdint.h>
-#include <stdbool.h>
 #include "../common/syn_defs.h"
 #include "../port/syn_port_gpio.h"
+
+#include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,14 +90,13 @@ extern "C" {
  *        tune by replacing 4 with the actual loop-body cycle count from the
  *        generated disassembly.
  */
-#define SYN_SOFT_ONEWIRE_LOOPS_PER_US(freq_hz) \
-    ((uint32_t)(((uint32_t)(freq_hz)) / 4000000UL))
+#define SYN_SOFT_ONEWIRE_LOOPS_PER_US(freq_hz) ((uint32_t)(((uint32_t)(freq_hz)) / 4000000UL))
 
 /** @brief 1-Wire bus handle.  Caller allocates; zero heap. */
 typedef struct {
-    SYN_GPIO_Pin pin;          /**< GPIO pin for the data line                   */
-    uint32_t     delay_loops;  /**< NOP iterations per µs — use
-                                *   SYN_SOFT_ONEWIRE_LOOPS_PER_US(F_CPU)         */
+    SYN_GPIO_Pin pin;     /**< GPIO pin for the data line                   */
+    uint32_t delay_loops; /**< NOP iterations per µs — use
+                           *   SYN_SOFT_ONEWIRE_LOOPS_PER_US(F_CPU)         */
 } SYN_SoftOneWire;
 
 /**
@@ -107,9 +107,7 @@ typedef struct {
  *                     Use SYN_SOFT_ONEWIRE_LOOPS_PER_US(F_CPU) or
  *                     SYN_SOFT_ONEWIRE_LOOPS_PER_US(16000000UL) for 16 MHz.
  */
-void syn_soft_onewire_init(SYN_SoftOneWire *ow,
-                           SYN_GPIO_Pin     pin,
-                           uint32_t         delay_loops);
+void syn_soft_onewire_init(SYN_SoftOneWire *ow, SYN_GPIO_Pin pin, uint32_t delay_loops);
 
 /**
  * @brief Issue a 1-Wire reset pulse and detect device presence.
@@ -138,16 +136,14 @@ uint8_t syn_soft_onewire_read_byte(const SYN_SoftOneWire *ow);
  * @param ow   Initialized bus handle.
  * @param rom  8-byte ROM code, LSB first.
  */
-void syn_soft_onewire_write_rom(const SYN_SoftOneWire *ow,
-                                const uint8_t          rom[8]);
+void syn_soft_onewire_write_rom(const SYN_SoftOneWire *ow, const uint8_t rom[8]);
 
 /**
  * @brief Read an 8-byte ROM code from the bus (after READ ROM command).
  * @param ow   Initialized bus handle.
  * @param rom  Output buffer, must be at least 8 bytes.
  */
-void syn_soft_onewire_read_rom(const SYN_SoftOneWire *ow,
-                               uint8_t                rom[8]);
+void syn_soft_onewire_read_rom(const SYN_SoftOneWire *ow, uint8_t rom[8]);
 
 #ifdef __cplusplus
 }

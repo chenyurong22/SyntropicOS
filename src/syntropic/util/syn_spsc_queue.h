@@ -12,9 +12,10 @@
 #define SYN_SPSC_QUEUE_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,11 +25,11 @@ extern "C" {
  * @brief SPSC Queue Control Structure.
  */
 typedef struct {
-    uint8_t *buffer;       /**< Pointer to caller-provided element buffer */
-    size_t   elem_size;    /**< Size of each element in bytes */
-    size_t   capacity;     /**< Maximum element capacity */
-    volatile size_t head;  /**< Write index (Producer modifies) */
-    volatile size_t tail;  /**< Read index (Consumer modifies) */
+    uint8_t *buffer;      /**< Pointer to caller-provided element buffer */
+    size_t elem_size;     /**< Size of each element in bytes */
+    size_t capacity;      /**< Maximum element capacity */
+    volatile size_t head; /**< Write index (Producer modifies) */
+    volatile size_t tail; /**< Read index (Consumer modifies) */
 } SYN_SPSC_Queue;
 
 /**
@@ -39,7 +40,8 @@ typedef struct {
  * @param capacity Number of elements buffer can hold (must be > 0).
  * @return SYN_OK on success.
  */
-SYN_Status syn_spsc_queue_init(SYN_SPSC_Queue *q, void *elem_buf, size_t elem_size, size_t capacity);
+SYN_Status syn_spsc_queue_init(SYN_SPSC_Queue *q, void *elem_buf, size_t elem_size,
+                               size_t capacity);
 
 /**
  * @brief Push an item into the queue (Producer only).

@@ -24,16 +24,16 @@
 #ifndef SYN_SCHED_H
 #define SYN_SCHED_H
 
-#include "syn_task.h"
 #include "../common/syn_compiler.h"
+#include "syn_task.h"
+
 #include <stdbool.h>
 
-#if defined(SYN_USE_TICKLESS) && SYN_USE_TICKLESS && \
-    defined(SYN_USE_TIMER) && SYN_USE_TIMER
+#if defined(SYN_USE_TICKLESS) && SYN_USE_TICKLESS && defined(SYN_USE_TIMER) && SYN_USE_TIMER
 #include "syn_timer.h"
 #endif
 #if defined(SYN_USE_TICKLESS) && SYN_USE_TICKLESS
-  #include "../system/syn_sleep.h"
+#include "../system/syn_sleep.h"
 #endif
 
 #ifdef __cplusplus
@@ -57,10 +57,10 @@ extern "C" {
  * a pointer. This means zero hidden allocation.
  */
 typedef struct SYN_Sched {
-    SYN_Task  *tasks;         /**< Pointer to caller-owned task array    */
-    size_t     task_count;    /**< Number of tasks in the array          */
-    size_t     rr_per_prio[SYN_SCHED_PRIO_LEVELS];
-                              /**< Per-priority round-robin indices      */
+    SYN_Task *tasks;   /**< Pointer to caller-owned task array    */
+    size_t task_count; /**< Number of tasks in the array          */
+    size_t rr_per_prio[SYN_SCHED_PRIO_LEVELS];
+    /**< Per-priority round-robin indices      */
 } SYN_Sched;
 
 /* ── Initialization ─────────────────────────────────────────────────────── */
@@ -86,11 +86,8 @@ void syn_sched_init(SYN_Sched *sched, SYN_Task *tasks, size_t count);
  * @param priority   Priority level (0 = highest).
  * @param user_data  Optional pointer to task-private data (or NULL).
  */
-void syn_task_create(SYN_Task *task,
-                      const char *name,
-                      SYN_TaskFunc func,
-                      uint8_t priority,
-                      void *user_data);
+void syn_task_create(SYN_Task *task, const char *name, SYN_TaskFunc func, uint8_t priority,
+                     void *user_data);
 
 /* ── Scheduler execution ────────────────────────────────────────────────── */
 
@@ -154,10 +151,8 @@ SYN_NORETURN void syn_sched_run_tickless(SYN_Sched *sched, SYN_Sleep *sleep);
  * @param timers       Array of software timers.
  * @param timer_count  Number of timers in the array.
  */
-SYN_NORETURN void syn_sched_run_tickless_ex(SYN_Sched *sched,
-                                             SYN_Sleep *sleep,
-                                             SYN_Timer *timers,
-                                             size_t timer_count);
+SYN_NORETURN void syn_sched_run_tickless_ex(SYN_Sched *sched, SYN_Sleep *sleep, SYN_Timer *timers,
+                                            size_t timer_count);
 #endif /* SYN_USE_TIMER */
 
 #endif /* SYN_USE_TICKLESS */

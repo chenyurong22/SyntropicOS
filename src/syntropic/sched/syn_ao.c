@@ -1,11 +1,11 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_AO) || SYN_USE_AO
 
 #if defined(SYN_USE_FSM) && !SYN_USE_FSM
-  #error "syn_ao requires SYN_USE_FSM=1 (table-driven FSM)"
+#error "syn_ao requires SYN_USE_FSM=1 (table-driven FSM)"
 #endif
 
 /**
@@ -13,10 +13,10 @@
  * @brief Active Object framework implementation.
  */
 
-#include "syn_ao.h"
-#include "../sched/syn_sched.h"
 #include "../port/syn_port_system.h"
+#include "../sched/syn_sched.h"
 #include "../util/syn_assert.h"
+#include "syn_ao.h"
 
 /**
  * @brief Protothread entry for active objects -- dispatches queued events.
@@ -46,12 +46,8 @@ static SYN_PT_Status syn_ao_pt_run(SYN_PT *pt, SYN_Task *task)
     PT_END(pt);
 }
 
-void syn_ao_init(SYN_ActiveObject *ao,
-                 const char *name,
-                 const SYN_FSM_Transition *transitions,
-                 SYN_FSM_State initial_state,
-                 void *mailbox_buf,
-                 size_t mailbox_cap)
+void syn_ao_init(SYN_ActiveObject *ao, const char *name, const SYN_FSM_Transition *transitions,
+                 SYN_FSM_State initial_state, void *mailbox_buf, size_t mailbox_cap)
 {
     SYN_ASSERT(ao != NULL);
     SYN_ASSERT(mailbox_buf != NULL);
@@ -72,7 +68,7 @@ void syn_ao_init(SYN_ActiveObject *ao,
 bool syn_ao_post(SYN_ActiveObject *ao, uint16_t sig, void *data)
 {
     SYN_ASSERT(ao != NULL);
-    SYN_AO_Event ev = { .sig = sig, .data = data };
+    SYN_AO_Event ev = {.sig = sig, .data = data};
 
     syn_port_enter_critical();
     bool success = syn_mailbox_post(&ao->mailbox, &ev);

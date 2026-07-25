@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_BIQUAD) || SYN_USE_BIQUAD
@@ -9,10 +9,10 @@
  * @brief Fixed-point Q16.16 Biquad filter implementation.
  */
 
-#include "syn_biquad.h"
 #include "../util/syn_assert.h"
-#include <stddef.h>
+#include "syn_biquad.h"
 
+#include <stddef.h>
 
 /* ── Biquad Filter API ──────────────────────────────────────────────────── */
 
@@ -41,11 +41,8 @@ q16_t syn_filter_biquad_update(SYN_FilterBiquad *f, q16_t sample)
     SYN_ASSERT(f != NULL);
 
     /* y[n] = b0*x[n] + b1*x[n-1] + b2*x[n-2] - a1*y[n-1] - a2*y[n-2] */
-    int64_t acc = ((int64_t)f->b0 * sample) +
-                  ((int64_t)f->b1 * f->x1) +
-                  ((int64_t)f->b2 * f->x2) -
-                  ((int64_t)f->a1 * f->y1) -
-                  ((int64_t)f->a2 * f->y2);
+    int64_t acc = ((int64_t)f->b0 * sample) + ((int64_t)f->b1 * f->x1) + ((int64_t)f->b2 * f->x2) -
+                  ((int64_t)f->a1 * f->y1) - ((int64_t)f->a2 * f->y2);
 
     /* Shift back to Q16.16 */
     q16_t output = (q16_t)(acc >> 16);
@@ -135,7 +132,7 @@ void syn_filter_biquad_bandpass(SYN_FilterBiquad *f, q16_t fc, q16_t fs, q16_t q
     q16_t alpha = q16_div(sin_w, q16_mul(Q16_FROM_INT(2), q));
 
     q16_t a0 = Q16_ONE + alpha;
-    q16_t b0 = alpha;            /* Peak gain = 1.0 */
+    q16_t b0 = alpha; /* Peak gain = 1.0 */
     q16_t b1 = 0;
     q16_t b2 = -alpha;
     q16_t a1 = -q16_mul(Q16_FROM_INT(2), cos_w);
@@ -167,7 +164,7 @@ void syn_filter_biquad_notch(SYN_FilterBiquad *f, q16_t fc, q16_t fs, q16_t q)
     q16_t b0 = Q16_ONE;
     q16_t b1 = -q16_mul(Q16_FROM_INT(2), cos_w);
     q16_t b2 = Q16_ONE;
-    q16_t a1 = b1;               /* Same as b1 for notch */
+    q16_t a1 = b1; /* Same as b1 for notch */
     q16_t a2 = Q16_ONE - alpha;
 
     f->b0 = q16_div(b0, a0);

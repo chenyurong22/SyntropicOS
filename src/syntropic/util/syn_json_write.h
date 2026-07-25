@@ -24,9 +24,9 @@
 #ifndef SYN_JSON_WRITE_H
 #define SYN_JSON_WRITE_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,16 +34,16 @@ extern "C" {
 
 /* ── Writer state ──────────────────────────────────────────────────────── */
 
-#define SYN_JSON_MAX_DEPTH  8  /**< Maximum nesting depth */
+#define SYN_JSON_MAX_DEPTH 8 /**< Maximum nesting depth */
 
 /** @brief Streaming JSON writer — tracks nesting, commas, and overflow. */
 typedef struct {
-    char    *buf;              /**< Output buffer                          */
-    size_t   capacity;         /**< Buffer capacity                        */
-    size_t   len;              /**< Bytes written so far                   */
-    uint8_t  depth;            /**< Current nesting depth                  */
-    bool     needs_comma;      /**< Insert comma before next element       */
-    bool     overflow;         /**< Set if buffer overflowed               */
+    char *buf;        /**< Output buffer                          */
+    size_t capacity;  /**< Buffer capacity                        */
+    size_t len;       /**< Bytes written so far                   */
+    uint8_t depth;    /**< Current nesting depth                  */
+    bool needs_comma; /**< Insert comma before next element       */
+    bool overflow;    /**< Set if buffer overflowed               */
 } SYN_JsonWriter;
 
 /* ── Init ──────────────────────────────────────────────────────────────── */

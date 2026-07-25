@@ -31,14 +31,15 @@
 #define SYN_PORT_SPI_ASYNC_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if defined(SYN_USE_SPI_ASYNC) && SYN_USE_SPI_ASYNC
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,12 +68,12 @@ typedef void (*SYN_SPI_Callback)(uint8_t bus, SYN_Status result, void *ctx);
  * CS assertion/deassertion is the caller's responsibility.
  */
 typedef struct {
-    uint8_t          bus;        /**< SPI bus index                      */
-    const uint8_t   *tx_buf;     /**< TX buffer (NULL → send zeros)     */
-    uint8_t         *rx_buf;     /**< RX buffer (NULL → discard)        */
-    size_t           len;        /**< Transfer length in bytes           */
-    SYN_SPI_Callback callback;   /**< Called on completion (ISR ctx)     */
-    void            *user_data;  /**< User context for callback          */
+    uint8_t bus;               /**< SPI bus index                      */
+    const uint8_t *tx_buf;     /**< TX buffer (NULL → send zeros)     */
+    uint8_t *rx_buf;           /**< RX buffer (NULL → discard)        */
+    size_t len;                /**< Transfer length in bytes           */
+    SYN_SPI_Callback callback; /**< Called on completion (ISR ctx)     */
+    void *user_data;           /**< User context for callback          */
 } SYN_SPI_Xfer;
 
 /* ── Port functions (user implements) ──────────────────────────────────── */

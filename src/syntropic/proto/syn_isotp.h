@@ -64,9 +64,10 @@
 
 #include "../common/syn_defs.h"
 #include "../drivers/syn_can.h"
-#include <stdint.h>
+
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
 #if defined(__AVR__) && !defined(_SSIZE_T_DEFINED_)
 typedef int ssize_t;
@@ -79,24 +80,24 @@ extern "C" {
 
 /** @brief ISO-TP Protocol Constants */
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
-#define SYN_ISOTP_MAX_PAYLOAD             0xFFFFFFFFU /**< 32-bit extended length (ISO 15765-2:2016) */
+#define SYN_ISOTP_MAX_PAYLOAD 0xFFFFFFFFU /**< 32-bit extended length (ISO 15765-2:2016) */
 #else
-#define SYN_ISOTP_MAX_PAYLOAD             4095U       /**< Standard 12-bit max payload (Classic CAN) */
+#define SYN_ISOTP_MAX_PAYLOAD 4095U /**< Standard 12-bit max payload (Classic CAN) */
 #endif
 
-#define SYN_ISOTP_PCI_SF                  0x00U /**< Single Frame              */
-#define SYN_ISOTP_PCI_FF                  0x10U /**< First Frame               */
-#define SYN_ISOTP_PCI_CF                  0x20U /**< Consecutive Frame         */
-#define SYN_ISOTP_PCI_FC                  0x30U /**< Flow Control Frame        */
+#define SYN_ISOTP_PCI_SF 0x00U /**< Single Frame              */
+#define SYN_ISOTP_PCI_FF 0x10U /**< First Frame               */
+#define SYN_ISOTP_PCI_CF 0x20U /**< Consecutive Frame         */
+#define SYN_ISOTP_PCI_FC 0x30U /**< Flow Control Frame        */
 
 /** @brief ISO 15765-2 Network Layer Default Timeouts (ISO 15765-2:2016) */
-#define SYN_ISOTP_DEFAULT_N_BS_MS         1000U /**< N_Bs max time for FC reception (1000 ms) */
-#define SYN_ISOTP_DEFAULT_N_CR_MS         1000U /**< N_Cr max time for CF reception (1000 ms) */
+#define SYN_ISOTP_DEFAULT_N_BS_MS 1000U /**< N_Bs max time for FC reception (1000 ms) */
+#define SYN_ISOTP_DEFAULT_N_CR_MS 1000U /**< N_Cr max time for CF reception (1000 ms) */
 
 /** @brief Flow Control Status (FC) */
-#define SYN_ISOTP_FC_CTS                  0x00U /**< Continue To Send          */
-#define SYN_ISOTP_FC_WAIT                 0x01U /**< Wait                      */
-#define SYN_ISOTP_FC_OVERFLOW             0x02U /**< Buffer Overflow           */
+#define SYN_ISOTP_FC_CTS 0x00U      /**< Continue To Send          */
+#define SYN_ISOTP_FC_WAIT 0x01U     /**< Wait                      */
+#define SYN_ISOTP_FC_OVERFLOW 0x02U /**< Buffer Overflow           */
 
 /** @brief ISO-TP Tx States */
 typedef enum {
@@ -117,37 +118,37 @@ typedef enum {
 /** @brief ISO 15765-2 Link Handle */
 typedef struct {
     /* Addressing & Mode */
-    uint32_t            rx_id;          /**< Expected CAN Rx ID         */
-    uint32_t            tx_id;          /**< Transmit CAN Tx ID         */
+    uint32_t rx_id; /**< Expected CAN Rx ID         */
+    uint32_t tx_id; /**< Transmit CAN Tx ID         */
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
-    bool                is_fd;          /**< true = CAN FD mode (64B)   */
+    bool is_fd; /**< true = CAN FD mode (64B)   */
 #endif
 
     /* Tx Channel */
-    uint8_t            *tx_buf;         /**< Tx payload buffer          */
-    size_t              tx_buf_size;    /**< Tx capacity                */
-    size_t              tx_len;         /**< Total payload length to tx */
-    size_t              tx_offset;      /**< Sent byte counter          */
-    uint8_t             tx_seq;         /**< Sequence counter (0..15)   */
-    SYN_ISOTP_TxState   tx_state;       /**< Transmit state             */
-    uint8_t             tx_bs;          /**< Active block size limit    */
-    uint8_t             tx_bs_count;    /**< Sent block frame counter   */
-    uint8_t             tx_st_min;      /**< STmin from receiver        */
-    uint32_t            tx_st_timer_us; /**< STmin timer (microseconds) */
-    uint32_t            n_bs_timeout_us;/**< N_Bs timeout (microseconds)*/
-    uint32_t            tx_timeout_timer_us; /**< Active N_Bs timer us  */
+    uint8_t *tx_buf;              /**< Tx payload buffer          */
+    size_t tx_buf_size;           /**< Tx capacity                */
+    size_t tx_len;                /**< Total payload length to tx */
+    size_t tx_offset;             /**< Sent byte counter          */
+    uint8_t tx_seq;               /**< Sequence counter (0..15)   */
+    SYN_ISOTP_TxState tx_state;   /**< Transmit state             */
+    uint8_t tx_bs;                /**< Active block size limit    */
+    uint8_t tx_bs_count;          /**< Sent block frame counter   */
+    uint8_t tx_st_min;            /**< STmin from receiver        */
+    uint32_t tx_st_timer_us;      /**< STmin timer (microseconds) */
+    uint32_t n_bs_timeout_us;     /**< N_Bs timeout (microseconds)*/
+    uint32_t tx_timeout_timer_us; /**< Active N_Bs timer us  */
 
     /* Rx Channel */
-    uint8_t            *rx_buf;         /**< Rx assembly buffer         */
-    size_t              rx_buf_size;    /**< Rx capacity                */
-    size_t              rx_len;         /**< Assembled byte count       */
-    size_t              rx_expected;    /**< Total expected msg length  */
-    uint8_t             rx_seq;         /**< Next expected sequence     */
-    SYN_ISOTP_RxState   rx_state;       /**< Receive state              */
-    bool                rx_fc_pending;  /**< Pending Flow Control frame */
-    uint8_t             rx_fc_status;   /**< Flow Control status to tx  */
-    uint32_t            n_cr_timeout_us;/**< N_Cr timeout (microseconds)*/
-    uint32_t            rx_timeout_timer_us; /**< Active N_Cr timer us  */
+    uint8_t *rx_buf;              /**< Rx assembly buffer         */
+    size_t rx_buf_size;           /**< Rx capacity                */
+    size_t rx_len;                /**< Assembled byte count       */
+    size_t rx_expected;           /**< Total expected msg length  */
+    uint8_t rx_seq;               /**< Next expected sequence     */
+    SYN_ISOTP_RxState rx_state;   /**< Receive state              */
+    bool rx_fc_pending;           /**< Pending Flow Control frame */
+    uint8_t rx_fc_status;         /**< Flow Control status to tx  */
+    uint32_t n_cr_timeout_us;     /**< N_Cr timeout (microseconds)*/
+    uint32_t rx_timeout_timer_us; /**< Active N_Cr timer us  */
 } SYN_ISOTP_Link;
 
 /**
@@ -168,9 +169,8 @@ void syn_isotp_set_timeouts(SYN_ISOTP_Link *link, uint32_t n_bs_ms, uint32_t n_c
  * @param tx_buf       Transmit buffer.
  * @param tx_buf_size  Transmit buffer capacity.
  */
-void syn_isotp_init(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id,
-                    uint8_t *rx_buf, size_t rx_buf_size,
-                    uint8_t *tx_buf, size_t tx_buf_size);
+void syn_isotp_init(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id, uint8_t *rx_buf,
+                    size_t rx_buf_size, uint8_t *tx_buf, size_t tx_buf_size);
 
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
 /**
@@ -184,9 +184,8 @@ void syn_isotp_init(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id,
  * @param tx_buf_size  Transmit buffer capacity.
  * @param is_fd        true = CAN FD mode (up to 64-byte payload frames).
  */
-void syn_isotp_init_fd(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id,
-                       uint8_t *rx_buf, size_t rx_buf_size,
-                       uint8_t *tx_buf, size_t tx_buf_size, bool is_fd);
+void syn_isotp_init_fd(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id, uint8_t *rx_buf,
+                       size_t rx_buf_size, uint8_t *tx_buf, size_t tx_buf_size, bool is_fd);
 #endif
 
 /**

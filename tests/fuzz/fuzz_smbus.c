@@ -4,12 +4,14 @@
  */
 
 #include "syntropic/proto/syn_smbus.h"
-#include <stdint.h>
+
 #include <stddef.h>
+#include <stdint.h>
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    if (size == 0) return 0;
+    if (size == 0)
+        return 0;
 
     SYN_SMBUS_Packet pkt;
     syn_smbus_decode_packet(&pkt, data, size, SYN_SMBUS_PROTO_WRITE_WORD, true);

@@ -1,13 +1,18 @@
+#include "mock_port.h"
+#include "syntropic/port/syn_port_flash.h"
+#include "syntropic/port/syn_port_i2c.h"
+#include "unity/unity.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "syntropic/port/syn_port_flash.h"
-#include "syntropic/port/syn_port_i2c.h"
-#include "mock_port.h"
-#include "unity/unity.h"
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_renode_spi_flash_w25q64(void)
 {

@@ -3,25 +3,24 @@
  * @brief Unity tests for syn_watchdog.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/sched/syn_watchdog.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int wdt_timeout_count = 0;
 static const char *wdt_timeout_name = NULL;
 
-static void wdt_on_timeout(SYN_Watchdog *wdt, const SYN_WDT_Entry *entry,
-                           void *ctx)
+static void wdt_on_timeout(SYN_Watchdog *wdt, const SYN_WDT_Entry *entry, void *ctx)
 {
-    (void)wdt; (void)ctx;
+    (void)wdt;
+    (void)ctx;
     wdt_timeout_count++;
     wdt_timeout_name = entry->name;
 }
 
 static void test_watchdog(void)
 {
-
     mock_tick_ms = 0;
     wdt_timeout_count = 0;
 
@@ -43,7 +42,7 @@ static void test_watchdog(void)
     syn_watchdog_checkin(&wdt, id0);
 
     /* task_a deadline at 150ms, task_b at 200ms */
-    mock_tick_advance(60);  /* now 110ms */
+    mock_tick_advance(60); /* now 110ms */
     syn_watchdog_update(&wdt);
     TEST_ASSERT_EQUAL_INT(0, wdt_timeout_count);
 

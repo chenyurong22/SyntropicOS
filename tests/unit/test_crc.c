@@ -3,10 +3,10 @@
  * @brief Unity tests for syn_crc — full coverage (adds CRC-8 path).
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/util/syn_crc.h"
+#include "unity/unity.h"
 
 static void test_crc(void)
 {

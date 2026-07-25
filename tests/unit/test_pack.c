@@ -3,10 +3,10 @@
  * @brief Unity tests for syn_pack.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/util/syn_pack.h"
+#include "unity/unity.h"
 
 static void test_pack(void)
 {

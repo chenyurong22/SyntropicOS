@@ -4,11 +4,13 @@
  */
 
 #include "syn_task_profile.h"
+
 #include <string.h>
 
 SYN_Status syn_task_profile_init(SYN_TaskProfileManager *mgr)
 {
-    if (!mgr) return SYN_INVALID_PARAM;
+    if (!mgr)
+        return SYN_INVALID_PARAM;
 
     memset(mgr, 0, sizeof(*mgr));
     mgr->enabled = true;
@@ -19,13 +21,16 @@ SYN_Status syn_task_profile_init(SYN_TaskProfileManager *mgr)
 
 void syn_task_profile_enable(SYN_TaskProfileManager *mgr, bool enable)
 {
-    if (!mgr) return;
+    if (!mgr)
+        return;
     mgr->enabled = enable;
 }
 
-void syn_task_profile_step_start(SYN_TaskProfileManager *mgr, size_t task_idx, const char *task_name, uint32_t now_us)
+void syn_task_profile_step_start(SYN_TaskProfileManager *mgr, size_t task_idx,
+                                 const char *task_name, uint32_t now_us)
 {
-    if (!mgr || !mgr->enabled || task_idx >= SYN_TASK_PROFILE_MAX_TASKS) return;
+    if (!mgr || !mgr->enabled || task_idx >= SYN_TASK_PROFILE_MAX_TASKS)
+        return;
 
     SYN_TaskProfile *p = &mgr->profiles[task_idx];
     if (!p->task_name) {
@@ -40,7 +45,8 @@ void syn_task_profile_step_start(SYN_TaskProfileManager *mgr, size_t task_idx, c
 
 void syn_task_profile_step_end(SYN_TaskProfileManager *mgr, size_t task_idx, uint32_t now_us)
 {
-    if (!mgr || !mgr->enabled || task_idx >= SYN_TASK_PROFILE_MAX_TASKS) return;
+    if (!mgr || !mgr->enabled || task_idx >= SYN_TASK_PROFILE_MAX_TASKS)
+        return;
 
     SYN_TaskProfile *p = &mgr->profiles[task_idx];
     uint32_t duration = now_us - p->last_start_us;
@@ -54,10 +60,12 @@ void syn_task_profile_step_end(SYN_TaskProfileManager *mgr, size_t task_idx, uin
 
 void syn_task_profile_update(SYN_TaskProfileManager *mgr, uint32_t now_us)
 {
-    if (!mgr) return;
+    if (!mgr)
+        return;
 
     uint32_t window_duration = now_us - mgr->window_start_us;
-    if (window_duration == 0) return;
+    if (window_duration == 0)
+        return;
 
     for (size_t i = 0; i < mgr->count; i++) {
         SYN_TaskProfile *p = &mgr->profiles[i];
@@ -65,9 +73,11 @@ void syn_task_profile_update(SYN_TaskProfileManager *mgr, uint32_t now_us)
     }
 }
 
-SYN_Status syn_task_profile_get(const SYN_TaskProfileManager *mgr, size_t task_idx, SYN_TaskProfile *profile)
+SYN_Status syn_task_profile_get(const SYN_TaskProfileManager *mgr, size_t task_idx,
+                                SYN_TaskProfile *profile)
 {
-    if (!mgr || !profile || task_idx >= mgr->count) return SYN_INVALID_PARAM;
+    if (!mgr || !profile || task_idx >= mgr->count)
+        return SYN_INVALID_PARAM;
 
     *profile = mgr->profiles[task_idx];
 

@@ -1,11 +1,12 @@
+#include "mock_port.h"
+#include "syntropic/log/syn_log.h"
+#include "syntropic/net/syn_mqtt.h"
+#include "unity/unity.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "syntropic/net/syn_mqtt.h"
-#include "syntropic/log/syn_log.h"
-#include "mock_port.h"
-#include "unity/unity.h"
 
 static bool message_received = false;
 static char last_payload[128] = {0};
@@ -13,7 +14,8 @@ static char last_payload[128] = {0};
 static void on_mqtt_msg(const char *topic, const uint8_t *payload, size_t len, void *ctx)
 {
     (void)ctx;
-    printf("[Integration Test] Received MQTT message on topic '%s': %.*s\n", topic, (int)len, (char *)payload);
+    printf("[Integration Test] Received MQTT message on topic '%s': %.*s\n", topic, (int)len,
+           (char *)payload);
     if (len < sizeof(last_payload)) {
         memcpy(last_payload, payload, len);
         last_payload[len] = '\0';
@@ -21,13 +23,18 @@ static void on_mqtt_msg(const char *topic, const uint8_t *payload, size_t len, v
     message_received = true;
 }
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_mqtt_mosquitto_e2e(void)
 {
     const char *host = getenv("MQTT_HOST");
-    if (!host) host = "127.0.0.1";
+    if (!host)
+        host = "127.0.0.1";
     uint16_t port = 1883;
 
     uint8_t rx_buf[256];
@@ -35,8 +42,8 @@ void test_mqtt_mosquitto_e2e(void)
     SYN_MqttClient client;
 
     printf("[Integration Test] Connecting to Mosquitto Broker at %s:%d...\n", host, port);
-    SYN_Status status = syn_mqtt_init(&client, host, port, "syn_integration_test_client",
-                                      NULL, NULL, 60, rx_buf, sizeof(rx_buf), tx_buf, sizeof(tx_buf));
+    SYN_Status status = syn_mqtt_init(&client, host, port, "syn_integration_test_client", NULL,
+                                      NULL, 60, rx_buf, sizeof(rx_buf), tx_buf, sizeof(tx_buf));
     TEST_ASSERT_EQUAL_INT(SYN_OK, status);
 
     client.on_message = on_mqtt_msg;
@@ -72,7 +79,8 @@ void test_mqtt_mosquitto_e2e(void)
 
     /* Publish message to syntropic/test */
     const char *test_msg = "Hello Mosquitto from SyntropicOS!";
-    status = syn_mqtt_publish(&client, "syntropic/test", (const uint8_t *)test_msg, strlen(test_msg), 0, false);
+    status = syn_mqtt_publish(&client, "syntropic/test", (const uint8_t *)test_msg,
+                              strlen(test_msg), 0, false);
     TEST_ASSERT_EQUAL_INT(SYN_OK, status);
 
     /* Drive task loop to process incoming published message */

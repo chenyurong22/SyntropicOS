@@ -32,12 +32,12 @@
 #define SYN_ADC_H
 
 #include "../common/syn_defs.h"
-#include "../port/syn_port_adc.h"
 #include "../dsp/syn_filter.h"
 #include "../dsp/syn_signal.h"
+#include "../port/syn_port_adc.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,38 +47,38 @@ extern "C" {
 
 /** @brief ADC digital filter selector. */
 typedef enum {
-    SYN_ADC_FILTER_NONE   = 0,  /**< No filtering                        */
-    SYN_ADC_FILTER_MA     = 1,  /**< Moving average                      */
-    SYN_ADC_FILTER_EMA    = 2,  /**< Exponential moving average          */
-    SYN_ADC_FILTER_MEDIAN = 3,  /**< Median filter                       */
+    SYN_ADC_FILTER_NONE = 0,   /**< No filtering                        */
+    SYN_ADC_FILTER_MA = 1,     /**< Moving average                      */
+    SYN_ADC_FILTER_EMA = 2,    /**< Exponential moving average          */
+    SYN_ADC_FILTER_MEDIAN = 3, /**< Median filter                       */
 } SYN_ADC_FilterType;
 
 /* ── ADC configuration ──────────────────────────────────────────────────── */
 
 /** @brief ADC channel configuration. */
 typedef struct {
-    uint8_t              channel;        /**< ADC channel number           */
-    uint8_t              oversample;     /**< Oversampling count (1,4,16..)*/
+    uint8_t channel;    /**< ADC channel number           */
+    uint8_t oversample; /**< Oversampling count (1,4,16..)*/
 
     /* Optional filter */
-    void                *filter;         /**< Filter instance              */
-    SYN_ADC_FilterType  filter_type;    /**< SYN_ADC_FilterType           */
+    void *filter;                   /**< Filter instance              */
+    SYN_ADC_FilterType filter_type; /**< SYN_ADC_FilterType           */
 
     /* Calibration: result = (raw + cal_offset) * cal_scale >> cal_scale_shift */
-    int16_t              cal_offset;     /**< Zero-point offset            */
-    uint16_t             cal_scale;      /**< Scale numerator              */
-    uint8_t              cal_scale_shift; /**< Scale denominator = 1<<shift*/
+    int16_t cal_offset;      /**< Zero-point offset            */
+    uint16_t cal_scale;      /**< Scale numerator              */
+    uint8_t cal_scale_shift; /**< Scale denominator = 1<<shift*/
 } SYN_ADC_Config;
 
 /* ── ADC instance ───────────────────────────────────────────────────────── */
 
 /** @brief ADC channel instance — config + last readings. */
 typedef struct {
-    SYN_ADC_Config cfg;          /**< Configuration                       */
-    int32_t         raw;         /**< Last raw reading (after oversample)  */
-    int32_t         filtered;    /**< After filter                         */
-    int32_t         calibrated;  /**< After calibration                    */
-    SYN_Signal    *stats;       /**< If set, calibrated value pushed here */
+    SYN_ADC_Config cfg; /**< Configuration                       */
+    int32_t raw;        /**< Last raw reading (after oversample)  */
+    int32_t filtered;   /**< After filter                         */
+    int32_t calibrated; /**< After calibration                    */
+    SYN_Signal *stats;  /**< If set, calibrated value pushed here */
 } SYN_ADC;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -114,21 +114,30 @@ int32_t syn_adc_read_mv(SYN_ADC *adc);
  * @param adc  ADC instance.
  * @return Raw ADC reading.
  */
-static inline int32_t syn_adc_raw(const SYN_ADC *adc) { return adc->raw; }
+static inline int32_t syn_adc_raw(const SYN_ADC *adc)
+{
+    return adc->raw;
+}
 
 /**
  * @brief Get last filtered value.
  * @param adc  ADC instance.
  * @return Filtered reading.
  */
-static inline int32_t syn_adc_filtered(const SYN_ADC *adc) { return adc->filtered; }
+static inline int32_t syn_adc_filtered(const SYN_ADC *adc)
+{
+    return adc->filtered;
+}
 
 /**
  * @brief Get last calibrated value.
  * @param adc  ADC instance.
  * @return Calibrated reading.
  */
-static inline int32_t syn_adc_calibrated(const SYN_ADC *adc) { return adc->calibrated; }
+static inline int32_t syn_adc_calibrated(const SYN_ADC *adc)
+{
+    return adc->calibrated;
+}
 
 /**
  * @brief Update calibration at runtime.
@@ -137,8 +146,7 @@ static inline int32_t syn_adc_calibrated(const SYN_ADC *adc) { return adc->calib
  * @param scale   New scale numerator.
  * @param shift   New scale shift (denominator = 1 << shift).
  */
-void syn_adc_set_calibration(SYN_ADC *adc, int16_t offset,
-                              uint16_t scale, uint8_t shift);
+void syn_adc_set_calibration(SYN_ADC *adc, int16_t offset, uint16_t scale, uint8_t shift);
 
 /**
  * @brief Attach a signal statistics window.

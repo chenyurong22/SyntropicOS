@@ -24,9 +24,10 @@
 #define SYN_WORKQUEUE_H
 
 #include "../util/syn_spsc_queue.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,14 +38,14 @@ typedef void (*SYN_WorkFunc)(void *ctx);
 
 /** Single work item. */
 typedef struct {
-    SYN_WorkFunc  func;         /**< Deferred callback function pointer */
-    void          *ctx;          /**< User context pointer for the callback */
+    SYN_WorkFunc func; /**< Deferred callback function pointer */
+    void *ctx;         /**< User context pointer for the callback */
 } SYN_WorkItem;
 
 /** Work queue (lock-free SPSC ring). */
 typedef struct {
-    SYN_SPSC_Queue queue;    /**< Embedded lock-free SPSC queue */
-    uint32_t       overflow; /**< Counter: posts dropped due to full */
+    SYN_SPSC_Queue queue; /**< Embedded lock-free SPSC queue */
+    uint32_t overflow;    /**< Counter: posts dropped due to full */
 } SYN_WorkQueue;
 
 /**
@@ -54,8 +55,7 @@ typedef struct {
  * @param buf      Backing storage array for work items.
  * @param capacity Number of elements in the buffer.
  */
-void syn_workqueue_init(SYN_WorkQueue *wq,
-                         SYN_WorkItem *buf, size_t capacity);
+void syn_workqueue_init(SYN_WorkQueue *wq, SYN_WorkItem *buf, size_t capacity);
 
 /**
  * @brief Post a work item. ISR-safe (single producer).
@@ -65,8 +65,7 @@ void syn_workqueue_init(SYN_WorkQueue *wq,
  * @param ctx  User data passed to the callback.
  * @return true if posted, false if queue is full.
  */
-bool syn_workqueue_post(SYN_WorkQueue *wq,
-                         SYN_WorkFunc func, void *ctx);
+bool syn_workqueue_post(SYN_WorkQueue *wq, SYN_WorkFunc func, void *ctx);
 
 /**
  * @brief Process all pending work items.

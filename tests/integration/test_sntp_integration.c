@@ -1,22 +1,28 @@
+#include "syntropic/net/syn_sntp.h"
+#include "unity/unity.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "syntropic/net/syn_sntp.h"
-#include "unity/unity.h"
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_sntp_chrony_e2e(void)
 {
     const char *host = getenv("SNTP_HOST");
-    if (!host) host = "127.0.0.1";
+    if (!host)
+        host = "127.0.0.1";
     uint16_t port = (strcmp(host, "127.0.0.1") == 0) ? 10123 : 123;
 
     SYN_SockAddr server = {0};
     server.port = port;
-    
+
     int a, b, c, d;
     if (sscanf(host, "%d.%d.%d.%d", &a, &b, &c, &d) == 4) {
         server.ip[0] = (uint8_t)a;
@@ -24,7 +30,10 @@ void test_sntp_chrony_e2e(void)
         server.ip[2] = (uint8_t)c;
         server.ip[3] = (uint8_t)d;
     } else {
-        server.ip[0] = 127; server.ip[1] = 0; server.ip[2] = 0; server.ip[3] = 1;
+        server.ip[0] = 127;
+        server.ip[1] = 0;
+        server.ip[2] = 0;
+        server.ip[3] = 1;
     }
 
     SYN_SNTP sntp;
@@ -34,7 +43,9 @@ void test_sntp_chrony_e2e(void)
     SYN_Status status = syn_sntp_query(&sntp);
 
     if (status != SYN_OK) {
-        printf("[Integration Test] SNTP query status: %d (Skipping if local NTP port %d is closed)\n", status, port);
+        printf(
+            "[Integration Test] SNTP query status: %d (Skipping if local NTP port %d is closed)\n",
+            status, port);
         return;
     }
 

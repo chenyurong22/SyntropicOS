@@ -3,14 +3,14 @@
  * @brief Unity tests for syn_mailbox.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/sched/syn_mailbox.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 typedef struct {
     uint16_t id;
-    int32_t  value;
+    int32_t value;
 } TestMsg;
 
 static void test_mailbox(void)
@@ -24,9 +24,9 @@ static void test_mailbox(void)
     TEST_ASSERT_EQUAL_INT(3, syn_mailbox_free(&mbox));
 
     /* Post messages */
-    TestMsg m1 = { .id = 1, .value = 100 };
-    TestMsg m2 = { .id = 2, .value = 200 };
-    TestMsg m3 = { .id = 3, .value = 300 };
+    TestMsg m1 = {.id = 1, .value = 100};
+    TestMsg m2 = {.id = 2, .value = 200};
+    TestMsg m3 = {.id = 3, .value = 300};
 
     TEST_ASSERT_TRUE(syn_mailbox_post(&mbox, &m1));
     TEST_ASSERT_TRUE(syn_mailbox_post(&mbox, &m2));
@@ -65,7 +65,7 @@ static void test_mailbox(void)
     syn_mailbox_init(&mb2, buf, sizeof(TestMsg), 4);
     TEST_ASSERT_TRUE(syn_mailbox_empty(&mb2));
 
-    TestMsg m = { .id = 99, .value = -1 };
+    TestMsg m = {.id = 99, .value = -1};
     syn_mailbox_post(&mb2, &m);
     TEST_ASSERT_EQUAL_INT(1, syn_mailbox_pending(&mb2));
 
@@ -85,9 +85,9 @@ static void test_mailbox_wraparound_and_notify(void)
     TEST_ASSERT_TRUE(mb.notify);
 #endif
 
-    TestMsg m1 = { .id = 10, .value = 1000 };
-    TestMsg m2 = { .id = 20, .value = 2000 };
-    TestMsg m3 = { .id = 30, .value = 3000 };
+    TestMsg m1 = {.id = 10, .value = 1000};
+    TestMsg m2 = {.id = 20, .value = 2000};
+    TestMsg m3 = {.id = 30, .value = 3000};
     TestMsg rx;
 
     /* Push 2, pop 1, push 1 (wraps head back to index 0) */

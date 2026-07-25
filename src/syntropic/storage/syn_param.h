@@ -50,9 +50,9 @@
 #include "../common/syn_defs.h"
 #include "../port/syn_port_flash.h"
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,33 +61,33 @@ extern "C" {
 /* ── Slot header ────────────────────────────────────────────────────────── */
 
 /** @brief Magic number for parameter slot headers. */
-#define SYN_PARAM_MAGIC  0xC0DEu
+#define SYN_PARAM_MAGIC 0xC0DEu
 
 /** @brief Slot header — stored at the beginning of each parameter slot. */
 typedef struct {
-    uint16_t  magic;       /**< Magic number (SYN_PARAM_MAGIC)          */
-    uint16_t  seq;         /**< Sequence number (higher = newer)          */
-    uint16_t  data_size;   /**< Size of the parameter data                */
-    uint16_t  crc;         /**< CRC-16 over the data                      */
-    uint8_t   _pad[8];     /**< Padding to 16 bytes                       */
+    uint16_t magic;     /**< Magic number (SYN_PARAM_MAGIC)          */
+    uint16_t seq;       /**< Sequence number (higher = newer)          */
+    uint16_t data_size; /**< Size of the parameter data                */
+    uint16_t crc;       /**< CRC-16 over the data                      */
+    uint8_t _pad[8];    /**< Padding to 16 bytes                       */
 } SYN_ParamSlotHeader;
 
 /* ── Parameter store ────────────────────────────────────────────────────── */
 
 /** @brief Wear-leveled flash parameter store instance. */
 typedef struct {
-    uint32_t  flash_base;    /**< Start address of the flash region       */
-    uint32_t  sector_size;   /**< Size of one flash sector (bytes)        */
-    uint8_t   sector_count;  /**< Number of sectors allocated             */
-    uint16_t  data_size;     /**< Size of the parameter data block        */
-    uint16_t  slot_size;     /**< sizeof(header) + data_size, aligned     */
-    uint16_t  slots_per_sector; /**< Slots that fit in one sector         */
+    uint32_t flash_base;       /**< Start address of the flash region       */
+    uint32_t sector_size;      /**< Size of one flash sector (bytes)        */
+    uint8_t sector_count;      /**< Number of sectors allocated             */
+    uint16_t data_size;        /**< Size of the parameter data block        */
+    uint16_t slot_size;        /**< sizeof(header) + data_size, aligned     */
+    uint16_t slots_per_sector; /**< Slots that fit in one sector         */
 
     /* Current state */
-    uint8_t   active_sector; /**< Sector containing the active slot       */
-    uint16_t  active_slot;   /**< Slot index within the active sector     */
-    uint16_t  next_seq;      /**< Next sequence number to use             */
-    bool      initialized;   /**< Init complete                           */
+    uint8_t active_sector; /**< Sector containing the active slot       */
+    uint16_t active_slot;  /**< Slot index within the active sector     */
+    uint16_t next_seq;     /**< Next sequence number to use             */
+    bool initialized;      /**< Init complete                           */
 } SYN_ParamStore;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -105,10 +105,8 @@ typedef struct {
  * @return SYN_OK if at least one valid slot was found,
  *         SYN_ERROR if flash is blank (use defaults).
  */
-SYN_Status syn_param_init(SYN_ParamStore *store,
-                            uint32_t flash_base,
-                            uint8_t sector_count,
-                            uint16_t data_size);
+SYN_Status syn_param_init(SYN_ParamStore *store, uint32_t flash_base, uint8_t sector_count,
+                          uint16_t data_size);
 
 /**
  * @brief Load parameters from the latest valid slot.

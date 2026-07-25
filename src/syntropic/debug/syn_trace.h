@@ -25,9 +25,10 @@
 #define SYN_TRACE_H
 
 #include "../port/syn_port_system.h"
-#include <stdint.h>
+
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,20 +38,20 @@ extern "C" {
 
 /** @brief Single trace event entry. */
 typedef struct {
-    uint32_t  timestamp;  /**< Tick when event occurred                   */
-    uint16_t  event_id;   /**< Application-defined event ID              */
-    uint16_t  value;      /**< Optional 16-bit payload                   */
+    uint32_t timestamp; /**< Tick when event occurred                   */
+    uint16_t event_id;  /**< Application-defined event ID              */
+    uint16_t value;     /**< Optional 16-bit payload                   */
 } SYN_TraceEntry;
 
 /* ── Trace buffer ───────────────────────────────────────────────────────── */
 
 /** @brief Circular trace event buffer. */
 typedef struct {
-    SYN_TraceEntry *entries;   /**< Circular buffer (caller-owned)      */
-    uint16_t         capacity;  /**< Buffer size                         */
-    uint16_t         head;      /**< Next write position                 */
-    uint32_t         count;     /**< Total events recorded (may wrap)    */
-    bool             enabled;   /**< Recording state active flag */
+    SYN_TraceEntry *entries; /**< Circular buffer (caller-owned)      */
+    uint16_t capacity;       /**< Buffer size                         */
+    uint16_t head;           /**< Next write position                 */
+    uint32_t count;          /**< Total events recorded (may wrap)    */
+    bool enabled;            /**< Recording state active flag */
 } SYN_Trace;
 
 /** Print callback for dump. */
@@ -65,9 +66,7 @@ typedef void (*SYN_TracePrintFunc)(const char *str);
  * @param entries   Array of trace entries (caller-owned).
  * @param capacity  Number of entries in the array.
  */
-void syn_trace_init(SYN_Trace *trace,
-                     SYN_TraceEntry *entries,
-                     uint16_t capacity);
+void syn_trace_init(SYN_Trace *trace, SYN_TraceEntry *entries, uint16_t capacity);
 
 /**
  * @brief Record a trace event.
@@ -115,8 +114,7 @@ static inline uint32_t syn_trace_count(const SYN_Trace *trace)
  * @param entry  Output entry.
  * @return true if a valid entry was read.
  */
-bool syn_trace_read(const SYN_Trace *trace, uint32_t index,
-                     SYN_TraceEntry *entry);
+bool syn_trace_read(const SYN_Trace *trace, uint32_t index, SYN_TraceEntry *entry);
 
 /**
  * @brief Dump all entries via a print callback.

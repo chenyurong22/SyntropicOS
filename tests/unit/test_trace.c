@@ -3,10 +3,10 @@
  * @brief Unity tests for syn_trace — full coverage.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/debug/syn_trace.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
@@ -62,7 +62,7 @@ static void test_trace(void)
     mock_tick_ms = 300;
     syn_trace_record(&trace, 0x03, 0);
     syn_trace_record(&trace, 0x04, 0);
-    syn_trace_record(&trace, 0x05, 0);  /* wraps, overwrites slot 0 */
+    syn_trace_record(&trace, 0x05, 0); /* wraps, overwrites slot 0 */
     syn_trace_record(&trace, 0x06, 0);
 
     TEST_ASSERT_EQUAL_INT(6, syn_trace_count(&trace));

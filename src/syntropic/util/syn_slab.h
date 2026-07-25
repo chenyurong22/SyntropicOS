@@ -12,9 +12,10 @@
 #define SYN_SLAB_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,21 +28,21 @@ extern "C" {
  * @brief Single Slab Size Class Descriptor.
  */
 typedef struct {
-    size_t   block_size;   /**< Aligned block size for this class */
-    size_t   total_blocks; /**< Total blocks in this slab class */
-    size_t   free_count;   /**< Current free blocks */
-    uint8_t *start_ptr;    /**< Start pointer of slab region */
-    void    *freelist;     /**< Embedded freelist head */
+    size_t block_size;   /**< Aligned block size for this class */
+    size_t total_blocks; /**< Total blocks in this slab class */
+    size_t free_count;   /**< Current free blocks */
+    uint8_t *start_ptr;  /**< Start pointer of slab region */
+    void *freelist;      /**< Embedded freelist head */
 } SYN_SlabClass;
 
 /**
  * @brief Multi-Class Slab Allocator.
  */
 typedef struct {
-    uint8_t      *backing_memory;                /**< Backing memory pointer */
-    size_t        total_memory_size;             /**< Total backing size */
+    uint8_t *backing_memory;                     /**< Backing memory pointer */
+    size_t total_memory_size;                    /**< Total backing size */
     SYN_SlabClass classes[SYN_SLAB_MAX_CLASSES]; /**< Slab classes */
-    size_t        num_classes;                   /**< Number of configured classes */
+    size_t num_classes;                          /**< Number of configured classes */
 } SYN_SlabAllocator;
 
 /**
@@ -63,11 +64,8 @@ typedef struct {
  * @param num_classes Number of classes (1 to SYN_SLAB_MAX_CLASSES).
  * @return SYN_OK on success.
  */
-SYN_Status syn_slab_init(SYN_SlabAllocator *slab,
-                         void *backing_memory,
-                         size_t total_size,
-                         const size_t *block_sizes,
-                         const size_t *blocks_per_class,
+SYN_Status syn_slab_init(SYN_SlabAllocator *slab, void *backing_memory, size_t total_size,
+                         const size_t *block_sizes, const size_t *blocks_per_class,
                          size_t num_classes);
 
 /**

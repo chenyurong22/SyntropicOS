@@ -3,8 +3,8 @@
  * @brief Tests for the JSON writer.
  */
 
-#include "unity/unity.h"
 #include "syntropic/util/syn_json_write.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
@@ -72,8 +72,7 @@ void test_json_key_bool(void)
     syn_json_key_bool(&w, "connected", true);
     syn_json_key_bool(&w, "error", false);
     syn_json_obj_close(&w);
-    TEST_ASSERT_EQUAL_STRING(
-        "{\"connected\":true,\"error\":false}", syn_json_str(&w));
+    TEST_ASSERT_EQUAL_STRING("{\"connected\":true,\"error\":false}", syn_json_str(&w));
 }
 
 void test_json_key_null(void)
@@ -93,9 +92,8 @@ void test_json_multiple_keys(void)
     syn_json_key_int(&w, "uptime", 12345);
     syn_json_key_bool(&w, "wifi", true);
     syn_json_obj_close(&w);
-    TEST_ASSERT_EQUAL_STRING(
-        "{\"device\":\"esp32\",\"uptime\":12345,\"wifi\":true}",
-        syn_json_str(&w));
+    TEST_ASSERT_EQUAL_STRING("{\"device\":\"esp32\",\"uptime\":12345,\"wifi\":true}",
+                             syn_json_str(&w));
 }
 
 void test_json_nested_object(void)
@@ -108,9 +106,7 @@ void test_json_nested_object(void)
     syn_json_key_int(&w, "port", 80);
     syn_json_obj_close(&w);
     syn_json_obj_close(&w);
-    TEST_ASSERT_EQUAL_STRING(
-        "{\"net\":{\"ip\":\"192.168.1.1\",\"port\":80}}",
-        syn_json_str(&w));
+    TEST_ASSERT_EQUAL_STRING("{\"net\":{\"ip\":\"192.168.1.1\",\"port\":80}}", syn_json_str(&w));
 }
 
 void test_json_array_values(void)
@@ -124,8 +120,7 @@ void test_json_array_values(void)
     syn_json_val_int(&w, 67);
     syn_json_arr_close(&w);
     syn_json_obj_close(&w);
-    TEST_ASSERT_EQUAL_STRING(
-        "{\"sensors\":[23,45,67]}", syn_json_str(&w));
+    TEST_ASSERT_EQUAL_STRING("{\"sensors\":[23,45,67]}", syn_json_str(&w));
 }
 
 void test_json_string_array(void)
@@ -144,8 +139,7 @@ void test_json_escaping(void)
     syn_json_obj_open(&w);
     syn_json_key_str(&w, "msg", "hello \"world\"\nline2");
     syn_json_obj_close(&w);
-    TEST_ASSERT_EQUAL_STRING(
-        "{\"msg\":\"hello \\\"world\\\"\\nline2\"}", syn_json_str(&w));
+    TEST_ASSERT_EQUAL_STRING("{\"msg\":\"hello \\\"world\\\"\\nline2\"}", syn_json_str(&w));
 }
 
 void test_json_overflow(void)
@@ -196,9 +190,9 @@ static void test_json_extra_escapes(void)
     syn_json_key_str(&w, "s", "a\\b\rc\td"); /* backslash, CR, TAB */
     syn_json_obj_close(&w);
     const char *out = syn_json_str(&w);
-    TEST_ASSERT_NOT_NULL(strstr(out, "\\\\"));  /* escaped backslash */
-    TEST_ASSERT_NOT_NULL(strstr(out, "\\r"));   /* escaped CR */
-    TEST_ASSERT_NOT_NULL(strstr(out, "\\t"));   /* escaped TAB */
+    TEST_ASSERT_NOT_NULL(strstr(out, "\\\\")); /* escaped backslash */
+    TEST_ASSERT_NOT_NULL(strstr(out, "\\r"));  /* escaped CR */
+    TEST_ASSERT_NOT_NULL(strstr(out, "\\t"));  /* escaped TAB */
 }
 
 /** jw_puts overflow mid-string — exercises lines 45-46 */

@@ -13,18 +13,16 @@
  */
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
-#if defined(PICO_BOARD) && !defined(ARDUINO) && \
-    defined(SYN_USE_MULTICORE) && SYN_USE_MULTICORE
-
-#include "syntropic/common/syn_defs.h"
-#include "syntropic/port/syn_port_spinlock.h"
-#include "syntropic/common/syn_barrier.h"
+#if defined(PICO_BOARD) && !defined(ARDUINO) && defined(SYN_USE_MULTICORE) && SYN_USE_MULTICORE
 
 #include "hardware/sync.h"
 #include "pico/multicore.h"
+#include "syntropic/common/syn_barrier.h"
+#include "syntropic/common/syn_defs.h"
+#include "syntropic/port/syn_port_spinlock.h"
 
 /* ── Per-lock saved interrupt state ────────────────────────────────────── */
 
@@ -64,7 +62,8 @@ void syn_port_memory_barrier(void)
 
 void syn_port_spinlock_acquire(uint8_t id)
 {
-    if (id >= SYN_SPINLOCK_COUNT) return;
+    if (id >= SYN_SPINLOCK_COUNT)
+        return;
     ensure_spinlocks_init();
 
     spin_lock_t *lock = spin_lock_instance(s_hw_lock_num[id]);
@@ -73,7 +72,8 @@ void syn_port_spinlock_acquire(uint8_t id)
 
 void syn_port_spinlock_release(uint8_t id)
 {
-    if (id >= SYN_SPINLOCK_COUNT) return;
+    if (id >= SYN_SPINLOCK_COUNT)
+        return;
 
     spin_lock_t *lock = spin_lock_instance(s_hw_lock_num[id]);
     spin_unlock(lock, s_saved_irq[id]);
@@ -81,12 +81,14 @@ void syn_port_spinlock_release(uint8_t id)
 
 bool syn_port_spinlock_try_acquire(uint8_t id)
 {
-    if (id >= SYN_SPINLOCK_COUNT) return false;
+    if (id >= SYN_SPINLOCK_COUNT)
+        return false;
     ensure_spinlocks_init();
 
     spin_lock_t *lock = spin_lock_instance(s_hw_lock_num[id]);
 
-    if (is_spin_locked(lock)) return false;
+    if (is_spin_locked(lock))
+        return false;
 
     uint32_t save = save_and_disable_interrupts();
     bool acquired = spin_try_lock_unsafe(lock);

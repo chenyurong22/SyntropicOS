@@ -3,14 +3,13 @@
  * @brief Unity tests for syn_servo.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/motor/syn_servo.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_servo(void)
 {
-
     SYN_Servo servo;
     syn_servo_init(&servo, 1000, 2000, 180);
 
@@ -39,8 +38,8 @@ static void test_servo(void)
 
     /* Smooth move */
     mock_tick_ms = 0;
-    syn_servo_set_angle(&servo, 0);   /* start at 0° (1000µs) */
-    syn_servo_move_to(&servo, 180, 1000);  /* move to 180° over 1s */
+    syn_servo_set_angle(&servo, 0);       /* start at 0° (1000µs) */
+    syn_servo_move_to(&servo, 180, 1000); /* move to 180° over 1s */
     TEST_ASSERT_FALSE(syn_servo_at_target(&servo));
 
     mock_tick_advance(500);

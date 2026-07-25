@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_TIMESYNC) || SYN_USE_TIMESYNC
@@ -9,10 +9,11 @@
  * @brief High-precision time discipline and clock synchronization implementation.
  */
 
-#include "syn_timesync.h"
 #include "../util/syn_assert.h"
-#include <string.h>
+#include "syn_timesync.h"
+
 #include <stdlib.h>
+#include <string.h>
 
 /* ── Init ───────────────────────────────────────────────────────────────── */
 
@@ -35,8 +36,7 @@ void syn_timesync_init(SYN_TimeSync *tsync)
 
 /* ── Bind PPS ───────────────────────────────────────────────────────────── */
 
-SYN_Status syn_timesync_bind_pps(SYN_TimeSync *tsync,
-                                 const SYN_HPTimestamp *pps_ts,
+SYN_Status syn_timesync_bind_pps(SYN_TimeSync *tsync, const SYN_HPTimestamp *pps_ts,
                                  uint64_t utc_sec)
 {
     if (tsync == NULL || pps_ts == NULL) {
@@ -61,11 +61,11 @@ SYN_Status syn_timesync_bind_pps(SYN_TimeSync *tsync,
 
     /* Update anchors */
     tsync->prev_pps_ticks = tsync->last_pps_ticks;
-    tsync->last_pps_ts    = *pps_ts;
+    tsync->last_pps_ts = *pps_ts;
     tsync->last_pps_ticks = curr_ticks;
-    tsync->last_utc_sec   = utc_sec;
+    tsync->last_utc_sec = utc_sec;
     tsync->pps_count++;
-    tsync->has_pps_lock   = true;
+    tsync->has_pps_lock = true;
 
 #if SYN_TIMESYNC_HAS_RTC
     /* Discipline hardware RTC to GPS time if RTC is enabled */
@@ -81,9 +81,8 @@ SYN_Status syn_timesync_bind_pps(SYN_TimeSync *tsync,
 
 /* ── Resolve UTC ────────────────────────────────────────────────────────── */
 
-SYN_Status syn_timesync_resolve_utc(const SYN_TimeSync *tsync,
-                                     const SYN_HPTimestamp *event_ts,
-                                     SYN_UTCTimestamp *out_utc)
+SYN_Status syn_timesync_resolve_utc(const SYN_TimeSync *tsync, const SYN_HPTimestamp *event_ts,
+                                    SYN_UTCTimestamp *out_utc)
 {
     if (tsync == NULL || event_ts == NULL || out_utc == NULL) {
         return SYN_INVALID_PARAM;
@@ -129,22 +128,20 @@ SYN_Status syn_timesync_resolve_utc(const SYN_TimeSync *tsync,
 
     /* Compute total seconds and sub-second nanoseconds */
     int64_t sec_offset = ns_delta / 1000000000LL;
-    int64_t nsec_rem   = ns_delta % 1000000000LL;
+    int64_t nsec_rem = ns_delta % 1000000000LL;
 
     if (nsec_rem < 0) {
         sec_offset -= 1;
-        nsec_rem   += 1000000000LL;
+        nsec_rem += 1000000000LL;
     }
 
-    out_utc->sec  = (uint64_t)((int64_t)tsync->last_utc_sec + sec_offset);
+    out_utc->sec = (uint64_t)((int64_t)tsync->last_utc_sec + sec_offset);
     out_utc->nsec = (uint32_t)nsec_rem;
 
     /*
      * Quality Tier & Uncertainty Evaluation
      */
-    uint64_t elapsed_s = (tick_delta >= 0)
-                            ? (uint64_t)tick_delta / freq_hz
-                            : 0;
+    uint64_t elapsed_s = (tick_delta >= 0) ? (uint64_t)tick_delta / freq_hz : 0;
 
     if (elapsed_s <= 1) {
         /* Tier 1: Active PPS lock within 1 second */
@@ -176,8 +173,7 @@ SYN_Status syn_timesync_resolve_utc(const SYN_TimeSync *tsync,
 
 /* ── Epoch Nanoseconds Helper ───────────────────────────────────────────── */
 
-uint64_t syn_timesync_to_epoch_ns(const SYN_TimeSync *tsync,
-                                  const SYN_HPTimestamp *event_ts)
+uint64_t syn_timesync_to_epoch_ns(const SYN_TimeSync *tsync, const SYN_HPTimestamp *event_ts)
 {
     SYN_UTCTimestamp utc;
     if (syn_timesync_resolve_utc(tsync, event_ts, &utc) != SYN_OK) {

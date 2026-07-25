@@ -20,34 +20,34 @@ extern "C" {
  * @brief MQTT client connection states.
  */
 typedef enum {
-    SYN_MQTT_DISCONNECTED,           /**< Connection is down, client inactive */
-    SYN_MQTT_CONNECTING,             /**< Actively opening TCP socket and sending MQTT CONNECT */
-    SYN_MQTT_CONNECTED,              /**< Connected and authenticated, ready to sub/pub */
+    SYN_MQTT_DISCONNECTED, /**< Connection is down, client inactive */
+    SYN_MQTT_CONNECTING,   /**< Actively opening TCP socket and sending MQTT CONNECT */
+    SYN_MQTT_CONNECTED,    /**< Connected and authenticated, ready to sub/pub */
 } SYN_MqttState;
 
 /**
  * @brief Non-blocking packet reception states.
  */
 typedef enum {
-    SYN_MQTT_RX_IDLE,             /**< Waiting for fixed header opcode byte */
-    SYN_MQTT_RX_REMAINING_LEN,    /**< Decoding variable-length packet size */
-    SYN_MQTT_RX_PAYLOAD,          /**< Accumulating packet payload into rx_buf */
-    SYN_MQTT_RX_DISCARD,          /**< Discarding bytes of an oversized packet */
+    SYN_MQTT_RX_IDLE,          /**< Waiting for fixed header opcode byte */
+    SYN_MQTT_RX_REMAINING_LEN, /**< Decoding variable-length packet size */
+    SYN_MQTT_RX_PAYLOAD,       /**< Accumulating packet payload into rx_buf */
+    SYN_MQTT_RX_DISCARD,       /**< Discarding bytes of an oversized packet */
 } SYN_MqttRxPhase;
 
 /**
  * @brief MQTT client context structure.
  */
 typedef struct {
-    SYN_Socket       sock;           /**< TCP socket connection to broker */
-    SYN_MqttState    state;          /**< Connection state machine status */
-    const char      *host;           /**< Hostname or IP of the broker */
-    uint16_t         port;           /**< Broker Port (typically 1883) */
-    const char      *client_id;      /**< Client identifier string (must be unique) */
-    const char      *username;       /**< Optional login username, or NULL */
-    const char      *password;       /**< Optional login password, or NULL */
-    uint16_t         keep_alive_s;   /**< Keep alive ping interval in seconds */
-    
+    SYN_Socket sock;       /**< TCP socket connection to broker */
+    SYN_MqttState state;   /**< Connection state machine status */
+    const char *host;      /**< Hostname or IP of the broker */
+    uint16_t port;         /**< Broker Port (typically 1883) */
+    const char *client_id; /**< Client identifier string (must be unique) */
+    const char *username;  /**< Optional login username, or NULL */
+    const char *password;  /**< Optional login password, or NULL */
+    uint16_t keep_alive_s; /**< Keep alive ping interval in seconds */
+
     /**
      * @brief User callback for incoming publications.
      * @param topic Topic name string.
@@ -56,30 +56,29 @@ typedef struct {
      * @param ctx User-defined context pointer.
      */
     void (*on_message)(const char *topic, const uint8_t *payload, size_t len, void *ctx);
-    void            *ctx;            /**< Context pointer for on_message callback */
+    void *ctx; /**< Context pointer for on_message callback */
 
-    uint8_t         *rx_buf;         /**< Receive packet formatting buffer */
-    size_t           rx_buf_size;    /**< Capacity of rx_buf */
-    uint8_t         *tx_buf;         /**< Transmit packet formatting buffer */
-    size_t           tx_buf_size;    /**< Capacity of tx_buf */
+    uint8_t *rx_buf;    /**< Receive packet formatting buffer */
+    size_t rx_buf_size; /**< Capacity of rx_buf */
+    uint8_t *tx_buf;    /**< Transmit packet formatting buffer */
+    size_t tx_buf_size; /**< Capacity of tx_buf */
 
-    uint32_t         last_activity_ms; /**< Timestamp of last transmitted or received packet */
-    uint16_t         next_packet_id;  /**< Sequence counter for packet identifiers */
-    
-    uint16_t         pending_puback_id; /**< Awaiting QoS 1 puback confirmation packet ID */
-    uint32_t         pending_puback_ms; /**< Timeout timer for pending puback confirmation */
-    uint8_t          retransmit_buf[128]; /**< Buffer for storing unacknowledged QoS 1 packet */
-    size_t           retransmit_len;    /**< Length of packet in retransmit_buf */
+    uint32_t last_activity_ms; /**< Timestamp of last transmitted or received packet */
+    uint16_t next_packet_id;   /**< Sequence counter for packet identifiers */
+
+    uint16_t pending_puback_id;  /**< Awaiting QoS 1 puback confirmation packet ID */
+    uint32_t pending_puback_ms;  /**< Timeout timer for pending puback confirmation */
+    uint8_t retransmit_buf[128]; /**< Buffer for storing unacknowledged QoS 1 packet */
+    size_t retransmit_len;       /**< Length of packet in retransmit_buf */
 
     /* ── Non-blocking RX State Machine ─────────────────────────────────── */
-    SYN_MqttRxPhase  rx_phase;       /**< Current RX state machine phase */
-    uint8_t          rx_header;      /**< Opcode byte of current packet */
-    uint32_t         rx_rem_len;     /**< Total remaining length of current packet */
-    uint32_t         rx_mult;        /**< Multiplier for decoding varint remaining len */
-    size_t           rx_pos;         /**< Bytes read into rx_buf or discarded so far */
-    uint32_t         rx_deadline;    /**< Tick deadline for incomplete packet RX */
+    SYN_MqttRxPhase rx_phase; /**< Current RX state machine phase */
+    uint8_t rx_header;        /**< Opcode byte of current packet */
+    uint32_t rx_rem_len;      /**< Total remaining length of current packet */
+    uint32_t rx_mult;         /**< Multiplier for decoding varint remaining len */
+    size_t rx_pos;            /**< Bytes read into rx_buf or discarded so far */
+    uint32_t rx_deadline;     /**< Tick deadline for incomplete packet RX */
 } SYN_MqttClient;
-
 
 /**
  * @brief Initialize the MQTT client.
@@ -102,8 +101,7 @@ typedef struct {
  */
 SYN_Status syn_mqtt_init(SYN_MqttClient *client, const char *host, uint16_t port,
                          const char *client_id, const char *username, const char *password,
-                         uint16_t keep_alive_s,
-                         uint8_t *rx_buf, size_t rx_buf_size,
+                         uint16_t keep_alive_s, uint8_t *rx_buf, size_t rx_buf_size,
                          uint8_t *tx_buf, size_t tx_buf_size);
 
 /**
@@ -120,8 +118,8 @@ SYN_Status syn_mqtt_init(SYN_MqttClient *client, const char *host, uint16_t port
  * @param retain       Retain flag on broker.
  * @return SYN_OK on queued, or error status if payload bounds exceeded.
  */
-SYN_Status syn_mqtt_publish(SYN_MqttClient *client, const char *topic,
-                            const void *payload, size_t len, uint8_t qos, bool retain);
+SYN_Status syn_mqtt_publish(SYN_MqttClient *client, const char *topic, const void *payload,
+                            size_t len, uint8_t qos, bool retain);
 
 /**
  * @brief Subscribe to a topic.

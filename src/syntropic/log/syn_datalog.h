@@ -15,9 +15,10 @@
 
 #include "../common/syn_defs.h"
 #include "../util/syn_ringbuf.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,14 +28,14 @@ extern "C" {
  * @brief Telemetry frame header.
  */
 typedef struct {
-    uint16_t id;    /**< User-defined stream ID */
-    uint16_t len;   /**< Payload length in bytes */
+    uint16_t id;  /**< User-defined stream ID */
+    uint16_t len; /**< Payload length in bytes */
 } SYN_DataLogHeader;
 
 /** @brief Data logger control block — ring buffer + drop counter. */
 typedef struct {
-    SYN_RingBuf rb;              /**< Ring buffer backend                */
-    uint32_t dropped_frames;     /**< Counter for frames dropped due to full buffer */
+    SYN_RingBuf rb;          /**< Ring buffer backend                */
+    uint32_t dropped_frames; /**< Counter for frames dropped due to full buffer */
 } SYN_DataLog;
 
 /**
@@ -70,7 +71,8 @@ size_t syn_datalog_read(SYN_DataLog *log, uint16_t *out_id, void *out_data, size
  * @param log  Logger instance.
  * @return Drop count.
  */
-static inline uint32_t syn_datalog_get_dropped(const SYN_DataLog *log) {
+static inline uint32_t syn_datalog_get_dropped(const SYN_DataLog *log)
+{
     return log->dropped_frames;
 }
 
@@ -78,7 +80,8 @@ static inline uint32_t syn_datalog_get_dropped(const SYN_DataLog *log) {
  * @brief Reset the datalog, discarding all frames.
  * @param log  Logger instance.
  */
-static inline void syn_datalog_reset(SYN_DataLog *log) {
+static inline void syn_datalog_reset(SYN_DataLog *log)
+{
     syn_ringbuf_reset(&log->rb);
     log->dropped_frames = 0;
 }
@@ -88,7 +91,8 @@ static inline void syn_datalog_reset(SYN_DataLog *log) {
  * @param log  Logger instance.
  * @return Bytes available.
  */
-static inline size_t syn_datalog_available(const SYN_DataLog *log) {
+static inline size_t syn_datalog_available(const SYN_DataLog *log)
+{
     return syn_ringbuf_count(&log->rb);
 }
 

@@ -28,7 +28,7 @@
 #define SYN_X25519_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_X25519) || SYN_USE_X25519
@@ -48,9 +48,7 @@ extern "C" {
  * @param scalar      32-byte private scalar (should be clamped).
  * @param point       32-byte public point (peer's public key).
  */
-void syn_x25519(uint8_t shared_out[32],
-                const uint8_t scalar[32],
-                const uint8_t point[32]);
+void syn_x25519(uint8_t shared_out[32], const uint8_t scalar[32], const uint8_t point[32]);
 
 /**
  * @brief Derive a public key from a private key.
@@ -60,8 +58,7 @@ void syn_x25519(uint8_t shared_out[32],
  * @param public_out   Output: 32-byte public key.
  * @param private_key  32-byte private key (should be clamped).
  */
-void syn_x25519_pubkey(uint8_t public_out[32],
-                       const uint8_t private_key[32]);
+void syn_x25519_pubkey(uint8_t public_out[32], const uint8_t private_key[32]);
 
 /**
  * @brief Clamp a 32-byte private key per RFC 7748.
@@ -73,9 +70,9 @@ void syn_x25519_pubkey(uint8_t public_out[32],
  */
 static inline void syn_x25519_clamp(uint8_t key[32])
 {
-    key[0]  &= 248;   /* Clear low 3 bits (multiple of 8) */
-    key[31] &= 127;   /* Clear high bit */
-    key[31] |= 64;    /* Set second-highest bit */
+    key[0] &= 248;  /* Clear low 3 bits (multiple of 8) */
+    key[31] &= 127; /* Clear high bit */
+    key[31] |= 64;  /* Set second-highest bit */
 }
 
 #ifdef __cplusplus

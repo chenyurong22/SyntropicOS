@@ -21,8 +21,9 @@
 #ifndef SYN_HWWDT_H
 #define SYN_HWWDT_H
 
-#include <stdint.h>
 #include "../common/syn_defs.h"
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

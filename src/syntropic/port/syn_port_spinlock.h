@@ -36,14 +36,15 @@
 #define SYN_PORT_SPINLOCK_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if defined(SYN_USE_MULTICORE) && SYN_USE_MULTICORE
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,7 +54,7 @@ extern "C" {
 
 /** @brief Number of spinlock IDs available. Override in syn_config.h. */
 #ifndef SYN_SPINLOCK_COUNT
-  #define SYN_SPINLOCK_COUNT  4
+#define SYN_SPINLOCK_COUNT 4
 #endif
 
 /* ── Port functions (user implements) ──────────────────────────────────── */

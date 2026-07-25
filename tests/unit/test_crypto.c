@@ -7,15 +7,14 @@
  * and Python (hashlib) reference implementations.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/crypto/syn_blake2s.h"
 #include "syntropic/crypto/syn_chacha20poly1305.h"
 #include "syntropic/crypto/syn_x25519.h"
+#include "syntropic/util/syn_fmt.h"
+#include "unity/unity.h"
 
 #include <string.h>
-
-#include "syntropic/util/syn_fmt.h"
 
 static void hex2bin(const char *hex, uint8_t *out, size_t len)
 {
@@ -34,7 +33,8 @@ static void test_blake2s_abc(void)
 
     uint8_t expected[32];
     hex2bin("508c5e8c327c14e2e1a72ba34eeb452f"
-            "37458b209ed63a294d999b4c86675982", expected, 32);
+            "37458b209ed63a294d999b4c86675982",
+            expected, 32);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, hash, 32);
 }
 
@@ -46,7 +46,8 @@ static void test_blake2s_empty(void)
 
     uint8_t expected[32];
     hex2bin("69217a3079908094e11121d042354a7c"
-            "1f55b6482ca1a51e1b250dfd1ed0eef9", expected, 32);
+            "1f55b6482ca1a51e1b250dfd1ed0eef9",
+            expected, 32);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, hash, 32);
 }
 
@@ -55,13 +56,15 @@ static void test_blake2s_empty(void)
 static void test_blake2s_seq64(void)
 {
     uint8_t data[64], hash[32];
-    for (int i = 0; i < 64; i++) data[i] = (uint8_t)i;
+    for (int i = 0; i < 64; i++)
+        data[i] = (uint8_t)i;
 
     syn_blake2s(data, 64, hash, 32);
 
     uint8_t expected[32];
     hex2bin("56f34e8b96557e90c1f24b52d0c89d51"
-            "086acf1b00f634cf1dde9233b8eaaa3e", expected, 32);
+            "086acf1b00f634cf1dde9233b8eaaa3e",
+            expected, 32);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, hash, 32);
 }
 
@@ -72,14 +75,16 @@ static void test_blake2s_multi_block(void)
     uint8_t data[66], hash[32];
     /* C value || "WireGuard v1 zx2c4 Jason@zx2c4.com" */
     hex2bin("60e26daef327efc02ec335e2a025d2d0"
-            "16eb4206f87277f52d38d1988b78cd36", data, 32);
+            "16eb4206f87277f52d38d1988b78cd36",
+            data, 32);
     memcpy(data + 32, "WireGuard v1 zx2c4 Jason@zx2c4.com", 34);
 
     syn_blake2s(data, 66, hash, 32);
 
     uint8_t expected[32];
     hex2bin("2211b361081ac566691243db458ad532"
-            "2d9c6c662293e8b70ee19c65ba079ef3", expected, 32);
+            "2d9c6c662293e8b70ee19c65ba079ef3",
+            expected, 32);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, hash, 32);
 }
 
@@ -87,7 +92,8 @@ static void test_blake2s_multi_block(void)
 static void test_blake2s_streaming_matches_oneshot(void)
 {
     uint8_t data[66];
-    for (int i = 0; i < 66; i++) data[i] = (uint8_t)(i * 7 + 3);
+    for (int i = 0; i < 66; i++)
+        data[i] = (uint8_t)(i * 7 + 3);
 
     uint8_t oneshot[32];
     syn_blake2s(data, 66, oneshot, 32);
@@ -106,7 +112,8 @@ static void test_blake2s_streaming_matches_oneshot(void)
 static void test_blake2s_streaming_byte_at_a_time(void)
 {
     uint8_t data[100];
-    for (int i = 0; i < 100; i++) data[i] = (uint8_t)i;
+    for (int i = 0; i < 100; i++)
+        data[i] = (uint8_t)i;
 
     uint8_t oneshot[32];
     syn_blake2s(data, 100, oneshot, 32);
@@ -125,13 +132,15 @@ static void test_blake2s_streaming_byte_at_a_time(void)
 static void test_blake2s_128_bytes(void)
 {
     uint8_t data[128], hash[32];
-    for (int i = 0; i < 128; i++) data[i] = (uint8_t)i;
+    for (int i = 0; i < 128; i++)
+        data[i] = (uint8_t)i;
 
     syn_blake2s(data, 128, hash, 32);
 
     uint8_t expected[32];
     hex2bin("1fa877de67259d19863a2a34bcc6962a"
-            "2b25fcbf5cbecd7ede8f1fa36688a796", expected, 32);
+            "2b25fcbf5cbecd7ede8f1fa36688a796",
+            expected, 32);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, hash, 32);
 }
 
@@ -139,13 +148,15 @@ static void test_blake2s_128_bytes(void)
 static void test_blake2s_256_bytes(void)
 {
     uint8_t data[256], hash[32];
-    for (int i = 0; i < 256; i++) data[i] = (uint8_t)i;
+    for (int i = 0; i < 256; i++)
+        data[i] = (uint8_t)i;
 
     syn_blake2s(data, 256, hash, 32);
 
     uint8_t expected[32];
     hex2bin("5fdeb59f681d975f52c8e69c5502e02a"
-            "12a3afcc5836ba58f42784c439228781", expected, 32);
+            "12a3afcc5836ba58f42784c439228781",
+            expected, 32);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, hash, 32);
 }
 
@@ -153,13 +164,15 @@ static void test_blake2s_256_bytes(void)
 static void test_blake2s_keyed_mac_vector(void)
 {
     uint8_t key[32], mac[32];
-    for (int i = 0; i < 32; i++) key[i] = (uint8_t)i;
+    for (int i = 0; i < 32; i++)
+        key[i] = (uint8_t)i;
 
     syn_blake2s_mac(key, 32, "abc", 3, mac, 32);
 
     uint8_t expected[32];
     hex2bin("a281f725754969a702f6fe36fc591b7d"
-            "ef866e4b70173ece402fc01c064d6b65", expected, 32);
+            "ef866e4b70173ece402fc01c064d6b65",
+            expected, 32);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, mac, 32);
 }
 
@@ -167,7 +180,8 @@ static void test_blake2s_keyed_mac_vector(void)
 static void test_blake2s_keyed_mac_16byte(void)
 {
     uint8_t key[32], mac[16];
-    for (int i = 0; i < 32; i++) key[i] = (uint8_t)i;
+    for (int i = 0; i < 32; i++)
+        key[i] = (uint8_t)i;
 
     syn_blake2s_mac(key, 32, "abc", 3, mac, 16);
 
@@ -187,7 +201,8 @@ static void test_hmac_blake2s_vector(void)
 
     uint8_t expected[32];
     hex2bin("61a1686eef8ea4b2f97bd2cd6f852244"
-            "39a7502b9e0b0b2d3526083d8ceb597c", expected, 32);
+            "39a7502b9e0b0b2d3526083d8ceb597c",
+            expected, 32);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, mac, 32);
 }
 
@@ -195,10 +210,12 @@ static void test_hmac_blake2s_vector(void)
 static void test_hmac_blake2s_streaming(void)
 {
     uint8_t key[32];
-    for (int i = 0; i < 32; i++) key[i] = (uint8_t)(i + 0x10);
+    for (int i = 0; i < 32; i++)
+        key[i] = (uint8_t)(i + 0x10);
 
     uint8_t data[64];
-    for (int i = 0; i < 64; i++) data[i] = (uint8_t)i;
+    for (int i = 0; i < 64; i++)
+        data[i] = (uint8_t)i;
 
     /* One-shot */
     uint8_t mac_oneshot[32];
@@ -223,14 +240,12 @@ static void test_hmac_blake2s_streaming(void)
 static void test_chacha20_block_rfc8439(void)
 {
     static const uint8_t key[32] = {
-        0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-        0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
-        0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
-        0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a,
+        0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+        0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
     };
     static const uint8_t nonce[12] = {
-        0x00,0x00,0x00,0x09,0x00,0x00,0x00,0x4a,
-        0x00,0x00,0x00,0x00,
+        0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x4a, 0x00, 0x00, 0x00, 0x00,
     };
     uint8_t out[64];
     syn_chacha20_block(key, nonce, 1, out);
@@ -239,7 +254,8 @@ static void test_chacha20_block_rfc8439(void)
     hex2bin("10f1e7e4d13b5915500fdd1fa32071c4"
             "c7d1f4c733c068030422aa9ac3d46c4e"
             "d2826446079faa0914c2d705d98b02a2"
-            "b5129cd1de164eb9cbd083e8a2503c4e", expected, 64);
+            "b5129cd1de164eb9cbd083e8a2503c4e",
+            expected, 64);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, out, 64);
 }
 
@@ -247,25 +263,20 @@ static void test_chacha20_block_rfc8439(void)
 static void test_chacha20_xor_rfc8439(void)
 {
     static const uint8_t key[32] = {
-        0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-        0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
-        0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
-        0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a,
+        0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+        0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
     };
     static const uint8_t nonce[12] = {
-        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x4a,
-        0x00,0x00,0x00,0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4a, 0x00, 0x00, 0x00, 0x00,
     };
     /* First 64 bytes of RFC 8439 §2.4.2 sunscreen plaintext */
     static const uint8_t plain[64] = {
-        0x4c,0x61,0x64,0x69,0x65,0x73,0x20,0x61,
-        0x6e,0x64,0x20,0x47,0x65,0x6e,0x74,0x6c,
-        0x65,0x6d,0x65,0x6e,0x20,0x6f,0x66,0x20,
-        0x74,0x68,0x65,0x20,0x63,0x6c,0x61,0x73,
-        0x73,0x20,0x6f,0x66,0x20,0x27,0x39,0x39,
-        0x3a,0x20,0x49,0x66,0x20,0x49,0x20,0x63,
-        0x6f,0x75,0x6c,0x64,0x20,0x6f,0x66,0x66,
-        0x65,0x72,0x20,0x79,0x6f,0x75,0x20,0x6f,
+        0x4c, 0x61, 0x64, 0x69, 0x65, 0x73, 0x20, 0x61, 0x6e, 0x64, 0x20, 0x47, 0x65,
+        0x6e, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x20, 0x6f, 0x66, 0x20, 0x74, 0x68,
+        0x65, 0x20, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x20, 0x6f, 0x66, 0x20, 0x27, 0x39,
+        0x39, 0x3a, 0x20, 0x49, 0x66, 0x20, 0x49, 0x20, 0x63, 0x6f, 0x75, 0x6c, 0x64,
+        0x20, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x20, 0x79, 0x6f, 0x75, 0x20, 0x6f,
     };
 
     uint8_t ct[64];
@@ -288,13 +299,13 @@ static void test_aead_roundtrip(void)
     memset(nonce, 0, 12);
 
     uint8_t plain[64], ct[64], tag[16], decrypted[64];
-    for (int i = 0; i < 64; i++) plain[i] = (uint8_t)i;
+    for (int i = 0; i < 64; i++)
+        plain[i] = (uint8_t)i;
 
     uint8_t aad[] = "test aad";
     syn_aead_encrypt(key, nonce, aad, sizeof(aad) - 1, plain, 64, ct, tag);
 
-    bool ok = syn_aead_decrypt(key, nonce, aad, sizeof(aad) - 1,
-                                ct, 64, tag, decrypted);
+    bool ok = syn_aead_decrypt(key, nonce, aad, sizeof(aad) - 1, ct, 64, tag, decrypted);
     TEST_ASSERT_TRUE(ok);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plain, decrypted, 64);
 }
@@ -340,13 +351,12 @@ static void test_aead_tamper_aad(void)
     memset(key, 0xCC, 32);
     memset(nonce, 0, 12);
 
-    uint8_t plain[8] = {'t','e','s','t','d','a','t','a'};
+    uint8_t plain[8] = {'t', 'e', 's', 't', 'd', 'a', 't', 'a'};
     uint8_t ct[8], tag[16], decrypted[8];
 
     syn_aead_encrypt(key, nonce, (uint8_t *)"good", 4, plain, 8, ct, tag);
 
-    bool ok = syn_aead_decrypt(key, nonce, (uint8_t *)"evil", 4,
-                                ct, 8, tag, decrypted);
+    bool ok = syn_aead_decrypt(key, nonce, (uint8_t *)"evil", 4, ct, 8, tag, decrypted);
     TEST_ASSERT_FALSE(ok);
 }
 
@@ -360,8 +370,7 @@ static void test_aead_empty_plaintext(void)
     uint8_t aad[] = "metadata";
     syn_aead_encrypt(key, nonce, aad, sizeof(aad) - 1, NULL, 0, NULL, tag);
 
-    bool ok = syn_aead_decrypt(key, nonce, aad, sizeof(aad) - 1,
-                                NULL, 0, tag, NULL);
+    bool ok = syn_aead_decrypt(key, nonce, aad, sizeof(aad) - 1, NULL, 0, tag, NULL);
     TEST_ASSERT_TRUE(ok);
 }
 
@@ -386,11 +395,13 @@ static void test_aead_empty_aad(void)
 static void test_aead_large(void)
 {
     uint8_t key[32], nonce[12];
-    for (int i = 0; i < 32; i++) key[i] = (uint8_t)i;
+    for (int i = 0; i < 32; i++)
+        key[i] = (uint8_t)i;
     memset(nonce, 0, 12);
 
     uint8_t plain[256], ct[256], tag[16], decrypted[256];
-    for (int i = 0; i < 256; i++) plain[i] = (uint8_t)(i ^ 0xAB);
+    for (int i = 0; i < 256; i++)
+        plain[i] = (uint8_t)(i ^ 0xAB);
 
     syn_aead_encrypt(key, nonce, NULL, 0, plain, 256, ct, tag);
 
@@ -425,15 +436,18 @@ static void test_x25519_vector1(void)
 {
     uint8_t scalar[32], u_in[32], result[32];
     hex2bin("a546e36bf0527c9d3b16154b82465edd"
-            "62144c0ac1fc5a18506a2244ba449ac4", scalar, 32);
+            "62144c0ac1fc5a18506a2244ba449ac4",
+            scalar, 32);
     hex2bin("e6db6867583030db3594c1a424b15f7c"
-            "726624ec26b3353b10a903a6d0ab1c4c", u_in, 32);
+            "726624ec26b3353b10a903a6d0ab1c4c",
+            u_in, 32);
 
     syn_x25519(result, scalar, u_in);
 
     uint8_t expected[32];
     hex2bin("c3da55379de9c6908e94ea4df28d084f"
-            "32eccf03491c71f754b4075577a28552", expected, 32);
+            "32eccf03491c71f754b4075577a28552",
+            expected, 32);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, result, 32);
 }
 
@@ -442,15 +456,18 @@ static void test_x25519_vector2(void)
 {
     uint8_t scalar[32], u_in[32], result[32];
     hex2bin("4b66e9d4d1b4673c5ad22691957d6af5"
-            "c11b6421e0ea01d42ca4169e7918ba0d", scalar, 32);
+            "c11b6421e0ea01d42ca4169e7918ba0d",
+            scalar, 32);
     hex2bin("e5210f12786811d3f4b7959d0538ae2c"
-            "31dbe7106fc03c3efc4cd549c715a493", u_in, 32);
+            "31dbe7106fc03c3efc4cd549c715a493",
+            u_in, 32);
 
     syn_x25519(result, scalar, u_in);
 
     uint8_t expected[32];
     hex2bin("95cbde9476e8907d7aade45cb4b873f8"
-            "8b595a68799fa152e6f8f7647aac7957", expected, 32);
+            "8b595a68799fa152e6f8f7647aac7957",
+            expected, 32);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, result, 32);
 }
 
@@ -499,8 +516,10 @@ static void test_x25519_shared_secret_symmetry(void)
     uint8_t a_priv[32], a_pub[32];
     uint8_t b_priv[32], b_pub[32];
 
-    memset(a_priv, 0x01, 32); syn_x25519_clamp(a_priv);
-    memset(b_priv, 0x02, 32); syn_x25519_clamp(b_priv);
+    memset(a_priv, 0x01, 32);
+    syn_x25519_clamp(a_priv);
+    memset(b_priv, 0x02, 32);
+    syn_x25519_clamp(b_priv);
 
     syn_x25519_pubkey(a_pub, a_priv);
     syn_x25519_pubkey(b_pub, b_priv);

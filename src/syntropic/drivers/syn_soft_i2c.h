@@ -12,8 +12,9 @@
 #define SYN_SOFT_I2C_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,9 +24,9 @@ extern "C" {
  * @brief Software I2C instance.
  */
 typedef struct {
-    SYN_GPIO_Pin scl;              /**< SCL GPIO pin identifier */
-    SYN_GPIO_Pin sda;              /**< SDA GPIO pin identifier */
-    uint32_t delay_loops;          /**< Iteration count for half-clock software delay */
+    SYN_GPIO_Pin scl;     /**< SCL GPIO pin identifier */
+    SYN_GPIO_Pin sda;     /**< SDA GPIO pin identifier */
+    uint32_t delay_loops; /**< Iteration count for half-clock software delay */
 } SYN_SoftI2C;
 
 /**
@@ -80,9 +81,8 @@ uint8_t syn_soft_i2c_read(const SYN_SoftI2C *i2c, bool ack);
  * @param rx_len    Number of bytes to read.
  * @return true if all bytes were ACKed, false on NACK.
  */
-bool syn_soft_i2c_write_read(SYN_SoftI2C *i2c, uint8_t dev_addr,
-                              const uint8_t *tx_data, size_t tx_len,
-                              uint8_t *rx_data, size_t rx_len);
+bool syn_soft_i2c_write_read(SYN_SoftI2C *i2c, uint8_t dev_addr, const uint8_t *tx_data,
+                             size_t tx_len, uint8_t *rx_data, size_t rx_len);
 
 #ifdef __cplusplus
 }

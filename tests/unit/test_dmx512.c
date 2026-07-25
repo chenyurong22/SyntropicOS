@@ -3,10 +3,10 @@
  * @brief Unity unit tests for DMX512 Master & Slave Protocol Stack.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/proto/syn_dmx512.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_dmx512_master_init_and_channels(void)
 {

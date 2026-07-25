@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_MATRIX) || SYN_USE_MATRIX
@@ -12,8 +12,8 @@
  * int64_t accumulators preserve full Q16 precision in multiply chains.
  */
 
-#include "syn_matrix.h"
 #include "../util/syn_assert.h"
+#include "syn_matrix.h"
 
 #include <string.h>
 
@@ -24,7 +24,7 @@
 void syn_matrix_identity(SYN_Matrix *m)
 {
     SYN_ASSERT(m != NULL);
-    SYN_ASSERT(m->rows == m->cols);  /* Must be square */
+    SYN_ASSERT(m->rows == m->cols); /* Must be square */
 
     memset(m->data, 0, (size_t)m->rows * m->cols * sizeof(q16_t));
     uint8_t i;
@@ -106,8 +106,7 @@ void syn_matrix_mul(const SYN_Matrix *a, const SYN_Matrix *b, SYN_Matrix *out)
     }
 }
 
-void syn_matrix_mul_vec(const SYN_Matrix *m, const q16_t *v_in,
-                        q16_t *v_out, uint8_t n_in)
+void syn_matrix_mul_vec(const SYN_Matrix *m, const q16_t *v_in, q16_t *v_out, uint8_t n_in)
 {
     SYN_ASSERT(m != NULL && v_in != NULL && v_out != NULL);
     SYN_ASSERT(m->cols == n_in);
@@ -194,24 +193,48 @@ static q16_t det_4x4(const q16_t *d)
     q16_t minor0[9], minor1[9], minor2[9], minor3[9];
 
     /* Minor of d[0]: rows 1-3, cols 1-3 */
-    minor0[0] = d[5];  minor0[1] = d[6];  minor0[2] = d[7];
-    minor0[3] = d[9];  minor0[4] = d[10]; minor0[5] = d[11];
-    minor0[6] = d[13]; minor0[7] = d[14]; minor0[8] = d[15];
+    minor0[0] = d[5];
+    minor0[1] = d[6];
+    minor0[2] = d[7];
+    minor0[3] = d[9];
+    minor0[4] = d[10];
+    minor0[5] = d[11];
+    minor0[6] = d[13];
+    minor0[7] = d[14];
+    minor0[8] = d[15];
 
     /* Minor of d[1]: rows 1-3, cols 0,2,3 */
-    minor1[0] = d[4];  minor1[1] = d[6];  minor1[2] = d[7];
-    minor1[3] = d[8];  minor1[4] = d[10]; minor1[5] = d[11];
-    minor1[6] = d[12]; minor1[7] = d[14]; minor1[8] = d[15];
+    minor1[0] = d[4];
+    minor1[1] = d[6];
+    minor1[2] = d[7];
+    minor1[3] = d[8];
+    minor1[4] = d[10];
+    minor1[5] = d[11];
+    minor1[6] = d[12];
+    minor1[7] = d[14];
+    minor1[8] = d[15];
 
     /* Minor of d[2]: rows 1-3, cols 0,1,3 */
-    minor2[0] = d[4];  minor2[1] = d[5];  minor2[2] = d[7];
-    minor2[3] = d[8];  minor2[4] = d[9];  minor2[5] = d[11];
-    minor2[6] = d[12]; minor2[7] = d[13]; minor2[8] = d[15];
+    minor2[0] = d[4];
+    minor2[1] = d[5];
+    minor2[2] = d[7];
+    minor2[3] = d[8];
+    minor2[4] = d[9];
+    minor2[5] = d[11];
+    minor2[6] = d[12];
+    minor2[7] = d[13];
+    minor2[8] = d[15];
 
     /* Minor of d[3]: rows 1-3, cols 0,1,2 */
-    minor3[0] = d[4];  minor3[1] = d[5];  minor3[2] = d[6];
-    minor3[3] = d[8];  minor3[4] = d[9];  minor3[5] = d[10];
-    minor3[6] = d[12]; minor3[7] = d[13]; minor3[8] = d[14];
+    minor3[0] = d[4];
+    minor3[1] = d[5];
+    minor3[2] = d[6];
+    minor3[3] = d[8];
+    minor3[4] = d[9];
+    minor3[5] = d[10];
+    minor3[6] = d[12];
+    minor3[7] = d[13];
+    minor3[8] = d[14];
 
     int64_t result = ((int64_t)d[0] * det_3x3(minor0)) >> Q16_SHIFT;
     result -= ((int64_t)d[1] * det_3x3(minor1)) >> Q16_SHIFT;
@@ -227,11 +250,16 @@ q16_t syn_matrix_det(const SYN_Matrix *m)
     SYN_ASSERT(m->rows == m->cols);
 
     switch (m->rows) {
-    case 1:  return m->data[0];
-    case 2:  return det_2x2(m->data);
-    case 3:  return det_3x3(m->data);
-    case 4:  return det_4x4(m->data);
-    default: return 0;  /* Unsupported */
+    case 1:
+        return m->data[0];
+    case 2:
+        return det_2x2(m->data);
+    case 3:
+        return det_3x3(m->data);
+    case 4:
+        return det_4x4(m->data);
+    default:
+        return 0; /* Unsupported */
     }
 }
 
@@ -248,14 +276,15 @@ q16_t syn_matrix_det(const SYN_Matrix *m)
 static SYN_Status inv_2x2(const SYN_Matrix *m, SYN_Matrix *out)
 {
     q16_t det = det_2x2(m->data);
-    if (det == 0) return SYN_ERROR;
+    if (det == 0)
+        return SYN_ERROR;
 
     /* [a b]^-1 = (1/det) * [ d -b]
      * [c d]                [-c  a] */
-    SYN_MAT_AT(out, 0, 0) =  q16_div(m->data[3], det);
+    SYN_MAT_AT(out, 0, 0) = q16_div(m->data[3], det);
     SYN_MAT_AT(out, 0, 1) = -q16_div(m->data[1], det);
     SYN_MAT_AT(out, 1, 0) = -q16_div(m->data[2], det);
-    SYN_MAT_AT(out, 1, 1) =  q16_div(m->data[0], det);
+    SYN_MAT_AT(out, 1, 1) = q16_div(m->data[0], det);
 
     return SYN_OK;
 }
@@ -269,7 +298,8 @@ static SYN_Status inv_2x2(const SYN_Matrix *m, SYN_Matrix *out)
 static SYN_Status inv_3x3(const SYN_Matrix *m, SYN_Matrix *out)
 {
     q16_t det = det_3x3(m->data);
-    if (det == 0) return SYN_ERROR;
+    if (det == 0)
+        return SYN_ERROR;
 
     const q16_t *d = m->data;
 
@@ -333,7 +363,8 @@ static SYN_Status inv_4x4(const SYN_Matrix *m, SYN_Matrix *out)
             }
         }
 
-        if (max_val == 0) return SYN_ERROR;  /* Singular */
+        if (max_val == 0)
+            return SYN_ERROR; /* Singular */
 
         /* Swap rows */
         if (max_row != k) {
@@ -352,7 +383,8 @@ static SYN_Status inv_4x4(const SYN_Matrix *m, SYN_Matrix *out)
 
         /* Eliminate column k from all other rows */
         for (i = 0; i < 4; i++) {
-            if (i == k) continue;
+            if (i == k)
+                continue;
             q16_t factor = aug[i][k];
             for (j = 0; j < 8; j++) {
                 aug[i][j] -= q16_mul(factor, aug[k][j]);
@@ -378,7 +410,8 @@ static SYN_Status inv_4x4(const SYN_Matrix *m, SYN_Matrix *out)
  */
 static SYN_Status inv_1x1(const SYN_Matrix *m, SYN_Matrix *out)
 {
-    if (m->data[0] == 0) return SYN_ERROR;
+    if (m->data[0] == 0)
+        return SYN_ERROR;
     out->data[0] = q16_div(Q16_ONE, m->data[0]);
     return SYN_OK;
 }
@@ -390,11 +423,16 @@ SYN_Status syn_matrix_inv(const SYN_Matrix *m, SYN_Matrix *out)
     SYN_ASSERT(out->rows == m->rows && out->cols == m->cols);
 
     switch (m->rows) {
-    case 1:  return inv_1x1(m, out);
-    case 2:  return inv_2x2(m, out);
-    case 3:  return inv_3x3(m, out);
-    case 4:  return inv_4x4(m, out);
-    default: return SYN_ERROR;  /* Unsupported dimension */
+    case 1:
+        return inv_1x1(m, out);
+    case 2:
+        return inv_2x2(m, out);
+    case 3:
+        return inv_3x3(m, out);
+    case 4:
+        return inv_4x4(m, out);
+    default:
+        return SYN_ERROR; /* Unsupported dimension */
     }
 }
 
@@ -411,10 +449,10 @@ void syn_matrix_rotate_2d(SYN_Matrix *out, q16_t angle)
     q16_t s = q16_sin(angle);
 
     syn_matrix_identity(out);
-    SYN_MAT_AT(out, 0, 0) =  c;
+    SYN_MAT_AT(out, 0, 0) = c;
     SYN_MAT_AT(out, 0, 1) = -s;
-    SYN_MAT_AT(out, 1, 0) =  s;
-    SYN_MAT_AT(out, 1, 1) =  c;
+    SYN_MAT_AT(out, 1, 0) = s;
+    SYN_MAT_AT(out, 1, 1) = c;
 }
 
 void syn_matrix_translate_2d(SYN_Matrix *out, q16_t tx, q16_t ty)
@@ -451,10 +489,10 @@ void syn_matrix_rotate_x(SYN_Matrix *out, q16_t angle)
     q16_t s = q16_sin(angle);
 
     syn_matrix_identity(out);
-    SYN_MAT_AT(out, 1, 1) =  c;
+    SYN_MAT_AT(out, 1, 1) = c;
     SYN_MAT_AT(out, 1, 2) = -s;
-    SYN_MAT_AT(out, 2, 1) =  s;
-    SYN_MAT_AT(out, 2, 2) =  c;
+    SYN_MAT_AT(out, 2, 1) = s;
+    SYN_MAT_AT(out, 2, 2) = c;
 }
 
 void syn_matrix_rotate_y(SYN_Matrix *out, q16_t angle)
@@ -466,10 +504,10 @@ void syn_matrix_rotate_y(SYN_Matrix *out, q16_t angle)
     q16_t s = q16_sin(angle);
 
     syn_matrix_identity(out);
-    SYN_MAT_AT(out, 0, 0) =  c;
-    SYN_MAT_AT(out, 0, 2) =  s;
+    SYN_MAT_AT(out, 0, 0) = c;
+    SYN_MAT_AT(out, 0, 2) = s;
     SYN_MAT_AT(out, 2, 0) = -s;
-    SYN_MAT_AT(out, 2, 2) =  c;
+    SYN_MAT_AT(out, 2, 2) = c;
 }
 
 void syn_matrix_rotate_z(SYN_Matrix *out, q16_t angle)
@@ -481,10 +519,10 @@ void syn_matrix_rotate_z(SYN_Matrix *out, q16_t angle)
     q16_t s = q16_sin(angle);
 
     syn_matrix_identity(out);
-    SYN_MAT_AT(out, 0, 0) =  c;
+    SYN_MAT_AT(out, 0, 0) = c;
     SYN_MAT_AT(out, 0, 1) = -s;
-    SYN_MAT_AT(out, 1, 0) =  s;
-    SYN_MAT_AT(out, 1, 1) =  c;
+    SYN_MAT_AT(out, 1, 0) = s;
+    SYN_MAT_AT(out, 1, 1) = c;
 }
 
 void syn_matrix_translate_3d(SYN_Matrix *out, q16_t tx, q16_t ty, q16_t tz)
@@ -543,7 +581,8 @@ SYN_Status syn_vec_normalize(const q16_t *v, q16_t *out, uint8_t n)
     SYN_ASSERT(v != NULL && out != NULL);
 
     q16_t mag = syn_vec_norm(v, n);
-    if (mag == 0) return SYN_ERROR;
+    if (mag == 0)
+        return SYN_ERROR;
 
     uint8_t i;
     for (i = 0; i < n; i++) {
@@ -564,7 +603,8 @@ SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Mat
     if (A->cols != n || b->rows != n || b->cols != 1 || x->rows != n || x->cols != 1) {
         return SYN_INVALID_PARAM;
     }
-    if (n > SYN_SOLVER_MAX_N) return SYN_INVALID_PARAM;
+    if (n > SYN_SOLVER_MAX_N)
+        return SYN_INVALID_PARAM;
 
     /* Local copy of A for LU decomposition */
     q16_t lu[SYN_SOLVER_MAX_N * SYN_SOLVER_MAX_N];
@@ -591,11 +631,14 @@ SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Mat
             }
         }
 
-        if (max_val == 0) return SYN_ERROR; /* Singular matrix */
+        if (max_val == 0)
+            return SYN_ERROR; /* Singular matrix */
 
         /* Swap rows if needed */
         if (pivot_idx != i) {
-            uint8_t tmp_p = P[i]; P[i] = P[pivot_idx]; P[pivot_idx] = tmp_p;
+            uint8_t tmp_p = P[i];
+            P[i] = P[pivot_idx];
+            P[pivot_idx] = tmp_p;
             for (j = 0; j < n; j++) {
                 q16_t tmp_v = lu[i * n + j];
                 lu[i * n + j] = lu[pivot_idx * n + j];
@@ -644,7 +687,8 @@ SYN_Status syn_matrix_solve_cholesky(const SYN_Matrix *A, const SYN_Matrix *b, S
     if (A->cols != n || b->rows != n || b->cols != 1 || x->rows != n || x->cols != 1) {
         return SYN_INVALID_PARAM;
     }
-    if (n > SYN_SOLVER_MAX_N) return SYN_INVALID_PARAM;
+    if (n > SYN_SOLVER_MAX_N)
+        return SYN_INVALID_PARAM;
 
     q16_t L[SYN_SOLVER_MAX_N * SYN_SOLVER_MAX_N];
     memset(L, 0, sizeof(L));
@@ -658,7 +702,8 @@ SYN_Status syn_matrix_solve_cholesky(const SYN_Matrix *A, const SYN_Matrix *b, S
             }
 
             if (i == j) {
-                if (sum <= 0) return SYN_ERROR; /* Not positive-definite */
+                if (sum <= 0)
+                    return SYN_ERROR; /* Not positive-definite */
                 L[i * n + j] = q16_sqrt((q16_t)sum);
             } else {
                 L[i * n + j] = q16_div((q16_t)sum, L[j * n + j]);
@@ -703,8 +748,8 @@ SYN_Status syn_matrix_least_squares(const SYN_Matrix *A, const SYN_Matrix *b, SY
     q16_t ata_data[SYN_SOLVER_MAX_N * SYN_SOLVER_MAX_N];
     q16_t atb_data[SYN_SOLVER_MAX_N];
 
-    SYN_Matrix AtA = { ata_data, n, n };
-    SYN_Matrix Atb = { atb_data, n, 1 };
+    SYN_Matrix AtA = {ata_data, n, n};
+    SYN_Matrix Atb = {atb_data, n, 1};
 
     /* AtA = Aᵀ · A */
     SYN_MAT_DECL(AT, n, m);
@@ -753,10 +798,13 @@ SYN_Status syn_matrix_set_block(SYN_Matrix *dst, uint8_t r0, uint8_t c0, const S
     return SYN_OK;
 }
 
-SYN_Status syn_matrix_outer_product(const q16_t *u, uint8_t rows, const q16_t *v, uint8_t cols, SYN_Matrix *out)
+SYN_Status syn_matrix_outer_product(const q16_t *u, uint8_t rows, const q16_t *v, uint8_t cols,
+                                    SYN_Matrix *out)
 {
-    if (u == NULL || v == NULL || out == NULL) return SYN_INVALID_PARAM;
-    if (out->rows != rows || out->cols != cols) return SYN_INVALID_PARAM;
+    if (u == NULL || v == NULL || out == NULL)
+        return SYN_INVALID_PARAM;
+    if (out->rows != rows || out->cols != cols)
+        return SYN_INVALID_PARAM;
 
     for (uint8_t r = 0; r < rows; r++) {
         for (uint8_t c = 0; c < cols; c++) {
@@ -781,7 +829,8 @@ SYN_Status syn_matrix_qr(const SYN_Matrix *A, SYN_Matrix *Q, SYN_Matrix *R)
 
     /* Modified Gram-Schmidt orthogonalization */
     q16_t v[SYN_SOLVER_MAX_N];
-    if (m > SYN_SOLVER_MAX_N) return SYN_INVALID_PARAM;
+    if (m > SYN_SOLVER_MAX_N)
+        return SYN_INVALID_PARAM;
 
     for (uint8_t k = 0; k < n; k++) {
         /* Extract k-th column into v */
@@ -806,7 +855,8 @@ SYN_Status syn_matrix_qr(const SYN_Matrix *A, SYN_Matrix *Q, SYN_Matrix *R)
 
         /* Compute norm of v */
         q16_t norm_v = syn_vec_norm(v, m);
-        if (norm_v == 0) return SYN_ERROR; /* Singular / linearly dependent */
+        if (norm_v == 0)
+            return SYN_ERROR; /* Singular / linearly dependent */
 
         SYN_MAT_AT(R, k, k) = norm_v;
 
@@ -821,15 +871,17 @@ SYN_Status syn_matrix_qr(const SYN_Matrix *A, SYN_Matrix *Q, SYN_Matrix *R)
 
 SYN_Status syn_matrix_eigen_sym2(const SYN_Matrix *A, q16_t evals[2], SYN_Matrix *E)
 {
-    if (A == NULL || evals == NULL || E == NULL) return SYN_INVALID_PARAM;
-    if (A->rows != 2 || A->cols != 2 || E->rows != 2 || E->cols != 2) return SYN_INVALID_PARAM;
+    if (A == NULL || evals == NULL || E == NULL)
+        return SYN_INVALID_PARAM;
+    if (A->rows != 2 || A->cols != 2 || E->rows != 2 || E->cols != 2)
+        return SYN_INVALID_PARAM;
 
     q16_t a = SYN_MAT_AT(A, 0, 0);
     q16_t b = SYN_MAT_AT(A, 0, 1);
     q16_t d = SYN_MAT_AT(A, 1, 1);
 
     q16_t trace = a + d;
-    q16_t diff  = a - d;
+    q16_t diff = a - d;
 
     q16_t disc = q16_hypot(diff, q16_mul(Q16_FROM_INT(2), b));
     q16_t l1 = (trace + disc) >> 1;
@@ -840,17 +892,22 @@ SYN_Status syn_matrix_eigen_sym2(const SYN_Matrix *A, q16_t evals[2], SYN_Matrix
 
     /* Eigenvectors */
     if (b == 0) {
-        SYN_MAT_AT(E, 0, 0) = Q16_ONE; SYN_MAT_AT(E, 0, 1) = 0;
-        SYN_MAT_AT(E, 1, 0) = 0;       SYN_MAT_AT(E, 1, 1) = Q16_ONE;
+        SYN_MAT_AT(E, 0, 0) = Q16_ONE;
+        SYN_MAT_AT(E, 0, 1) = 0;
+        SYN_MAT_AT(E, 1, 0) = 0;
+        SYN_MAT_AT(E, 1, 1) = Q16_ONE;
     } else {
-        q16_t v1[2] = { l1 - d, b };
-        q16_t v2[2] = { l2 - d, b };
-        q16_t e1[2], e2[2];
+        q16_t v1[2] = {l1 - d, b};
+        q16_t v2[2] = {l2 - d, b};
+        q16_t e1[2] = {0, 0};
+        q16_t e2[2] = {0, 0};
         syn_vec_normalize(v1, e1, 2);
         syn_vec_normalize(v2, e2, 2);
 
-        SYN_MAT_AT(E, 0, 0) = e1[0]; SYN_MAT_AT(E, 0, 1) = e2[0];
-        SYN_MAT_AT(E, 1, 0) = e1[1]; SYN_MAT_AT(E, 1, 1) = e2[1];
+        SYN_MAT_AT(E, 0, 0) = e1[0];
+        SYN_MAT_AT(E, 0, 1) = e2[0];
+        SYN_MAT_AT(E, 1, 0) = e1[1];
+        SYN_MAT_AT(E, 1, 1) = e2[1];
     }
 
     return SYN_OK;
@@ -858,8 +915,10 @@ SYN_Status syn_matrix_eigen_sym2(const SYN_Matrix *A, q16_t evals[2], SYN_Matrix
 
 SYN_Status syn_matrix_eigen_sym3(const SYN_Matrix *A, q16_t evals[3], SYN_Matrix *E)
 {
-    if (A == NULL || evals == NULL || E == NULL) return SYN_INVALID_PARAM;
-    if (A->rows != 3 || A->cols != 3 || E->rows != 3 || E->cols != 3) return SYN_INVALID_PARAM;
+    if (A == NULL || evals == NULL || E == NULL)
+        return SYN_INVALID_PARAM;
+    if (A->rows != 3 || A->cols != 3 || E->rows != 3 || E->cols != 3)
+        return SYN_INVALID_PARAM;
 
     SYN_MAT_DECL(S, 3, 3);
     syn_matrix_copy(&S, A);
@@ -870,10 +929,19 @@ SYN_Status syn_matrix_eigen_sym3(const SYN_Matrix *A, q16_t evals[3], SYN_Matrix
         /* Find largest off-diagonal element */
         uint8_t p = 0, q = 1;
         q16_t max_off = q16_abs(SYN_MAT_AT(&S, 0, 1));
-        if (q16_abs(SYN_MAT_AT(&S, 0, 2)) > max_off) { max_off = q16_abs(SYN_MAT_AT(&S, 0, 2)); p = 0; q = 2; }
-        if (q16_abs(SYN_MAT_AT(&S, 1, 2)) > max_off) { max_off = q16_abs(SYN_MAT_AT(&S, 1, 2)); p = 1; q = 2; }
+        if (q16_abs(SYN_MAT_AT(&S, 0, 2)) > max_off) {
+            max_off = q16_abs(SYN_MAT_AT(&S, 0, 2));
+            p = 0;
+            q = 2;
+        }
+        if (q16_abs(SYN_MAT_AT(&S, 1, 2)) > max_off) {
+            max_off = q16_abs(SYN_MAT_AT(&S, 1, 2));
+            p = 1;
+            q = 2;
+        }
 
-        if (max_off < 4) break; /* Converged (less than 1e-4 in Q16) */
+        if (max_off < 4)
+            break; /* Converged (less than 1e-4 in Q16) */
 
         q16_t app = SYN_MAT_AT(&S, p, p);
         q16_t aqq = SYN_MAT_AT(&S, q, q);
@@ -892,8 +960,10 @@ SYN_Status syn_matrix_eigen_sym3(const SYN_Matrix *A, q16_t evals[3], SYN_Matrix
                 SYN_MAT_AT(&S, i, q) = SYN_MAT_AT(&S, q, i) = q16_mul(s, a_ip) + q16_mul(c, a_iq);
             }
         }
-        SYN_MAT_AT(&S, p, p) = q16_mul(c, q16_mul(c, app) - q16_mul(s, apq)) - q16_mul(s, q16_mul(c, apq) - q16_mul(s, aqq));
-        SYN_MAT_AT(&S, q, q) = q16_mul(s, q16_mul(s, app) + q16_mul(c, apq)) + q16_mul(c, q16_mul(s, apq) + q16_mul(c, aqq));
+        SYN_MAT_AT(&S, p, p) = q16_mul(c, q16_mul(c, app) - q16_mul(s, apq)) -
+                               q16_mul(s, q16_mul(c, apq) - q16_mul(s, aqq));
+        SYN_MAT_AT(&S, q, q) = q16_mul(s, q16_mul(s, app) + q16_mul(c, apq)) +
+                               q16_mul(c, q16_mul(s, apq) + q16_mul(c, aqq));
         SYN_MAT_AT(&S, p, q) = SYN_MAT_AT(&S, q, p) = 0;
 
         /* Update eigenvector matrix E = E J */
@@ -913,7 +983,9 @@ SYN_Status syn_matrix_eigen_sym3(const SYN_Matrix *A, q16_t evals[3], SYN_Matrix
     for (uint8_t i = 0; i < 2; i++) {
         for (uint8_t j = i + 1; j < 3; j++) {
             if (evals[j] > evals[i]) {
-                q16_t tmp_e = evals[i]; evals[i] = evals[j]; evals[j] = tmp_e;
+                q16_t tmp_e = evals[i];
+                evals[i] = evals[j];
+                evals[j] = tmp_e;
                 for (uint8_t k = 0; k < 3; k++) {
                     q16_t tmp_v = SYN_MAT_AT(E, k, i);
                     SYN_MAT_AT(E, k, i) = SYN_MAT_AT(E, k, j);

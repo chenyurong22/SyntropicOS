@@ -24,8 +24,8 @@
 #ifndef SYN_CRC_H
 #define SYN_CRC_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,14 +35,14 @@ extern "C" {
 
 /** Set to 1 for lookup-table CRC (fast), 0 for bit-by-bit (small). */
 #ifndef SYN_CRC_USE_TABLE
-  #define SYN_CRC_USE_TABLE  1
+#define SYN_CRC_USE_TABLE 1
 #endif
 
 /* ── CRC-8 (MAXIM / Dallas 1-Wire) ─────────────────────────────────────── */
 /* Polynomial: x^8 + x^5 + x^4 + 1  (0x31)                                */
 
 /** @brief CRC-8 initial value. */
-#define SYN_CRC8_INIT  0x00u
+#define SYN_CRC8_INIT 0x00u
 
 /**
  * @brief Update CRC-8 with a block of data.
@@ -68,7 +68,7 @@ static inline uint8_t syn_crc8(const void *data, size_t len)
 /* Polynomial: x^16 + x^12 + x^5 + 1  (0x1021)                             */
 
 /** @brief CRC-16 CCITT initial value. */
-#define SYN_CRC16_CCITT_INIT  0xFFFFu
+#define SYN_CRC16_CCITT_INIT 0xFFFFu
 
 /**
  * @brief Update CRC-16 CCITT with a block of data.
@@ -94,7 +94,7 @@ static inline uint16_t syn_crc16_ccitt(const void *data, size_t len)
 /* Polynomial: x^16 + x^15 + x^2 + 1  (0x8005, reflected)                  */
 
 /** @brief CRC-16 Modbus initial value. */
-#define SYN_CRC16_MODBUS_INIT  0xFFFFu
+#define SYN_CRC16_MODBUS_INIT 0xFFFFu
 
 /**
  * @brief Update CRC-16 Modbus with a block of data.
@@ -120,7 +120,7 @@ static inline uint16_t syn_crc16_modbus(const void *data, size_t len)
 /* Polynomial: 0x04C11DB7 (reflected: 0xEDB88320)                           */
 
 /** @brief CRC-32 initial value. */
-#define SYN_CRC32_INIT  0xFFFFFFFFu
+#define SYN_CRC32_INIT 0xFFFFFFFFu
 
 /**
  * @brief Update CRC-32 with a block of data.

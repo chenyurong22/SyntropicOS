@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_ADC) || SYN_USE_ADC
@@ -9,8 +9,8 @@
  * @brief ADC abstraction implementation.
  */
 
-#include "syn_adc.h"
 #include "../util/syn_assert.h"
+#include "syn_adc.h"
 
 #include <string.h>
 
@@ -22,8 +22,10 @@ SYN_Status syn_adc_init(SYN_ADC *adc, const SYN_ADC_Config *cfg)
     memset(adc, 0, sizeof(*adc));
     adc->cfg = *cfg;
 
-    if (adc->cfg.oversample == 0) adc->cfg.oversample = 1;
-    if (adc->cfg.cal_scale == 0)  adc->cfg.cal_scale  = 1;
+    if (adc->cfg.oversample == 0)
+        adc->cfg.oversample = 1;
+    if (adc->cfg.cal_scale == 0)
+        adc->cfg.cal_scale = 1;
 
     return syn_port_adc_init(cfg->channel);
 }
@@ -36,7 +38,8 @@ SYN_Status syn_adc_init(SYN_ADC *adc, const SYN_ADC_Config *cfg)
  */
 static int16_t apply_filter(SYN_ADC *adc, int16_t value)
 {
-    if (adc->cfg.filter == NULL) return value;
+    if (adc->cfg.filter == NULL)
+        return value;
 
     switch (adc->cfg.filter_type) {
     case SYN_ADC_FILTER_MA:
@@ -55,11 +58,12 @@ int32_t syn_adc_read(SYN_ADC *adc)
     SYN_ASSERT(adc != NULL);
 
     /* Oversampling */
+    uint8_t oversample = adc->cfg.oversample > 0 ? adc->cfg.oversample : 1;
     int32_t sum = 0;
-    for (uint8_t i = 0; i < adc->cfg.oversample; i++) {
+    for (uint8_t i = 0; i < oversample; i++) {
         sum += (int32_t)syn_port_adc_read(adc->cfg.channel);
     }
-    adc->raw = sum / adc->cfg.oversample;
+    adc->raw = sum / oversample;
 
     /* Filter */
     adc->filtered = apply_filter(adc, (int16_t)adc->raw);
@@ -87,21 +91,21 @@ int32_t syn_adc_read_mv(SYN_ADC *adc)
 
     /* Convert raw (after oversample) to millivolts */
     uint16_t ref_mv = syn_port_adc_reference_mv();
-    uint8_t  bits   = syn_port_adc_resolution();
-    int32_t  max_raw = (int32_t)((1L << bits) - 1);
+    uint8_t bits = syn_port_adc_resolution();
+    int32_t max_raw = (int32_t)((1L << bits) - 1);
 
-    if (max_raw == 0) return 0;
+    if (max_raw == 0)
+        return 0;
 
     return (int32_t)(((int64_t)adc->raw * (int32_t)ref_mv) / max_raw);
 }
 
-void syn_adc_set_calibration(SYN_ADC *adc, int16_t offset,
-                              uint16_t scale, uint8_t shift)
+void syn_adc_set_calibration(SYN_ADC *adc, int16_t offset, uint16_t scale, uint8_t shift)
 {
     SYN_ASSERT(adc != NULL);
-    adc->cfg.cal_offset      = offset;
-    adc->cfg.cal_scale        = scale;
-    adc->cfg.cal_scale_shift  = shift;
+    adc->cfg.cal_offset = offset;
+    adc->cfg.cal_scale = scale;
+    adc->cfg.cal_scale_shift = shift;
 }
 
 void syn_adc_set_stats(SYN_ADC *adc, SYN_Signal *stats)

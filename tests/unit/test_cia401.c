@@ -3,8 +3,9 @@
  * @brief Unity unit tests for CANopen CiA 401 Generic I/O Profile.
  */
 
-#include "unity/unity.h"
 #include "syntropic/proto/syn_cia401.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 static SYN_CiA401_Device g_cia401_dev;

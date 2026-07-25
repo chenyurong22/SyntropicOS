@@ -30,9 +30,9 @@
 #ifndef SYN_COBS_H
 #define SYN_COBS_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,16 +71,15 @@ struct SYN_COBS_Decoder;
  * @param len      Decoded packet length.
  * @param ctx      User context.
  */
-typedef void (*SYN_COBS_PacketCallback)(const uint8_t *data, size_t len,
-                                         void *ctx);
+typedef void (*SYN_COBS_PacketCallback)(const uint8_t *data, size_t len, void *ctx);
 
 /** @brief Streaming COBS frame decoder. */
 typedef struct SYN_COBS_Decoder {
-    uint8_t                 *buf;       /**< Receive buffer                */
-    size_t                   buf_size;  /**< Buffer capacity               */
-    size_t                   idx;       /**< Current write position        */
-    SYN_COBS_PacketCallback callback;  /**< Callback on complete packet   */
-    void                    *ctx;      /**< User context for callback     */
+    uint8_t *buf;                     /**< Receive buffer                */
+    size_t buf_size;                  /**< Buffer capacity               */
+    size_t idx;                       /**< Current write position        */
+    SYN_COBS_PacketCallback callback; /**< Callback on complete packet   */
+    void *ctx;                        /**< User context for callback     */
 } SYN_COBS_Decoder;
 
 /**
@@ -92,10 +91,8 @@ typedef struct SYN_COBS_Decoder {
  * @param callback  Called when a complete packet is decoded.
  * @param ctx       User context for callback.
  */
-void syn_cobs_decoder_init(SYN_COBS_Decoder *dec,
-                            uint8_t *buf, size_t buf_size,
-                            SYN_COBS_PacketCallback callback,
-                            void *ctx);
+void syn_cobs_decoder_init(SYN_COBS_Decoder *dec, uint8_t *buf, size_t buf_size,
+                           SYN_COBS_PacketCallback callback, void *ctx);
 
 /**
  * @brief Feed a byte to the streaming decoder.

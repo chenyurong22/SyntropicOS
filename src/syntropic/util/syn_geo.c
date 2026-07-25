@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_GEO) || SYN_USE_GEO
@@ -9,8 +9,9 @@
  * @brief Geodetic coordinate transformations and distance calculation implementation.
  */
 
-#include "syn_geo.h"
 #include "../util/syn_assert.h"
+#include "syn_geo.h"
+
 #include <math.h>
 #include <stddef.h>
 
@@ -23,8 +24,8 @@
 
 /* ── WGS84 to ECEF ─────────────────────────────────────────────────────── */
 
-SYN_Status syn_geo_wgs84_to_ecef(double lat_deg, double lon_deg, double alt_m,
-                                 double *out_x, double *out_y, double *out_z)
+SYN_Status syn_geo_wgs84_to_ecef(double lat_deg, double lon_deg, double alt_m, double *out_x,
+                                 double *out_y, double *out_z)
 {
     if (out_x == NULL || out_y == NULL || out_z == NULL) {
         return SYN_INVALID_PARAM;
@@ -50,8 +51,8 @@ SYN_Status syn_geo_wgs84_to_ecef(double lat_deg, double lon_deg, double alt_m,
 
 /* ── ECEF to WGS84 (Bowring's Closed-Form Algorithm) ───────────────────── */
 
-SYN_Status syn_geo_ecef_to_wgs84(double x, double y, double z,
-                                 double *out_lat, double *out_lon, double *out_alt)
+SYN_Status syn_geo_ecef_to_wgs84(double x, double y, double z, double *out_lat, double *out_lon,
+                                 double *out_alt)
 {
     if (out_lat == NULL || out_lon == NULL || out_alt == NULL) {
         return SYN_INVALID_PARAM;
@@ -68,8 +69,8 @@ SYN_Status syn_geo_ecef_to_wgs84(double x, double y, double z,
     double sin_th = sin(theta);
     double cos_th = cos(theta);
 
-    double lat_rad = atan2(z + ep2 * b * sin_th * sin_th * sin_th,
-                           p - e2 * a * cos_th * cos_th * cos_th);
+    double lat_rad =
+        atan2(z + ep2 * b * sin_th * sin_th * sin_th, p - e2 * a * cos_th * cos_th * cos_th);
     double lon_rad = atan2(y, x);
 
     double sin_lat = sin(lat_rad);
@@ -84,18 +85,18 @@ SYN_Status syn_geo_ecef_to_wgs84(double x, double y, double z,
 
 /* ── ECEF to ENU ───────────────────────────────────────────────────────── */
 
-SYN_Status syn_geo_ecef_to_enu(double x, double y, double z,
-                               double ref_lat_deg, double ref_lon_deg, double ref_alt_m,
-                               SYN_ENU *out_enu)
+SYN_Status syn_geo_ecef_to_enu(double x, double y, double z, double ref_lat_deg, double ref_lon_deg,
+                               double ref_alt_m, SYN_ENU *out_enu)
 {
     if (out_enu == NULL) {
         return SYN_INVALID_PARAM;
     }
 
     double ref_x, ref_y, ref_z;
-    SYN_Status st = syn_geo_wgs84_to_ecef(ref_lat_deg, ref_lon_deg, ref_alt_m,
-                                          &ref_x, &ref_y, &ref_z);
-    if (st != SYN_OK) return st;
+    SYN_Status st =
+        syn_geo_wgs84_to_ecef(ref_lat_deg, ref_lon_deg, ref_alt_m, &ref_x, &ref_y, &ref_z);
+    if (st != SYN_OK)
+        return st;
 
     double dx = x - ref_x;
     double dy = y - ref_y;
@@ -110,18 +111,17 @@ SYN_Status syn_geo_ecef_to_enu(double x, double y, double z,
     double cos_lon = cos(ref_lon_rad);
 
     /* Rotation matrix R_ENU */
-    out_enu->east_m  = -sin_lon * dx + cos_lon * dy;
+    out_enu->east_m = -sin_lon * dx + cos_lon * dy;
     out_enu->north_m = -sin_lat * cos_lon * dx - sin_lat * sin_lon * dy + cos_lat * dz;
-    out_enu->up_m    =  cos_lat * cos_lon * dx + cos_lat * sin_lon * dy + sin_lat * dz;
+    out_enu->up_m = cos_lat * cos_lon * dx + cos_lat * sin_lon * dy + sin_lat * dz;
 
     return SYN_OK;
 }
 
 /* ── Direct WGS84 to ENU ───────────────────────────────────────────────── */
 
-SYN_Status syn_geo_wgs84_to_enu(double lat_deg, double lon_deg, double alt_m,
-                                double ref_lat_deg, double ref_lon_deg, double ref_alt_m,
-                                SYN_ENU *out_enu)
+SYN_Status syn_geo_wgs84_to_enu(double lat_deg, double lon_deg, double alt_m, double ref_lat_deg,
+                                double ref_lon_deg, double ref_alt_m, SYN_ENU *out_enu)
 {
     if (out_enu == NULL) {
         return SYN_INVALID_PARAM;
@@ -129,15 +129,15 @@ SYN_Status syn_geo_wgs84_to_enu(double lat_deg, double lon_deg, double alt_m,
 
     double x, y, z;
     SYN_Status st = syn_geo_wgs84_to_ecef(lat_deg, lon_deg, alt_m, &x, &y, &z);
-    if (st != SYN_OK) return st;
+    if (st != SYN_OK)
+        return st;
 
     return syn_geo_ecef_to_enu(x, y, z, ref_lat_deg, ref_lon_deg, ref_alt_m, out_enu);
 }
 
 /* ── Haversine 2D Distance ─────────────────────────────────────────────── */
 
-double syn_geo_haversine_m(double lat1_deg, double lon1_deg,
-                           double lat2_deg, double lon2_deg)
+double syn_geo_haversine_m(double lat1_deg, double lon1_deg, double lat2_deg, double lon2_deg)
 {
     double dlat = (lat2_deg - lat1_deg) * DEG_TO_RAD;
     double dlon = (lon2_deg - lon1_deg) * DEG_TO_RAD;
@@ -156,7 +156,8 @@ double syn_geo_haversine_m(double lat1_deg, double lon1_deg,
 
 double syn_geo_3d_distance_m(const SYN_ENU *p1, const SYN_ENU *p2)
 {
-    if (p1 == NULL || p2 == NULL) return 0.0;
+    if (p1 == NULL || p2 == NULL)
+        return 0.0;
 
     double de = p2->east_m - p1->east_m;
     double dn = p2->north_m - p1->north_m;
@@ -173,29 +174,29 @@ SYN_Status syn_geo_pos_from_gga(const SYN_NMEA_GGA *gga, SYN_GeoPos *out_pos)
         return SYN_INVALID_PARAM;
     }
 
-    out_pos->latitude   = gga->latitude;
-    out_pos->longitude  = gga->longitude;
+    out_pos->latitude = gga->latitude;
+    out_pos->longitude = gga->longitude;
     out_pos->altitude_m = (double)gga->altitude_m;
-    out_pos->fix_type   = gga->fix_quality;
-    out_pos->valid      = gga->valid;
+    out_pos->fix_type = gga->fix_quality;
+    out_pos->valid = gga->valid;
 
     switch (gga->fix_quality) {
-        case SYN_NMEA_FIX_RTK:
-            out_pos->accuracy_m = 0.01f;  /* 1 cm RTK Fixed accuracy */
-            break;
-        case SYN_NMEA_FIX_FLOAT_RTK:
-            out_pos->accuracy_m = 0.20f;  /* 20 cm RTK Float accuracy */
-            break;
-        case SYN_NMEA_FIX_DGPS:
-            out_pos->accuracy_m = 1.00f;  /* 1 meter DGPS accuracy */
-            break;
-        case SYN_NMEA_FIX_GPS:
-        case SYN_NMEA_FIX_PPS:
-            out_pos->accuracy_m = 2.50f;  /* Standard GPS accuracy */
-            break;
-        default:
-            out_pos->accuracy_m = 50.0f;  /* Unverified / estimated accuracy */
-            break;
+    case SYN_NMEA_FIX_RTK:
+        out_pos->accuracy_m = 0.01f; /* 1 cm RTK Fixed accuracy */
+        break;
+    case SYN_NMEA_FIX_FLOAT_RTK:
+        out_pos->accuracy_m = 0.20f; /* 20 cm RTK Float accuracy */
+        break;
+    case SYN_NMEA_FIX_DGPS:
+        out_pos->accuracy_m = 1.00f; /* 1 meter DGPS accuracy */
+        break;
+    case SYN_NMEA_FIX_GPS:
+    case SYN_NMEA_FIX_PPS:
+        out_pos->accuracy_m = 2.50f; /* Standard GPS accuracy */
+        break;
+    default:
+        out_pos->accuracy_m = 50.0f; /* Unverified / estimated accuracy */
+        break;
     }
 
     return SYN_OK;

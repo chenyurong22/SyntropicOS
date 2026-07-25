@@ -3,8 +3,8 @@
  * @brief Unit test suite for Lock-Free SPSC Queue (syn_spsc_queue).
  */
 
-#include "unity/unity.h"
 #include "syntropic/util/syn_spsc_queue.h"
+#include "unity/unity.h"
 
 typedef struct {
     uint32_t id;

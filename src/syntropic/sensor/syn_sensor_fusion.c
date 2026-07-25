@@ -4,8 +4,10 @@
  */
 
 #include "syn_sensor_fusion.h"
+
 #include "../util/syn_assert.h"
 #include "../util/syn_matrix.h"
+
 #include <string.h>
 
 void syn_sensor_fusion_init(SYN_SensorFusion *f, q16_t Kp, q16_t Ki, q16_t dt)
@@ -36,10 +38,11 @@ void syn_sensor_fusion_reset(SYN_SensorFusion *f)
     f->e_int[2] = 0;
 }
 
-SYN_Status syn_sensor_fusion_update(SYN_SensorFusion *f, q16_t gx, q16_t gy, q16_t gz,
-                                     q16_t ax, q16_t ay, q16_t az)
+SYN_Status syn_sensor_fusion_update(SYN_SensorFusion *f, q16_t gx, q16_t gy, q16_t gz, q16_t ax,
+                                    q16_t ay, q16_t az)
 {
-    if (f == NULL) return SYN_INVALID_PARAM;
+    if (f == NULL)
+        return SYN_INVALID_PARAM;
 
     q16_t qw = f->q.w;
     q16_t qx = f->q.x;
@@ -96,9 +99,9 @@ SYN_Status syn_sensor_fusion_update(SYN_SensorFusion *f, q16_t gx, q16_t gy, q16
     q16_t half_dt = f->dt >> 1;
 
     q16_t dqw = q16_mul(-q16_mul(qx, gx) - q16_mul(qy, gy) - q16_mul(qz, gz), half_dt);
-    q16_t dqx = q16_mul( q16_mul(qw, gx) + q16_mul(qy, gz) - q16_mul(qz, gy), half_dt);
-    q16_t dqy = q16_mul( q16_mul(qw, gy) - q16_mul(qx, gz) + q16_mul(qz, gx), half_dt);
-    q16_t dqz = q16_mul( q16_mul(qw, gz) + q16_mul(qx, gy) - q16_mul(qy, gx), half_dt);
+    q16_t dqx = q16_mul(q16_mul(qw, gx) + q16_mul(qy, gz) - q16_mul(qz, gy), half_dt);
+    q16_t dqy = q16_mul(q16_mul(qw, gy) - q16_mul(qx, gz) + q16_mul(qz, gx), half_dt);
+    q16_t dqz = q16_mul(q16_mul(qw, gz) + q16_mul(qx, gy) - q16_mul(qy, gx), half_dt);
 
     qw += dqw;
     qx += dqx;
@@ -106,7 +109,8 @@ SYN_Status syn_sensor_fusion_update(SYN_SensorFusion *f, q16_t gx, q16_t gy, q16
     qz += dqz;
 
     /* Normalize quaternion to preserve unit length */
-    int64_t q_sq = ((int64_t)qw * qw) + ((int64_t)qx * qx) + ((int64_t)qy * qy) + ((int64_t)qz * qz);
+    int64_t q_sq =
+        ((int64_t)qw * qw) + ((int64_t)qx * qx) + ((int64_t)qy * qy) + ((int64_t)qz * qz);
     q_sq >>= Q16_SHIFT;
     q16_t q_norm = q16_sqrt((q16_t)q_sq);
 
@@ -127,14 +131,16 @@ SYN_Status syn_sensor_fusion_update(SYN_SensorFusion *f, q16_t gx, q16_t gy, q16
 
 SYN_Status syn_sensor_fusion_get_quaternion(const SYN_SensorFusion *f, SYN_Quaternion *q)
 {
-    if (f == NULL || q == NULL) return SYN_INVALID_PARAM;
+    if (f == NULL || q == NULL)
+        return SYN_INVALID_PARAM;
     *q = f->q;
     return SYN_OK;
 }
 
 SYN_Status syn_sensor_fusion_get_euler(const SYN_SensorFusion *f, SYN_EulerAngles *euler)
 {
-    if (f == NULL || euler == NULL) return SYN_INVALID_PARAM;
+    if (f == NULL || euler == NULL)
+        return SYN_INVALID_PARAM;
 
     q16_t qw = f->q.w;
     q16_t qx = f->q.x;

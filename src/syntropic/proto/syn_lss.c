@@ -4,19 +4,21 @@
  */
 
 #include "syn_lss.h"
+
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
+
 #include <string.h>
 
 void syn_lss_slave_init(SYN_LSSSlave *slave, const SYN_LSSAddress *addr, uint8_t initial_node_id)
 {
     SYN_ASSERT(slave != NULL && addr != NULL);
     memset(slave, 0, sizeof(*slave));
-    slave->mode       = SYN_LSS_MODE_OPERATION;
-    slave->node_id    = initial_node_id;
+    slave->mode = SYN_LSS_MODE_OPERATION;
+    slave->node_id = initial_node_id;
     slave->baud_table = SYN_LSS_BAUD_250K;
-    slave->addr       = *addr;
-    slave->store_req  = false;
+    slave->addr = *addr;
+    slave->store_req = false;
 }
 
 bool syn_lss_slave_process(SYN_LSSSlave *slave, const SYN_CAN_Frame *frame, SYN_CAN_Frame *resp)

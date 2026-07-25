@@ -33,7 +33,7 @@
 #define SYN_COREDUMP_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if defined(SYN_USE_COREDUMP) && SYN_USE_COREDUMP
@@ -41,8 +41,8 @@
 #include "../common/syn_defs.h"
 #include "syn_fault.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,17 +51,17 @@ extern "C" {
 /* ── Configuration defaults ─────────────────────────────────────────────── */
 
 #ifndef SYN_COREDUMP_STACK_SIZE
-  #define SYN_COREDUMP_STACK_SIZE  128  /**< Bytes of stack to capture  */
+#define SYN_COREDUMP_STACK_SIZE 128 /**< Bytes of stack to capture  */
 #endif
 
 #ifndef SYN_COREDUMP_FLASH_ADDR
-  #error "SYN_COREDUMP_FLASH_ADDR must be defined to the reserved flash sector address"
+#error "SYN_COREDUMP_FLASH_ADDR must be defined to the reserved flash sector address"
 #endif
 
 /* ── Magic ──────────────────────────────────────────────────────────────── */
 
 /** @brief Magic number identifying a valid core dump ("CDMP"). */
-#define SYN_COREDUMP_MAGIC  0x43444D50u
+#define SYN_COREDUMP_MAGIC 0x43444D50u
 
 /* ── Core dump structure ────────────────────────────────────────────────── */
 
@@ -71,12 +71,12 @@ extern "C" {
  * Total size: ~180 bytes with 128-byte stack capture.
  */
 typedef struct {
-    uint32_t         magic;                              /**< SYN_COREDUMP_MAGIC when valid */
-    SYN_FaultContext regs;                               /**< CPU register snapshot         */
-    uint32_t         stack_bytes;                        /**< Actual stack bytes captured    */
-    uint8_t          stack[SYN_COREDUMP_STACK_SIZE];     /**< Partial stack snapshot         */
-    uint32_t         uptime_ms;                          /**< System uptime at fault         */
-    uint32_t         crc;                                /**< CRC-32 over preceding fields   */
+    uint32_t magic;                         /**< SYN_COREDUMP_MAGIC when valid */
+    SYN_FaultContext regs;                  /**< CPU register snapshot         */
+    uint32_t stack_bytes;                   /**< Actual stack bytes captured    */
+    uint8_t stack[SYN_COREDUMP_STACK_SIZE]; /**< Partial stack snapshot         */
+    uint32_t uptime_ms;                     /**< System uptime at fault         */
+    uint32_t crc;                           /**< CRC-32 over preceding fields   */
 } SYN_CoreDump;
 
 /* ── API ────────────────────────────────────────────────────────────────── */

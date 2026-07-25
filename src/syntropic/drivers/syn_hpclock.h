@@ -55,17 +55,17 @@
 #define SYN_HPCLOCK_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_HPCLOCK) || SYN_USE_HPCLOCK
 
-#include "../common/syn_defs.h"
 #include "../common/syn_compiler.h"
+#include "../common/syn_defs.h"
 #include "../port/syn_port_hpclock.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,13 +84,16 @@ extern "C" {
  * 12 bytes, naturally aligned.
  */
 typedef struct {
-    uint32_t msb_1;   /**< First read of overflow counter              */
-    uint32_t lsb;     /**< Read of hardware counter register            */
-    uint32_t msb_2;   /**< Second read of overflow counter              */
+    uint32_t msb_1; /**< First read of overflow counter              */
+    uint32_t lsb;   /**< Read of hardware counter register            */
+    uint32_t msb_2; /**< Second read of overflow counter              */
 } SYN_HPTimestamp;
 
 /** @brief Static initializer for SYN_HPTimestamp (all zeros). */
-#define SYN_HPTIMESTAMP_INIT  { 0, 0, 0 }
+#define SYN_HPTIMESTAMP_INIT \
+    {                        \
+        0, 0, 0              \
+    }
 
 /* ── Capture macro ─────────────────────────────────────────────────────── */
 
@@ -106,14 +109,15 @@ typedef struct {
  *
  * @param ts  An SYN_HPTimestamp lvalue (not a pointer).
  */
-#define SYN_HPCLOCK_CAPTURE(ts) do {                                    \
-    volatile uint32_t *syn_hp_lsb_p_ = syn_port_hpclock_lsb_ptr();     \
-    (ts).msb_1 = syn_hpclock_msb;                                       \
-    SYN_COMPILER_BARRIER();                                             \
-    (ts).lsb   = *syn_hp_lsb_p_;                                       \
-    SYN_COMPILER_BARRIER();                                             \
-    (ts).msb_2 = syn_hpclock_msb;                                       \
-} while (0)
+#define SYN_HPCLOCK_CAPTURE(ts)                                        \
+    do {                                                               \
+        volatile uint32_t *syn_hp_lsb_p_ = syn_port_hpclock_lsb_ptr(); \
+        (ts).msb_1 = syn_hpclock_msb;                                  \
+        SYN_COMPILER_BARRIER();                                        \
+        (ts).lsb = *syn_hp_lsb_p_;                                     \
+        SYN_COMPILER_BARRIER();                                        \
+        (ts).msb_2 = syn_hpclock_msb;                                  \
+    } while (0)
 
 /* ── Resolution ────────────────────────────────────────────────────────── */
 
@@ -154,8 +158,7 @@ uint64_t syn_hpclock_ticks_to_ns(uint64_t ticks);
  * @param end    Later timestamp.
  * @return Elapsed ticks (end - start).
  */
-uint64_t syn_hpclock_elapsed(const SYN_HPTimestamp *start,
-                              const SYN_HPTimestamp *end);
+uint64_t syn_hpclock_elapsed(const SYN_HPTimestamp *start, const SYN_HPTimestamp *end);
 
 /**
  * @brief Check if a timestamp is zero (uninitialized).

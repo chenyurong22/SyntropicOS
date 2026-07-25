@@ -43,8 +43,8 @@
 #include "../common/syn_defs.h"
 #include "../port/syn_port_serial.h"
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,17 +54,17 @@ extern "C" {
 
 /** Maximum length of a single command line (including null terminator). */
 #ifndef SYN_CLI_LINE_BUF_SIZE
-  #define SYN_CLI_LINE_BUF_SIZE   128
+#define SYN_CLI_LINE_BUF_SIZE 128
 #endif
 
 /** Maximum number of arguments (including the command name). */
 #ifndef SYN_CLI_MAX_ARGS
-  #define SYN_CLI_MAX_ARGS        16
+#define SYN_CLI_MAX_ARGS 16
 #endif
 
 /** Command history depth (0 = disabled). */
 #ifndef SYN_CLI_HISTORY_DEPTH
-  #define SYN_CLI_HISTORY_DEPTH    0
+#define SYN_CLI_HISTORY_DEPTH 0
 #endif
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
@@ -84,32 +84,32 @@ typedef int (*SYN_CLI_Handler)(int argc, char *argv[]);
  * Typically defined as a const static array.
  */
 typedef struct {
-    const char       *name;     /**< Command name (matched against input)   */
-    const char       *help;     /**< Help text shown by the `help` command  */
-    SYN_CLI_Handler  handler;  /**< Function called when command matches   */
+    const char *name;        /**< Command name (matched against input)   */
+    const char *help;        /**< Help text shown by the `help` command  */
+    SYN_CLI_Handler handler; /**< Function called when command matches   */
 } SYN_CLI_Command;
 
 /** @brief CLI instance — command table, line buffer, I/O, and history. */
 typedef struct {
     /* Command table */
-    const SYN_CLI_Command *commands;     /**< Registered command array    */
-    size_t                  command_count; /**< Number of commands         */
+    const SYN_CLI_Command *commands; /**< Registered command array    */
+    size_t command_count;            /**< Number of commands         */
 
     /* Line buffer */
-    char    line_buf[SYN_CLI_LINE_BUF_SIZE]; /**< Input line buffer       */
-    size_t  line_pos;                    /**< Current cursor position     */
+    char line_buf[SYN_CLI_LINE_BUF_SIZE]; /**< Input line buffer       */
+    size_t line_pos;                      /**< Current cursor position     */
 
     /* Configuration */
-    const char *prompt;                  /**< Prompt string               */
-    bool        echo;                    /**< Echo enabled                */
-    uint8_t     escape_state;            /**< ANSI escape sequence state  */
+    const char *prompt;   /**< Prompt string               */
+    bool echo;            /**< Echo enabled                */
+    uint8_t escape_state; /**< ANSI escape sequence state  */
 
     /* History */
 #if SYN_CLI_HISTORY_DEPTH > 0
-    char    history[SYN_CLI_HISTORY_DEPTH][SYN_CLI_LINE_BUF_SIZE]; /**< History ring  */
-    size_t  history_count;               /**< Number of history entries   */
-    size_t  history_write;               /**< Next write position         */
-    size_t  history_read;                /**< Current read position       */
+    char history[SYN_CLI_HISTORY_DEPTH][SYN_CLI_LINE_BUF_SIZE]; /**< History ring  */
+    size_t history_count;                                       /**< Number of history entries   */
+    size_t history_write;                                       /**< Next write position         */
+    size_t history_read;                                        /**< Current read position       */
 #endif
 } SYN_CLI;
 
@@ -126,10 +126,8 @@ typedef struct {
  * @param prompt     Prompt string (e.g., "> " or "syntropic> "). Stored by
  *                   pointer, not copied.
  */
-void syn_cli_init(SYN_CLI *cli,
-                   const SYN_CLI_Command *commands,
-                   size_t cmd_count,
-                   const char *prompt);
+void syn_cli_init(SYN_CLI *cli, const SYN_CLI_Command *commands, size_t cmd_count,
+                  const char *prompt);
 
 /**
  * @brief Enable or disable local echo.
@@ -205,19 +203,19 @@ void syn_cli_printf(const SYN_CLI *cli, const char *fmt, ...);
  */
 
 #ifndef SYN_CLI_CMD_VERSION
-#define SYN_CLI_CMD_VERSION  1
+#define SYN_CLI_CMD_VERSION 1
 #endif
 #ifndef SYN_CLI_CMD_UPTIME
 /** @brief Enable built-in 'uptime' command. */
-#define SYN_CLI_CMD_UPTIME   1
+#define SYN_CLI_CMD_UPTIME 1
 #endif
 #ifndef SYN_CLI_CMD_ERRORS
 /** @brief Enable built-in 'errors' command. */
-#define SYN_CLI_CMD_ERRORS   1
+#define SYN_CLI_CMD_ERRORS 1
 #endif
 #ifndef SYN_CLI_CMD_TASKS
 /** @brief Enable built-in 'tasks' command. */
-#define SYN_CLI_CMD_TASKS    1
+#define SYN_CLI_CMD_TASKS 1
 #endif
 
 struct SYN_ErrLog;

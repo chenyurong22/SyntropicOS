@@ -69,7 +69,8 @@ SYN_Status syn_filter_design_notch(q16_t fc_hz, q16_t fs_hz, q16_t Q, SYN_Biquad
  * @param biquad Target biquad filter instance.
  * @return SYN_OK on success, SYN_INVALID_PARAM if NULL.
  */
-SYN_Status syn_filter_design_apply_to_biquad(const SYN_BiquadCoeffs *coeffs, SYN_FilterBiquad *biquad);
+SYN_Status syn_filter_design_apply_to_biquad(const SYN_BiquadCoeffs *coeffs,
+                                             SYN_FilterBiquad *biquad);
 
 #ifdef __cplusplus
 }

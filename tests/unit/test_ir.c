@@ -3,10 +3,10 @@
  * @brief Unity unit tests for Infrared (IR) Remote Control Protocol Engine (syn_ir).
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/proto/syn_ir.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 #if defined(SYN_USE_IR) && SYN_USE_IR
 
@@ -16,11 +16,7 @@ static void test_ir_nec_decode_encode(void)
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_decoder_init(&decoder));
 
     /* 1. Standard NEC Frame: Address = 0x12, Command = 0x34 */
-    SYN_IR_Frame tx_frame = {
-        .protocol = SYN_IR_PROTO_NEC,
-        .address = 0x12,
-        .command = 0x34
-    };
+    SYN_IR_Frame tx_frame = {.protocol = SYN_IR_PROTO_NEC, .address = 0x12, .command = 0x34};
 
     SYN_IR_Pulse pulses[100];
     size_t count = 0;
@@ -55,10 +51,7 @@ static void test_ir_nec_decode_encode(void)
     /* 3. NEC Extended Frame: Address = 0x1234, Command = 0x56 */
     syn_ir_decoder_init(&decoder);
     SYN_IR_Frame ext_tx = {
-        .protocol = SYN_IR_PROTO_NEC_EXTENDED,
-        .address = 0x1234,
-        .command = 0x56
-    };
+        .protocol = SYN_IR_PROTO_NEC_EXTENDED, .address = 0x1234, .command = 0x56};
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_encode_frame(&ext_tx, pulses, 100, &count));
 
     for (size_t i = 0; i < count; i++) {
@@ -73,11 +66,7 @@ static void test_ir_nec_decode_encode(void)
 
     /* 4. Apple IR Frame */
     syn_ir_decoder_init(&decoder);
-    SYN_IR_Frame apple_tx = {
-        .protocol = SYN_IR_PROTO_APPLE,
-        .address = 0xEE87,
-        .command = 0x0B
-    };
+    SYN_IR_Frame apple_tx = {.protocol = SYN_IR_PROTO_APPLE, .address = 0xEE87, .command = 0x0B};
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_encode_frame(&apple_tx, pulses, 100, &count));
 
     for (size_t i = 0; i < count; i++) {
@@ -96,11 +85,7 @@ static void test_ir_sony_sircs_decode(void)
     SYN_IR_Decoder decoder;
 
     /* 1. Sony 12-bit SIRCS: Cmd = 0x1A (26), Addr = 0x01 */
-    SYN_IR_Frame s12_tx = {
-        .protocol = SYN_IR_PROTO_SONY_12,
-        .address = 0x01,
-        .command = 0x1A
-    };
+    SYN_IR_Frame s12_tx = {.protocol = SYN_IR_PROTO_SONY_12, .address = 0x01, .command = 0x1A};
     SYN_IR_Pulse pulses[100];
     size_t count = 0;
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_encode_frame(&s12_tx, pulses, 100, &count));
@@ -121,11 +106,7 @@ static void test_ir_sony_sircs_decode(void)
     TEST_ASSERT_EQUAL(40, rx_frame.carrier_khz);
 
     /* 2. Sony 15-bit SIRCS */
-    SYN_IR_Frame s15_tx = {
-        .protocol = SYN_IR_PROTO_SONY_15,
-        .address = 0x8A,
-        .command = 0x2B
-    };
+    SYN_IR_Frame s15_tx = {.protocol = SYN_IR_PROTO_SONY_15, .address = 0x8A, .command = 0x2B};
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_encode_frame(&s15_tx, pulses, 100, &count));
 
     syn_ir_decoder_init(&decoder);
@@ -140,11 +121,7 @@ static void test_ir_sony_sircs_decode(void)
     TEST_ASSERT_EQUAL(0x2B, rx_frame.command);
 
     /* 3. Sony 20-bit SIRCS */
-    SYN_IR_Frame s20_tx = {
-        .protocol = SYN_IR_PROTO_SONY_20,
-        .address = 0x05,
-        .command = 0x3F
-    };
+    SYN_IR_Frame s20_tx = {.protocol = SYN_IR_PROTO_SONY_20, .address = 0x05, .command = 0x3F};
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_encode_frame(&s20_tx, pulses, 100, &count));
 
     syn_ir_decoder_init(&decoder);
@@ -168,11 +145,7 @@ static void test_ir_rc5_rc6_samsung_kaseikyo_denon(void)
     bool decoded = false;
 
     /* 1. Samsung 32-bit: Address = 0x0707, Command = 0x02 */
-    SYN_IR_Frame sam_tx = {
-        .protocol = SYN_IR_PROTO_SAMSUNG,
-        .address = 0x0707,
-        .command = 0x02
-    };
+    SYN_IR_Frame sam_tx = {.protocol = SYN_IR_PROTO_SAMSUNG, .address = 0x0707, .command = 0x02};
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_encode_frame(&sam_tx, pulses, 150, &count));
     syn_ir_decoder_init(&decoder);
     for (size_t i = 0; i < count; i++) {
@@ -187,10 +160,7 @@ static void test_ir_rc5_rc6_samsung_kaseikyo_denon(void)
 
     /* 2. Kaseikyo 48-bit */
     SYN_IR_Frame kas_tx = {
-        .protocol = SYN_IR_PROTO_KASEIKYO,
-        .address = 0x4004,
-        .command = 0x01002000
-    };
+        .protocol = SYN_IR_PROTO_KASEIKYO, .address = 0x4004, .command = 0x01002000};
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_encode_frame(&kas_tx, pulses, 150, &count));
     syn_ir_decoder_init(&decoder);
     for (size_t i = 0; i < count; i++) {
@@ -204,11 +174,7 @@ static void test_ir_rc5_rc6_samsung_kaseikyo_denon(void)
     TEST_ASSERT_EQUAL(0x01002000, rx_frame.command);
 
     /* 3. Denon 15-bit */
-    SYN_IR_Frame den_tx = {
-        .protocol = SYN_IR_PROTO_DENON,
-        .address = 0x0A,
-        .command = 0x1C
-    };
+    SYN_IR_Frame den_tx = {.protocol = SYN_IR_PROTO_DENON, .address = 0x0A, .command = 0x1C};
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_encode_frame(&den_tx, pulses, 150, &count));
     syn_ir_decoder_init(&decoder);
     for (size_t i = 0; i < count; i++) {
@@ -222,12 +188,10 @@ static void test_ir_rc5_rc6_samsung_kaseikyo_denon(void)
     TEST_ASSERT_EQUAL(0x1C, rx_frame.command);
 
     /* 4. RC5 Frame with Toggle Bit */
-    SYN_IR_Frame rc5_tx = {
-        .protocol = SYN_IR_PROTO_RC5,
-        .address = 0x05,
-        .command = 0x0C,
-        .flags = SYN_IR_FLAG_TOGGLE
-    };
+    SYN_IR_Frame rc5_tx = {.protocol = SYN_IR_PROTO_RC5,
+                           .address = 0x05,
+                           .command = 0x0C,
+                           .flags = SYN_IR_FLAG_TOGGLE};
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_encode_frame(&rc5_tx, pulses, 150, &count));
     syn_ir_decoder_init(&decoder);
     decoded = false;
@@ -245,11 +209,7 @@ static void test_ir_rc5_rc6_samsung_kaseikyo_denon(void)
     TEST_ASSERT_EQUAL(0x0C, rx_frame.command);
 
     /* 5. RC6 Frame */
-    SYN_IR_Frame rc6_tx = {
-        .protocol = SYN_IR_PROTO_RC6,
-        .address = 0x04,
-        .command = 0x11
-    };
+    SYN_IR_Frame rc6_tx = {.protocol = SYN_IR_PROTO_RC6, .address = 0x04, .command = 0x11};
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_encode_frame(&rc6_tx, pulses, 150, &count));
     syn_ir_decoder_init(&decoder);
     decoded = false;
@@ -281,12 +241,12 @@ static void test_ir_edge_cases(void)
 
     size_t count = 0;
     SYN_IR_Pulse pulses[10];
-    SYN_IR_Frame frame = { .protocol = SYN_IR_PROTO_NEC, .address = 1, .command = 1 };
+    SYN_IR_Frame frame = {.protocol = SYN_IR_PROTO_NEC, .address = 1, .command = 1};
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ir_encode_frame(NULL, pulses, 10, &count));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ir_encode_frame(&frame, NULL, 10, &count));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ir_encode_frame(&frame, pulses, 10, NULL));
 
-    SYN_IR_Frame bad_proto = { .protocol = (SYN_IR_Protocol)999, .address = 1, .command = 1 };
+    SYN_IR_Frame bad_proto = {.protocol = (SYN_IR_Protocol)999, .address = 1, .command = 1};
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ir_encode_frame(&bad_proto, pulses, 10, &count));
 
     /* Buffer capacity too small */
@@ -349,12 +309,10 @@ static void test_ir_edge_cases(void)
     TEST_ASSERT_EQUAL(SYN_IR_STATE_IDLE, decoder.state);
 
     /* RC6 Frame with Toggle flag */
-    SYN_IR_Frame rc6_toggle = {
-        .protocol = SYN_IR_PROTO_RC6,
-        .address = 0x07,
-        .command = 0x02,
-        .flags = SYN_IR_FLAG_TOGGLE
-    };
+    SYN_IR_Frame rc6_toggle = {.protocol = SYN_IR_PROTO_RC6,
+                               .address = 0x07,
+                               .command = 0x02,
+                               .flags = SYN_IR_FLAG_TOGGLE};
     SYN_IR_Pulse rc6_pulses[100];
     size_t rc6_cnt = 0;
     TEST_ASSERT_EQUAL(SYN_OK, syn_ir_encode_frame(&rc6_toggle, rc6_pulses, 100, &rc6_cnt));

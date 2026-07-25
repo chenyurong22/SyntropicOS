@@ -13,56 +13,57 @@
 #include "../common/syn_defs.h"
 #include "../drivers/syn_can.h"
 #include "syn_j1939.h"
-#include <stdint.h>
-#include <stddef.h>
+
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** @defgroup n2k_pgns Standard NMEA 2000 Parameter Group Numbers
-  * @{ */
+ * @{ */
 /* Network Management */
-#define SYN_N2K_PGN_ISO_ACKNOWLEDGEMENT 59392U  /**< ISO Acknowledgement (0x0E800) */
-#define SYN_N2K_PGN_ISO_REQUEST         59904U  /**< ISO Request (0x0EA00) */
-#define SYN_N2K_PGN_ISO_ADDRESS_CLAIM   60928U  /**< ISO Address Claim (0x0EE00) */
-#define SYN_N2K_PGN_SYSTEM_TIME         126992U /**< System Time (0x1F010) */
-#define SYN_N2K_PGN_PRODUCT_INFO        126996U /**< Product Information (0x1F014) */
+#define SYN_N2K_PGN_ISO_ACKNOWLEDGEMENT 59392U /**< ISO Acknowledgement (0x0E800) */
+#define SYN_N2K_PGN_ISO_REQUEST 59904U         /**< ISO Request (0x0EA00) */
+#define SYN_N2K_PGN_ISO_ADDRESS_CLAIM 60928U   /**< ISO Address Claim (0x0EE00) */
+#define SYN_N2K_PGN_SYSTEM_TIME 126992U        /**< System Time (0x1F010) */
+#define SYN_N2K_PGN_PRODUCT_INFO 126996U       /**< Product Information (0x1F014) */
 
 /* Steering, Heading & Navigation */
-#define SYN_N2K_PGN_RUDDER               127245U /**< Rudder Angle (0x1F10D) */
-#define SYN_N2K_PGN_VESSEL_HEADING      127250U /**< Vessel Heading (0x1F112) */
-#define SYN_N2K_PGN_RATE_OF_TURN        127251U /**< Rate of Turn (0x1F113) */
-#define SYN_N2K_PGN_ATTITUDE            127257U /**< Attitude (Pitch/Roll/Yaw) (0x1F119) */
-#define SYN_N2K_PGN_MAGNETIC_VARIATION  127258U /**< Magnetic Variation (0x1F11A) */
-#define SYN_N2K_PGN_SPEED_WATER         128259U /**< Speed Through Water (0x1F503) */
-#define SYN_N2K_PGN_WATER_DEPTH         128267U /**< Water Depth (0x1F50B) */
-#define SYN_N2K_PGN_DISTANCE_LOG        128275U /**< Distance Log (0x1F513) */
-#define SYN_N2K_PGN_POS_RAPID           129025U /**< Position, Rapid Update (0x1F801) */
-#define SYN_N2K_PGN_COG_SOG_RAPID       129026U /**< COG & SOG, Rapid Update (0x1F802) */
-#define SYN_N2K_PGN_GNSS_POS            129029U /**< GNSS Position Data (0x1F805) */
+#define SYN_N2K_PGN_RUDDER 127245U             /**< Rudder Angle (0x1F10D) */
+#define SYN_N2K_PGN_VESSEL_HEADING 127250U     /**< Vessel Heading (0x1F112) */
+#define SYN_N2K_PGN_RATE_OF_TURN 127251U       /**< Rate of Turn (0x1F113) */
+#define SYN_N2K_PGN_ATTITUDE 127257U           /**< Attitude (Pitch/Roll/Yaw) (0x1F119) */
+#define SYN_N2K_PGN_MAGNETIC_VARIATION 127258U /**< Magnetic Variation (0x1F11A) */
+#define SYN_N2K_PGN_SPEED_WATER 128259U        /**< Speed Through Water (0x1F503) */
+#define SYN_N2K_PGN_WATER_DEPTH 128267U        /**< Water Depth (0x1F50B) */
+#define SYN_N2K_PGN_DISTANCE_LOG 128275U       /**< Distance Log (0x1F513) */
+#define SYN_N2K_PGN_POS_RAPID 129025U          /**< Position, Rapid Update (0x1F801) */
+#define SYN_N2K_PGN_COG_SOG_RAPID 129026U      /**< COG & SOG, Rapid Update (0x1F802) */
+#define SYN_N2K_PGN_GNSS_POS 129029U           /**< GNSS Position Data (0x1F805) */
 
 /* Power & Battery Systems */
-#define SYN_N2K_PGN_INVERTER_STATUS     127501U /**< Inverter Status (0x1F20D) */
-#define SYN_N2K_PGN_AC_INPUT_STATUS     127503U /**< AC Input Status (0x1F20F) */
-#define SYN_N2K_PGN_AC_OUTPUT_STATUS    127504U /**< AC Output Status (0x1F210) */
-#define SYN_N2K_PGN_FLUID_LEVEL         127505U /**< Fluid Level (Fuel/Water/Waste) (0x1F211) */
-#define SYN_N2K_PGN_DC_DETAILED_STATUS  127506U /**< DC Detailed Status (0x1F212) */
-#define SYN_N2K_PGN_CHARGER_STATUS      127507U /**< Charger Status (0x1F213) */
-#define SYN_N2K_PGN_BATTERY_STATUS      127508U /**< Battery Status (0x1F214) */
-#define SYN_N2K_PGN_CHARGER_CONFIG      127509U /**< Charger Configuration (0x1F215) */
+#define SYN_N2K_PGN_INVERTER_STATUS 127501U    /**< Inverter Status (0x1F20D) */
+#define SYN_N2K_PGN_AC_INPUT_STATUS 127503U    /**< AC Input Status (0x1F20F) */
+#define SYN_N2K_PGN_AC_OUTPUT_STATUS 127504U   /**< AC Output Status (0x1F210) */
+#define SYN_N2K_PGN_FLUID_LEVEL 127505U        /**< Fluid Level (Fuel/Water/Waste) (0x1F211) */
+#define SYN_N2K_PGN_DC_DETAILED_STATUS 127506U /**< DC Detailed Status (0x1F212) */
+#define SYN_N2K_PGN_CHARGER_STATUS 127507U     /**< Charger Status (0x1F213) */
+#define SYN_N2K_PGN_BATTERY_STATUS 127508U     /**< Battery Status (0x1F214) */
+#define SYN_N2K_PGN_CHARGER_CONFIG 127509U     /**< Charger Configuration (0x1F215) */
 
 /* Engine & Transmission */
-#define SYN_N2K_PGN_ENGINE_RAPID        127488U /**< Engine Parameters, Rapid Update (0x1F200) */
-#define SYN_N2K_PGN_ENGINE_DYNAMIC      127489U /**< Engine Parameters, Dynamic (0x1F201) */
+#define SYN_N2K_PGN_ENGINE_RAPID 127488U        /**< Engine Parameters, Rapid Update (0x1F200) */
+#define SYN_N2K_PGN_ENGINE_DYNAMIC 127489U      /**< Engine Parameters, Dynamic (0x1F201) */
 #define SYN_N2K_PGN_TRANSMISSION_PARAMS 127493U /**< Transmission Parameters (0x1F205) */
-#define SYN_N2K_PGN_TRIM_TAB            127497U /**< Trim Tab Position (0x1F209) */
+#define SYN_N2K_PGN_TRIM_TAB 127497U            /**< Trim Tab Position (0x1F209) */
 
 /* Environment */
-#define SYN_N2K_PGN_WIND_DATA           130306U /**< Wind Data (0x1FD02) */
-#define SYN_N2K_PGN_ENV_PARAMS          130310U /**< Environmental Parameters (0x1FD06) */
-#define SYN_N2K_PGN_ENVIRONMENTAL_ACT   130311U /**< Environmental Parameters (Actual) (0x1FD07) */
+#define SYN_N2K_PGN_WIND_DATA 130306U         /**< Wind Data (0x1FD02) */
+#define SYN_N2K_PGN_ENV_PARAMS 130310U        /**< Environmental Parameters (0x1FD06) */
+#define SYN_N2K_PGN_ENVIRONMENTAL_ACT 130311U /**< Environmental Parameters (Actual) (0x1FD07) */
 /** @} */
 
 /**
@@ -78,31 +79,31 @@ typedef struct {
  * @brief Rapid Update COG & SOG (PGN 129026).
  */
 typedef struct {
-    uint8_t  sid;             /**< Sequence ID / Measurement counter */
-    uint8_t  cog_ref;         /**< Course Reference (0=True, 1=Magnetic) */
-    uint16_t cog_rad_1e4;     /**< Course Over Ground in 0.0001 radians (0 to 62831) */
-    uint16_t sog_m_s_1e2;     /**< Speed Over Ground in 0.01 m/s (0 to 65532) */
+    uint8_t sid;          /**< Sequence ID / Measurement counter */
+    uint8_t cog_ref;      /**< Course Reference (0=True, 1=Magnetic) */
+    uint16_t cog_rad_1e4; /**< Course Over Ground in 0.0001 radians (0 to 62831) */
+    uint16_t sog_m_s_1e2; /**< Speed Over Ground in 0.01 m/s (0 to 65532) */
 } SYN_N2K_CogSogRapid;
 
 /**
  * @brief Vessel Heading (PGN 127250).
  */
 typedef struct {
-    uint8_t  sid;             /**< Sequence ID */
-    uint16_t heading_rad_1e4; /**< Heading angle in 0.0001 radians */
-    int16_t  deviation_rad_1e4;/**< Magnetic Deviation in 0.0001 radians */
-    int16_t  variation_rad_1e4;/**< Magnetic Variation in 0.0001 radians */
-    uint8_t  heading_ref;     /**< Heading Reference (0=True, 1=Magnetic) */
+    uint8_t sid;               /**< Sequence ID */
+    uint16_t heading_rad_1e4;  /**< Heading angle in 0.0001 radians */
+    int16_t deviation_rad_1e4; /**< Magnetic Deviation in 0.0001 radians */
+    int16_t variation_rad_1e4; /**< Magnetic Variation in 0.0001 radians */
+    uint8_t heading_ref;       /**< Heading Reference (0=True, 1=Magnetic) */
 } SYN_N2K_VesselHeading;
 
 /**
  * @brief Battery Status (PGN 127508).
  */
 typedef struct {
-    uint8_t  sid;             /**< Sequence ID */
-    uint8_t  instance;        /**< Battery Instance ID (0-254) */
+    uint8_t sid;              /**< Sequence ID */
+    uint8_t instance;         /**< Battery Instance ID (0-254) */
     uint16_t voltage_1e2;     /**< Battery Voltage in 0.01 Volts (e.g. 1250 = 12.50V) */
-    int16_t  current_1e1;     /**< Battery Current in 0.1 Amperes (e.g. 150 = 15.0A) */
+    int16_t current_1e1;      /**< Battery Current in 0.1 Amperes (e.g. 150 = 15.0A) */
     uint16_t temperature_1e1; /**< Battery Temperature in 0.1 Kelvin (e.g. 2982 = 298.2K / 25C) */
 } SYN_N2K_BatteryStatus;
 
@@ -110,11 +111,11 @@ typedef struct {
  * @brief DC Detailed Status (PGN 127506).
  */
 typedef struct {
-    uint8_t  sid;             /**< Sequence ID */
-    uint8_t  instance;        /**< DC Instance ID (0-254) */
-    uint8_t  dc_type;         /**< DC Source Type (0=Battery, 1=Alternator, 2=Convertor, 3=Solar, 4=Wind) */
-    uint8_t  state_of_charge; /**< State of Charge in 1% (0 to 100%) */
-    uint8_t  state_of_health; /**< State of Health in 1% (0 to 100%) */
+    uint8_t sid;      /**< Sequence ID */
+    uint8_t instance; /**< DC Instance ID (0-254) */
+    uint8_t dc_type;  /**< DC Source Type (0=Battery, 1=Alternator, 2=Convertor, 3=Solar, 4=Wind) */
+    uint8_t state_of_charge;  /**< State of Charge in 1% (0 to 100%) */
+    uint8_t state_of_health;  /**< State of Health in 1% (0 to 100%) */
     uint16_t time_to_go_min;  /**< Time Remaining in minutes (0 to 65532 min) */
     uint16_t capacity_ah_1e1; /**< Capacity / Ripple Voltage in 0.1 AH */
 } SYN_N2K_DcDetailedStatus;
@@ -123,7 +124,7 @@ typedef struct {
  * @brief Environmental Parameters (PGN 130310).
  */
 typedef struct {
-    uint8_t  sid;             /**< Sequence ID */
+    uint8_t sid;              /**< Sequence ID */
     uint16_t water_temp_1e2;  /**< Water Temperature in 0.01 Kelvin */
     uint16_t air_temp_1e2;    /**< Outside Air Temperature in 0.01 Kelvin */
     uint16_t pressure_pa_1e2; /**< Atmospheric Pressure in 100 Pa (hPa / mbar) */
@@ -133,14 +134,14 @@ typedef struct {
  * @brief NMEA 2000 Fast-Packet RX Re-assembly Context.
  */
 typedef struct {
-    bool     active;           /**< Active Fast-Packet session flag */
-    uint8_t  seq_id;           /**< Fast-Packet Sequence Identifier (0-7) */
-    uint8_t  expected_frame;   /**< Next expected frame index (0..31) */
-    uint8_t  sa;               /**< Sender Source Address */
-    uint32_t pgn;              /**< Target PGN */
-    uint8_t  total_bytes;      /**< Total payload length in bytes (max 223) */
-    uint8_t  received_bytes;   /**< Currently received byte count */
-    uint8_t  data[223];        /**< Re-assembled payload buffer */
+    bool active;            /**< Active Fast-Packet session flag */
+    uint8_t seq_id;         /**< Fast-Packet Sequence Identifier (0-7) */
+    uint8_t expected_frame; /**< Next expected frame index (0..31) */
+    uint8_t sa;             /**< Sender Source Address */
+    uint32_t pgn;           /**< Target PGN */
+    uint8_t total_bytes;    /**< Total payload length in bytes (max 223) */
+    uint8_t received_bytes; /**< Currently received byte count */
+    uint8_t data[223];      /**< Re-assembled payload buffer */
 } SYN_N2K_FastPacketRx;
 
 /**
@@ -150,7 +151,8 @@ typedef struct {
  * @param frame Output CAN frame.
  * @return SYN_OK on success.
  */
-SYN_Status syn_n2k_encode_position_rapid(uint8_t sa, const SYN_N2K_PositionRapid *pos, SYN_CAN_Frame *frame);
+SYN_Status syn_n2k_encode_position_rapid(uint8_t sa, const SYN_N2K_PositionRapid *pos,
+                                         SYN_CAN_Frame *frame);
 
 /**
  * @brief Decode PGN 129025 (Position, Rapid Update) from an 8-byte CAN frame.
@@ -167,7 +169,8 @@ SYN_Status syn_n2k_decode_position_rapid(const SYN_CAN_Frame *frame, SYN_N2K_Pos
  * @param frame Output CAN frame.
  * @return SYN_OK on success.
  */
-SYN_Status syn_n2k_encode_cog_sog_rapid(uint8_t sa, const SYN_N2K_CogSogRapid *cog_sog, SYN_CAN_Frame *frame);
+SYN_Status syn_n2k_encode_cog_sog_rapid(uint8_t sa, const SYN_N2K_CogSogRapid *cog_sog,
+                                        SYN_CAN_Frame *frame);
 
 /**
  * @brief Decode PGN 129026 (COG & SOG, Rapid Update) from an 8-byte CAN frame.
@@ -184,7 +187,8 @@ SYN_Status syn_n2k_decode_cog_sog_rapid(const SYN_CAN_Frame *frame, SYN_N2K_CogS
  * @param frame Output CAN frame.
  * @return SYN_OK on success.
  */
-SYN_Status syn_n2k_encode_heading(uint8_t sa, const SYN_N2K_VesselHeading *heading, SYN_CAN_Frame *frame);
+SYN_Status syn_n2k_encode_heading(uint8_t sa, const SYN_N2K_VesselHeading *heading,
+                                  SYN_CAN_Frame *frame);
 
 /**
  * @brief Decode PGN 127250 (Vessel Heading) from an 8-byte CAN frame.
@@ -201,7 +205,8 @@ SYN_Status syn_n2k_decode_heading(const SYN_CAN_Frame *frame, SYN_N2K_VesselHead
  * @param frame Output CAN frame.
  * @return SYN_OK on success.
  */
-SYN_Status syn_n2k_encode_battery(uint8_t sa, const SYN_N2K_BatteryStatus *battery, SYN_CAN_Frame *frame);
+SYN_Status syn_n2k_encode_battery(uint8_t sa, const SYN_N2K_BatteryStatus *battery,
+                                  SYN_CAN_Frame *frame);
 
 /**
  * @brief Decode PGN 127508 (Battery Status) from an 8-byte CAN frame.
@@ -218,7 +223,8 @@ SYN_Status syn_n2k_decode_battery(const SYN_CAN_Frame *frame, SYN_N2K_BatterySta
  * @param frame Output CAN frame.
  * @return SYN_OK on success.
  */
-SYN_Status syn_n2k_encode_dc_detailed(uint8_t sa, const SYN_N2K_DcDetailedStatus *dc, SYN_CAN_Frame *frame);
+SYN_Status syn_n2k_encode_dc_detailed(uint8_t sa, const SYN_N2K_DcDetailedStatus *dc,
+                                      SYN_CAN_Frame *frame);
 
 /**
  * @brief Decode PGN 127506 (DC Detailed Status) from an 8-byte CAN frame.
@@ -235,7 +241,8 @@ SYN_Status syn_n2k_decode_dc_detailed(const SYN_CAN_Frame *frame, SYN_N2K_DcDeta
  * @param frame Output CAN frame.
  * @return SYN_OK on success.
  */
-SYN_Status syn_n2k_encode_environment(uint8_t sa, const SYN_N2K_EnvParams *env, SYN_CAN_Frame *frame);
+SYN_Status syn_n2k_encode_environment(uint8_t sa, const SYN_N2K_EnvParams *env,
+                                      SYN_CAN_Frame *frame);
 
 /**
  * @brief Decode PGN 130310 (Environmental Parameters) from an 8-byte CAN frame.
@@ -254,10 +261,8 @@ SYN_Status syn_n2k_decode_environment(const SYN_CAN_Frame *frame, SYN_N2K_EnvPar
  * @param out_len Output length of payload in bytes.
  * @return SYN_OK if payload complete, or SYN_BUSY if Fast-Packet frames are still pending.
  */
-SYN_Status syn_n2k_fastpacket_process(SYN_N2K_FastPacketRx *rx,
-                                      const SYN_CAN_Frame *frame,
-                                      uint32_t target_pgn,
-                                      const uint8_t **out_payload,
+SYN_Status syn_n2k_fastpacket_process(SYN_N2K_FastPacketRx *rx, const SYN_CAN_Frame *frame,
+                                      uint32_t target_pgn, const uint8_t **out_payload,
                                       size_t *out_len);
 
 #ifdef __cplusplus

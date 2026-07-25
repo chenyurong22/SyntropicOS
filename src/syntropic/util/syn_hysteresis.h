@@ -27,8 +27,8 @@
 #ifndef SYN_HYSTERESIS_H
 #define SYN_HYSTERESIS_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,9 +36,9 @@ extern "C" {
 
 /** @brief Hysteresis comparator with configurable dead-band. */
 typedef struct {
-    int32_t  threshold;     /**< Center threshold value                   */
-    int32_t  band;          /**< Half-width of the deadband               */
-    bool     state;         /**< Current output state (high/low)          */
+    int32_t threshold; /**< Center threshold value                   */
+    int32_t band;      /**< Half-width of the deadband               */
+    bool state;        /**< Current output state (high/low)          */
 } SYN_Hysteresis;
 
 /**
@@ -51,14 +51,11 @@ typedef struct {
  *                   (threshold - band).
  * @param initial    Initial output state.
  */
-static inline void syn_hyst_init(SYN_Hysteresis *h,
-                                  int32_t threshold,
-                                  int32_t band,
-                                  bool initial)
+static inline void syn_hyst_init(SYN_Hysteresis *h, int32_t threshold, int32_t band, bool initial)
 {
     h->threshold = threshold;
-    h->band      = band;
-    h->state     = initial;
+    h->band = band;
+    h->state = initial;
 }
 
 /**
@@ -101,11 +98,10 @@ static inline bool syn_hyst_state(const SYN_Hysteresis *h)
  * @param threshold  New center threshold.
  * @param band       New half-width of dead-band.
  */
-static inline void syn_hyst_set(SYN_Hysteresis *h,
-                                 int32_t threshold, int32_t band)
+static inline void syn_hyst_set(SYN_Hysteresis *h, int32_t threshold, int32_t band)
 {
     h->threshold = threshold;
-    h->band      = band;
+    h->band = band;
 }
 
 #ifdef __cplusplus

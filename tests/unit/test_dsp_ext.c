@@ -3,13 +3,14 @@
  * @brief Unity tests for Biquad filter and FFT extensions.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
+#include "unity/unity.h"
+
 #include <math.h>
 
 #ifndef M_PI
-  #define M_PI 3.14159265358979323846
+#define M_PI 3.14159265358979323846
 #endif
 
 static void test_trig_math(void)
@@ -41,7 +42,8 @@ static void test_biquad_filter(void)
     SYN_FilterBiquad f;
 
     /* Test manual initialization */
-    syn_filter_biquad_init(&f, Q16_ONE, Q16_FROM_INT(2), Q16_FROM_INT(3), Q16_FROM_INT(4), Q16_FROM_INT(5));
+    syn_filter_biquad_init(&f, Q16_ONE, Q16_FROM_INT(2), Q16_FROM_INT(3), Q16_FROM_INT(4),
+                           Q16_FROM_INT(5));
     TEST_ASSERT_EQUAL(Q16_ONE, f.b0);
     TEST_ASSERT_EQUAL(Q16_FROM_INT(2), f.b1);
     TEST_ASSERT_EQUAL(Q16_FROM_INT(3), f.b2);
@@ -76,7 +78,8 @@ static void test_biquad_attenuation(void)
         q16_t in = Q16_FROM_FLOAT(sin(angle));
         q16_t out = syn_filter_biquad_update(&f, in);
         if (i > 100) { /* wait for transient response to settle */
-            if (q16_abs(out) > max_out_low) max_out_low = q16_abs(out);
+            if (q16_abs(out) > max_out_low)
+                max_out_low = q16_abs(out);
         }
     }
     /* Output amplitude should be > 0.85 (gain at 1Hz is close to 1) */
@@ -91,7 +94,8 @@ static void test_biquad_attenuation(void)
         q16_t in = Q16_FROM_FLOAT(sin(angle));
         q16_t out = syn_filter_biquad_update(&f, in);
         if (i > 100) {
-            if (q16_abs(out) > max_out_high) max_out_high = q16_abs(out);
+            if (q16_abs(out) > max_out_high)
+                max_out_high = q16_abs(out);
         }
     }
     /* Output amplitude should be heavily attenuated (< 0.15) */
@@ -118,7 +122,7 @@ static void test_fft(void)
     for (int i = 0; i < 32; i++) {
         double r = (double)real[i] / 65536.0;
         double im = (double)imag[i] / 65536.0;
-        magnitude[i] = Q16_FROM_FLOAT(sqrt(r*r + im*im));
+        magnitude[i] = Q16_FROM_FLOAT(sqrt(r * r + im * im));
     }
 
     q16_t max_mag = 0;
@@ -179,7 +183,7 @@ static void test_fft_impulse(void)
     for (int i = 0; i < 32; i++) {
         double r = (double)real[i] / 65536.0;
         double im = (double)imag[i] / 65536.0;
-        q16_t magnitude = Q16_FROM_FLOAT(sqrt(r*r + im*im));
+        q16_t magnitude = Q16_FROM_FLOAT(sqrt(r * r + im * im));
         TEST_ASSERT_INT_WITHIN(Q16_FROM_FLOAT(0.01), Q16_ONE, magnitude);
     }
 }
@@ -242,8 +246,10 @@ static void test_fft_against_reference(void)
         double diff_r = ref_real[k] - fft_r;
         double diff_i = ref_imag[k] - fft_i;
 
-        if (diff_r < 0) diff_r = -diff_r;
-        if (diff_i < 0) diff_i = -diff_i;
+        if (diff_r < 0)
+            diff_r = -diff_r;
+        if (diff_i < 0)
+            diff_i = -diff_i;
 
         TEST_ASSERT_TRUE(diff_r < 0.02);
         TEST_ASSERT_TRUE(diff_i < 0.02);
@@ -298,7 +304,8 @@ static void test_fft_spectrum_analytics(void)
 
     /* Synthesize signal: fundamental at bin 4 (A=1.0), harmonic at bin 8 (A=0.1) */
     for (uint16_t i = 0; i < 32; i++) {
-        q16_t t = q16_div(q16_mul(q16_mul(Q16_FROM_INT(2), Q16_PI), Q16_FROM_INT(i)), Q16_FROM_INT(32));
+        q16_t t =
+            q16_div(q16_mul(q16_mul(Q16_FROM_INT(2), Q16_PI), Q16_FROM_INT(i)), Q16_FROM_INT(32));
         q16_t f1 = q16_cos(q16_mul(Q16_FROM_INT(4), t));
         q16_t f2 = q16_mul(Q16_FROM_FLOAT(0.1), q16_cos(q16_mul(Q16_FROM_INT(8), t)));
         real[i] = f1 + f2;
@@ -311,7 +318,8 @@ static void test_fft_spectrum_analytics(void)
     /* Peak finding */
     SYN_FFTPeak peaks[4];
     uint8_t num_peaks = 0;
-    TEST_ASSERT_EQUAL(SYN_OK, syn_fft_find_peaks(mag, 17, Q16_FROM_INT(1000), peaks, 4, &num_peaks));
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_fft_find_peaks(mag, 17, Q16_FROM_INT(1000), peaks, 4, &num_peaks));
     TEST_ASSERT_TRUE(num_peaks >= 2);
     TEST_ASSERT_EQUAL_INT(4, peaks[0].bin); /* Top peak at bin 4 */
     TEST_ASSERT_EQUAL_INT(8, peaks[1].bin); /* Second peak at bin 8 */
@@ -324,12 +332,14 @@ static void test_fft_spectrum_analytics(void)
 
     /* Invalid parameters tests */
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_fft_magnitude_spectrum(NULL, imag, mag, 32));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_fft_find_peaks(NULL, 17, Q16_FROM_INT(1000), peaks, 4, &num_peaks));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_fft_find_peaks(NULL, 17, Q16_FROM_INT(1000), peaks, 4, &num_peaks));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_fft_thd(NULL, 17, 4, 3, &thd_pct));
 
     /* Peak sorting test: smaller peak at lower bin, larger peak at higher bin */
-    q16_t synthetic_mag[8] = { 0, 100, 0, 500, 0, 0, 0, 0 };
-    TEST_ASSERT_EQUAL(SYN_OK, syn_fft_find_peaks(synthetic_mag, 8, Q16_FROM_INT(1000), peaks, 4, &num_peaks));
+    q16_t synthetic_mag[8] = {0, 100, 0, 500, 0, 0, 0, 0};
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_fft_find_peaks(synthetic_mag, 8, Q16_FROM_INT(1000), peaks, 4, &num_peaks));
     TEST_ASSERT_EQUAL_INT(2, num_peaks);
     TEST_ASSERT_EQUAL_INT(3, peaks[0].bin); /* Larger peak (500) sorted first */
     TEST_ASSERT_EQUAL_INT(1, peaks[1].bin); /* Smaller peak (100) sorted second */

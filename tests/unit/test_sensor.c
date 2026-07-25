@@ -3,10 +3,10 @@
  * @brief Unity tests for syn_sensor.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/sensor/syn_sensor.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int16_t mock_sensor_value = 0;
 static int sensor_high_count = 0;
@@ -20,26 +20,29 @@ static int16_t mock_sensor_read(void *ctx)
 
 static void sensor_on_high(SYN_Sensor *s, int16_t v, void *ctx)
 {
-    (void)s; (void)v; (void)ctx;
+    (void)s;
+    (void)v;
+    (void)ctx;
     sensor_high_count++;
 }
 
 static void sensor_on_low(SYN_Sensor *s, int16_t v, void *ctx)
 {
-    (void)s; (void)v; (void)ctx;
+    (void)s;
+    (void)v;
+    (void)ctx;
     sensor_low_count++;
 }
 
 static void test_sensor(void)
 {
-
     mock_tick_ms = 0;
     sensor_high_count = 0;
-    sensor_low_count  = 0;
+    sensor_low_count = 0;
 
     SYN_Sensor sensor;
     SYN_FilterEMA ema;
-    syn_filter_ema_init(&ema, 255);  /* alpha=1.0 (no filtering for testing) */
+    syn_filter_ema_init(&ema, 255); /* alpha=1.0 (no filtering for testing) */
 
     syn_sensor_init(&sensor, "test", mock_sensor_read, NULL);
     syn_sensor_set_interval(&sensor, 100);
@@ -84,7 +87,7 @@ static void test_sensor_filters_and_edge_cases(void)
 {
     mock_tick_ms = 0;
     sensor_high_count = 0;
-    sensor_low_count  = 0;
+    sensor_low_count = 0;
 
     SYN_Sensor s;
     syn_sensor_init(&s, "temp", mock_sensor_read, NULL);
@@ -135,7 +138,7 @@ static void test_sensor_filters_and_edge_cases(void)
 
     /* 4. Threshold Callback Triggering & Clearing */
     syn_sensor_set_threshold(&s, 500, 50, sensor_on_high, sensor_on_low, NULL);
-    
+
     mock_sensor_value = 600;
     syn_sensor_read_now(&s);
     TEST_ASSERT_EQUAL_INT(1, sensor_high_count);

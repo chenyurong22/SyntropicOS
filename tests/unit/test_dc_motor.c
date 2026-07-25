@@ -3,16 +3,16 @@
  * @brief Unity tests for syn_dc_motor — full coverage.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/motor/syn_dc_motor.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 /* ── Duty callback capture ──────────────────────────────────────────────── */
 
 static uint16_t last_duty_pin;
 static uint16_t last_duty_val;
-static int      duty_call_count;
+static int duty_call_count;
 
 static void duty_cb(SYN_GPIO_Pin pin, uint16_t duty, void *ctx)
 {
@@ -24,8 +24,8 @@ static void duty_cb(SYN_GPIO_Pin pin, uint16_t duty, void *ctx)
 
 static void duty_reset(void)
 {
-    last_duty_pin  = 0xFF;
-    last_duty_val  = 0xFF;
+    last_duty_pin = 0xFF;
+    last_duty_val = 0xFF;
     duty_call_count = 0;
 }
 
@@ -114,11 +114,11 @@ static void test_dc_motor_dual_pwm_no_callback(void)
     /* Forward — pin_a HIGH, pin_b LOW */
     syn_dc_motor_set_speed(&motor, 80);
     TEST_ASSERT_EQUAL(SYN_GPIO_HIGH, mock_gpio_states[5]); /* pin_a HIGH */
-    TEST_ASSERT_EQUAL(SYN_GPIO_LOW,  mock_gpio_states[6]); /* pin_b LOW */
+    TEST_ASSERT_EQUAL(SYN_GPIO_LOW, mock_gpio_states[6]);  /* pin_b LOW */
 
     /* Reverse — pin_a LOW, pin_b HIGH */
     syn_dc_motor_set_speed(&motor, -80);
-    TEST_ASSERT_EQUAL(SYN_GPIO_LOW,  mock_gpio_states[5]);
+    TEST_ASSERT_EQUAL(SYN_GPIO_LOW, mock_gpio_states[5]);
     TEST_ASSERT_EQUAL(SYN_GPIO_HIGH, mock_gpio_states[6]);
 
     /* Zero speed forward — pin_a LOW (duty=0), pin_b LOW */

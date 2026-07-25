@@ -3,18 +3,18 @@
  * @brief Unity tests for Dynamic IIR Biquad Filter Design Generator.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
-#include "syntropic/dsp/syn_filter_design.h"
 #include "syntropic/dsp/syn_biquad.h"
+#include "syntropic/dsp/syn_filter_design.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_filter_design_lowpass(void)
 {
     SYN_BiquadCoeffs coeffs;
     q16_t fc = Q16_FROM_INT(100);
     q16_t fs = Q16_FROM_INT(1000);
-    q16_t Q  = Q16_FROM_FLOAT(0.7071); /* Butterworth */
+    q16_t Q = Q16_FROM_FLOAT(0.7071); /* Butterworth */
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_filter_design_lowpass(fc, fs, Q, &coeffs));
 
@@ -40,7 +40,7 @@ static void test_filter_design_highpass(void)
     SYN_BiquadCoeffs coeffs;
     q16_t fc = Q16_FROM_INT(200);
     q16_t fs = Q16_FROM_INT(1000);
-    q16_t Q  = Q16_FROM_FLOAT(0.7071);
+    q16_t Q = Q16_FROM_FLOAT(0.7071);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_filter_design_highpass(fc, fs, Q, &coeffs));
 
@@ -64,7 +64,7 @@ static void test_filter_design_bandpass_and_notch(void)
     SYN_BiquadCoeffs bp_coeffs, notch_coeffs;
     q16_t fc = Q16_FROM_INT(60);
     q16_t fs = Q16_FROM_INT(1000);
-    q16_t Q  = Q16_FROM_INT(5);
+    q16_t Q = Q16_FROM_INT(5);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_filter_design_bandpass(fc, fs, Q, &bp_coeffs));
     TEST_ASSERT_EQUAL(SYN_OK, syn_filter_design_notch(fc, fs, Q, &notch_coeffs));
@@ -95,7 +95,7 @@ static void test_filter_design_invalid_params(void)
     SYN_BiquadCoeffs coeffs;
     q16_t fc = Q16_FROM_INT(100);
     q16_t fs = Q16_FROM_INT(1000);
-    q16_t Q  = Q16_FROM_FLOAT(0.7071);
+    q16_t Q = Q16_FROM_FLOAT(0.7071);
 
     /* NULL outputs */
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_design_lowpass(fc, fs, Q, NULL));
@@ -106,7 +106,8 @@ static void test_filter_design_invalid_params(void)
 
     /* Frequency limits (fc <= 0 or fc >= fs/2) */
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_design_lowpass(0, fs, Q, &coeffs));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_design_lowpass(Q16_FROM_INT(500), fs, Q, &coeffs));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_filter_design_lowpass(Q16_FROM_INT(500), fs, Q, &coeffs));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_design_lowpass(fc, 0, Q, &coeffs));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_design_lowpass(fc, fs, 0, &coeffs));
 }
@@ -116,7 +117,7 @@ static void test_biquad_direct_methods(void)
     SYN_FilterBiquad f;
     q16_t fc = Q16_FROM_INT(100);
     q16_t fs = Q16_FROM_INT(1000);
-    q16_t q  = Q16_FROM_INT(2);
+    q16_t q = Q16_FROM_INT(2);
 
     syn_filter_biquad_init(&f, Q16_ONE, 0, 0, 0, 0);
     TEST_ASSERT_EQUAL(Q16_ONE, syn_filter_biquad_update(&f, Q16_ONE));

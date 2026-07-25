@@ -12,8 +12,8 @@
 #define SYN_UART_H
 
 #include "../common/syn_defs.h"
-#include "../util/syn_ringbuf.h"
 #include "../port/syn_port_uart.h"
+#include "../util/syn_ringbuf.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,18 +22,18 @@ extern "C" {
 /* ── Configuration defaults (override in syn_config.h) ───────────────── */
 
 #ifndef SYN_UART_TX_BUF_SIZE
-  /** @brief UART transmit buffer size (bytes). */
-  #define SYN_UART_TX_BUF_SIZE   128
+/** @brief UART transmit buffer size (bytes). */
+#define SYN_UART_TX_BUF_SIZE 128
 #endif
 
 #ifndef SYN_UART_RX_BUF_SIZE
-  /** @brief UART receive buffer size (bytes). */
-  #define SYN_UART_RX_BUF_SIZE   128
+/** @brief UART receive buffer size (bytes). */
+#define SYN_UART_RX_BUF_SIZE 128
 #endif
 
 #ifndef SYN_UART_MAX_INSTANCES
-  /** @brief Maximum UART instances supported. */
-  #define SYN_UART_MAX_INSTANCES  2
+/** @brief Maximum UART instances supported. */
+#define SYN_UART_MAX_INSTANCES 2
 #endif
 
 /* ── UART handle ────────────────────────────────────────────────────────── */
@@ -46,12 +46,12 @@ extern "C" {
  * allocation is needed.
  */
 typedef struct {
-    SYN_UARTInstance instance;     /**< Hardware UART peripheral index */
-    SYN_RingBuf     tx_rb;         /**< Transmit ring buffer control block */
-    SYN_RingBuf     rx_rb;         /**< Receive ring buffer control block */
-    uint8_t          tx_buf[SYN_UART_TX_BUF_SIZE]; /**< Physical storage memory for TX ring buffer */
-    uint8_t          rx_buf[SYN_UART_RX_BUF_SIZE]; /**< Physical storage memory for RX ring buffer */
-    bool             initialized;   /**< Initialization flag status */
+    SYN_UARTInstance instance;            /**< Hardware UART peripheral index */
+    SYN_RingBuf tx_rb;                    /**< Transmit ring buffer control block */
+    SYN_RingBuf rx_rb;                    /**< Receive ring buffer control block */
+    uint8_t tx_buf[SYN_UART_TX_BUF_SIZE]; /**< Physical storage memory for TX ring buffer */
+    uint8_t rx_buf[SYN_UART_RX_BUF_SIZE]; /**< Physical storage memory for RX ring buffer */
+    bool initialized;                     /**< Initialization flag status */
 } SYN_UART;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -64,9 +64,7 @@ typedef struct {
  * @param baudrate  Desired baud rate.
  * @return SYN_OK on success.
  */
-SYN_Status syn_uart_init(SYN_UART *uart,
-                            SYN_UARTInstance instance,
-                            uint32_t baudrate);
+SYN_Status syn_uart_init(SYN_UART *uart, SYN_UARTInstance instance, uint32_t baudrate);
 
 /**
  * @brief De-initialize a UART instance.
@@ -84,9 +82,7 @@ SYN_Status syn_uart_deinit(SYN_UART *uart);
  * @param timeout_ms Timeout in milliseconds (0 = no timeout).
  * @return SYN_OK on success.
  */
-SYN_Status syn_uart_write_str(const SYN_UART *uart,
-                                const char *str,
-                                uint32_t timeout_ms);
+SYN_Status syn_uart_write_str(const SYN_UART *uart, const char *str, uint32_t timeout_ms);
 
 /**
  * @brief Write a buffer of bytes to the UART (blocking).
@@ -97,10 +93,8 @@ SYN_Status syn_uart_write_str(const SYN_UART *uart,
  * @param timeout_ms Timeout in milliseconds (0 = no timeout).
  * @return SYN_OK on success.
  */
-SYN_Status syn_uart_write(const SYN_UART *uart,
-                             const uint8_t *data,
-                             size_t len,
-                             uint32_t timeout_ms);
+SYN_Status syn_uart_write(const SYN_UART *uart, const uint8_t *data, size_t len,
+                          uint32_t timeout_ms);
 
 /**
  * @brief Read bytes from the UART RX ring buffer.

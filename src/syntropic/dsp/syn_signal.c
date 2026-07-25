@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SIGNAL) || SYN_USE_SIGNAL
@@ -9,21 +9,21 @@
  * @brief Signal statistics implementation.
  */
 
-#include "syn_signal.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_qmath.h"
+#include "syn_signal.h"
 
-#include <string.h>
 #include <limits.h>
+#include <string.h>
 
 /* INT32_MIN / INT32_MAX fallback for C99 */
 #ifndef INT32_MIN
 /** @brief INT32_MIN fallback for pre-C99 compilers. */
-#define INT32_MIN  (-2147483647 - 1)
+#define INT32_MIN (-2147483647 - 1)
 #endif
 #ifndef INT32_MAX
 /** @brief INT32_MAX fallback for pre-C99 compilers. */
-#define INT32_MAX  2147483647
+#define INT32_MAX 2147483647
 #endif
 
 void syn_signal_init(SYN_Signal *sig, int32_t *buf, size_t capacity)
@@ -33,7 +33,7 @@ void syn_signal_init(SYN_Signal *sig, int32_t *buf, size_t capacity)
     SYN_ASSERT(capacity > 0);
 
     memset(sig, 0, sizeof(*sig));
-    sig->buf      = buf;
+    sig->buf = buf;
     sig->capacity = capacity;
     memset(buf, 0, sizeof(int32_t) * capacity);
 }
@@ -51,16 +51,17 @@ void syn_signal_push(SYN_Signal *sig, int32_t sample)
     sig->sum += sample;
 
     sig->head++;
-    if (sig->head >= sig->capacity) sig->head = 0;
+    if (sig->head >= sig->capacity)
+        sig->head = 0;
 
     sig->cache_valid = false;
 }
 
 void syn_signal_clear(SYN_Signal *sig)
 {
-    sig->head  = 0;
+    sig->head = 0;
     sig->count = 0;
-    sig->sum   = 0;
+    sig->sum = 0;
     sig->cache_valid = false;
 }
 
@@ -72,7 +73,8 @@ void syn_signal_clear(SYN_Signal *sig)
  */
 static void recompute_minmax(SYN_Signal *sig)
 {
-    if (sig->cache_valid || sig->count == 0) return;
+    if (sig->cache_valid || sig->count == 0)
+        return;
 
     int32_t lo = INT32_MAX;
     int32_t hi = INT32_MIN;
@@ -89,25 +91,29 @@ static void recompute_minmax(SYN_Signal *sig)
     for (i = 0; i < sig->count; i++) {
         size_t idx = (start + i) % sig->capacity;
         int32_t v = sig->buf[idx];
-        if (v < lo) lo = v;
-        if (v > hi) hi = v;
+        if (v < lo)
+            lo = v;
+        if (v > hi)
+            hi = v;
     }
 
-    sig->cached_min  = lo;
-    sig->cached_max  = hi;
+    sig->cached_min = lo;
+    sig->cached_max = hi;
     sig->cache_valid = true;
 }
 
 int32_t syn_signal_min(SYN_Signal *sig)
 {
-    if (sig->count == 0) return 0;
+    if (sig->count == 0)
+        return 0;
     recompute_minmax(sig);
     return sig->cached_min;
 }
 
 int32_t syn_signal_max(SYN_Signal *sig)
 {
-    if (sig->count == 0) return 0;
+    if (sig->count == 0)
+        return 0;
     recompute_minmax(sig);
     return sig->cached_max;
 }
@@ -116,7 +122,8 @@ int32_t syn_signal_max(SYN_Signal *sig)
 
 int32_t syn_signal_variance_q16(const SYN_Signal *sig)
 {
-    if (sig->count < 2) return 0;
+    if (sig->count < 2)
+        return 0;
 
     int32_t mean = (int32_t)(sig->sum / (int64_t)sig->count);
 
@@ -139,8 +146,10 @@ int32_t syn_signal_variance_q16(const SYN_Signal *sig)
     int64_t var_q16 = (sum_sq << 16) / (int64_t)sig->count;
 
     /* Clamp to int32_t range */
-    if (var_q16 > INT32_MAX) return INT32_MAX;
-    if (var_q16 < INT32_MIN) return INT32_MIN;
+    if (var_q16 > INT32_MAX)
+        return INT32_MAX;
+    if (var_q16 < INT32_MIN)
+        return INT32_MIN;
 
     return (int32_t)var_q16;
 }
@@ -149,14 +158,16 @@ int32_t syn_signal_variance_q16(const SYN_Signal *sig)
 
 int32_t syn_signal_latest(const SYN_Signal *sig)
 {
-    if (sig->count == 0) return 0;
+    if (sig->count == 0)
+        return 0;
     size_t idx = (sig->head == 0) ? sig->capacity - 1 : sig->head - 1;
     return sig->buf[idx];
 }
 
 int32_t syn_signal_at(const SYN_Signal *sig, size_t index)
 {
-    if (index >= sig->count) return 0;
+    if (index >= sig->count)
+        return 0;
 
     size_t start;
     if (sig->count < sig->capacity) {
@@ -171,10 +182,11 @@ int32_t syn_signal_at(const SYN_Signal *sig, size_t index)
 
 int32_t syn_signal_delta(const SYN_Signal *sig)
 {
-    if (sig->count < 2) return 0;
+    if (sig->count < 2)
+        return 0;
 
     size_t latest_idx = (sig->head == 0) ? sig->capacity - 1 : sig->head - 1;
-    size_t prev_idx   = (latest_idx == 0) ? sig->capacity - 1 : latest_idx - 1;
+    size_t prev_idx = (latest_idx == 0) ? sig->capacity - 1 : latest_idx - 1;
 
     return sig->buf[latest_idx] - sig->buf[prev_idx];
 }
@@ -183,7 +195,8 @@ int32_t syn_signal_delta(const SYN_Signal *sig)
 
 int32_t syn_signal_rms_q16(const SYN_Signal *sig)
 {
-    if (sig->count == 0) return 0;
+    if (sig->count == 0)
+        return 0;
 
     /* RMS = sqrt( sum(x^2) / N )
      * Accumulate x^2 in 64-bit, then divide by N, shift to Q16, sqrt. */
@@ -206,7 +219,8 @@ int32_t syn_signal_rms_q16(const SYN_Signal *sig)
     int64_t mean_sq_q16 = (sum_sq << 16) / (int64_t)sig->count;
 
     /* Clamp to int32_t range for q16_sqrt input */
-    if (mean_sq_q16 > INT32_MAX) mean_sq_q16 = INT32_MAX;
+    if (mean_sq_q16 > INT32_MAX)
+        mean_sq_q16 = INT32_MAX;
 
     return q16_sqrt((q16_t)mean_sq_q16);
 }
@@ -214,7 +228,8 @@ int32_t syn_signal_rms_q16(const SYN_Signal *sig)
 int32_t syn_signal_std_dev_q16(const SYN_Signal *sig)
 {
     int32_t var = syn_signal_variance_q16(sig);
-    if (var <= 0) return 0;
+    if (var <= 0)
+        return 0;
     return q16_sqrt(var);
 }
 

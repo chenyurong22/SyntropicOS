@@ -35,8 +35,8 @@
 
 #include "../common/syn_defs.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,40 +46,40 @@ extern "C" {
 
 /** @brief Menu item action types. */
 typedef enum {
-    SYN_MENU_ACTION_SUBMENU  = 0,  /**< Navigate into child menu        */
-    SYN_MENU_ACTION_CALLBACK = 1,  /**< Call a function                  */
-    SYN_MENU_ACTION_TOGGLE   = 2,  /**< Toggle a bool                   */
-    SYN_MENU_ACTION_VALUE    = 3,  /**< Adjust an int32_t value          */
+    SYN_MENU_ACTION_SUBMENU = 0,  /**< Navigate into child menu        */
+    SYN_MENU_ACTION_CALLBACK = 1, /**< Call a function                  */
+    SYN_MENU_ACTION_TOGGLE = 2,   /**< Toggle a bool                   */
+    SYN_MENU_ACTION_VALUE = 3,    /**< Adjust an int32_t value          */
 } SYN_MenuAction;
 
 /* ── Value config (for ACTION_VALUE items) ──────────────────────────────── */
 
 /** @brief Value adjustment config for SYN_MENU_ACTION_VALUE items. */
 typedef struct {
-    int32_t *value;     /**< Pointer to the value to adjust              */
-    int32_t  min;       /**< Minimum allowed value                       */
-    int32_t  max;       /**< Maximum allowed value                       */
-    int32_t  step;      /**< Increment/decrement step                    */
+    int32_t *value; /**< Pointer to the value to adjust              */
+    int32_t min;    /**< Minimum allowed value                       */
+    int32_t max;    /**< Maximum allowed value                       */
+    int32_t step;   /**< Increment/decrement step                    */
 } SYN_MenuValueCfg;
 
 /* ── Menu item ──────────────────────────────────────────────────────────── */
 
 /** @brief Menu item — label + action type + union payload. */
 typedef struct SYN_MenuItem {
-    const char                   *label;       /**< Display text            */
-    uint8_t                       action;      /**< SYN_MenuAction         */
+    const char *label; /**< Display text            */
+    uint8_t action;    /**< SYN_MenuAction         */
     union {
         struct {
             const struct SYN_MenuItem *children; /**< Child items array    */
-            uint8_t                     count;   /**< Number of children   */
+            uint8_t count;                       /**< Number of children   */
         } submenu;                               /**< SYN_MENU_ACTION_SUBMENU */
         struct {
-            void (*func)(void *ctx);             /**< Callback function    */
-            void  *ctx;                          /**< Callback context     */
-        } callback;                              /**< SYN_MENU_ACTION_CALLBACK */
-        bool                       *toggle;      /**< SYN_MENU_ACTION_TOGGLE */
-        SYN_MenuValueCfg           value_cfg;    /**< SYN_MENU_ACTION_VALUE */
-    } u;                                         /**< Action-specific data */
+            void (*func)(void *ctx); /**< Callback function    */
+            void *ctx;               /**< Callback context     */
+        } callback;                  /**< SYN_MENU_ACTION_CALLBACK */
+        bool *toggle;                /**< SYN_MENU_ACTION_TOGGLE */
+        SYN_MenuValueCfg value_cfg;  /**< SYN_MENU_ACTION_VALUE */
+    } u;                             /**< Action-specific data */
 } SYN_MenuItem;
 
 /** @name Convenience macros for static menu definition
@@ -87,28 +87,37 @@ typedef struct SYN_MenuItem {
  */
 
 /** @brief Define a submenu item. */
-#define SYN_MENU_SUBMENU(lbl, items) \
-    { .label = (lbl), .action = SYN_MENU_ACTION_SUBMENU, \
-      .u = { .submenu = { .children = (items), .count = sizeof(items)/sizeof((items)[0]) } } }
+#define SYN_MENU_SUBMENU(lbl, items)                                                      \
+    {                                                                                     \
+        .label = (lbl), .action = SYN_MENU_ACTION_SUBMENU, .u = {                         \
+            .submenu = {.children = (items), .count = sizeof(items) / sizeof((items)[0])} \
+        }                                                                                 \
+    }
 
 /** @brief Define a callback action item. */
-#define SYN_MENU_CALLBACK(lbl, fn, c) \
-    { .label = (lbl), .action = SYN_MENU_ACTION_CALLBACK, \
-      .u = { .callback = { .func = (fn), .ctx = (c) } } }
+#define SYN_MENU_CALLBACK(lbl, fn, c)                              \
+    {                                                              \
+        .label = (lbl), .action = SYN_MENU_ACTION_CALLBACK, .u = { \
+            .callback = {.func = (fn), .ctx = (c)}                 \
+        }                                                          \
+    }
 
 /** @brief Define a boolean toggle item. */
-#define SYN_MENU_TOGGLE(lbl, ptr) \
-    { .label = (lbl), .action = SYN_MENU_ACTION_TOGGLE, \
-      .u = { .toggle = (ptr) } }
+#define SYN_MENU_TOGGLE(lbl, ptr)                                                 \
+    {                                                                             \
+        .label = (lbl), .action = SYN_MENU_ACTION_TOGGLE, .u = {.toggle = (ptr) } \
+    }
 
 /** @brief Define a numeric value editor item. */
-#define SYN_MENU_VALUE(lbl, ptr, mn, mx, st) \
-    { .label = (lbl), .action = SYN_MENU_ACTION_VALUE, \
-      .u = { .value_cfg = { .value = (ptr), .min = (mn), .max = (mx), .step = (st) } } }
+#define SYN_MENU_VALUE(lbl, ptr, mn, mx, st)                                      \
+    {                                                                             \
+        .label = (lbl), .action = SYN_MENU_ACTION_VALUE, .u = {                   \
+            .value_cfg = {.value = (ptr), .min = (mn), .max = (mx), .step = (st)} \
+        }                                                                         \
+    }
 
 /** @brief Define the root menu. */
-#define SYN_MENU_ROOT(name, items) \
-    static const SYN_MenuItem name = SYN_MENU_SUBMENU(#name, items)
+#define SYN_MENU_ROOT(name, items) static const SYN_MenuItem name = SYN_MENU_SUBMENU(#name, items)
 
 /** @} */
 
@@ -126,26 +135,26 @@ typedef void (*SYN_MenuRenderFn)(const struct SYN_Menu *menu, void *ctx);
 /* ── Menu state ─────────────────────────────────────────────────────────── */
 
 #ifndef SYN_MENU_MAX_DEPTH
-#define SYN_MENU_MAX_DEPTH  8  /**< Max nesting depth (stack size)      */
+#define SYN_MENU_MAX_DEPTH 8 /**< Max nesting depth (stack size)      */
 #endif
 
 /** @brief Menu runtime state — navigation stack and rendering. */
 typedef struct SYN_Menu {
-    const SYN_MenuItem *root;          /**< Root menu item (submenu)      */
+    const SYN_MenuItem *root; /**< Root menu item (submenu)      */
 
     /* Navigation stack */
     const SYN_MenuItem *stack[SYN_MENU_MAX_DEPTH]; /**< Parent chain    */
-    uint8_t              stack_sel[SYN_MENU_MAX_DEPTH]; /**< Selection idx */
-    uint8_t              depth;         /**< Current depth (0 = root)      */
+    uint8_t stack_sel[SYN_MENU_MAX_DEPTH];         /**< Selection idx */
+    uint8_t depth;                                 /**< Current depth (0 = root)      */
 
     /* Current view */
-    const SYN_MenuItem *current;       /**< Current menu level (submenu)  */
-    uint8_t              selected;      /**< Currently highlighted index   */
-    bool                 editing;       /**< In value-edit mode?           */
+    const SYN_MenuItem *current; /**< Current menu level (submenu)  */
+    uint8_t selected;            /**< Currently highlighted index   */
+    bool editing;                /**< In value-edit mode?           */
 
     /* Render */
-    SYN_MenuRenderFn    render;        /**< Called after state changes    */
-    void                *render_ctx;   /**< Context for render callback   */
+    SYN_MenuRenderFn render; /**< Called after state changes    */
+    void *render_ctx;        /**< Context for render callback   */
 } SYN_Menu;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -158,8 +167,7 @@ typedef struct SYN_Menu {
  * @param render  Render callback (called after each navigation action).
  * @param ctx     Context for render callback.
  */
-void syn_menu_init(SYN_Menu *menu, const SYN_MenuItem *root,
-                     SYN_MenuRenderFn render, void *ctx);
+void syn_menu_init(SYN_Menu *menu, const SYN_MenuItem *root, SYN_MenuRenderFn render, void *ctx);
 
 /**
  * @brief Move selection up. In edit mode: increment value.

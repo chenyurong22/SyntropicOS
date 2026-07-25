@@ -1,9 +1,9 @@
 #ifndef LFS_H
 #define LFS_H
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #ifdef __cplusplus
@@ -13,16 +13,18 @@ extern "C" {
 typedef uint32_t lfs_size_t;
 typedef uint32_t lfs_off_t;
 typedef uint32_t lfs_block_t;
-typedef int32_t  lfs_ssize_t;
-typedef int32_t  lfs_soff_t;
+typedef int32_t lfs_ssize_t;
+typedef int32_t lfs_soff_t;
 
 struct lfs_config {
     void *context;
-    int (*read)(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
-    int (*prog)(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size);
+    int (*read)(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer,
+                lfs_size_t size);
+    int (*prog)(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer,
+                lfs_size_t size);
     int (*erase)(const struct lfs_config *c, lfs_block_t block);
     int (*sync)(const struct lfs_config *c);
-    
+
     lfs_size_t read_size;
     lfs_size_t prog_size;
     lfs_size_t block_size;
@@ -50,22 +52,22 @@ struct lfs_info {
     char name[256];
 };
 
-#define LFS_ERR_OK          0
-#define LFS_ERR_IO          -5
+#define LFS_ERR_OK 0
+#define LFS_ERR_IO -5
 
-#define LFS_O_RDONLY        1
-#define LFS_O_WRONLY        2
-#define LFS_O_RDWR          3
-#define LFS_O_CREAT         0x0100
-#define LFS_O_APPEND        0x0200
-#define LFS_O_TRUNC         0x0400
+#define LFS_O_RDONLY 1
+#define LFS_O_WRONLY 2
+#define LFS_O_RDWR 3
+#define LFS_O_CREAT 0x0100
+#define LFS_O_APPEND 0x0200
+#define LFS_O_TRUNC 0x0400
 
-#define LFS_SEEK_SET        0
-#define LFS_SEEK_CUR        1
-#define LFS_SEEK_END        2
+#define LFS_SEEK_SET 0
+#define LFS_SEEK_CUR 1
+#define LFS_SEEK_END 2
 
-#define LFS_TYPE_REG        1
-#define LFS_TYPE_DIR        2
+#define LFS_TYPE_REG 1
+#define LFS_TYPE_DIR 2
 
 /* Mock APIs used by syn_lfs.c */
 int lfs_file_open(lfs_t *lfs, lfs_file_t *file, const char *path, int flags);

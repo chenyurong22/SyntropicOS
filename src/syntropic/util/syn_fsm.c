@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_FSM) || SYN_USE_FSM
@@ -9,9 +9,9 @@
  * @brief Finite state machine implementation.
  */
 
-#include "syn_fsm.h"
-#include "syn_assert.h"
 #include "../log/syn_log.h"
+#include "syn_assert.h"
+#include "syn_fsm.h"
 
 #include <string.h>
 
@@ -23,14 +23,15 @@
  * @param state  State to look up.
  * @return Descriptor, or NULL if not found.
  */
-static const SYN_FSM_StateDesc *find_state_desc(const SYN_FSM *fsm,
-                                                  SYN_FSM_State state)
+static const SYN_FSM_StateDesc *find_state_desc(const SYN_FSM *fsm, SYN_FSM_State state)
 {
-    if (fsm->state_descs == NULL) return NULL;
+    if (fsm->state_descs == NULL)
+        return NULL;
 
     const SYN_FSM_StateDesc *d = fsm->state_descs;
     while (d->state != SYN_FSM_STATE_NONE) {
-        if (d->state == state) return d;
+        if (d->state == state)
+            return d;
         d++;
     }
     return NULL;
@@ -64,18 +65,16 @@ static void fire_enter(const SYN_FSM *fsm, SYN_FSM_State state)
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
-void syn_fsm_init(SYN_FSM *fsm,
-                   const SYN_FSM_Transition *transitions,
-                   SYN_FSM_State initial,
-                   const char *tag)
+void syn_fsm_init(SYN_FSM *fsm, const SYN_FSM_Transition *transitions, SYN_FSM_State initial,
+                  const char *tag)
 {
     SYN_ASSERT(fsm != NULL);
     SYN_ASSERT(transitions != NULL);
 
     memset(fsm, 0, sizeof(*fsm));
     fsm->transitions = transitions;
-    fsm->current     = initial;
-    fsm->tag         = tag;
+    fsm->current = initial;
+    fsm->tag = tag;
 }
 
 void syn_fsm_set_state_descs(SYN_FSM *fsm, const SYN_FSM_StateDesc *descs)
@@ -84,7 +83,7 @@ void syn_fsm_set_state_descs(SYN_FSM *fsm, const SYN_FSM_StateDesc *descs)
     fsm->state_descs = descs;
 }
 
-void syn_fsm_set_state_names(SYN_FSM *fsm, const char * const *names)
+void syn_fsm_set_state_names(SYN_FSM *fsm, const char *const *names)
 {
     SYN_ASSERT(fsm != NULL);
     fsm->state_names = names;
@@ -127,13 +126,11 @@ bool syn_fsm_dispatch(SYN_FSM *fsm, SYN_FSM_Event event)
 #if !defined(SYN_USE_LOG) || SYN_USE_LOG
             if (fsm->tag != NULL) {
                 if (fsm->state_names != NULL) {
-                    SYN_LOG_D(fsm->tag, "%s -> %s (evt %d)",
-                               fsm->state_names[old_state],
-                               fsm->state_names[t->to],
-                               (int)event);
+                    SYN_LOG_D(fsm->tag, "%s -> %s (evt %d)", fsm->state_names[old_state],
+                              fsm->state_names[t->to], (int)event);
                 } else {
-                    SYN_LOG_D(fsm->tag, "S%d -> S%d (evt %d)",
-                               (int)old_state, (int)t->to, (int)event);
+                    SYN_LOG_D(fsm->tag, "S%d -> S%d (evt %d)", (int)old_state, (int)t->to,
+                              (int)event);
                 }
             }
 #endif

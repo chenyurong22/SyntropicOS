@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_FMT) || SYN_USE_FMT
@@ -49,7 +49,8 @@ static size_t write_str(char *buf, size_t size, size_t pos, const char *s)
 
 size_t syn_fmt_uint(char *buf, size_t size, uint32_t val)
 {
-    if (size == 0) return 0;
+    if (size == 0)
+        return 0;
 
     char tmp[11]; /* max 10 digits for uint32 */
     int i = 0;
@@ -69,8 +70,10 @@ size_t syn_fmt_uint(char *buf, size_t size, uint32_t val)
         pos = write_char(buf, size, pos, tmp[--i]);
     }
 
-    if (pos < size) buf[pos] = '\0';
-    else buf[size - 1] = '\0';
+    if (pos < size)
+        buf[pos] = '\0';
+    else
+        buf[size - 1] = '\0';
 
     return (pos < size) ? pos : size - 1;
 }
@@ -79,7 +82,8 @@ size_t syn_fmt_uint(char *buf, size_t size, uint32_t val)
 
 size_t syn_fmt_int(char *buf, size_t size, int32_t val)
 {
-    if (size == 0) return 0;
+    if (size == 0)
+        return 0;
 
     size_t pos = 0;
     uint32_t uval;
@@ -108,8 +112,10 @@ size_t syn_fmt_int(char *buf, size_t size, int32_t val)
         pos = write_char(buf, size, pos, tmp[--i]);
     }
 
-    if (pos < size) buf[pos] = '\0';
-    else buf[size - 1] = '\0';
+    if (pos < size)
+        buf[pos] = '\0';
+    else
+        buf[size - 1] = '\0';
 
     return (pos < size) ? pos : size - 1;
 }
@@ -121,8 +127,10 @@ static const char hex_chars[] = "0123456789ABCDEF";
 
 size_t syn_fmt_hex(char *buf, size_t size, uint32_t val, uint8_t min_digits)
 {
-    if (size == 0) return 0;
-    if (min_digits > 8) min_digits = 8;
+    if (size == 0)
+        return 0;
+    if (min_digits > 8)
+        min_digits = 8;
 
     char tmp[8];
     int i = 0;
@@ -134,7 +142,8 @@ size_t syn_fmt_hex(char *buf, size_t size, uint32_t val, uint8_t min_digits)
     while (val > 0 || i < (int)min_digits) {
         tmp[i++] = hex_chars[val & 0xF];
         val >>= 4;
-        if (i >= 8) break;
+        if (i >= 8)
+            break;
     }
 
     size_t pos = 0;
@@ -142,29 +151,36 @@ size_t syn_fmt_hex(char *buf, size_t size, uint32_t val, uint8_t min_digits)
         pos = write_char(buf, size, pos, tmp[--i]);
     }
 
-    if (pos < size) buf[pos] = '\0';
-    else buf[size - 1] = '\0';
+    if (pos < size)
+        buf[pos] = '\0';
+    else
+        buf[size - 1] = '\0';
 
     return (pos < size) ? pos : size - 1;
 }
 
 static int hex_char_to_nibble(char c)
 {
-    if (c >= '0' && c <= '9') return (c - '0');
-    if (c >= 'a' && c <= 'f') return (c - 'a' + 10);
-    if (c >= 'A' && c <= 'F') return (c - 'A' + 10);
+    if (c >= '0' && c <= '9')
+        return (c - '0');
+    if (c >= 'a' && c <= 'f')
+        return (c - 'a' + 10);
+    if (c >= 'A' && c <= 'F')
+        return (c - 'A' + 10);
     return -1;
 }
 
 size_t syn_fmt_hex_parse(const char *hex_str, uint8_t *out_bin, size_t max_bytes)
 {
-    if (!hex_str || !out_bin || max_bytes == 0) return 0;
+    if (!hex_str || !out_bin || max_bytes == 0)
+        return 0;
 
     size_t bytes = 0;
     while (hex_str[0] != '\0' && hex_str[1] != '\0' && bytes < max_bytes) {
         int hi = hex_char_to_nibble(hex_str[0]);
         int lo = hex_char_to_nibble(hex_str[1]);
-        if (hi < 0 || lo < 0) break;
+        if (hi < 0 || lo < 0)
+            break;
         out_bin[bytes++] = (uint8_t)((hi << 4) | lo);
         hex_str += 2;
     }
@@ -173,11 +189,12 @@ size_t syn_fmt_hex_parse(const char *hex_str, uint8_t *out_bin, size_t max_bytes
 
 /* ── Q16.16 fixed-point ─────────────────────────────────────────────────── */
 
-size_t syn_fmt_q16(char *buf, size_t size, int32_t q16_val,
-                    uint8_t frac_digits)
+size_t syn_fmt_q16(char *buf, size_t size, int32_t q16_val, uint8_t frac_digits)
 {
-    if (size == 0) return 0;
-    if (frac_digits > 6) frac_digits = 6;
+    if (size == 0)
+        return 0;
+    if (frac_digits > 6)
+        frac_digits = 6;
 
     size_t pos = 0;
     uint32_t abs_val;
@@ -213,7 +230,8 @@ size_t syn_fmt_q16(char *buf, size_t size, int32_t q16_val,
         /* frac = (frac_bits / 65536) × 10^frac_digits */
         uint32_t frac_bits = abs_val & 0xFFFF;
         static const uint32_t powers[] = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000};
-        uint8_t idx = frac_digits & 0x07u; /* clamp already done above; mask silences OOB analysis */
+        uint8_t idx =
+            frac_digits & 0x07u; /* clamp already done above; mask silences OOB analysis */
         uint32_t frac = (uint32_t)(((uint64_t)frac_bits * powers[idx]) >> 16);
 
         /* Zero-pad to frac_digits width */
@@ -227,18 +245,20 @@ size_t syn_fmt_q16(char *buf, size_t size, int32_t q16_val,
         }
     }
 
-    if (pos < size) buf[pos] = '\0';
-    else buf[size - 1] = '\0';
+    if (pos < size)
+        buf[pos] = '\0';
+    else
+        buf[size - 1] = '\0';
 
     return (pos < size) ? pos : size - 1;
 }
 
 /* ── Hex dump ───────────────────────────────────────────────────────────── */
 
-size_t syn_fmt_hexdump(char *buf, size_t size,
-                        const uint8_t *data, size_t len)
+size_t syn_fmt_hexdump(char *buf, size_t size, const uint8_t *data, size_t len)
 {
-    if (size == 0) return 0;
+    if (size == 0)
+        return 0;
 
     size_t pos = 0;
     size_t i;
@@ -251,8 +271,10 @@ size_t syn_fmt_hexdump(char *buf, size_t size,
         pos = write_char(buf, size, pos, hex_chars[data[i] & 0xF]);
     }
 
-    if (pos < size) buf[pos] = '\0';
-    else buf[size - 1] = '\0';
+    if (pos < size)
+        buf[pos] = '\0';
+    else
+        buf[size - 1] = '\0';
 
     return (pos < size) ? pos : size - 1;
 }
@@ -261,8 +283,10 @@ size_t syn_fmt_hexdump(char *buf, size_t size,
 
 size_t syn_fmt_fixed(char *buf, size_t size, int32_t val, uint8_t places)
 {
-    if (size == 0) return 0;
-    if (places > 9) places = 9;
+    if (size == 0)
+        return 0;
+    if (places > 9)
+        places = 9;
 
     size_t pos = 0;
     uint32_t abs_val;
@@ -277,9 +301,10 @@ size_t syn_fmt_fixed(char *buf, size_t size, int32_t val, uint8_t places)
     /* Compute divisor = 10^places */
     uint32_t div = 1;
     uint8_t p;
-    for (p = 0; p < places; p++) div *= 10;
+    for (p = 0; p < places; p++)
+        div *= 10;
 
-    uint32_t int_part  = abs_val / div;
+    uint32_t int_part = abs_val / div;
     /* Integer part */
     char tmp[11];
     int i = 0;
@@ -310,18 +335,20 @@ size_t syn_fmt_fixed(char *buf, size_t size, int32_t val, uint8_t places)
         }
     }
 
-    if (pos < size) buf[pos] = '\0';
-    else buf[size - 1] = '\0';
+    if (pos < size)
+        buf[pos] = '\0';
+    else
+        buf[size - 1] = '\0';
 
     return (pos < size) ? pos : size - 1;
 }
 
 /* ── Concat ─────────────────────────────────────────────────────────────── */
 
-size_t syn_fmt_concat(char *buf, size_t size,
-                       const char *const *parts, size_t n)
+size_t syn_fmt_concat(char *buf, size_t size, const char *const *parts, size_t n)
 {
-    if (size == 0) return 0;
+    if (size == 0)
+        return 0;
 
     size_t pos = 0;
     size_t i;
@@ -332,8 +359,10 @@ size_t syn_fmt_concat(char *buf, size_t size,
         }
     }
 
-    if (pos < size) buf[pos] = '\0';
-    else buf[size - 1] = '\0';
+    if (pos < size)
+        buf[pos] = '\0';
+    else
+        buf[size - 1] = '\0';
 
     return (pos < size) ? pos : size - 1;
 }

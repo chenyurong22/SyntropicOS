@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_FAULT) || SYN_USE_FAULT
@@ -9,16 +9,17 @@
  * @brief CPU Hard Fault / Post-Mortem Diagnostics implementation.
  */
 
-#include "syn_fault.h"
 #include "../util/syn_assert.h"
+#include "syn_fault.h"
+
 #include <string.h>
 
 #if defined(__CC_ARM) || defined(__ARMCC_VERSION)
-  #define SYN_NOINIT __attribute__((section(".bss.noinit")))
+#define SYN_NOINIT __attribute__((section(".bss.noinit")))
 #elif defined(__GNUC__)
-  #define SYN_NOINIT __attribute__((section(".noinit")))
+#define SYN_NOINIT __attribute__((section(".noinit")))
 #else
-  #define SYN_NOINIT
+#define SYN_NOINIT
 #endif
 
 /* Global variable mapped to uninitialized RAM segment */

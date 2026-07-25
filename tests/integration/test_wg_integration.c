@@ -1,40 +1,50 @@
+#include "mock_port.h"
+#include "syntropic/net/syn_sntp.h"
+#include "syntropic/net/syn_wg.h"
+#include "unity/unity.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "syntropic/net/syn_wg.h"
-#include "syntropic/net/syn_sntp.h"
-#include "mock_port.h"
-#include "unity/unity.h"
 
 static bool wg_packet_received = false;
 
 static void on_wg_recv(const uint8_t *ip_packet, size_t len, void *ctx)
 {
-    (void)ip_packet; (void)ctx;
+    (void)ip_packet;
+    (void)ctx;
     printf("[Integration Test] WireGuard decrypted IP packet received (%zu bytes)\n", len);
     wg_packet_received = true;
 }
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_wireguard_vpn_integration(void)
 {
     const char *host = getenv("WG_HOST");
-    if (!host) host = "127.0.0.1";
+    if (!host)
+        host = "127.0.0.1";
     uint16_t port = 51820;
 
     printf("[Integration Test] Initializing WireGuard Noise_IK Tunnel to %s:%d...\n", host, port);
 
     SYN_SNTP sntp;
-    SYN_SockAddr ntp_server = { .ip = {127,0,0,1}, .port = 10123 };
+    SYN_SockAddr ntp_server = {.ip = {127, 0, 0, 1}, .port = 10123};
     syn_sntp_init(&sntp, &ntp_server, 3600);
 
     SYN_WgConfig cfg;
     memset(&cfg, 0, sizeof(cfg));
     cfg.endpoint.port = port;
-    cfg.endpoint.ip[0] = 127; cfg.endpoint.ip[1] = 0; cfg.endpoint.ip[2] = 0; cfg.endpoint.ip[3] = 1;
+    cfg.endpoint.ip[0] = 127;
+    cfg.endpoint.ip[1] = 0;
+    cfg.endpoint.ip[2] = 0;
+    cfg.endpoint.ip[3] = 1;
     cfg.keepalive_interval_s = 25;
 
     /* Fill dummy Curve25519 test keys (32 bytes each) */

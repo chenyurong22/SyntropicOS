@@ -9,9 +9,9 @@
 #ifndef SYN_PORT_CAN_H
 #define SYN_PORT_CAN_H
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,8 +36,7 @@ bool syn_port_can_init(uint8_t port, uint32_t bitrate);
  * @param dlc      Data length code (0-8).
  * @return true if frame was queued for transmission.
  */
-bool syn_port_can_send(uint8_t port, uint32_t id, bool extended,
-                         const uint8_t *data, uint8_t dlc);
+bool syn_port_can_send(uint8_t port, uint32_t id, bool extended, const uint8_t *data, uint8_t dlc);
 
 /**
  * @brief Receive a CAN frame (non-blocking).
@@ -49,8 +48,7 @@ bool syn_port_can_send(uint8_t port, uint32_t id, bool extended,
  * @param dlc      [out] Data length code.
  * @return true if a frame was received.
  */
-bool syn_port_can_receive(uint8_t port, uint32_t *id, bool *extended,
-                            uint8_t *data, uint8_t *dlc);
+bool syn_port_can_receive(uint8_t port, uint32_t *id, bool *extended, uint8_t *data, uint8_t *dlc);
 
 /**
  * @brief Set hardware acceptance filter.

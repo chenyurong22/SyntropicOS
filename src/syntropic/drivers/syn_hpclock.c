@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_HPCLOCK) || SYN_USE_HPCLOCK
@@ -9,8 +9,8 @@
  * @brief High-precision clock — resolution and conversion implementation.
  */
 
-#include "syn_hpclock.h"
 #include "../util/syn_assert.h"
+#include "syn_hpclock.h"
 
 /* ── Overflow counter (shared with port ISR) ───────────────────────────── */
 
@@ -57,8 +57,8 @@ uint64_t syn_hpclock_resolve(const SYN_HPTimestamp *ts)
         msb = ts->msb_1;
     } else {
         /* Overflow occurred — determine which side of the wrap. */
-        msb = (ts->lsb < 0x80000000u) ? ts->msb_2   /* post-wrap  */
-                                       : ts->msb_1;  /* pre-wrap   */
+        msb = (ts->lsb < 0x80000000u) ? ts->msb_2  /* post-wrap  */
+                                      : ts->msb_1; /* pre-wrap   */
     }
 
     return ((uint64_t)msb << 32) | (uint64_t)ts->lsb;
@@ -69,7 +69,8 @@ uint64_t syn_hpclock_resolve(const SYN_HPTimestamp *ts)
 uint64_t syn_hpclock_ticks_to_ns(uint64_t ticks)
 {
     uint32_t freq_hz = syn_port_hpclock_freq_hz();
-    if (freq_hz == 0) return 0;
+    if (freq_hz == 0)
+        return 0;
 
     /*
      * ns = ticks * 1,000,000,000 / freq_hz
@@ -84,20 +85,18 @@ uint64_t syn_hpclock_ticks_to_ns(uint64_t ticks)
      * rem_ticks < freq_hz and freq_hz < 4.29 GHz (always true for
      * any practical MCU clock).
      */
-    uint64_t whole_s   = ticks / freq_hz;
+    uint64_t whole_s = ticks / freq_hz;
     uint64_t rem_ticks = ticks % freq_hz;
 
-    return whole_s * 1000000000ULL
-         + rem_ticks * 1000000000ULL / freq_hz;
+    return whole_s * 1000000000ULL + rem_ticks * 1000000000ULL / freq_hz;
 }
 
 /* ── Elapsed ───────────────────────────────────────────────────────────── */
 
-uint64_t syn_hpclock_elapsed(const SYN_HPTimestamp *start,
-                              const SYN_HPTimestamp *end)
+uint64_t syn_hpclock_elapsed(const SYN_HPTimestamp *start, const SYN_HPTimestamp *end)
 {
     SYN_ASSERT(start != NULL);
-    SYN_ASSERT(end   != NULL);
+    SYN_ASSERT(end != NULL);
 
     return syn_hpclock_resolve(end) - syn_hpclock_resolve(start);
 }

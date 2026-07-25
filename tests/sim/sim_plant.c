@@ -1,4 +1,5 @@
 #include "sim_plant.h"
+
 #include <math.h>
 #include <string.h>
 
@@ -45,19 +46,19 @@ static double rand_uniform(uint32_t *state)
 void sim_plant_init_defaults(SimPlant *plant)
 {
     SimPlantParams p = {
-        .mass_kg          = 136.0,      /* 300 lb */
-        .motor_Km         = 250.0,      /* Motor force constant — enough for 0.75 m/s² at speed */
-        .motor_Kb         = 0.03,       /* Back-EMF coefficient */
-        .friction_static  = 35.0,       /* 35 N stiction (linear rail bearings) */
-        .friction_coulomb = 20.0,       /* 20 N sliding friction */
-        .friction_viscous = 15.0,       /* 15 N·s/m damping */
-        .driver_deadband  = 3.0,        /* 3% deadband */
-        .driver_asymmetry = 0.05,       /* 5% forward/reverse asymmetry */
-        .counts_per_meter = 10000.0,    /* 10,000 counts/m ≈ 0.1mm resolution */
-        .encoder_noise_counts = 2.0,    /* ±2 count noise */
-        .track_min_m      = 0.0,        /* Hard endstop at 0m */
-        .track_max_m      = 50.0,       /* Hard endstop at 50m */
-        .dt_s             = 0.01,       /* 100 Hz update rate */
+        .mass_kg = 136.0,            /* 300 lb */
+        .motor_Km = 250.0,           /* Motor force constant — enough for 0.75 m/s² at speed */
+        .motor_Kb = 0.03,            /* Back-EMF coefficient */
+        .friction_static = 35.0,     /* 35 N stiction (linear rail bearings) */
+        .friction_coulomb = 20.0,    /* 20 N sliding friction */
+        .friction_viscous = 15.0,    /* 15 N·s/m damping */
+        .driver_deadband = 3.0,      /* 3% deadband */
+        .driver_asymmetry = 0.05,    /* 5% forward/reverse asymmetry */
+        .counts_per_meter = 10000.0, /* 10,000 counts/m ≈ 0.1mm resolution */
+        .encoder_noise_counts = 2.0, /* ±2 count noise */
+        .track_min_m = 0.0,          /* Hard endstop at 0m */
+        .track_max_m = 50.0,         /* Hard endstop at 50m */
+        .dt_s = 0.01,                /* 100 Hz update rate */
     };
     sim_plant_init(plant, &p);
 
@@ -76,8 +77,10 @@ void sim_plant_init(SimPlant *plant, const SimPlantParams *params)
 void sim_plant_set_command(SimPlant *plant, double command_pct)
 {
     /* Clamp to ±100% */
-    if (command_pct > 100.0) command_pct = 100.0;
-    if (command_pct < -100.0) command_pct = -100.0;
+    if (command_pct > 100.0)
+        command_pct = 100.0;
+    if (command_pct < -100.0)
+        command_pct = -100.0;
     plant->command_pct = command_pct;
 }
 
@@ -105,8 +108,8 @@ void sim_plant_step(SimPlant *plant)
         effective_cmd = 0.0;
     } else {
         double sign = (cmd > 0.0) ? 1.0 : -1.0;
-        effective_cmd = sign * (fabs(cmd) - p->driver_deadband)
-                      * 100.0 / (100.0 - p->driver_deadband);
+        effective_cmd =
+            sign * (fabs(cmd) - p->driver_deadband) * 100.0 / (100.0 - p->driver_deadband);
     }
 
     if (effective_cmd < 0.0) {

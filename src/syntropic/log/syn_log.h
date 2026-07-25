@@ -40,11 +40,11 @@
 #ifndef SYN_LOG_H
 #define SYN_LOG_H
 
-#include "../common/syn_defs.h"
 #include "../common/syn_compiler.h"
+#include "../common/syn_defs.h"
 
-#include <stddef.h>
 #include <stdarg.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,41 +54,41 @@ extern "C" {
 
 /** @brief Log severity levels. */
 typedef enum {
-    SYN_LOG_TRACE = 0,   /**< Very fine-grained debug info          */
-    SYN_LOG_DEBUG = 1,   /**< Debug messages                         */
-    SYN_LOG_INFO  = 2,   /**< Informational messages                 */
-    SYN_LOG_WARN  = 3,   /**< Warnings                               */
-    SYN_LOG_ERROR = 4,   /**< Errors                                  */
-    SYN_LOG_FATAL = 5,   /**< Fatal / unrecoverable errors           */
-    SYN_LOG_NONE  = 6,   /**< Disable all logging                    */
+    SYN_LOG_TRACE = 0, /**< Very fine-grained debug info          */
+    SYN_LOG_DEBUG = 1, /**< Debug messages                         */
+    SYN_LOG_INFO = 2,  /**< Informational messages                 */
+    SYN_LOG_WARN = 3,  /**< Warnings                               */
+    SYN_LOG_ERROR = 4, /**< Errors                                  */
+    SYN_LOG_FATAL = 5, /**< Fatal / unrecoverable errors           */
+    SYN_LOG_NONE = 6,  /**< Disable all logging                    */
 } SYN_LogLevel;
 
 /* ── Compile-time minimum level ─────────────────────────────────────────── */
 
 #ifndef SYN_LOG_LEVEL
-  /** @brief Compile-time minimum log level (defaults to SYN_LOG_DEBUG). */
-  #define SYN_LOG_LEVEL   SYN_LOG_DEBUG
+/** @brief Compile-time minimum log level (defaults to SYN_LOG_DEBUG). */
+#define SYN_LOG_LEVEL SYN_LOG_DEBUG
 #endif
 
 /* ── Output buffer size ─────────────────────────────────────────────────── */
 
 #ifndef SYN_LOG_BUF_SIZE
-  /** @brief Size of the log formatting buffer in bytes. */
-  #define SYN_LOG_BUF_SIZE   192
+/** @brief Size of the log formatting buffer in bytes. */
+#define SYN_LOG_BUF_SIZE 192
 #endif
 
 /* ── Timestamp ──────────────────────────────────────────────────────────── */
 
 /** Set to 0 in syn_config.h to disable timestamp prefix. */
 #ifndef SYN_LOG_TIMESTAMP
-  #define SYN_LOG_TIMESTAMP  1
+#define SYN_LOG_TIMESTAMP 1
 #endif
 
 /* ── Color output ───────────────────────────────────────────────────────── */
 
 /** Set to 1 in syn_config.h to enable ANSI color codes. */
 #ifndef SYN_LOG_COLOR
-  #define SYN_LOG_COLOR      0
+#define SYN_LOG_COLOR 0
 #endif
 
 /* ── Output function type ───────────────────────────────────────────────── */
@@ -162,51 +162,51 @@ void syn_log_hexdump(const char *tag, const void *data, size_t len);
  * @{
  */
 #if SYN_LOG_LEVEL <= 0
-  /** @brief Log at TRACE level. */
-  #define SYN_LOG_T(tag, fmt, ...)   syn_log(SYN_LOG_TRACE, tag, fmt, ##__VA_ARGS__)
+/** @brief Log at TRACE level. */
+#define SYN_LOG_T(tag, fmt, ...) syn_log(SYN_LOG_TRACE, tag, fmt, ##__VA_ARGS__)
 #else
-  /** @brief Log at TRACE level (compiled out). */
-  #define SYN_LOG_T(tag, fmt, ...)   ((void)0)
+/** @brief Log at TRACE level (compiled out). */
+#define SYN_LOG_T(tag, fmt, ...) ((void)0)
 #endif
 
 #if SYN_LOG_LEVEL <= 1
-  /** @brief Log at DEBUG level. */
-  #define SYN_LOG_D(tag, fmt, ...)   syn_log(SYN_LOG_DEBUG, tag, fmt, ##__VA_ARGS__)
+/** @brief Log at DEBUG level. */
+#define SYN_LOG_D(tag, fmt, ...) syn_log(SYN_LOG_DEBUG, tag, fmt, ##__VA_ARGS__)
 #else
-  /** @brief Log at DEBUG level (compiled out). */
-  #define SYN_LOG_D(tag, fmt, ...)   ((void)0)
+/** @brief Log at DEBUG level (compiled out). */
+#define SYN_LOG_D(tag, fmt, ...) ((void)0)
 #endif
 
 #if SYN_LOG_LEVEL <= 2
-  /** @brief Log at INFO level. */
-  #define SYN_LOG_I(tag, fmt, ...)   syn_log(SYN_LOG_INFO, tag, fmt, ##__VA_ARGS__)
+/** @brief Log at INFO level. */
+#define SYN_LOG_I(tag, fmt, ...) syn_log(SYN_LOG_INFO, tag, fmt, ##__VA_ARGS__)
 #else
-  /** @brief Log at INFO level (compiled out). */
-  #define SYN_LOG_I(tag, fmt, ...)   ((void)0)
+/** @brief Log at INFO level (compiled out). */
+#define SYN_LOG_I(tag, fmt, ...) ((void)0)
 #endif
 
 #if SYN_LOG_LEVEL <= 3
-  /** @brief Log at WARN level. */
-  #define SYN_LOG_W(tag, fmt, ...)   syn_log(SYN_LOG_WARN, tag, fmt, ##__VA_ARGS__)
+/** @brief Log at WARN level. */
+#define SYN_LOG_W(tag, fmt, ...) syn_log(SYN_LOG_WARN, tag, fmt, ##__VA_ARGS__)
 #else
-  /** @brief Log at WARN level (compiled out). */
-  #define SYN_LOG_W(tag, fmt, ...)   ((void)0)
+/** @brief Log at WARN level (compiled out). */
+#define SYN_LOG_W(tag, fmt, ...) ((void)0)
 #endif
 
 #if SYN_LOG_LEVEL <= 4
-  /** @brief Log at ERROR level. */
-  #define SYN_LOG_E(tag, fmt, ...)   syn_log(SYN_LOG_ERROR, tag, fmt, ##__VA_ARGS__)
+/** @brief Log at ERROR level. */
+#define SYN_LOG_E(tag, fmt, ...) syn_log(SYN_LOG_ERROR, tag, fmt, ##__VA_ARGS__)
 #else
-  /** @brief Log at ERROR level (compiled out). */
-  #define SYN_LOG_E(tag, fmt, ...)   ((void)0)
+/** @brief Log at ERROR level (compiled out). */
+#define SYN_LOG_E(tag, fmt, ...) ((void)0)
 #endif
 
 #if SYN_LOG_LEVEL <= 5
-  /** @brief Log at FATAL level. */
-  #define SYN_LOG_F(tag, fmt, ...)   syn_log(SYN_LOG_FATAL, tag, fmt, ##__VA_ARGS__)
+/** @brief Log at FATAL level. */
+#define SYN_LOG_F(tag, fmt, ...) syn_log(SYN_LOG_FATAL, tag, fmt, ##__VA_ARGS__)
 #else
-  /** @brief Log at FATAL level (compiled out). */
-  #define SYN_LOG_F(tag, fmt, ...)   ((void)0)
+/** @brief Log at FATAL level (compiled out). */
+#define SYN_LOG_F(tag, fmt, ...) ((void)0)
 #endif
 /** @} */
 

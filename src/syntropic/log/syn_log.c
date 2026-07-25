@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_LOG) || SYN_USE_LOG
@@ -9,14 +9,14 @@
  * @brief Logging system implementation.
  */
 
-#include "syn_log.h"
-#include "../port/syn_port_system.h"
 #include "../port/syn_port_serial.h"
+#include "../port/syn_port_system.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_fmt.h"
+#include "syn_log.h"
 
 #if defined(SYN_USE_FMT) && !SYN_USE_FMT
-  #error "syn_log requires SYN_USE_FMT=1. Enable it in syn_config.h."
+#error "syn_log requires SYN_USE_FMT=1. Enable it in syn_config.h."
 #endif
 
 #if !defined(SYN_LOG_USE_PRINTF) || SYN_LOG_USE_PRINTF
@@ -26,31 +26,31 @@
 
 /* ── State ──────────────────────────────────────────────────────────────── */
 
-static SYN_LogLevel      s_level    = SYN_LOG_DEBUG; /**< Current minimum log level.  */
-static bool              s_inited   = false;          /**< Init flag.                  */
+static SYN_LogLevel s_level = SYN_LOG_DEBUG; /**< Current minimum log level.  */
+static bool s_inited = false;                /**< Init flag.                  */
 
 /* ── Level labels ─────────────────────────────────────────────────────────────── */
 
 /** @brief Single-char level labels: T=Trace, D=Debug, I=Info, W=Warn, E=Error, F=Fatal. */
-static const char * const s_level_chars = "TDIWEF";
+static const char *const s_level_chars = "TDIWEF";
 
 #if SYN_LOG_COLOR
-static const char * const s_level_colors[] = {
-    "\033[90m",     /* TRACE — gray     */
-    "\033[36m",     /* DEBUG — cyan     */
-    "\033[32m",     /* INFO  — green    */
-    "\033[33m",     /* WARN  — yellow   */
-    "\033[31m",     /* ERROR — red      */
-    "\033[1;31m",   /* FATAL — bold red */
+static const char *const s_level_colors[] = {
+    "\033[90m",   /* TRACE — gray     */
+    "\033[36m",   /* DEBUG — cyan     */
+    "\033[32m",   /* INFO  — green    */
+    "\033[33m",   /* WARN  — yellow   */
+    "\033[31m",   /* ERROR — red      */
+    "\033[1;31m", /* FATAL — bold red */
 };
-#define LOG_COLOR_RESET   "\033[0m"
+#define LOG_COLOR_RESET "\033[0m"
 #endif
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
 void syn_log_init(SYN_LogLevel min_level)
 {
-    s_level  = min_level;
+    s_level = min_level;
     s_inited = true;
 }
 
@@ -75,15 +75,15 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
     }
 
     char buf[SYN_LOG_BUF_SIZE];
-    int  pos = 0;
-    int  remaining = (int)sizeof(buf) - 2; /* reserve space for \n\0 */
+    int pos = 0;
+    int remaining = (int)sizeof(buf) - 2; /* reserve space for \n\0 */
 
     /* Color prefix */
 #if SYN_LOG_COLOR
     if (level <= SYN_LOG_FATAL) {
-        int n = snprintf(buf + pos, (size_t)(remaining - pos),
-                         "%s", s_level_colors[level]);
-        if (n > 0) pos += n;
+        int n = snprintf(buf + pos, (size_t)(remaining - pos), "%s", s_level_colors[level]);
+        if (n > 0)
+            pos += n;
     }
 #endif
 
@@ -96,8 +96,10 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
         syn_fmt_uint(num, sizeof(num), tick);
         size_t nl = strlen(num);
         size_t pad = (7 > nl) ? 7 - nl : 0;
-        while (pad-- > 0) buf[pos++] = ' ';
-        memcpy(buf + pos, num, nl); pos += (int)nl;
+        while (pad-- > 0)
+            buf[pos++] = ' ';
+        memcpy(buf + pos, num, nl);
+        pos += (int)nl;
         buf[pos++] = ']';
         buf[pos++] = ' ';
     }
@@ -110,8 +112,10 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
         if (tag != NULL && tag[0] != '\0') {
             buf[pos++] = '/';
             size_t tl = strlen(tag);
-            if (tl > (size_t)(remaining - pos - 3)) tl = (size_t)(remaining - pos - 3);
-            memcpy(buf + pos, tag, tl); pos += (int)tl;
+            if (tl > (size_t)(remaining - pos - 3))
+                tl = (size_t)(remaining - pos - 3);
+            memcpy(buf + pos, tag, tl);
+            pos += (int)tl;
         }
         buf[pos++] = ':';
         buf[pos++] = ' ';
@@ -123,12 +127,14 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
         int n = vsnprintf(buf + pos, (size_t)(remaining - pos), fmt, args);
         if (n > 0) {
             pos += n;
-            if (pos > remaining) pos = remaining;
+            if (pos > remaining)
+                pos = remaining;
         }
 #else
         /* No printf: copy format string literally */
         size_t fl = strlen(fmt);
-        if (fl > (size_t)(remaining - pos)) fl = (size_t)(remaining - pos);
+        if (fl > (size_t)(remaining - pos))
+            fl = (size_t)(remaining - pos);
         memcpy(buf + pos, fmt, fl);
         pos += (int)fl;
 #endif
@@ -139,7 +145,8 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
     {
         const char *rst = LOG_COLOR_RESET "\n";
         size_t rl = strlen(rst);
-        if (rl > sizeof(buf) - (size_t)pos - 1) rl = sizeof(buf) - (size_t)pos - 1;
+        if (rl > sizeof(buf) - (size_t)pos - 1)
+            rl = sizeof(buf) - (size_t)pos - 1;
         memcpy(buf + pos, rst, rl);
         pos += (int)rl;
     }
@@ -149,7 +156,8 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
 #endif
 
     /* Null-terminate */
-    if (pos >= (int)sizeof(buf)) pos = (int)sizeof(buf) - 1;
+    if (pos >= (int)sizeof(buf))
+        pos = (int)sizeof(buf) - 1;
     buf[pos] = '\0';
 
     syn_port_serial_write((const uint8_t *)buf, (size_t)pos);
@@ -187,7 +195,8 @@ void syn_log_hexdump(const char *tag, const void *data, size_t len)
 
         /* Offset: XXXX  */
         syn_fmt_hex(num, sizeof(num), (uint32_t)offset, 4);
-        memcpy(line + pos, num, 4); pos += 4;
+        memcpy(line + pos, num, 4);
+        pos += 4;
         line[pos++] = ' ';
         line[pos++] = ' ';
 
@@ -217,7 +226,7 @@ void syn_log_hexdump(const char *tag, const void *data, size_t len)
         }
         line[pos++] = '|';
         line[pos++] = '\n';
-        line[pos]   = '\0';
+        line[pos] = '\0';
 
         syn_log(SYN_LOG_DEBUG, tag, "%s", line);
 

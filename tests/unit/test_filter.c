@@ -3,10 +3,10 @@
  * @brief Unity tests for syn_filter — full coverage (adds reset paths).
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/dsp/syn_filter.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_filters(void)
 {
@@ -99,7 +99,7 @@ static void test_filter_median_reset(void)
 /** FIR filter test — 3-tap moving average */
 static void test_filter_fir(void)
 {
-    q16_t taps[3] = { Q16_FROM_FRAC(1, 3), Q16_FROM_FRAC(1, 3), Q16_FROM_FRAC(1, 3) };
+    q16_t taps[3] = {Q16_FROM_FRAC(1, 3), Q16_FROM_FRAC(1, 3), Q16_FROM_FRAC(1, 3)};
     q16_t history[3];
 
     SYN_FilterFIR fir;

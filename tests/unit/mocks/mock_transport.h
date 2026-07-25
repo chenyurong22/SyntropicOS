@@ -6,15 +6,15 @@
 #ifndef MOCK_TRANSPORT_H
 #define MOCK_TRANSPORT_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 static uint8_t rt_tx_buf[128];
-static size_t  rt_tx_len = 0;
+static size_t rt_tx_len = 0;
 static uint8_t rt_rx_buf[128];
-static size_t  rt_rx_len = 0;
-static bool    rt_rx_rdy = false;
+static size_t rt_rx_len = 0;
+static bool rt_rx_rdy = false;
 
 static bool rt_send(const uint8_t *d, size_t l, void *c)
 {
@@ -27,8 +27,10 @@ static bool rt_send(const uint8_t *d, size_t l, void *c)
 static bool rt_recv(uint8_t *d, size_t mx, size_t *ol, void *c)
 {
     (void)c;
-    if (!rt_rx_rdy) return false;
-    if (rt_rx_len > mx) return false;
+    if (!rt_rx_rdy)
+        return false;
+    if (rt_rx_len > mx)
+        return false;
     memcpy(d, rt_rx_buf, rt_rx_len);
     *ol = rt_rx_len;
     rt_rx_rdy = false;

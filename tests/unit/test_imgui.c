@@ -3,10 +3,10 @@
  * @brief Unity tests for the SyntropicOS IMGUI framework.
  */
 
-#include "unity/unity.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/display/syn_canvas.h"
+#include "syntropic/syntropic.h"
 #include "syntropic/ui/syn_imgui.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
@@ -21,9 +21,9 @@ static void test_imgui_navigation(void)
 
     /* Frame 1: Discover widget count */
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
-    syn_imgui_button(&ctx, "B1", 0, 0, 40, 15);   /* ID 1 */
-    syn_imgui_button(&ctx, "B2", 0, 20, 40, 15);  /* ID 2 */
-    syn_imgui_button(&ctx, "B3", 0, 40, 40, 15);  /* ID 3 */
+    syn_imgui_button(&ctx, "B1", 0, 0, 40, 15);  /* ID 1 */
+    syn_imgui_button(&ctx, "B2", 0, 20, 40, 15); /* ID 2 */
+    syn_imgui_button(&ctx, "B3", 0, 40, 40, 15); /* ID 3 */
     syn_imgui_end(&ctx);
 
     TEST_ASSERT_EQUAL_INT(3, ctx.last_max_id);
@@ -93,7 +93,7 @@ static void test_imgui_widgets(void)
     /* Focus index 3 (Slider) and select it to enter edit mode */
     ctx.focused_id = 3;
     int32_t val = 50;
-    
+
     /* Frame A: Select button enters edit mode */
     syn_imgui_begin(&ctx, &canvas, true, false, 0, false, 0, 0);
     syn_imgui_button(&ctx, "B1", 0, 0, 40, 15);
@@ -113,7 +113,7 @@ static void test_imgui_widgets(void)
 
     TEST_ASSERT_TRUE(s_changed);
     TEST_ASSERT_EQUAL_INT(65, val);
-    TEST_ASSERT_EQUAL_INT(3, ctx.active_id); /* Remains active */
+    TEST_ASSERT_EQUAL_INT(3, ctx.active_id);  /* Remains active */
     TEST_ASSERT_EQUAL_INT(3, ctx.focused_id); /* Focus did not move despite dial movement */
 
     /* Frame C: Select key again exits edit mode */
@@ -232,15 +232,15 @@ static void test_imgui_advanced(void)
     TEST_ASSERT_TRUE(fb[0] != 0);
 
     /* 2. Combo Box Test */
-    const char *opts[] = { "A", "B", "C" };
+    const char *opts[] = {"A", "B", "C"};
     int32_t selected = 0;
-    
+
     /* Press select to enter edit mode */
     ctx.focused_id = 1;
     syn_imgui_begin(&ctx, &canvas, true, false, 0, false, 0, 0);
     bool c_changed = syn_imgui_combo(&ctx, "Combo", opts, 3, &selected, 0, 0, 80, 15);
     syn_imgui_end(&ctx);
-    
+
     TEST_ASSERT_FALSE(c_changed);
     TEST_ASSERT_EQUAL_INT(1, ctx.active_id); /* active */
 
@@ -262,7 +262,7 @@ static void test_imgui_advanced(void)
     TEST_ASSERT_EQUAL_INT(0, selected);
 
     /* 3. Graph plotting test */
-    int32_t telemetry[5] = { 10, 50, 90, 30, 70 };
+    int32_t telemetry[5] = {10, 50, 90, 30, 70};
     syn_canvas_clear(&canvas);
     syn_imgui_graph(&ctx, "Telemetry", telemetry, 5, 0, 100, 0, 0, 64, 32);
     /* Basic sanity check: data line drawn */
@@ -273,10 +273,12 @@ static void test_imgui_advanced(void)
     syn_imgui_gauge(&ctx, "Speed", 75, 0, 100, 32, 32, 16);
     bool has_pixels = false;
     for (size_t i = 0; i < sizeof(fb); i++) {
-        if (fb[i] != 0) { has_pixels = true; break; }
+        if (fb[i] != 0) {
+            has_pixels = true;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(has_pixels);
-
 
     /* 5. Modal Dialog popup test */
     /* OK button is at ID next_id+1 = 1. Cancel button is at ID next_id+2 = 2.
@@ -310,7 +312,7 @@ static void test_imgui_set_style(void)
     syn_imgui_init(&ctx);
 
     SYN_IMGUI_Style s = syn_imgui_default_style();
-    s.fg      = SYN_COLOR_RED;
+    s.fg = SYN_COLOR_RED;
     s.padding = 4;
     syn_imgui_set_style(&ctx, &s);
 
@@ -340,7 +342,7 @@ static void test_imgui_layout_cursor_advances(void)
     syn_imgui_button(&ctx, "OK", 0, 0, 0, 0);
 
     /* After a 5x7 font: h = 7 + 2*2=11, spacing=3 → cy should advance to 4+11+3=18 */
-    TEST_ASSERT_EQUAL_INT(4, ctx.layout.cx);   /* back to origin_x */
+    TEST_ASSERT_EQUAL_INT(4, ctx.layout.cx); /* back to origin_x */
     TEST_ASSERT_EQUAL_INT(18, ctx.layout.cy);
 
     syn_imgui_layout_end(&ctx);
@@ -359,12 +361,12 @@ static void test_imgui_same_line(void)
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
     syn_imgui_layout_begin(&ctx, 0, 0, 60);
 
-    syn_imgui_button(&ctx, "A", 0, 0, 0, 0);  /* advances cy to 0+11+3=14 */
+    syn_imgui_button(&ctx, "A", 0, 0, 0, 0); /* advances cy to 0+11+3=14 */
     /* same_line: next widget appends to the right, cy stays at 14 */
     syn_imgui_same_line(&ctx);
     int16_t cx_before = ctx.layout.cx;
     (void)cx_before;
-    syn_imgui_button(&ctx, "B", 0, 0, 0, 0);  /* on same row as A */
+    syn_imgui_button(&ctx, "B", 0, 0, 0, 0); /* on same row as A */
 
     /* cy unchanged after same_line widget — still at 14 */
     TEST_ASSERT_EQUAL_INT(14, ctx.layout.cy);
@@ -442,12 +444,12 @@ static void test_imgui_spinner_no_change_when_unfocused(void)
 
     /* Two widgets: button (ID 1, focused), spinner (ID 2, unfocused) */
     syn_imgui_begin(&ctx, &canvas, false, false, 1, false, 0, 0);
-    syn_imgui_button(&ctx, "Go", 0, 0, 30, 13);  /* ID 1 — gets focus via enc_delta */
+    syn_imgui_button(&ctx, "Go", 0, 0, 30, 13); /* ID 1 — gets focus via enc_delta */
     bool changed = syn_imgui_spinner(&ctx, "V", &val, 0, 100, 1, 40, 0, 80, 13);
     syn_imgui_end(&ctx);
 
     TEST_ASSERT_FALSE(changed);
-    TEST_ASSERT_EQUAL_INT32(50, val);  /* unchanged */
+    TEST_ASSERT_EQUAL_INT32(50, val); /* unchanged */
 }
 
 /* ── canvas text_height / hline / vline ──────────────────────────────────── */
@@ -556,7 +558,7 @@ static void test_imgui_tabs(void)
     syn_imgui_init(&ctx);
     ctx.last_max_id = 1;
 
-    const char *tabs[] = { "Dash", "Set", "Info" };
+    const char *tabs[] = {"Dash", "Set", "Info"};
     int32_t active = 0;
 
     /* Frame 1: select enters edit mode */
@@ -636,13 +638,16 @@ static void test_imgui_bar_chart(void)
     ctx.gfx = &canvas;
 
     syn_canvas_clear(&canvas);
-    int32_t data[4] = { 10, 50, 80, 30 };
+    int32_t data[4] = {10, 50, 80, 30};
     syn_imgui_bar_chart(&ctx, "Stats", data, 4, 0, 100, 0, 0, 64, 32);
 
     /* Verify that some pixels were drawn */
     bool has_pixels = false;
     for (size_t i = 0; i < sizeof(fb); i++) {
-        if (fb[i] != 0) { has_pixels = true; break; }
+        if (fb[i] != 0) {
+            has_pixels = true;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(has_pixels);
 }
@@ -660,7 +665,7 @@ static void test_imgui_icon_button(void)
     ctx.last_max_id = 1;
 
     /* Simple 8x8 icon: filled square */
-    const uint8_t icon[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+    const uint8_t icon[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
     /* Press select while focused */
     syn_imgui_begin(&ctx, &canvas, true, false, 0, false, 0, 0);
@@ -691,7 +696,10 @@ static void test_imgui_label_alignment(void)
 
     bool has_pixels = false;
     for (size_t i = 0; i < sizeof(fb); i++) {
-        if (fb[i] != 0) { has_pixels = true; break; }
+        if (fb[i] != 0) {
+            has_pixels = true;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(has_pixels);
 }
@@ -713,7 +721,10 @@ static void test_imgui_status_bar(void)
 
     bool has_pixels = false;
     for (size_t i = 0; i < sizeof(fb); i++) {
-        if (fb[i] != 0) { has_pixels = true; break; }
+        if (fb[i] != 0) {
+            has_pixels = true;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(has_pixels);
 }
@@ -815,7 +826,10 @@ static void test_imgui_separator_text(void)
 
     bool has_pixels = false;
     for (size_t i = 0; i < sizeof(fb); i++) {
-        if (fb[i] != 0) { has_pixels = true; break; }
+        if (fb[i] != 0) {
+            has_pixels = true;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(has_pixels);
 }
@@ -868,7 +882,10 @@ static void test_imgui_value_int(void)
 
     bool has_pixels = false;
     for (size_t i = 0; i < sizeof(fb); i++) {
-        if (fb[i] != 0) { has_pixels = true; break; }
+        if (fb[i] != 0) {
+            has_pixels = true;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(has_pixels);
 }
@@ -890,7 +907,10 @@ static void test_imgui_progress_bar_ex(void)
     syn_imgui_progress_bar_ex(&ctx, 73, 0, 100, NULL, 0, 0, 100, 12);
     bool has_pixels = false;
     for (size_t i = 0; i < sizeof(fb); i++) {
-        if (fb[i] != 0) { has_pixels = true; break; }
+        if (fb[i] != 0) {
+            has_pixels = true;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(has_pixels);
 
@@ -899,7 +919,10 @@ static void test_imgui_progress_bar_ex(void)
     syn_imgui_progress_bar_ex(&ctx, -10, 0, 100, NULL, 0, 0, 100, 12);
     has_pixels = false;
     for (size_t i = 0; i < sizeof(fb); i++) {
-        if (fb[i] != 0) { has_pixels = true; break; }
+        if (fb[i] != 0) {
+            has_pixels = true;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(has_pixels);
 }
@@ -983,7 +1006,10 @@ static void test_imgui_text_wrapped(void)
 
     bool has_pixels = false;
     for (size_t i = 0; i < sizeof(fb); i++) {
-        if (fb[i] != 0) { has_pixels = true; break; }
+        if (fb[i] != 0) {
+            has_pixels = true;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(has_pixels);
 }
@@ -1054,13 +1080,15 @@ static void test_imgui_text_clipped(void)
 
     syn_canvas_clear(&canvas);
     /* Draw a long text but clip to only 40px width */
-    syn_imgui_text_clipped(&ctx, "Very long text that overflows", 0, 0,
-                             0, 0, 40, 14);
+    syn_imgui_text_clipped(&ctx, "Very long text that overflows", 0, 0, 0, 0, 40, 14);
 
     /* Verify something was drawn */
     bool has_pixels = false;
     for (size_t i = 0; i < sizeof(fb); i++) {
-        if (fb[i] != 0) { has_pixels = true; break; }
+        if (fb[i] != 0) {
+            has_pixels = true;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(has_pixels);
 
@@ -1070,14 +1098,15 @@ static void test_imgui_text_clipped(void)
         for (int16_t row = 0; row < 14; row++) {
             /* SSD1306: page = y/8, idx = page*width + x, bit = y%8 */
             size_t page = (size_t)row / 8;
-            size_t idx  = page * 128 + (size_t)col;
+            size_t idx = page * 128 + (size_t)col;
             uint8_t bit = (uint8_t)(1 << (row % 8));
             if (fb[idx] & bit) {
                 overflow = true;
                 break;
             }
         }
-        if (overflow) break;
+        if (overflow)
+            break;
     }
     TEST_ASSERT_FALSE(overflow);
 }
@@ -1103,19 +1132,24 @@ static void test_imgui_text_marquee(void)
     /* Long text that overflows — offset should advance */
     offset = 0;
     syn_canvas_clear(&canvas);
-    syn_imgui_text_marquee(&ctx, "This is a very long scrolling text for testing", &offset, 0, 0, 40, 1);
+    syn_imgui_text_marquee(&ctx, "This is a very long scrolling text for testing", &offset, 0, 0,
+                           40, 1);
     TEST_ASSERT_TRUE(offset > 0);
 
     /* Call a few more times — offset should keep advancing */
     int16_t prev = offset;
     syn_canvas_clear(&canvas);
-    syn_imgui_text_marquee(&ctx, "This is a very long scrolling text for testing", &offset, 0, 0, 40, 1);
+    syn_imgui_text_marquee(&ctx, "This is a very long scrolling text for testing", &offset, 0, 0,
+                           40, 1);
     TEST_ASSERT_TRUE(offset > prev);
 
     /* Verify something was drawn */
     bool has_pixels = false;
     for (size_t i = 0; i < sizeof(fb); i++) {
-        if (fb[i] != 0) { has_pixels = true; break; }
+        if (fb[i] != 0) {
+            has_pixels = true;
+            break;
+        }
     }
     TEST_ASSERT_TRUE(has_pixels);
 }
@@ -1388,7 +1422,7 @@ static void test_imgui_edge_cases_and_uncovered_paths(void)
     syn_imgui_end(&ctx);
 
     /* 3. Combo Box Touch & Exit */
-    const char *opts[] = { "O1", "O2" };
+    const char *opts[] = {"O1", "O2"};
     int32_t selected = 0;
     syn_imgui_begin(&ctx, &canvas, false, false, 0, true, 68, 7);
     syn_imgui_combo(&ctx, "C1", opts, 2, &selected, 0, 0, 80, 15);
@@ -1475,7 +1509,7 @@ static void test_imgui_edge_cases_and_uncovered_paths(void)
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
     syn_imgui_text_wrapped(&ctx, "Line1\nLine2", 0, 0, 60);
 
-    const char *long_tabs[] = { "LongDashboardText" };
+    const char *long_tabs[] = {"LongDashboardText"};
     int32_t active_tab = 0;
     syn_imgui_tabs(&ctx, long_tabs, 1, &active_tab, 0, 0, 20);
 
@@ -1591,4 +1625,3 @@ void run_imgui_tests(void)
     RUN_TEST(test_imgui_layout_resolve_tabs);
     RUN_TEST(test_imgui_edge_cases_and_uncovered_paths);
 }
-

@@ -3,9 +3,9 @@
  * @brief Tests for async I2C port abstraction (mock-based).
  */
 
-#include "unity/unity.h"
-#include "syntropic/port/syn_port_i2c_async.h"
 #include "mocks/mock_port.h"
+#include "syntropic/port/syn_port_i2c_async.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
@@ -31,9 +31,12 @@ void test_i2c_async_write_only(void)
     cb_count = 0;
     uint8_t tx[] = {0x6B, 0x00};
     SYN_I2C_Xfer xfer = {
-        .bus = 0, .addr = 0x68,
-        .tx_data = tx, .tx_len = 2,
-        .rx_data = NULL, .rx_len = 0,
+        .bus = 0,
+        .addr = 0x68,
+        .tx_data = tx,
+        .tx_len = 2,
+        .rx_data = NULL,
+        .rx_len = 0,
         .callback = i2c_done,
         .user_data = (void *)0xA1,
     };
@@ -55,9 +58,12 @@ void test_i2c_async_read_only(void)
     cb_count = 0;
     uint8_t rx[4] = {0};
     SYN_I2C_Xfer xfer = {
-        .bus = 1, .addr = 0x76,
-        .tx_data = NULL, .tx_len = 0,
-        .rx_data = rx, .rx_len = 4,
+        .bus = 1,
+        .addr = 0x76,
+        .tx_data = NULL,
+        .tx_len = 0,
+        .rx_data = rx,
+        .rx_len = 4,
         .callback = i2c_done,
     };
 
@@ -73,9 +79,12 @@ void test_i2c_async_write_read(void)
     uint8_t reg = 0xD0;
     uint8_t val;
     SYN_I2C_Xfer xfer = {
-        .bus = 0, .addr = 0x76,
-        .tx_data = &reg, .tx_len = 1,
-        .rx_data = &val, .rx_len = 1,
+        .bus = 0,
+        .addr = 0x76,
+        .tx_data = &reg,
+        .tx_len = 1,
+        .rx_data = &val,
+        .rx_len = 1,
         .callback = i2c_done,
     };
 
@@ -88,8 +97,10 @@ void test_i2c_async_busy_rejects(void)
 {
     uint8_t tx = 0;
     SYN_I2C_Xfer xfer = {
-        .bus = 0, .addr = 0x50,
-        .tx_data = &tx, .tx_len = 1,
+        .bus = 0,
+        .addr = 0x50,
+        .tx_data = &tx,
+        .tx_len = 1,
         .callback = i2c_done,
     };
 
@@ -103,8 +114,10 @@ void test_i2c_async_cancel(void)
     cb_count = 0;
     uint8_t tx = 0;
     SYN_I2C_Xfer xfer = {
-        .bus = 0, .addr = 0x50,
-        .tx_data = &tx, .tx_len = 1,
+        .bus = 0,
+        .addr = 0x50,
+        .tx_data = &tx,
+        .tx_len = 1,
         .callback = i2c_done,
     };
 
@@ -127,8 +140,10 @@ void test_i2c_async_error_result(void)
     cb_count = 0;
     uint8_t tx = 0;
     SYN_I2C_Xfer xfer = {
-        .bus = 0, .addr = 0x50,
-        .tx_data = &tx, .tx_len = 1,
+        .bus = 0,
+        .addr = 0x50,
+        .tx_data = &tx,
+        .tx_len = 1,
         .callback = i2c_done,
     };
 

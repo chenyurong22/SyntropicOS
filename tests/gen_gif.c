@@ -1,10 +1,11 @@
 /**
  * @file gen_gif.c
- * @brief Renders a multi-frame sequence of SyntropicOS IMGUI to simulate interactive screen and values.
+ * @brief Renders a multi-frame sequence of SyntropicOS IMGUI to simulate interactive screen and
+ * values.
  */
 
-#include "syntropic/syntropic.h"
 #include "syntropic/display/syn_canvas.h"
+#include "syntropic/syntropic.h"
 #include "syntropic/ui/syn_imgui.h"
 
 #include <stdio.h>
@@ -21,12 +22,12 @@ int main(void)
     syn_imgui_init(&ctx);
 
     /* Setup state variables */
-    int32_t page = 0;                     /* Page selection (0 = Dashboard, 1 = Stats) */
-    int32_t mode = 1;                     /* Radio button state (1=Auto, 2=Manual) */
-    bool led_state = true;                /* Checkbox state */
-    int32_t speed = 50;                   /* Slider speed */
-    int32_t temp_data[10] = { 20, 24, 30, 42, 35, 45, 55, 60, 58, 62 }; /* Graph telemetry */
-    int32_t load_value = 50;              /* Gauge load percentage */
+    int32_t page = 0;      /* Page selection (0 = Dashboard, 1 = Stats) */
+    int32_t mode = 1;      /* Radio button state (1=Auto, 2=Manual) */
+    bool led_state = true; /* Checkbox state */
+    int32_t speed = 50;    /* Slider speed */
+    int32_t temp_data[10] = {20, 24, 30, 42, 35, 45, 55, 60, 58, 62}; /* Graph telemetry */
+    int32_t load_value = 50;                                          /* Gauge load percentage */
     bool show_dialog = false;
     bool dialog_ok = false;
 
@@ -70,7 +71,7 @@ int main(void)
         if (frame >= 0 && frame < 20) {
             page = 0;
             if (frame < 10) {
-                speed = 50 + frame * 3;       /* 50 -> 80 */
+                speed = 50 + frame * 3; /* 50 -> 80 */
             } else {
                 speed = 80 - (frame - 10) * 3; /* 80 -> 50 */
             }
@@ -82,17 +83,17 @@ int main(void)
             if (frame == 20) {
                 ctx.focused_id = 3; /* Focus on Auto radio button */
             } else if (frame == 22) {
-                enc_delta = 1;      /* Move focus to LED checkbox (id = 4) */
+                enc_delta = 1; /* Move focus to LED checkbox (id = 4) */
             } else if (frame == 24) {
-                select = true;      /* Toggle LED checkbox state */
+                select = true; /* Toggle LED checkbox state */
             } else if (frame == 26) {
-                enc_delta = 1;      /* Move focus to Speed slider (id = 5) */
+                enc_delta = 1; /* Move focus to Speed slider (id = 5) */
             } else if (frame == 28) {
-                select = true;      /* Enter Slider Edit Mode */
+                select = true; /* Enter Slider Edit Mode */
             } else if (frame >= 29 && frame < 33) {
-                enc_delta = 6;      /* Increase Slider value */
+                enc_delta = 6; /* Increase Slider value */
             } else if (frame == 33) {
-                select = true;      /* Exit Slider Edit Mode */
+                select = true; /* Exit Slider Edit Mode */
             }
         }
 
@@ -106,7 +107,7 @@ int main(void)
             } else if (frame == 39) {
                 enc_delta = -1; /* Auto -> Stats Tab Button (id = 2) */
             } else if (frame == 41) {
-                select = true;  /* Click Stats Tab Button (switches page to 1) */
+                select = true; /* Click Stats Tab Button (switches page to 1) */
             }
         }
 
@@ -117,7 +118,7 @@ int main(void)
             if (frame == 50) {
                 enc_delta = -1; /* Focus moves to Dash Tab (id=1) */
             } else if (frame == 55) {
-                enc_delta = 1;  /* Focus moves back to Stats Tab (id=2) */
+                enc_delta = 1; /* Focus moves back to Stats Tab (id=2) */
             }
         }
 
@@ -128,7 +129,7 @@ int main(void)
                 enc_delta = -1; /* Stats -> Dash Tab (id=1) */
             } else if (frame == 72) {
                 page = 1;
-                select = true;  /* Click Dash Tab Button (switches page to 0) */
+                select = true; /* Click Dash Tab Button (switches page to 0) */
             } else {
                 page = 0;
             }
@@ -151,8 +152,7 @@ int main(void)
                 touch_down = true;
                 touch_x = 30;
                 touch_y = 18;
-            }
-            else {
+            } else {
                 page = 0;
             }
         }
@@ -163,11 +163,11 @@ int main(void)
             show_dialog = true;
 
             if (frame == 89) {
-                enc_delta = 1;  /* Focus to Cancel button */
+                enc_delta = 1; /* Focus to Cancel button */
             } else if (frame == 93) {
                 enc_delta = -1; /* Focus to OK button */
             } else if (frame == 97) {
-                select = true;  /* Click OK to dismiss */
+                select = true; /* Click OK to dismiss */
             }
         }
 
@@ -185,8 +185,10 @@ int main(void)
         bool click_dash = syn_imgui_button(&ctx, "Dash", 2, 12, 60, 12);
         bool click_stats = syn_imgui_button(&ctx, "Stats", 66, 12, 60, 12);
 
-        if (click_dash) page = 0;
-        if (click_stats) page = 1;
+        if (click_dash)
+            page = 0;
+        if (click_stats)
+            page = 1;
 
         /* Highlight active tab manually by drawing an underline */
         if (page == 0) {
@@ -206,18 +208,24 @@ int main(void)
 
             /* Overwrite active gauge needle in red */
             int32_t val = load_value;
-            if (val < 0) val = 0;
-            if (val > 100) val = 100;
+            if (val < 0)
+                val = 0;
+            if (val > 100)
+                val = 100;
             int32_t val_percent = (val * 1000) / 100;
             int32_t temp = (1000 - val_percent) * 8;
             int32_t idx = temp / 1000;
             int32_t rem = temp % 1000;
 
-            static const int16_t sin_tbl[9] = { 0, 98, 181, 236, 256, 236, 181, 98, 0 };
-            static const int16_t cos_tbl[9] = { 256, 236, 181, 98, 0, -98, -181, -236, -256 };
+            static const int16_t sin_tbl[9] = {0, 98, 181, 236, 256, 236, 181, 98, 0};
+            static const int16_t cos_tbl[9] = {256, 236, 181, 98, 0, -98, -181, -236, -256};
 
-            int32_t sin_val = (idx >= 8) ? sin_tbl[8] : sin_tbl[idx] + (rem * (sin_tbl[idx + 1] - sin_tbl[idx])) / 1000;
-            int32_t cos_val = (idx >= 8) ? cos_tbl[8] : cos_tbl[idx] + (rem * (cos_tbl[idx + 1] - cos_tbl[idx])) / 1000;
+            int32_t sin_val = (idx >= 8)
+                                  ? sin_tbl[8]
+                                  : sin_tbl[idx] + (rem * (sin_tbl[idx + 1] - sin_tbl[idx])) / 1000;
+            int32_t cos_val = (idx >= 8)
+                                  ? cos_tbl[8]
+                                  : cos_tbl[idx] + (rem * (cos_tbl[idx + 1] - cos_tbl[idx])) / 1000;
 
             int16_t nx = 30 + (int16_t)((cos_val * 6) / 256);
             int16_t ny = 52 - (int16_t)((sin_val * 6) / 256);
@@ -244,6 +252,7 @@ int main(void)
     }
 
     fclose(f);
-    printf("Successfully wrote %d frames of raw framebuffer to tests/simulation_fb.bin\n", total_frames);
+    printf("Successfully wrote %d frames of raw framebuffer to tests/simulation_fb.bin\n",
+           total_frames);
     return 0;
 }

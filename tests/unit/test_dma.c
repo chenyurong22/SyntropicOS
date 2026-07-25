@@ -3,9 +3,10 @@
  * @brief Unit tests for bare-metal safe DMA transaction engine (syn_dma).
  */
 
-#include "unity/unity.h"
-#include "syntropic/drivers/syn_dma.h"
 #include "mocks/mock_port.h"
+#include "syntropic/drivers/syn_dma.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 static SYN_DMA g_dma;
@@ -28,15 +29,13 @@ static void dma_test_setup(void)
     mock_dma_stop_count = 0;
     memset(mock_dma, 0, sizeof(mock_dma));
 
-    SYN_DMA_Config cfg = {
-        .channel_id = 0,
-        .dir        = SYN_DMA_DIR_MEM_TO_MEM,
-        .data_size  = SYN_DMA_SIZE_32BIT,
-        .src_inc    = true,
-        .dst_inc    = true,
-        .callback   = dma_test_callback,
-        .user_ctx   = NULL
-    };
+    SYN_DMA_Config cfg = {.channel_id = 0,
+                          .dir = SYN_DMA_DIR_MEM_TO_MEM,
+                          .data_size = SYN_DMA_SIZE_32BIT,
+                          .src_inc = true,
+                          .dst_inc = true,
+                          .callback = dma_test_callback,
+                          .user_ctx = NULL};
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dma_init(&g_dma, &cfg));
 }
 
@@ -45,8 +44,7 @@ void test_dma_init_invalid_params(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dma_init(NULL, NULL));
 
     SYN_DMA_Config bad_cfg = {
-        .channel_id = 1,
-        .data_size  = (SYN_DMA_Size)3 /* Invalid data size */
+        .channel_id = 1, .data_size = (SYN_DMA_Size)3 /* Invalid data size */
     };
     SYN_DMA dma;
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dma_init(&dma, &bad_cfg));
@@ -55,8 +53,8 @@ void test_dma_init_invalid_params(void)
 void test_dma_start_alignment_verification(void)
 {
     dma_test_setup();
-    uint32_t src_aligned[4] = { 1, 2, 3, 4 };
-    uint32_t dst_aligned[4] = { 0 };
+    uint32_t src_aligned[4] = {1, 2, 3, 4};
+    uint32_t dst_aligned[4] = {0};
 
     /* Invalid params: NULL buffers or count == 0 */
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dma_start(NULL, src_aligned, dst_aligned, 4));
@@ -84,8 +82,8 @@ void test_dma_start_alignment_verification(void)
 void test_dma_busy_rejection(void)
 {
     dma_test_setup();
-    uint32_t src[2] = { 10, 20 };
-    uint32_t dst[2] = { 0 };
+    uint32_t src[2] = {10, 20};
+    uint32_t dst[2] = {0};
 
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dma_start(&g_dma, src, dst, 2));
     TEST_ASSERT_EQUAL_INT(SYN_DMA_STATE_BUSY, syn_dma_get_state(&g_dma));
@@ -97,8 +95,8 @@ void test_dma_busy_rejection(void)
 void test_dma_isr_handler_events(void)
 {
     dma_test_setup();
-    uint32_t src[2] = { 100, 200 };
-    uint32_t dst[2] = { 0 };
+    uint32_t src[2] = {100, 200};
+    uint32_t dst[2] = {0};
 
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dma_start(&g_dma, src, dst, 2));
 
@@ -136,8 +134,8 @@ void test_dma_stop_and_null_checks(void)
 
     /* Hardware port error trigger */
     g_dma.cfg.channel_id = 99; /* Out of range for mock hardware port */
-    uint32_t src[1] = { 1 };
-    uint32_t dst[1] = { 0 };
+    uint32_t src[1] = {1};
+    uint32_t dst[1] = {0};
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dma_start(&g_dma, src, dst, 1));
     TEST_ASSERT_EQUAL_INT(SYN_DMA_STATE_ERROR, syn_dma_get_state(&g_dma));
     TEST_ASSERT_EQUAL_UINT32(1, g_dma.errors_cnt);
@@ -157,4 +155,3 @@ void run_dma_tests(void)
     RUN_TEST(test_dma_isr_handler_events);
     RUN_TEST(test_dma_stop_and_null_checks);
 }
-

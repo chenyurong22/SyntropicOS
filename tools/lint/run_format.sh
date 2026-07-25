@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
 MODE="check"
-if [[ $# -gt 0 && "$1" == "--fix" ]]; then
+if [[ "${FIX:-0}" == "1" || "${1:-}" == "--fix" || "${1:-}" == "FIX=1" ]]; then
     MODE="fix"
 fi
 

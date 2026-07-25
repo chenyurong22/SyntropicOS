@@ -4,12 +4,14 @@
  */
 
 #include "syntropic/util/syn_json_read.h"
-#include <stdint.h>
+
 #include <stddef.h>
+#include <stdint.h>
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    if (size == 0) return 0;
+    if (size == 0)
+        return 0;
 
     SYN_JsonReader reader;
     syn_json_reader_init(&reader, (const char *)data, size);

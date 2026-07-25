@@ -3,9 +3,9 @@
  * @brief Unity tests for Post-Mortem Hard Fault diagnostics.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_fault_check_and_log(void)
 {
@@ -14,17 +14,15 @@ static void test_fault_check_and_log(void)
     syn_errlog_init(&elog, err_buf, 4, 1);
 
     /* Simulate a Hard Fault capture */
-    SYN_FaultContext ctx = {
-        .pc = 0x08001234,
-        .lr = 0x08005678,
-        .sp = 0x20001000,
-        .r0 = 0,
-        .r1 = 1,
-        .r2 = 2,
-        .r3 = 3,
-        .r12 = 12,
-        .xpsr = 0x01000000
-    };
+    SYN_FaultContext ctx = {.pc = 0x08001234,
+                            .lr = 0x08005678,
+                            .sp = 0x20001000,
+                            .r0 = 0,
+                            .r1 = 1,
+                            .r2 = 2,
+                            .r3 = 3,
+                            .r12 = 12,
+                            .xpsr = 0x01000000};
 
     syn_fault_capture(&ctx);
 
@@ -49,7 +47,7 @@ static void test_fault_check_and_log(void)
 
 static void test_fault_null_log(void)
 {
-    SYN_FaultContext ctx = { .pc = 0x08005555 };
+    SYN_FaultContext ctx = {.pc = 0x08005555};
     syn_fault_capture(&ctx);
 
     /* Check with NULL errlog should handle safely (not crash) and clear signature */
@@ -72,4 +70,3 @@ void run_fault_tests(void)
     RUN_TEST(test_fault_null_log);
     RUN_TEST(test_fault_capture_null);
 }
-

@@ -8,8 +8,9 @@
 #define SYN_BACKOFF_H
 
 #include "../common/syn_defs.h"
-#include <stdint.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,9 +21,9 @@ typedef struct {
     uint32_t min_ms;      /**< Initial timeout (ms)           */
     uint32_t max_ms;      /**< Maximum timeout (ms)           */
     uint32_t current_ms;  /**< Current timeout duration (ms) */
-    uint8_t  attempts;    /**< Number of failed attempts      */
-    uint8_t  max_attempts; /**< Maximum number of attempts    */
-    uint8_t  factor;      /**< Multiplier (usually 2)         */
+    uint8_t attempts;     /**< Number of failed attempts      */
+    uint8_t max_attempts; /**< Maximum number of attempts    */
+    uint8_t factor;       /**< Multiplier (usually 2)         */
 } SYN_Backoff;
 
 /**
@@ -33,7 +34,8 @@ typedef struct {
  * @param factor  Exponential factor (usually 2).
  * @param max_attempts Maximum number of attempts.
  */
-void syn_backoff_init(SYN_Backoff *b, uint32_t min_ms, uint32_t max_ms, uint8_t factor, uint8_t max_attempts);
+void syn_backoff_init(SYN_Backoff *b, uint32_t min_ms, uint32_t max_ms, uint8_t factor,
+                      uint8_t max_attempts);
 
 /**
  * @brief Get the next delay in milliseconds.

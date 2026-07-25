@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_PID) || SYN_USE_PID
@@ -9,12 +9,11 @@
  * @brief PID controller implementation.
  */
 
-#include "syn_pid.h"
 #include "../common/syn_defs.h"
 #include "../util/syn_assert.h"
+#include "syn_pid.h"
 
 #include <string.h>
-
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
@@ -25,7 +24,7 @@ void syn_pid_init(SYN_PID *pid, const SYN_PID_Config *cfg)
     SYN_ASSERT(cfg->scale != 0);
 
     memset(pid, 0, sizeof(*pid));
-    pid->cfg   = *cfg;
+    pid->cfg = *cfg;
     pid->first = true;
 
     /* Auto-compute integral_max if not explicitly set.
@@ -35,21 +34,20 @@ void syn_pid_init(SYN_PID *pid, const SYN_PID_Config *cfg)
      * Use 64-bit to avoid overflow in the multiply. */
     if (pid->cfg.integral_max == 0) {
         if (pid->cfg.ki > 0) {
-            pid->cfg.integral_max = (int32_t)(
-                ((int64_t)pid->cfg.out_max * pid->cfg.scale * 1000)
-                / pid->cfg.ki);
+            pid->cfg.integral_max =
+                (int32_t)(((int64_t)pid->cfg.out_max * pid->cfg.scale * 1000) / pid->cfg.ki);
         } else {
             pid->cfg.integral_max = pid->cfg.out_max * pid->cfg.scale;
         }
     }
 }
 
-int32_t syn_pid_update(SYN_PID *pid, int32_t setpoint,
-                        int32_t measured, uint32_t dt_ms)
+int32_t syn_pid_update(SYN_PID *pid, int32_t setpoint, int32_t measured, uint32_t dt_ms)
 {
     SYN_ASSERT(pid != NULL);
 
-    if (dt_ms == 0) dt_ms = 1;
+    if (dt_ms == 0)
+        dt_ms = 1;
 
     int32_t error = setpoint - measured;
 
@@ -94,8 +92,7 @@ int32_t syn_pid_update(SYN_PID *pid, int32_t setpoint,
     output = SYN_CLAMP(output, pid->cfg.out_min, pid->cfg.out_max);
 
     /* Anti-windup: if output is saturated, freeze integral */
-    if ((output == pid->cfg.out_max && error > 0) ||
-        (output == pid->cfg.out_min && error < 0)) {
+    if ((output == pid->cfg.out_max && error > 0) || (output == pid->cfg.out_min && error < 0)) {
         pid->integral -= error * (int32_t)dt_ms;
     }
 
@@ -106,11 +103,11 @@ int32_t syn_pid_update(SYN_PID *pid, int32_t setpoint,
 void syn_pid_reset(SYN_PID *pid)
 {
     SYN_ASSERT(pid != NULL);
-    pid->integral        = 0;
-    pid->prev_error      = 0;
+    pid->integral = 0;
+    pid->prev_error = 0;
     pid->prev_d_filtered = 0;
-    pid->output          = 0;
-    pid->first           = true;
+    pid->output = 0;
+    pid->first = true;
 }
 
 void syn_pid_set_gains(SYN_PID *pid, int32_t kp, int32_t ki, int32_t kd)

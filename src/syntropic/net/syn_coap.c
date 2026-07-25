@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_COAP) || SYN_USE_COAP
@@ -9,14 +9,15 @@
  * @brief CoAP message serialization, parsing, and cooperative client task implementation.
  */
 
-#include "syn_coap.h"
 #include "../port/syn_port_system.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
+#include "syn_coap.h"
+
 #include <string.h>
 
-size_t syn_coap_serialize(const SYN_CoapMsg *msg, const SYN_CoapOption *options, size_t option_count,
-                          uint8_t *buf, size_t max_buf_len)
+size_t syn_coap_serialize(const SYN_CoapMsg *msg, const SYN_CoapOption *options,
+                          size_t option_count, uint8_t *buf, size_t max_buf_len)
 {
     SYN_ASSERT(msg != NULL);
     SYN_ASSERT(buf != NULL);
@@ -178,11 +179,13 @@ SYN_Status syn_coap_parse(SYN_CoapMsg *msg, SYN_CoapOption *options, size_t max_
         if (delta_val < 13) {
             delta = delta_val;
         } else if (delta_val == 13) {
-            if (pos >= buf_len) return SYN_ERROR;
+            if (pos >= buf_len)
+                return SYN_ERROR;
             delta = 13 + buf[pos++];
         } else if (delta_val == 14) {
-            if (pos + 1 >= buf_len) return SYN_ERROR;
-            delta = (uint16_t)(269 + (((uint16_t)buf[pos] << 8) | buf[pos+1]));
+            if (pos + 1 >= buf_len)
+                return SYN_ERROR;
+            delta = (uint16_t)(269 + (((uint16_t)buf[pos] << 8) | buf[pos + 1]));
             pos += 2;
         } else {
             return SYN_ERROR;
@@ -192,11 +195,13 @@ SYN_Status syn_coap_parse(SYN_CoapMsg *msg, SYN_CoapOption *options, size_t max_
         if (len_val < 13) {
             len = len_val;
         } else if (len_val == 13) {
-            if (pos >= buf_len) return SYN_ERROR;
+            if (pos >= buf_len)
+                return SYN_ERROR;
             len = 13 + buf[pos++];
         } else if (len_val == 14) {
-            if (pos + 1 >= buf_len) return SYN_ERROR;
-            len = (size_t)(269 + (((uint16_t)buf[pos] << 8) | buf[pos+1]));
+            if (pos + 1 >= buf_len)
+                return SYN_ERROR;
+            len = (size_t)(269 + (((uint16_t)buf[pos] << 8) | buf[pos + 1]));
             pos += 2;
         } else {
             return SYN_ERROR;
@@ -225,9 +230,10 @@ void syn_coap_request_init(SYN_CoapRequest *r, const SYN_SockAddr *server_addr,
                            const SYN_CoapMsg *msg, uint32_t timeout_ms, uint8_t retries)
 {
     SYN_ASSERT(r != NULL);
-    memset(r, 0, sizeof(*r));
+    (void)memset(r, 0, sizeof(*r));
     r->server_addr = *server_addr;
-    r->req_msg     = msg;
+    r->req_msg = msg;
+    r->start_ms = 0;
     /* Initialize backoff: factor 2 for binary exponential.
      * max_attempts = retries + 1 (original + retransmissions) */
     syn_backoff_init(&r->backoff, timeout_ms, timeout_ms << retries, 2, retries + 1);
@@ -248,8 +254,8 @@ SYN_PT_Status syn_coap_request_task(SYN_PT *pt, SYN_Task *task)
     }
 
     /* Serialize once into struct-owned buffer (survives across yields) */
-    r->tx_len = syn_coap_serialize(r->req_msg, r->req_options, r->req_option_count,
-                                   r->tx_buf, sizeof(r->tx_buf));
+    r->tx_len = syn_coap_serialize(r->req_msg, r->req_options, r->req_option_count, r->tx_buf,
+                                   sizeof(r->tx_buf));
     if (r->tx_len == 0) {
         syn_port_sock_close(r->sock);
         r->sock = SYN_SOCKET_INVALID;
@@ -280,8 +286,7 @@ SYN_PT_Status syn_coap_request_task(SYN_PT *pt, SYN_Task *task)
                 r->resp_len = (size_t)n;
                 SYN_Status st = syn_coap_parse(&r->resp_msg, r->resp_options, 8,
                                                &r->resp_option_count, r->resp_buf, r->resp_len);
-                if (st == SYN_OK &&
-                    r->resp_msg.token_len == r->req_msg->token_len &&
+                if (st == SYN_OK && r->resp_msg.token_len == r->req_msg->token_len &&
                     memcmp(r->resp_msg.token, r->req_msg->token, r->resp_msg.token_len) == 0) {
                     r->status = SYN_OK;
                     break;
@@ -290,16 +295,17 @@ SYN_PT_Status syn_coap_request_task(SYN_PT *pt, SYN_Task *task)
             PT_DEFER(pt, task);
         }
 
-        if (r->status == SYN_OK) break;
+        if (r->status == SYN_OK)
+            break;
     }
 
-    if (r->status == SYN_BUSY) r->status = SYN_TIMEOUT;
+    if (r->status == SYN_BUSY)
+        r->status = SYN_TIMEOUT;
 
     syn_port_sock_close(r->sock);
     r->sock = SYN_SOCKET_INVALID;
 
     PT_END(pt);
 }
-
 
 #endif /* SYN_USE_COAP */

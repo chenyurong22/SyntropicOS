@@ -3,9 +3,9 @@
  * @brief Unity tests for Active Object concurrency framework.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 enum { AO_ST_OFF, AO_ST_ON };
 enum { AO_EV_TOGGLE, AO_EV_SET_VAL };
@@ -28,12 +28,11 @@ static void ao_on_set_val(void *ctx)
 }
 
 static const SYN_FSM_Transition test_ao_table[] = {
-    { AO_ST_OFF, AO_EV_TOGGLE,  AO_ST_ON,  NULL, ao_on_toggle },
-    { AO_ST_ON,  AO_EV_TOGGLE,  AO_ST_OFF, NULL, ao_on_toggle },
-    { AO_ST_OFF, AO_EV_SET_VAL, AO_ST_OFF, NULL, ao_on_set_val },
-    { AO_ST_ON,  AO_EV_SET_VAL, AO_ST_ON,  NULL, ao_on_set_val },
-    SYN_FSM_END
-};
+    {AO_ST_OFF, AO_EV_TOGGLE, AO_ST_ON, NULL, ao_on_toggle},
+    {AO_ST_ON, AO_EV_TOGGLE, AO_ST_OFF, NULL, ao_on_toggle},
+    {AO_ST_OFF, AO_EV_SET_VAL, AO_ST_OFF, NULL, ao_on_set_val},
+    {AO_ST_ON, AO_EV_SET_VAL, AO_ST_ON, NULL, ao_on_set_val},
+    SYN_FSM_END};
 
 static SYN_ActiveObject test_ao_obj;
 static SYN_AO_Event mbox_buf[4];

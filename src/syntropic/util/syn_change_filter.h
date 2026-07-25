@@ -27,8 +27,8 @@
 #ifndef SYN_CHANGE_FILTER_H
 #define SYN_CHANGE_FILTER_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,11 +36,11 @@ extern "C" {
 
 /** @brief Dead-band + rate-limited change filter. */
 typedef struct {
-    float    last_value;      /**< Last reported value                    */
+    float last_value;         /**< Last reported value                    */
     uint32_t last_time_ms;    /**< Tick when last reported                */
-    float    dead_band;       /**< Minimum |delta| to count as changed   */
+    float dead_band;          /**< Minimum |delta| to count as changed   */
     uint32_t min_interval_ms; /**< Minimum ms between reports (0=no limit) */
-    bool     initialized;     /**< false until first update               */
+    bool initialized;         /**< false until first update               */
 } SYN_ChangeFilter;
 
 /**
@@ -52,15 +52,14 @@ typedef struct {
  * @param min_interval_ms  Minimum milliseconds between reports.
  *                         Use 0 to disable rate limiting.
  */
-static inline void syn_change_filter_init(SYN_ChangeFilter *cf,
-                                           float dead_band,
-                                           uint32_t min_interval_ms)
+static inline void syn_change_filter_init(SYN_ChangeFilter *cf, float dead_band,
+                                          uint32_t min_interval_ms)
 {
-    cf->last_value      = 0.0f;
-    cf->last_time_ms    = 0;
-    cf->dead_band       = dead_band;
+    cf->last_value = 0.0f;
+    cf->last_time_ms = 0;
+    cf->dead_band = dead_band;
     cf->min_interval_ms = min_interval_ms;
-    cf->initialized     = false;
+    cf->initialized = false;
 }
 
 /**
@@ -73,15 +72,13 @@ static inline void syn_change_filter_init(SYN_ChangeFilter *cf,
  * @param now_ms   Current tick in milliseconds.
  * @return true if the value should be reported.
  */
-static inline bool syn_change_filter_update(SYN_ChangeFilter *cf,
-                                             float value,
-                                             uint32_t now_ms)
+static inline bool syn_change_filter_update(SYN_ChangeFilter *cf, float value, uint32_t now_ms)
 {
     /* First value is always reported */
     if (!cf->initialized) {
-        cf->last_value   = value;
+        cf->last_value = value;
         cf->last_time_ms = now_ms;
-        cf->initialized  = true;
+        cf->initialized = true;
         return true;
     }
 
@@ -93,14 +90,15 @@ static inline bool syn_change_filter_update(SYN_ChangeFilter *cf,
 
     /* Dead-band check */
     float delta = value - cf->last_value;
-    if (delta < 0.0f) delta = -delta;
+    if (delta < 0.0f)
+        delta = -delta;
 
     if (delta <= cf->dead_band) {
         return false;
     }
 
     /* Changed enough and enough time passed */
-    cf->last_value   = value;
+    cf->last_value = value;
     cf->last_time_ms = now_ms;
     return true;
 }
@@ -134,11 +132,10 @@ static inline float syn_change_filter_last(const SYN_ChangeFilter *cf)
  * @param dead_band        New dead-band threshold.
  * @param min_interval_ms  New minimum reporting interval (ms).
  */
-static inline void syn_change_filter_set(SYN_ChangeFilter *cf,
-                                          float dead_band,
-                                          uint32_t min_interval_ms)
+static inline void syn_change_filter_set(SYN_ChangeFilter *cf, float dead_band,
+                                         uint32_t min_interval_ms)
 {
-    cf->dead_band       = dead_band;
+    cf->dead_band = dead_band;
     cf->min_interval_ms = min_interval_ms;
 }
 

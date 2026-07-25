@@ -4,8 +4,9 @@
  */
 
 #include "syntropic/proto/syn_cia402.h"
-#include <string.h>
+
 #include <math.h>
+#include <string.h>
 
 SYN_Status syn_cia402_init(SYN_CiA402Drive *drive, const SYN_CiA402Config *cfg)
 {
@@ -178,7 +179,8 @@ SYN_Status syn_cia402_set_target_torque(SYN_CiA402Drive *drive, int16_t target_t
     return SYN_OK;
 }
 
-SYN_Status syn_cia402_report_actuals(SYN_CiA402Drive *drive, int32_t actual_pos, int32_t actual_vel, int16_t actual_torque)
+SYN_Status syn_cia402_report_actuals(SYN_CiA402Drive *drive, int32_t actual_pos, int32_t actual_vel,
+                                     int16_t actual_torque)
 {
     if (drive == NULL) {
         return SYN_INVALID_PARAM;
@@ -242,7 +244,9 @@ SYN_Status syn_cia402_update(SYN_CiA402Drive *drive, uint32_t dt_ms)
 
         case SYN_CIA402_MODE_PV: {
             float target_v = (float)drive->target_velocity;
-            float accel = (drive->cfg.profile_acceleration > 0) ? (float)drive->cfg.profile_acceleration : 5000.0f;
+            float accel = (drive->cfg.profile_acceleration > 0)
+                              ? (float)drive->cfg.profile_acceleration
+                              : 5000.0f;
 
             if (drive->current_speed < target_v) {
                 drive->current_speed += accel * dt;
@@ -286,7 +290,9 @@ SYN_Status syn_cia402_update(SYN_CiA402Drive *drive, uint32_t dt_ms)
             break;
         }
     } else if (drive->state == SYN_CIA402_STATE_QUICK_STOP_ACTIVE) {
-        float q_decel = (drive->cfg.quick_stop_deceleration > 0) ? (float)drive->cfg.quick_stop_deceleration : 10000.0f;
+        float q_decel = (drive->cfg.quick_stop_deceleration > 0)
+                            ? (float)drive->cfg.quick_stop_deceleration
+                            : 10000.0f;
         if (drive->current_speed > 0.0f) {
             drive->current_speed -= q_decel * dt;
             if (drive->current_speed < 0.0f) {
@@ -310,7 +316,8 @@ SYN_Status syn_cia402_update(SYN_CiA402Drive *drive, uint32_t dt_ms)
     return SYN_OK;
 }
 
-size_t syn_cia402_populate_od(SYN_CANOpenODEntry *entries, size_t max_entries, SYN_CiA402Drive *drive)
+size_t syn_cia402_populate_od(SYN_CANOpenODEntry *entries, size_t max_entries,
+                              SYN_CiA402Drive *drive)
 {
     if (entries == NULL || drive == NULL || max_entries < 10U) {
         return 0U;

@@ -33,9 +33,10 @@
 #define SYN_SEQUENCER_H
 
 #include "../port/syn_port_system.h"
-#include <stdint.h>
+
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,9 +49,9 @@ typedef void (*SYN_SeqAction)(void *ctx);
 
 /** Sequence step descriptor. */
 typedef struct {
-    SYN_SeqAction  action;     /**< Action to execute (NULL = delay only)*/
-    void           *ctx;        /**< Context for action                   */
-    uint32_t        delay_ms;   /**< Delay AFTER action before next step  */
+    SYN_SeqAction action; /**< Action to execute (NULL = delay only)*/
+    void *ctx;            /**< Context for action                   */
+    uint32_t delay_ms;    /**< Delay AFTER action before next step  */
 } SYN_SeqStep;
 
 /* ── Sequencer state ────────────────────────────────────────────────────── */
@@ -59,10 +60,10 @@ typedef struct {
  * @brief Action sequencer execution states.
  */
 typedef enum {
-    SYN_SEQ_IDLE     = 0,            /**< Sequence is inactive or stopped */
-    SYN_SEQ_RUNNING  = 1,            /**< Actively executing actions */
-    SYN_SEQ_WAITING  = 2,            /**< Waiting on step delay timer */
-    SYN_SEQ_DONE     = 3,            /**< Sequence completed all steps */
+    SYN_SEQ_IDLE = 0,    /**< Sequence is inactive or stopped */
+    SYN_SEQ_RUNNING = 1, /**< Actively executing actions */
+    SYN_SEQ_WAITING = 2, /**< Waiting on step delay timer */
+    SYN_SEQ_DONE = 3,    /**< Sequence completed all steps */
 } SYN_SeqState;
 
 /* ── Completion callback ────────────────────────────────────────────────── */
@@ -75,23 +76,22 @@ struct SYN_Sequencer;
  * @param seq Pointer to the completed sequencer context.
  * @param ctx User context associated with the completion handler.
  */
-typedef void (*SYN_SeqCompleteCallback)(struct SYN_Sequencer *seq,
-                                          void *ctx);
+typedef void (*SYN_SeqCompleteCallback)(struct SYN_Sequencer *seq, void *ctx);
 
 /**
  * @brief Sequencer runtime context.
  */
 typedef struct SYN_Sequencer {
-    const SYN_SeqStep  *steps;          /**< Array of step descriptors to run */
-    uint16_t             step_count;    /**< Total step count in sequence */
-    uint16_t             current;       /**< Current step index            */
-    SYN_SeqState        state;         /**< Current sequencer operational state */
-    uint32_t             wait_start;    /**< Tick when delay started       */
-    bool                 loop;          /**< Auto-restart on completion?   */
-    uint16_t             loop_count;    /**< Times completed (for looping) */
+    const SYN_SeqStep *steps; /**< Array of step descriptors to run */
+    uint16_t step_count;      /**< Total step count in sequence */
+    uint16_t current;         /**< Current step index            */
+    SYN_SeqState state;       /**< Current sequencer operational state */
+    uint32_t wait_start;      /**< Tick when delay started       */
+    bool loop;                /**< Auto-restart on completion?   */
+    uint16_t loop_count;      /**< Times completed (for looping) */
 
     SYN_SeqCompleteCallback on_complete; /**< Callback function when sequence finishes */
-    void                    *on_complete_ctx; /**< Context data for completion callback */
+    void *on_complete_ctx;               /**< Context data for completion callback */
 } SYN_Sequencer;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -103,8 +103,7 @@ typedef struct SYN_Sequencer {
  * @param steps  Array of step descriptors (must persist).
  * @param count  Number of steps.
  */
-void syn_seq_init(SYN_Sequencer *seq,
-                   const SYN_SeqStep *steps, uint16_t count);
+void syn_seq_init(SYN_Sequencer *seq, const SYN_SeqStep *steps, uint16_t count);
 
 /**
  * @brief Set completion callback.
@@ -113,8 +112,7 @@ void syn_seq_init(SYN_Sequencer *seq,
  * @param cb  Callback function invoked on sequence end.
  * @param ctx Callback context data pointer.
  */
-void syn_seq_on_complete(SYN_Sequencer *seq,
-                          SYN_SeqCompleteCallback cb, void *ctx);
+void syn_seq_on_complete(SYN_Sequencer *seq, SYN_SeqCompleteCallback cb, void *ctx);
 
 /**
  * @brief Enable looping (auto-restart on completion).

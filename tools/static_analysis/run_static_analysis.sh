@@ -6,9 +6,14 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 cd "${ROOT_DIR}"
 
+JOBS=$(nproc 2>/dev/null || echo 4)
+
+mkdir -p build/cppcheck
 echo "=== Running Cppcheck Static Analysis on src/ ==="
 if command -v cppcheck >/dev/null 2>&1; then
-    cppcheck --enable=warning,style,performance,portability \
+    cppcheck --std=c99 -j "${JOBS}" \
+        --cppcheck-build-dir=build/cppcheck \
+        --enable=warning,style,performance,portability \
         --inline-suppr \
         --suppress=missingIncludeSystem \
         --suppress=unusedFunction \
@@ -21,7 +26,7 @@ fi
 
 echo "=== Running Clang Static Analyzer (scan-build) ==="
 if command -v scan-build >/dev/null 2>&1; then
-    scan-build --status-bugs make -f tests/Makefile.unity clean test_unity
+    scan-build --status-bugs make -j "${JOBS}" -f tests/Makefile.unity clean test_unity
     echo "=== Clang Static Analyzer Complete ==="
 else
     echo "Notice: scan-build not found on host. Run via container: make -C tools/containers container-static"

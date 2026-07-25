@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SD) || SYN_USE_SD
@@ -24,50 +24,50 @@
  * data blocks use 0xFF dummy bytes (CRC mode off by default in SPI).
  */
 
-#include "syn_sd.h"
 #include "../util/syn_assert.h"
+#include "syn_sd.h"
 
 #include <string.h>
 
 /** @name SD command codes
  * @{
  */
-#define SD_CMD0    0u   /**< GO_IDLE_STATE           */
-#define SD_CMD8    8u   /**< SEND_IF_COND            */
-#define SD_CMD9    9u   /**< SEND_CSD                */
-#define SD_CMD13  13u   /**< SEND_STATUS             */
-#define SD_CMD16  16u   /**< SET_BLOCKLEN            */
-#define SD_CMD17  17u   /**< READ_SINGLE_BLOCK       */
-#define SD_CMD24  24u   /**< WRITE_BLOCK             */
-#define SD_CMD55  55u   /**< APP_CMD prefix          */
-#define SD_CMD58  58u   /**< READ_OCR                */
-#define SD_ACMD41 41u   /**< SD_SEND_OP_COND (app)   */
+#define SD_CMD0 0u    /**< GO_IDLE_STATE           */
+#define SD_CMD8 8u    /**< SEND_IF_COND            */
+#define SD_CMD9 9u    /**< SEND_CSD                */
+#define SD_CMD13 13u  /**< SEND_STATUS             */
+#define SD_CMD16 16u  /**< SET_BLOCKLEN            */
+#define SD_CMD17 17u  /**< READ_SINGLE_BLOCK       */
+#define SD_CMD24 24u  /**< WRITE_BLOCK             */
+#define SD_CMD55 55u  /**< APP_CMD prefix          */
+#define SD_CMD58 58u  /**< READ_OCR                */
+#define SD_ACMD41 41u /**< SD_SEND_OP_COND (app)   */
 /** @} */
 
 /** @name R1 response flags
  * @{
  */
-#define SD_R1_IDLE    0x01u   /**< Card in idle state during init          */
-#define SD_R1_ILLCMD  0x04u   /**< Illegal command (SDSC: no CMD8 support) */
-#define SD_R1_READY   0x00u   /**< No errors, card ready                   */
-#define SD_R1_ERR_MSK 0xFEu   /**< Any bit other than IDLE = error         */
-#define SD_R1_TIMEOUT 0xFFu   /**< No response from card                   */
+#define SD_R1_IDLE 0x01u    /**< Card in idle state during init          */
+#define SD_R1_ILLCMD 0x04u  /**< Illegal command (SDSC: no CMD8 support) */
+#define SD_R1_READY 0x00u   /**< No errors, card ready                   */
+#define SD_R1_ERR_MSK 0xFEu /**< Any bit other than IDLE = error         */
+#define SD_R1_TIMEOUT 0xFFu /**< No response from card                   */
 /** @} */
 
 /** @name Data tokens
  * @{
  */
-#define SD_TOKEN_START    0xFEu  /**< Start block for single read/write     */
-#define SD_TOKEN_ACCEPTED 0x05u  /**< Write data response: (xxx0_0101)      */
+#define SD_TOKEN_START 0xFEu    /**< Start block for single read/write     */
+#define SD_TOKEN_ACCEPTED 0x05u /**< Write data response: (xxx0_0101)      */
 /** @} */
 
 /** @name Retry limits
  * @{
  */
-#define SD_R1_POLL_RETRIES   8u    /**< Max R1 polling attempts              */
-#define SD_ACMD41_RETRIES 1000u    /**< Max ACMD41 init retries              */
-#define SD_TOKEN_RETRIES  2000u    /**< Max token wait retries               */
-#define SD_BUSY_RETRIES   2000u    /**< Max busy wait retries                */
+#define SD_R1_POLL_RETRIES 8u   /**< Max R1 polling attempts              */
+#define SD_ACMD41_RETRIES 1000u /**< Max ACMD41 init retries              */
+#define SD_TOKEN_RETRIES 2000u  /**< Max token wait retries               */
+#define SD_BUSY_RETRIES 2000u   /**< Max busy wait retries                */
 /** @} */
 
 /**
@@ -97,8 +97,8 @@ static uint8_t sd_cmd(const SYN_SD *sd, uint8_t cmd, uint32_t arg, uint8_t crc)
     buf[0] = (uint8_t)(0x40u | cmd);
     buf[1] = (uint8_t)((arg >> 24) & 0xFFu);
     buf[2] = (uint8_t)((arg >> 16) & 0xFFu);
-    buf[3] = (uint8_t)((arg >>  8) & 0xFFu);
-    buf[4] = (uint8_t)( arg        & 0xFFu);
+    buf[3] = (uint8_t)((arg >> 8) & 0xFFu);
+    buf[4] = (uint8_t)(arg & 0xFFu);
     buf[5] = crc;
     /* rx_buf=NULL: port drives MOSI=0xFF during any simultaneous card output */
     syn_port_spi_transfer(sd->spi_bus, buf, NULL, sizeof(buf));
@@ -164,22 +164,19 @@ static SYN_Status sd_read_csd(SYN_SD *sd)
     uint8_t csd_ver = (csd[0] >> 6) & 0x03u;
     if (csd_ver == 0u) {
         /* CSD v1 (SDSC): decode C_SIZE, C_SIZE_MULT, READ_BL_LEN */
-        uint8_t  read_bl_len  = csd[5] & 0x0Fu;
-        uint32_t c_size       = (uint32_t)((csd[6] & 0x03u) << 10)
-                              | ((uint32_t)csd[7] << 2)
-                              | (uint32_t)((csd[8] >> 6) & 0x03u);
-        uint8_t  c_size_mult  = (uint8_t)(((csd[9]  & 0x03u) << 1)
-                              | ((csd[10] >> 7) & 0x01u));
-        uint32_t mult         = (uint32_t)1u << ((uint32_t)c_size_mult + 2u);
+        uint8_t read_bl_len = csd[5] & 0x0Fu;
+        uint32_t c_size = (uint32_t)((csd[6] & 0x03u) << 10) | ((uint32_t)csd[7] << 2) |
+                          (uint32_t)((csd[8] >> 6) & 0x03u);
+        uint8_t c_size_mult = (uint8_t)(((csd[9] & 0x03u) << 1) | ((csd[10] >> 7) & 0x01u));
+        uint32_t mult = (uint32_t)1u << ((uint32_t)c_size_mult + 2u);
         /* block_len / 512 avoids intermediate overflow for large SDSC cards */
-        uint32_t bl_shift     = (read_bl_len >= 9u) ? (uint32_t)(read_bl_len - 9u) : 0u;
+        uint32_t bl_shift = (read_bl_len >= 9u) ? (uint32_t)(read_bl_len - 9u) : 0u;
         uint32_t block_factor = (uint32_t)1u << bl_shift;
-        sd->sector_count      = (c_size + 1u) * mult * block_factor;
+        sd->sector_count = (c_size + 1u) * mult * block_factor;
     } else {
         /* CSD v2 (SDHC/SDXC): C_SIZE directly encodes 512KB units */
-        uint32_t c_size  = ((uint32_t)(csd[7] & 0x3Fu) << 16)
-                         | ((uint32_t)csd[8] << 8)
-                         | (uint32_t)csd[9];
+        uint32_t c_size =
+            ((uint32_t)(csd[7] & 0x3Fu) << 16) | ((uint32_t)csd[8] << 8) | (uint32_t)csd[9];
         sd->sector_count = (c_size + 1u) * 1024u;
     }
 
@@ -190,18 +187,18 @@ SYN_Status syn_sd_init(SYN_SD *sd, uint8_t spi_bus, SYN_GPIO_Pin cs)
 {
     SYN_ASSERT(sd != NULL);
 
-    sd->spi_bus      = spi_bus;
-    sd->cs_pin       = cs;
-    sd->type         = SYN_SD_UNKNOWN;
+    sd->spi_bus = spi_bus;
+    sd->cs_pin = cs;
+    sd->type = SYN_SD_UNKNOWN;
     sd->sector_count = 0u;
-    sd->initialized  = false;
+    sd->initialized = false;
 
     /* Configure SPI at 400 kHz (SD spec: <= 400 kHz during init) */
     SYN_SPI_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.bus       = spi_bus;
-    cfg.clock_hz  = 400000u;
-    cfg.mode      = SYN_SPI_MODE_0;
+    cfg.bus = spi_bus;
+    cfg.clock_hz = 400000u;
+    cfg.mode = SYN_SPI_MODE_0;
     cfg.bit_order = 0u; /* MSB first */
     if (syn_port_spi_init(&cfg) != SYN_OK) {
         return SYN_ERROR;
@@ -304,14 +301,12 @@ SYN_Status syn_sd_init(SYN_SD *sd, uint8_t spi_bus, SYN_GPIO_Pin cs)
 
 SYN_Status syn_sd_read(const SYN_SD *sd, uint32_t sector, uint8_t *buf)
 {
-    SYN_ASSERT(sd  != NULL);
+    SYN_ASSERT(sd != NULL);
     SYN_ASSERT(buf != NULL);
     SYN_ASSERT(sd->initialized);
 
     /* SDSC: byte address (sector * 512).  SDHC: sector address. */
-    uint32_t addr = (sd->type == SYN_SD_SDSC)
-                  ? (sector * (uint32_t)SYN_SD_SECTOR_SIZE)
-                  : sector;
+    uint32_t addr = (sd->type == SYN_SD_SDSC) ? (sector * (uint32_t)SYN_SD_SECTOR_SIZE) : sector;
 
     syn_port_spi_cs_assert(sd->spi_bus, sd->cs_pin);
 
@@ -347,13 +342,11 @@ SYN_Status syn_sd_read(const SYN_SD *sd, uint32_t sector, uint8_t *buf)
 
 SYN_Status syn_sd_write(const SYN_SD *sd, uint32_t sector, const uint8_t *buf)
 {
-    SYN_ASSERT(sd  != NULL);
+    SYN_ASSERT(sd != NULL);
     SYN_ASSERT(buf != NULL);
     SYN_ASSERT(sd->initialized);
 
-    uint32_t addr = (sd->type == SYN_SD_SDSC)
-                  ? (sector * (uint32_t)SYN_SD_SECTOR_SIZE)
-                  : sector;
+    uint32_t addr = (sd->type == SYN_SD_SDSC) ? (sector * (uint32_t)SYN_SD_SECTOR_SIZE) : sector;
 
     syn_port_spi_cs_assert(sd->spi_bus, sd->cs_pin);
 

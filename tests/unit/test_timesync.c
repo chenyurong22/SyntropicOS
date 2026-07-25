@@ -3,11 +3,11 @@
  * @brief Unity tests for syn_timesync — high-precision time discipline service.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/drivers/syn_hpclock.h"
 #include "syntropic/drivers/syn_timesync.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 /* ── Simulated Hardware Clock ──────────────────────────────────────────── */
 
@@ -20,7 +20,7 @@ volatile uint32_t *syn_port_hpclock_lsb_ptr(void)
 
 uint32_t syn_port_hpclock_freq_hz(void)
 {
-    return 16000000UL;  /* 16 MHz hardware timer */
+    return 16000000UL; /* 16 MHz hardware timer */
 }
 
 /* ── Test Suite ────────────────────────────────────────────────────────── */
@@ -42,7 +42,7 @@ static void test_timesync_unsynced_fallback(void)
 
     SYN_HPTimestamp event_ts;
     event_ts.msb_1 = 0;
-    event_ts.lsb   = 16000;  /* 16000 ticks = 1 ms */
+    event_ts.lsb = 16000; /* 16000 ticks = 1 ms */
     event_ts.msb_2 = 0;
 
     SYN_UTCTimestamp utc;
@@ -51,7 +51,7 @@ static void test_timesync_unsynced_fallback(void)
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL(SYN_TIME_SOURCE_UNSYNCED, utc.source);
     TEST_ASSERT_EQUAL_UINT64(0, utc.sec);
-    TEST_ASSERT_EQUAL_UINT32(1000000, utc.nsec);  /* 1 ms = 1,000,000 ns */
+    TEST_ASSERT_EQUAL_UINT32(1000000, utc.nsec); /* 1 ms = 1,000,000 ns */
     TEST_ASSERT_EQUAL_UINT32(0xFFFFFFFFU, utc.uncertainty_ns);
 }
 
@@ -63,7 +63,7 @@ static void test_timesync_locked_resolution(void)
     /* Bind PPS #1 at tick 1,000,000, UTC second 1,700,000,000 */
     SYN_HPTimestamp pps_ts;
     pps_ts.msb_1 = 0;
-    pps_ts.lsb   = 1000000;
+    pps_ts.lsb = 1000000;
     pps_ts.msb_2 = 0;
 
     uint64_t epoch_sec = 1700000000ULL;
@@ -74,7 +74,7 @@ static void test_timesync_locked_resolution(void)
     /* Event occurs 8,000,000 ticks later (0.5 seconds at 16 MHz) */
     SYN_HPTimestamp event_ts;
     event_ts.msb_1 = 0;
-    event_ts.lsb   = 9000000;
+    event_ts.lsb = 9000000;
     event_ts.msb_2 = 0;
 
     SYN_UTCTimestamp utc;
@@ -83,7 +83,7 @@ static void test_timesync_locked_resolution(void)
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL(SYN_TIME_SOURCE_GPS_PPS, utc.source);
     TEST_ASSERT_EQUAL_UINT64(1700000000ULL, utc.sec);
-    TEST_ASSERT_EQUAL_UINT32(500000000U, utc.nsec);  /* 0.5s = 500,000,000 ns */
+    TEST_ASSERT_EQUAL_UINT32(500000000U, utc.nsec); /* 0.5s = 500,000,000 ns */
     TEST_ASSERT_EQUAL_UINT32(50, utc.uncertainty_ns);
 }
 
@@ -95,7 +95,7 @@ static void test_timesync_event_before_pps(void)
     /* Bind PPS at tick 10,000,000, UTC second 100 */
     SYN_HPTimestamp pps_ts;
     pps_ts.msb_1 = 0;
-    pps_ts.lsb   = 10000000;
+    pps_ts.lsb = 10000000;
     pps_ts.msb_2 = 0;
 
     syn_timesync_bind_pps(&tsync, &pps_ts, 100);
@@ -103,7 +103,7 @@ static void test_timesync_event_before_pps(void)
     /* Event occurs 1,600,000 ticks (100 ms) BEFORE the PPS anchor */
     SYN_HPTimestamp event_ts;
     event_ts.msb_1 = 0;
-    event_ts.lsb   = 8400000;
+    event_ts.lsb = 8400000;
     event_ts.msb_2 = 0;
 
     SYN_UTCTimestamp utc;
@@ -122,12 +122,16 @@ static void test_timesync_drift_ppm_measurement(void)
 
     /* PPS 1 at tick 0, UTC sec 100 */
     SYN_HPTimestamp pps1;
-    pps1.msb_1 = 0; pps1.lsb = 0; pps1.msb_2 = 0;
+    pps1.msb_1 = 0;
+    pps1.lsb = 0;
+    pps1.msb_2 = 0;
     syn_timesync_bind_pps(&tsync, &pps1, 100);
 
     /* PPS 2 at tick 16,000,160 (160 ticks fast over 16M nominal = +10 PPM) */
     SYN_HPTimestamp pps2;
-    pps2.msb_1 = 0; pps2.lsb = 16000160; pps2.msb_2 = 0;
+    pps2.msb_1 = 0;
+    pps2.lsb = 16000160;
+    pps2.msb_2 = 0;
     syn_timesync_bind_pps(&tsync, &pps2, 101);
 
     TEST_ASSERT_EQUAL_INT32(10, tsync.drift_ppm);
@@ -140,8 +144,12 @@ static void test_timesync_holdover_uncertainty_growth(void)
 
     /* Bind PPS 1 & 2 to establish 10 PPM drift */
     SYN_HPTimestamp pps1, pps2;
-    pps1.msb_1 = 0; pps1.lsb = 0; pps1.msb_2 = 0;
-    pps2.msb_1 = 0; pps2.lsb = 16000160; pps2.msb_2 = 0;
+    pps1.msb_1 = 0;
+    pps1.lsb = 0;
+    pps1.msb_2 = 0;
+    pps2.msb_1 = 0;
+    pps2.lsb = 16000160;
+    pps2.msb_2 = 0;
 
     syn_timesync_bind_pps(&tsync, &pps1, 100);
     syn_timesync_bind_pps(&tsync, &pps2, 101);
@@ -149,7 +157,7 @@ static void test_timesync_holdover_uncertainty_growth(void)
     /* Event 5 seconds into holdover (16MHz * 5 = 80,000,000 ticks past pps2) */
     SYN_HPTimestamp event_ts;
     event_ts.msb_1 = 0;
-    event_ts.lsb   = 16000160 + 80000000;
+    event_ts.lsb = 16000160 + 80000000;
     event_ts.msb_2 = 0;
 
     SYN_UTCTimestamp utc;
@@ -166,16 +174,18 @@ static void test_timesync_holdover_expiration(void)
 {
     SYN_TimeSync tsync;
     syn_timesync_init(&tsync);
-    tsync.max_holdover_s = 10;  /* Shorten holdover to 10s for test */
+    tsync.max_holdover_s = 10; /* Shorten holdover to 10s for test */
 
     SYN_HPTimestamp pps;
-    pps.msb_1 = 0; pps.lsb = 0; pps.msb_2 = 0;
+    pps.msb_1 = 0;
+    pps.lsb = 0;
+    pps.msb_2 = 0;
     syn_timesync_bind_pps(&tsync, &pps, 100);
 
     /* Event 15 seconds after PPS (exceeds 10s max holdover) */
     SYN_HPTimestamp event_ts;
     event_ts.msb_1 = 0;
-    event_ts.lsb   = 16000000UL * 15;
+    event_ts.lsb = 16000000UL * 15;
     event_ts.msb_2 = 0;
 
     SYN_UTCTimestamp utc;
@@ -192,12 +202,14 @@ static void test_timesync_to_epoch_ns_helper(void)
     syn_timesync_init(&tsync);
 
     SYN_HPTimestamp pps;
-    pps.msb_1 = 0; pps.lsb = 0; pps.msb_2 = 0;
-    syn_timesync_bind_pps(&tsync, &pps, 10);  /* UTC sec = 10 */
+    pps.msb_1 = 0;
+    pps.lsb = 0;
+    pps.msb_2 = 0;
+    syn_timesync_bind_pps(&tsync, &pps, 10); /* UTC sec = 10 */
 
     SYN_HPTimestamp event_ts;
     event_ts.msb_1 = 0;
-    event_ts.lsb   = 16000;  /* 1 ms = 1,000,000 ns */
+    event_ts.lsb = 16000; /* 1 ms = 1,000,000 ns */
     event_ts.msb_2 = 0;
 
     uint64_t epoch_ns = syn_timesync_to_epoch_ns(&tsync, &event_ts);
@@ -211,7 +223,9 @@ static void test_timesync_null_params(void)
     syn_timesync_init(&tsync);
 
     SYN_HPTimestamp ts;
-    ts.msb_1 = 0; ts.lsb = 100; ts.msb_2 = 0;
+    ts.msb_1 = 0;
+    ts.lsb = 100;
+    ts.msb_2 = 0;
     SYN_UTCTimestamp utc;
 
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_timesync_bind_pps(NULL, &ts, 100));
@@ -233,7 +247,9 @@ static void test_timesync_is_pps_locked(void)
     TEST_ASSERT_FALSE(syn_timesync_is_pps_locked(&tsync));
 
     SYN_HPTimestamp pps;
-    pps.msb_1 = 0; pps.lsb = 0; pps.msb_2 = 0;
+    pps.msb_1 = 0;
+    pps.lsb = 0;
+    pps.msb_2 = 0;
     syn_timesync_bind_pps(&tsync, &pps, 100);
 
     TEST_ASSERT_TRUE(syn_timesync_is_pps_locked(&tsync));
@@ -241,11 +257,14 @@ static void test_timesync_is_pps_locked(void)
 
 /* ── Runner ────────────────────────────────────────────────────────────── */
 
-void setUp(void) {
+void setUp(void)
+{
     fake_timer_cnt = 0;
 }
 
-void tearDown(void) {}
+void tearDown(void)
+{
+}
 
 int main(void)
 {

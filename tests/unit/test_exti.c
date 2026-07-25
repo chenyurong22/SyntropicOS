@@ -3,10 +3,10 @@
  * @brief Unity tests for syn_exti — full coverage (adds enable/disable/capacity).
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/drivers/syn_exti.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static int exti_fire_count = 0;
 static SYN_GPIO_Pin exti_last_pin = 255;
@@ -35,8 +35,7 @@ static void test_exti(void)
     TEST_ASSERT_EQUAL_INT(0, syn_exti_count());
 
     /* Register pin 3 */
-    SYN_Status st = syn_exti_register(3, SYN_EXTI_FALLING,
-                                        exti_callback, NULL);
+    SYN_Status st = syn_exti_register(3, SYN_EXTI_FALLING, exti_callback, NULL);
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL_INT(1, syn_exti_count());
 
@@ -103,17 +102,15 @@ static void test_exti_capacity_full(void)
     /* Fill up to SYN_EXTI_MAX_PINS (default 16) */
     int registered = 0;
     for (int i = 0; i < 16; i++) {
-        SYN_Status st = syn_exti_register((SYN_GPIO_Pin)i,
-                                           SYN_EXTI_RISING,
-                                           exti_callback, NULL);
-        if (st == SYN_OK) registered++;
+        SYN_Status st = syn_exti_register((SYN_GPIO_Pin)i, SYN_EXTI_RISING, exti_callback, NULL);
+        if (st == SYN_OK)
+            registered++;
     }
     TEST_ASSERT_EQUAL_INT(16, registered);
     TEST_ASSERT_EQUAL_INT(16, syn_exti_count());
 
     /* One more should fail */
-    SYN_Status overflow = syn_exti_register(100, SYN_EXTI_RISING,
-                                              exti_callback, NULL);
+    SYN_Status overflow = syn_exti_register(100, SYN_EXTI_RISING, exti_callback, NULL);
     TEST_ASSERT_EQUAL(SYN_ERROR, overflow);
 }
 

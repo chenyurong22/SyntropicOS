@@ -10,9 +10,9 @@
 #define SYN_EVENT_H
 
 #include "../common/syn_defs.h"
-#include "../util/syn_bits.h"
 #include "../pt/syn_pt.h"
 #include "../sched/syn_event_flags.h"
+#include "../util/syn_bits.h"
 
 #include <stdbool.h>
 
@@ -91,19 +91,19 @@ static inline bool syn_event_check_any(const SYN_EventGroup *grp, uint32_t mask)
 /**
  * @brief Block the protothread until ALL bits in @p mask are set, then auto-clear.
  */
-#define PT_WAIT_EVENT(pt, grp, mask)                          \
-    do {                                                       \
-        PT_WAIT_UNTIL(pt, syn_event_check_all(grp, mask));    \
-        syn_event_clear(grp, mask);                           \
+#define PT_WAIT_EVENT(pt, grp, mask)                       \
+    do {                                                   \
+        PT_WAIT_UNTIL(pt, syn_event_check_all(grp, mask)); \
+        syn_event_clear(grp, mask);                        \
     } while (0)
 
 /**
  * @brief Block the protothread until ANY bit in @p mask is set, then auto-clear.
  */
-#define PT_WAIT_EVENT_ANY(pt, grp, mask)                      \
-    do {                                                       \
-        PT_WAIT_UNTIL(pt, syn_event_check_any(grp, mask));    \
-        syn_event_clear(grp, syn_event_get(grp) & (mask));    \
+#define PT_WAIT_EVENT_ANY(pt, grp, mask)                   \
+    do {                                                   \
+        PT_WAIT_UNTIL(pt, syn_event_check_any(grp, mask)); \
+        syn_event_clear(grp, syn_event_get(grp) & (mask)); \
     } while (0)
 
 #ifdef __cplusplus

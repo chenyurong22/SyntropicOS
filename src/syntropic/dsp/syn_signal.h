@@ -30,9 +30,9 @@
 #ifndef SYN_SIGNAL_H
 #define SYN_SIGNAL_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,16 +42,16 @@ extern "C" {
 
 /** @brief Signal statistics — sliding window with incremental min/max/mean. */
 typedef struct {
-    int32_t  *buf;           /**< Sample buffer (circular)                */
-    size_t    capacity;      /**< Buffer size                             */
-    size_t    head;          /**< Next write position                     */
-    size_t    count;         /**< Number of valid samples (≤ capacity)    */
+    int32_t *buf;    /**< Sample buffer (circular)                */
+    size_t capacity; /**< Buffer size                             */
+    size_t head;     /**< Next write position                     */
+    size_t count;    /**< Number of valid samples (≤ capacity)    */
 
     /* Running accumulators */
-    int64_t   sum;           /**< Sum of all samples in window            */
-    int32_t   cached_min;    /**< Cached min (invalidated on push)        */
-    int32_t   cached_max;    /**< Cached max (invalidated on push)        */
-    bool      cache_valid;   /**< True if min/max caches are current      */
+    int64_t sum;        /**< Sum of all samples in window            */
+    int32_t cached_min; /**< Cached min (invalidated on push)        */
+    int32_t cached_max; /**< Cached max (invalidated on push)        */
+    bool cache_valid;   /**< True if min/max caches are current      */
 } SYN_Signal;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -121,7 +121,8 @@ int32_t syn_signal_max(SYN_Signal *sig);
  */
 static inline int32_t syn_signal_peak_to_peak(SYN_Signal *sig)
 {
-    if (sig->count == 0) return 0;
+    if (sig->count == 0)
+        return 0;
     return syn_signal_max(sig) - syn_signal_min(sig);
 }
 
@@ -132,7 +133,8 @@ static inline int32_t syn_signal_peak_to_peak(SYN_Signal *sig)
  */
 static inline int32_t syn_signal_mean(const SYN_Signal *sig)
 {
-    if (sig->count == 0) return 0;
+    if (sig->count == 0)
+        return 0;
     return (int32_t)(sig->sum / (int64_t)sig->count);
 }
 

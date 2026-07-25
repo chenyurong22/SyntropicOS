@@ -3,14 +3,13 @@
  * @brief Unity tests for syn_fmt.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/util/syn_fmt.h"
+#include "unity/unity.h"
 
 static void test_fmt(void)
 {
-
     char buf[64];
     size_t n;
 
@@ -54,12 +53,12 @@ static void test_fmt(void)
     TEST_ASSERT_EQUAL_INT(0, strcmp(buf, "12.345"));
 
     /* Hex dump */
-    uint8_t data[] = { 0xDE, 0xAD, 0xBE, 0xEF };
+    uint8_t data[] = {0xDE, 0xAD, 0xBE, 0xEF};
     n = syn_fmt_hexdump(buf, sizeof(buf), data, 4);
     TEST_ASSERT_EQUAL_INT(0, strcmp(buf, "DE AD BE EF"));
 
     /* Concat */
-    const char *parts[] = { "Hello", " ", "World" };
+    const char *parts[] = {"Hello", " ", "World"};
     n = syn_fmt_concat(buf, sizeof(buf), parts, 3);
     TEST_ASSERT_EQUAL_INT(0, strcmp(buf, "Hello World"));
 
@@ -122,7 +121,7 @@ static void test_fmt_fixed_small(void)
 /** syn_fmt_uint truncation — exercises line 73 (buf full) */
 static void test_fmt_str_truncation(void)
 {
-    char buf[4]; /* room for 3 chars + NUL */
+    char buf[4];                                /* room for 3 chars + NUL */
     syn_fmt_uint(buf, sizeof(buf), 123456789u); /* 9 digits won't fit */
     TEST_ASSERT_EQUAL('\0', buf[3]);
     TEST_ASSERT_EQUAL('1', buf[0]);
@@ -144,7 +143,7 @@ static void test_fmt_q16_truncation(void)
 static void test_fmt_hexdump_truncation(void)
 {
     char buf[4]; /* room for only 1 byte "XX" + space + NUL */
-    uint8_t data[] = { 0xAB, 0xCD, 0xEF };
+    uint8_t data[] = {0xAB, 0xCD, 0xEF};
     syn_fmt_hexdump(buf, sizeof(buf), data, sizeof(data));
     TEST_ASSERT_EQUAL('\0', buf[3]);
 }
@@ -161,7 +160,7 @@ static void test_fmt_fixed_truncation(void)
 static void test_fmt_concat_truncation(void)
 {
     char buf[5];
-    const char *parts[] = { "Hello", " ", "World" };
+    const char *parts[] = {"Hello", " ", "World"};
     syn_fmt_concat(buf, sizeof(buf), parts, 3);
     TEST_ASSERT_EQUAL('\0', buf[4]);
 }

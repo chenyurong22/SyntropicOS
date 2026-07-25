@@ -3,10 +3,10 @@
  * @brief Unity tests for syn_profiler — full coverage.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
-#include "syntropic/syntropic.h"
 #include "syntropic/debug/syn_profiler.h"
+#include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 #include <string.h>
 
@@ -90,7 +90,7 @@ static void test_profiler_dump(void)
     syn_profiler_init(&prof, entries, 4);
 
     /* Register tasks with different name lengths */
-    syn_profiler_register(&prof, 0, "task_a");          /* short name */
+    syn_profiler_register(&prof, 0, "task_a");              /* short name */
     syn_profiler_register(&prof, 1, "very_long_task_name"); /* >13 chars — triggers truncation */
     /* Slot 2 and 3 — no name (should be skipped in dump) */
 
@@ -139,7 +139,7 @@ static void test_profiler_oob_guards(void)
     /* Indexes >= capacity should be silently ignored */
     syn_profiler_task_begin(&prof, 5); /* OOB */
     mock_tick_advance(1);
-    syn_profiler_task_end(&prof, 5);   /* OOB */
+    syn_profiler_task_end(&prof, 5); /* OOB */
     /* No crash = pass */
 }
 

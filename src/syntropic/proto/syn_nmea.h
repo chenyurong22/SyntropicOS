@@ -18,15 +18,15 @@
 
 #include "../common/syn_defs.h"
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define SYN_NMEA_MAX_SENTENCE_LEN   82   /**< Max NMEA 0183 sentence length */
+#define SYN_NMEA_MAX_SENTENCE_LEN 82 /**< Max NMEA 0183 sentence length */
 
 /** @brief NMEA Sentence Type Enum */
 typedef enum {
@@ -41,81 +41,81 @@ typedef enum {
 /** @brief GPS Fix Quality Enum (from GGA) */
 typedef enum {
     SYN_NMEA_FIX_INVALID = 0,
-    SYN_NMEA_FIX_GPS     = 1,
-    SYN_NMEA_FIX_DGPS    = 2,
-    SYN_NMEA_FIX_PPS     = 3,
-    SYN_NMEA_FIX_RTK     = 4,
+    SYN_NMEA_FIX_GPS = 1,
+    SYN_NMEA_FIX_DGPS = 2,
+    SYN_NMEA_FIX_PPS = 3,
+    SYN_NMEA_FIX_RTK = 4,
     SYN_NMEA_FIX_FLOAT_RTK = 5,
     SYN_NMEA_FIX_ESTIMATED = 6,
 } SYN_NMEA_FixQuality;
 
 /** @brief Parsed NMEA GGA (Fix Data) Structure */
 typedef struct {
-    uint8_t  hours;
-    uint8_t  minutes;
-    uint8_t  seconds;
+    uint8_t hours;
+    uint8_t minutes;
+    uint8_t seconds;
     uint16_t milliseconds;
-    double   latitude;       /**< Decimal degrees (+N, -S) */
-    double   longitude;      /**< Decimal degrees (+E, -W) */
+    double latitude;  /**< Decimal degrees (+N, -S) */
+    double longitude; /**< Decimal degrees (+E, -W) */
     SYN_NMEA_FixQuality fix_quality;
-    uint8_t  num_satellites;
-    float    hdop;
-    float    altitude_m;
-    bool     valid;
+    uint8_t num_satellites;
+    float hdop;
+    float altitude_m;
+    bool valid;
 } SYN_NMEA_GGA;
 
 /** @brief Parsed NMEA RMC (Recommended Minimum Data) Structure */
 typedef struct {
-    uint8_t  hours;
-    uint8_t  minutes;
-    uint8_t  seconds;
+    uint8_t hours;
+    uint8_t minutes;
+    uint8_t seconds;
     uint16_t milliseconds;
-    bool     status_valid;   /**< 'A' = valid, 'V' = receiver warning */
-    double   latitude;       /**< Decimal degrees (+N, -S) */
-    double   longitude;      /**< Decimal degrees (+E, -W) */
-    float    speed_knots;    /**< Speed over ground in knots */
-    float    course_deg;     /**< Course over ground in true degrees */
-    uint8_t  day;
-    uint8_t  month;
+    bool status_valid; /**< 'A' = valid, 'V' = receiver warning */
+    double latitude;   /**< Decimal degrees (+N, -S) */
+    double longitude;  /**< Decimal degrees (+E, -W) */
+    float speed_knots; /**< Speed over ground in knots */
+    float course_deg;  /**< Course over ground in true degrees */
+    uint8_t day;
+    uint8_t month;
     uint16_t year;
-    bool     valid;
+    bool valid;
 } SYN_NMEA_RMC;
 
 /** @brief Parsed NMEA VTG (Velocity & Course) Structure */
 typedef struct {
-    float    course_true_deg;
-    float    speed_knots;
-    float    speed_kph;
-    bool     valid;
+    float course_true_deg;
+    float speed_knots;
+    float speed_kph;
+    bool valid;
 } SYN_NMEA_VTG;
 
 /** @brief Parsed NMEA GSA (DOP & Active Satellites) Structure */
 typedef struct {
-    char     mode;           /**< 'M' = Manual, 'A' = Automatic */
-    uint8_t  fix_type;       /**< 1 = No fix, 2 = 2D fix, 3 = 3D fix */
-    float    pdop;
-    float    hdop;
-    float    vdop;
-    bool     valid;
+    char mode;        /**< 'M' = Manual, 'A' = Automatic */
+    uint8_t fix_type; /**< 1 = No fix, 2 = 2D fix, 3 = 3D fix */
+    float pdop;
+    float hdop;
+    float vdop;
+    bool valid;
 } SYN_NMEA_GSA;
 
 /** @brief Parsed NMEA ZDA (UTC Date & Time) Structure */
 typedef struct {
-    uint8_t  hours;
-    uint8_t  minutes;
-    uint8_t  seconds;
+    uint8_t hours;
+    uint8_t minutes;
+    uint8_t seconds;
     uint16_t milliseconds;
-    uint8_t  day;
-    uint8_t  month;
+    uint8_t day;
+    uint8_t month;
     uint16_t year;
-    bool     valid;
+    bool valid;
 } SYN_NMEA_ZDA;
 
 /** @brief Streaming NMEA Parser State Machine */
 typedef struct {
-    char     buf[SYN_NMEA_MAX_SENTENCE_LEN + 1];
-    uint8_t  pos;
-    bool     in_sentence;
+    char buf[SYN_NMEA_MAX_SENTENCE_LEN + 1];
+    uint8_t pos;
+    bool in_sentence;
 } SYN_NMEA_Parser;
 
 /**

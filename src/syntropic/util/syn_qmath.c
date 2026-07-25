@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_QMATH) || SYN_USE_QMATH
@@ -13,8 +13,8 @@
  * with hardware multiply; functional on 8-bit AVR.
  */
 
-#include "syn_qmath.h"
 #include "../common/syn_defs.h"
+#include "syn_qmath.h"
 
 /* ════════════════════════════════════════════════════════════════════════ */
 /*  Trigonometric — sin, cos, tan                                          */
@@ -23,8 +23,10 @@
 q16_t q16_sin(q16_t x)
 {
     /* Normalize x to [-PI, PI] */
-    while (x > Q16_PI)  x -= Q16_2_PI;
-    while (x < -Q16_PI) x += Q16_2_PI;
+    while (x > Q16_PI)
+        x -= Q16_2_PI;
+    while (x < -Q16_PI)
+        x += Q16_2_PI;
 
     /* Map to [-PI/2, PI/2] */
     if (x > Q16_PI_2) {
@@ -79,10 +81,10 @@ q16_t q16_tan(q16_t x)
 static q16_t atan_core(q16_t x)
 {
     /* x is in [0, Q16_ONE] */
-    static const int64_t c1 = 65527;   /*  0.999866 */
-    static const int64_t c3 = -21646;  /* -0.330299 */
-    static const int64_t c5 = 11805;   /*  0.180141 */
-    static const int64_t c7 = -4200;   /* -0.064090 */
+    static const int64_t c1 = 65527;  /*  0.999866 */
+    static const int64_t c3 = -21646; /* -0.330299 */
+    static const int64_t c5 = 11805;  /*  0.180141 */
+    static const int64_t c7 = -4200;  /* -0.064090 */
 
     int64_t x2 = ((int64_t)x * x) >> 16;
     int64_t x3 = (x2 * x) >> 16;
@@ -131,8 +133,10 @@ q16_t q16_atan2(q16_t y, q16_t x)
 q16_t q16_asin(q16_t x)
 {
     /* Clamp to [-1, 1] */
-    if (x >= Q16_ONE) return Q16_PI_2;
-    if (x <= -Q16_ONE) return -Q16_PI_2;
+    if (x >= Q16_ONE)
+        return Q16_PI_2;
+    if (x <= -Q16_ONE)
+        return -Q16_PI_2;
 
     /*
      * 5th-order Chebyshev approximation for asin(x), |x| <= 1:
@@ -143,9 +147,9 @@ q16_t q16_asin(q16_t x)
      *   c3 ≈ 1/6             = 10923
      *   c5 ≈ 3/40            = 4915
      */
-    static const q16_t c1 = 65536;  /* 1.0      */
-    static const q16_t c3 = 10923;  /* 0.16667  */
-    static const q16_t c5 = 4915;   /* 0.07500  */
+    static const q16_t c1 = 65536; /* 1.0      */
+    static const q16_t c3 = 10923; /* 0.16667  */
+    static const q16_t c5 = 4915;  /* 0.07500  */
 
     int64_t x2 = ((int64_t)x * x) / 65536LL;
     int64_t x3 = (x2 * x) / 65536LL;
@@ -171,7 +175,8 @@ uint32_t syn_isqrt32(uint32_t n)
 {
     uint32_t root = 0;
     uint32_t bit = 1UL << 30;
-    while (bit > n) bit >>= 2;
+    while (bit > n)
+        bit >>= 2;
     while (bit != 0) {
         if (n >= root + bit) {
             n -= root + bit;
@@ -188,7 +193,8 @@ uint64_t syn_isqrt64(uint64_t n)
 {
     uint64_t root = 0;
     uint64_t bit = (uint64_t)1 << 62;
-    while (bit > n) bit >>= 2;
+    while (bit > n)
+        bit >>= 2;
     while (bit != 0) {
         uint64_t trial = root + bit;
         if (n >= trial) {
@@ -204,7 +210,8 @@ uint64_t syn_isqrt64(uint64_t n)
 
 q16_t q16_sqrt(q16_t x)
 {
-    if (x <= 0) return 0;
+    if (x <= 0)
+        return 0;
     return (q16_t)syn_isqrt64((uint64_t)(uint32_t)x << 16);
 }
 
@@ -261,12 +268,14 @@ q16_t q16_exp(q16_t x)
      * 2^k is a left shift by k (in Q16: Q16_ONE << k).
      * e^r is computed via 4th-order minimax polynomial over [0, ln2).
      */
-    if (x == 0) return Q16_ONE;
+    if (x == 0)
+        return Q16_ONE;
 
     /* Handle negative exponents via e^(-x) = 1/e^x */
     if (x < 0) {
         q16_t pos = q16_exp(-x);
-        if (pos == 0) return INT32_MAX; /* -x overflowed */
+        if (pos == 0)
+            return INT32_MAX; /* -x overflowed */
         return q16_div(Q16_ONE, pos);
     }
 
@@ -282,8 +291,14 @@ q16_t q16_exp(q16_t x)
     q16_t r = x - q16_mul((q16_t)(k * Q16_ONE), Q16_LN2);
 
     /* Clamp r to [0, ln2) — numerical safety */
-    if (r < 0) { r = 0; k--; }
-    if (r >= Q16_LN2) { r -= Q16_LN2; k++; }
+    if (r < 0) {
+        r = 0;
+        k--;
+    }
+    if (r >= Q16_LN2) {
+        r -= Q16_LN2;
+        k++;
+    }
 
     /*
      * e^r ≈ 1 + r + r²/2 + r³/6 + r⁴/24 (4th-order Taylor, r in [0, 0.693])
@@ -297,10 +312,12 @@ q16_t q16_exp(q16_t x)
 
     /* Multiply by 2^k */
     if (k >= 0) {
-        if (k >= 15) return INT32_MAX;  /* Would overflow Q16 integer range */
+        if (k >= 15)
+            return INT32_MAX; /* Would overflow Q16 integer range */
         return exp_r << k;
     } else {
-        if (k < -16) return 0;
+        if (k < -16)
+            return 0;
         return exp_r >> (-k);
     }
 }
@@ -315,8 +332,10 @@ q16_t q16_log(q16_t x)
      *
      * ln(m) is computed via polynomial approximation on [1, 2).
      */
-    if (x <= 0) return INT32_MIN;  /* Undefined */
-    if (x == Q16_ONE) return 0;
+    if (x <= 0)
+        return INT32_MIN; /* Undefined */
+    if (x == Q16_ONE)
+        return 0;
 
     /* Find k such that x = m * 2^k, where m is in [Q16_ONE, 2*Q16_ONE) */
     uint32_t ux = (uint32_t)x;
@@ -346,7 +365,7 @@ q16_t q16_log(q16_t x)
     int64_t y5 = (y3 * y2) >> 16;
     int64_t y7 = (y5 * y2) >> 16;
 
-    int64_t ln_m = ((int64_t)y + y3 / 3 + y5 / 5 + y7 / 7) << 1;
+    int64_t ln_m = ((int64_t)y + y3 / 3 + y5 / 5 + y7 / 7) * 2;
 
     /* ln(x) = k * ln(2) + ln(m) */
     return q16_mul(Q16_FROM_INT(k), Q16_LN2) + (q16_t)ln_m;
@@ -354,9 +373,12 @@ q16_t q16_log(q16_t x)
 
 q16_t q16_pow(q16_t base, q16_t exp)
 {
-    if (base <= 0) return 0;
-    if (exp == 0) return Q16_ONE;
-    if (exp == Q16_ONE) return base;
+    if (base <= 0)
+        return 0;
+    if (exp == 0)
+        return Q16_ONE;
+    if (exp == Q16_ONE)
+        return base;
 
     return q16_exp(q16_mul(exp, q16_log(base)));
 }
@@ -378,7 +400,8 @@ q16_t q16_round(q16_t x)
 
 q16_t q16_poly_eval(const q16_t *coeffs, uint8_t n, q16_t x)
 {
-    if (coeffs == NULL || n == 0) return 0;
+    if (coeffs == NULL || n == 0)
+        return 0;
 
     q16_t res = coeffs[n - 1];
     for (int i = (int)n - 2; i >= 0; i--) {
@@ -393,8 +416,10 @@ q16_t q16_poly_eval(const q16_t *coeffs, uint8_t n, q16_t x)
 
 size_t q16_to_str(q16_t val, char *buf, size_t buf_len, uint8_t decimals)
 {
-    if (buf == NULL || buf_len == 0) return 0;
-    if (decimals > 4) decimals = 4;
+    if (buf == NULL || buf_len == 0)
+        return 0;
+    if (decimals > 4)
+        decimals = 4;
 
     char tmp[16];
     size_t pos = 0;
@@ -428,15 +453,18 @@ size_t q16_to_str(q16_t val, char *buf, size_t buf_len, uint8_t decimals)
 
     /* Assemble: sign + reversed integer digits */
     if (sign) {
-        if (pos < sizeof(tmp) - 1) tmp[pos++] = '-';
+        if (pos < sizeof(tmp) - 1)
+            tmp[pos++] = '-';
     }
     while (int_len > 0) {
-        if (pos < sizeof(tmp) - 1) tmp[pos++] = int_buf[--int_len];
+        if (pos < sizeof(tmp) - 1)
+            tmp[pos++] = int_buf[--int_len];
     }
 
     /* Fractional part */
     if (decimals > 0) {
-        if (pos < sizeof(tmp) - 1) tmp[pos++] = '.';
+        if (pos < sizeof(tmp) - 1)
+            tmp[pos++] = '.';
 
         /* Multiply fractional bits by 10 repeatedly to extract digits */
         uint8_t d;
@@ -444,7 +472,8 @@ size_t q16_to_str(q16_t val, char *buf, size_t buf_len, uint8_t decimals)
             frac_bits *= 10;
             uint8_t digit = (uint8_t)(frac_bits >> 16);
             frac_bits &= 0xFFFF;
-            if (pos < sizeof(tmp) - 1) tmp[pos++] = (char)('0' + digit);
+            if (pos < sizeof(tmp) - 1)
+                tmp[pos++] = (char)('0' + digit);
         }
     }
 
@@ -466,7 +495,8 @@ size_t q16_to_str(q16_t val, char *buf, size_t buf_len, uint8_t decimals)
 
 size_t q16_from_str(const char *str, q16_t *out)
 {
-    if (str == NULL || out == NULL) return 0;
+    if (str == NULL || out == NULL)
+        return 0;
 
     const char *p = str;
     int32_t sign = 1;
@@ -480,7 +510,8 @@ size_t q16_from_str(const char *str, q16_t *out)
     }
 
     /* Must have at least one digit */
-    if (*p < '0' || *p > '9') return 0;
+    if (*p < '0' || *p > '9')
+        return 0;
 
     /* Integer part */
     int32_t int_part = 0;
@@ -505,7 +536,8 @@ size_t q16_from_str(const char *str, q16_t *out)
             frac_num = frac_num * 10 + (uint32_t)(*p - '0');
             frac_den *= 10;
             p++;
-            if (frac_den >= 100000) break;  /* Limit precision to avoid overflow */
+            if (frac_den >= 100000)
+                break; /* Limit precision to avoid overflow */
         }
         if (frac_den > 0) {
             frac_q16 = (uint32_t)(((uint64_t)frac_num << 16) / frac_den);

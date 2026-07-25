@@ -28,23 +28,23 @@
 #include "../common/syn_defs.h"
 #include "../port/syn_port_spi.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** Fixed sector size in bytes. All SD cards expose 512-byte sectors in SPI mode. */
-#define SYN_SD_SECTOR_SIZE  512u
+#define SYN_SD_SECTOR_SIZE 512u
 
 /**
  * @brief SD card type, detected automatically during syn_sd_init().
  */
 typedef enum {
     SYN_SD_UNKNOWN = 0, /**< Not yet initialized or unrecognized card          */
-    SYN_SD_SDSC    = 1, /**< Standard Capacity (<=2 GB, byte-addressed)        */
-    SYN_SD_SDHC    = 2, /**< High or Extended Capacity (>2 GB, sector-addressed) */
+    SYN_SD_SDSC = 1,    /**< Standard Capacity (<=2 GB, byte-addressed)        */
+    SYN_SD_SDHC = 2,    /**< High or Extended Capacity (>2 GB, sector-addressed) */
 } SYN_SD_Type;
 
 /**
@@ -53,11 +53,11 @@ typedef enum {
  * Allocate statically and pass to syn_sd_init(). Treat as opaque after init.
  */
 typedef struct {
-    uint8_t       spi_bus;      /**< SPI bus index (syn_port_spi_* argument)  */
-    SYN_GPIO_Pin  cs_pin;       /**< Chip-select GPIO pin                     */
-    SYN_SD_Type   type;         /**< Detected card type (SDSC or SDHC)        */
-    uint32_t      sector_count; /**< Total 512-byte sectors (from CSD)        */
-    bool          initialized;  /**< true after a successful syn_sd_init()    */
+    uint8_t spi_bus;       /**< SPI bus index (syn_port_spi_* argument)  */
+    SYN_GPIO_Pin cs_pin;   /**< Chip-select GPIO pin                     */
+    SYN_SD_Type type;      /**< Detected card type (SDSC or SDHC)        */
+    uint32_t sector_count; /**< Total 512-byte sectors (from CSD)        */
+    bool initialized;      /**< true after a successful syn_sd_init()    */
 } SYN_SD;
 
 /**

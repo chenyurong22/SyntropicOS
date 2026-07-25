@@ -3,14 +3,13 @@
  * @brief Unity tests for syn_math.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/util/syn_qmath.h"
+#include "unity/unity.h"
 
 static void test_qmath(void)
 {
-
     q16_t a = Q16_FROM_INT(3);
     q16_t b = Q16_FROM_INT(2);
     TEST_ASSERT_EQUAL_INT(3, Q16_TO_INT(a));
@@ -50,11 +49,10 @@ static void test_qmath(void)
 
 static void test_rate_limit(void)
 {
-
     mock_tick_ms = 0;
 
     SYN_RateLimit rl;
-    syn_rate_limit_init(&rl, 3, 1000);  /* 3 per second */
+    syn_rate_limit_init(&rl, 3, 1000); /* 3 per second */
 
     TEST_ASSERT_TRUE(syn_rate_limit_allow(&rl));
     TEST_ASSERT_TRUE(syn_rate_limit_allow(&rl));
@@ -82,7 +80,7 @@ static void test_rate_limit(void)
 
 static void test_q16_rounding(void)
 {
-    q16_t x_pos = Q16_FROM_INT(2) + Q16_FROM_FRAC(3, 4); /* 2.75 */
+    q16_t x_pos = Q16_FROM_INT(2) + Q16_FROM_FRAC(3, 4);  /* 2.75 */
     q16_t x_neg = Q16_FROM_INT(-2) - Q16_FROM_FRAC(3, 4); /* -2.75 */
 
     TEST_ASSERT_EQUAL(Q16_FROM_INT(2), q16_floor(x_pos));
@@ -108,7 +106,7 @@ static void test_q16_saturating(void)
 static void test_q16_poly_eval(void)
 {
     /* P(x) = 1 + 2*x + 3*x^2 */
-    q16_t coeffs[3] = { Q16_FROM_INT(1), Q16_FROM_INT(2), Q16_FROM_INT(3) };
+    q16_t coeffs[3] = {Q16_FROM_INT(1), Q16_FROM_INT(2), Q16_FROM_INT(3)};
 
     /* P(0) = 1 */
     TEST_ASSERT_EQUAL(Q16_FROM_INT(1), q16_poly_eval(coeffs, 3, 0));

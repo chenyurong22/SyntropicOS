@@ -3,9 +3,9 @@
  * @brief Unity tests for tickless idle — syn_sched_next_wakeup().
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 #include <limits.h>
 
@@ -34,7 +34,7 @@ static void test_next_wakeup_no_delays(void)
 
     /* Both tasks have delay_until == 0 (ready now) */
     uint32_t wake = syn_sched_next_wakeup(&sched);
-    TEST_ASSERT_EQUAL(100, wake);  /* returns 'now' */
+    TEST_ASSERT_EQUAL(100, wake); /* returns 'now' */
 }
 
 /** One task delayed to tick 500 → returns 500. */
@@ -73,7 +73,7 @@ static void test_next_wakeup_all_delayed(void)
     tasks[2].delay_until = 500;
 
     uint32_t wake = syn_sched_next_wakeup(&sched);
-    TEST_ASSERT_EQUAL(200, wake);  /* minimum future deadline */
+    TEST_ASSERT_EQUAL(200, wake); /* minimum future deadline */
 }
 
 /** Dead tasks are ignored. */
@@ -88,7 +88,7 @@ static void test_next_wakeup_dead_ignored(void)
     syn_sched_init(&sched, tasks, 2);
 
     tasks[0].state = (uint8_t)SYN_TASK_DEAD;
-    tasks[0].delay_until = 200;  /* should be ignored */
+    tasks[0].delay_until = 200; /* should be ignored */
     tasks[1].delay_until = 500;
 
     uint32_t wake = syn_sched_next_wakeup(&sched);
@@ -107,7 +107,7 @@ static void test_next_wakeup_suspended_ignored(void)
     syn_sched_init(&sched, tasks, 2);
 
     tasks[0].state = (uint8_t)SYN_TASK_SUSPENDED;
-    tasks[0].delay_until = 0;  /* ready but suspended */
+    tasks[0].delay_until = 0; /* ready but suspended */
     tasks[1].delay_until = 400;
 
     uint32_t wake = syn_sched_next_wakeup(&sched);
@@ -143,7 +143,7 @@ static void test_next_wakeup_expired_delay(void)
     syn_task_create(&tasks[1], "b", dummy_task, 0, NULL);
     syn_sched_init(&sched, tasks, 2);
 
-    tasks[0].delay_until = 300;  /* already expired at tick 500 */
+    tasks[0].delay_until = 300; /* already expired at tick 500 */
     tasks[1].delay_until = 800;
 
     uint32_t wake = syn_sched_next_wakeup(&sched);
@@ -245,7 +245,7 @@ static void test_tickless_wakelock_prevents_sleep(void)
 
     SYN_Sleep sleep;
     syn_sleep_init(&sleep, SYN_SLEEP_LIGHT);
-    syn_sleep_lock(&sleep, 1);  /* hold a wakelock (bit 0) */
+    syn_sleep_lock(&sleep, 1); /* hold a wakelock (bit 0) */
 
     uint32_t wake = syn_sched_next_wakeup(&sched);
     TEST_ASSERT_EQUAL(500, wake);
@@ -255,7 +255,7 @@ static void test_tickless_wakelock_prevents_sleep(void)
         syn_port_sleep_until(wake);
     }
 
-    TEST_ASSERT_EQUAL(0, mock_sleep_until_count);  /* did NOT sleep */
+    TEST_ASSERT_EQUAL(0, mock_sleep_until_count); /* did NOT sleep */
     TEST_ASSERT_EQUAL(0, mock_sleep_count);
 
     syn_sleep_unlock(&sleep, 1);

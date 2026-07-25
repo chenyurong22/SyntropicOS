@@ -19,9 +19,9 @@
 #ifndef SYN_FMT_H
 #define SYN_FMT_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,8 +77,7 @@ size_t syn_fmt_hex_parse(const char *hex_str, uint8_t *out_bin, size_t max_bytes
  * @param frac_digits Number of fractional decimal digits (1–6).
  * @return Number of characters written.
  */
-size_t syn_fmt_q16(char *buf, size_t size, int32_t q16_val,
-                    uint8_t frac_digits);
+size_t syn_fmt_q16(char *buf, size_t size, int32_t q16_val, uint8_t frac_digits);
 
 /**
  * @brief Format a hex dump of a byte array.
@@ -91,8 +90,7 @@ size_t syn_fmt_q16(char *buf, size_t size, int32_t q16_val,
  * @param len   Number of bytes.
  * @return Number of characters written.
  */
-size_t syn_fmt_hexdump(char *buf, size_t size,
-                        const uint8_t *data, size_t len);
+size_t syn_fmt_hexdump(char *buf, size_t size, const uint8_t *data, size_t len);
 
 /**
  * @brief Format a value with a fixed number of decimal places.
@@ -118,8 +116,7 @@ size_t syn_fmt_fixed(char *buf, size_t size, int32_t val, uint8_t places);
  * @param n      Number of strings.
  * @return Total characters written.
  */
-size_t syn_fmt_concat(char *buf, size_t size,
-                       const char *const *parts, size_t n);
+size_t syn_fmt_concat(char *buf, size_t size, const char *const *parts, size_t n);
 
 /**
  * @brief Case-insensitive prefix match (ASCII).
@@ -132,9 +129,12 @@ static inline bool syn_str_prefix_icase(const char *str, const char *prefix)
     while (*prefix) {
         char a = *str++;
         char b = *prefix++;
-        if (a >= 'A' && a <= 'Z') a = (char)(a + 32);
-        if (b >= 'A' && b <= 'Z') b = (char)(b + 32);
-        if (a != b) return false;
+        if (a >= 'A' && a <= 'Z')
+            a = (char)(a + 32);
+        if (b >= 'A' && b <= 'Z')
+            b = (char)(b + 32);
+        if (a != b)
+            return false;
     }
     return true;
 }

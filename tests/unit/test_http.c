@@ -3,25 +3,26 @@
  * @brief Tests for the HTTP client — header parsing, body streaming.
  */
 
-#include "unity/unity.h"
-#include "syntropic/net/syn_http.h"
 #include "mocks/mock_port.h"
+#include "syntropic/net/syn_http.h"
+#include "unity/unity.h"
 
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
 static uint8_t work_buf[512];
 
 /* Body accumulator */
-static uint8_t  body_accum[2048];
-static size_t   body_accum_len;
+static uint8_t body_accum[2048];
+static size_t body_accum_len;
 
 static bool body_accumulate(const uint8_t *data, size_t len, void *ctx)
 {
     (void)ctx;
-    if (body_accum_len + len > sizeof(body_accum)) return false;
+    if (body_accum_len + len > sizeof(body_accum))
+        return false;
     memcpy(body_accum + body_accum_len, data, len);
     body_accum_len += len;
     return true;
@@ -39,7 +40,7 @@ static SYN_Status run_client_task(SYN_HttpClient *client)
     PT_INIT(&pt);
     SYN_Task task;
     task.user_data = client;
-    
+
     SYN_PT_Status status;
     while ((status = syn_http_client_task(&pt, &task)) == PT_WAITING || status == PT_YIELDED) {
         mock_tick_advance(10);
@@ -54,20 +55,17 @@ void test_http_get_200(void)
     mock_port_reset();
     reset_accum();
 
-    const char *response =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Length: 13\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        "Hello, World!";
+    const char *response = "HTTP/1.1 200 OK\r\n"
+                           "Content-Length: 13\r\n"
+                           "Connection: close\r\n"
+                           "\r\n"
+                           "Hello, World!";
 
     mock_sock_set_response(response, strlen(response));
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     SYN_HttpResponse resp = client.resp;
 
@@ -85,19 +83,16 @@ void test_http_get_404(void)
     mock_port_reset();
     reset_accum();
 
-    const char *response =
-        "HTTP/1.1 404 Not Found\r\n"
-        "Content-Length: 9\r\n"
-        "\r\n"
-        "Not Found";
+    const char *response = "HTTP/1.1 404 Not Found\r\n"
+                           "Content-Length: 9\r\n"
+                           "\r\n"
+                           "Not Found";
 
     mock_sock_set_response(response, strlen(response));
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/missing",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/missing", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     SYN_HttpResponse resp = client.resp;
 
@@ -114,9 +109,9 @@ void test_http_get_large_body(void)
     /* Build a response with a 1024-byte body */
     char response[2048];
     int hdr_len = snprintf(response, sizeof(response),
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Length: 1024\r\n"
-        "\r\n");
+                           "HTTP/1.1 200 OK\r\n"
+                           "Content-Length: 1024\r\n"
+                           "\r\n");
 
     /* Fill body with pattern */
     for (int i = 0; i < 1024; i++) {
@@ -126,10 +121,8 @@ void test_http_get_large_body(void)
     mock_sock_set_response(response, (size_t)(hdr_len + 1024));
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/big",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/big", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     SYN_HttpResponse resp = client.resp;
 
@@ -150,19 +143,16 @@ void test_http_get_no_content_length(void)
     reset_accum();
 
     /* Connection: close without Content-Length — read until EOF */
-    const char *response =
-        "HTTP/1.1 200 OK\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        "streamed data";
+    const char *response = "HTTP/1.1 200 OK\r\n"
+                           "Connection: close\r\n"
+                           "\r\n"
+                           "streamed data";
 
     mock_sock_set_response(response, strlen(response));
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/stream",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/stream", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     SYN_HttpResponse resp = client.resp;
 
@@ -176,18 +166,15 @@ void test_http_get_sends_correct_request(void)
 {
     mock_port_reset();
 
-    const char *response =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Length: 0\r\n"
-        "\r\n";
+    const char *response = "HTTP/1.1 200 OK\r\n"
+                           "Content-Length: 0\r\n"
+                           "\r\n";
 
     mock_sock_set_response(response, strlen(response));
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "myhost.local", 8080, "/api/v1/status",
-                          NULL, NULL, 0, NULL, 0,
-                          NULL, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "myhost.local", 8080, "/api/v1/status", NULL, NULL, 0,
+                         NULL, 0, NULL, NULL, work_buf, sizeof(work_buf));
     run_client_task(&client);
 
     /* Verify the sent request contains the right pieces */
@@ -204,23 +191,19 @@ void test_http_post_basic(void)
     mock_port_reset();
     reset_accum();
 
-    const char *response =
-        "HTTP/1.1 201 Created\r\n"
-        "Content-Length: 2\r\n"
-        "\r\n"
-        "OK";
+    const char *response = "HTTP/1.1 201 Created\r\n"
+                           "Content-Length: 2\r\n"
+                           "\r\n"
+                           "OK";
 
     mock_sock_set_response(response, strlen(response));
 
     const char *body = "{\"key\":\"value\"}";
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "POST", "api.example.com", 80, "/data",
-                          "application/json",
-                          (const uint8_t *)body, strlen(body),
-                          NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "POST", "api.example.com", 80, "/data", "application/json",
+                         (const uint8_t *)body, strlen(body), NULL, 0, body_accumulate, NULL,
+                         work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     SYN_HttpResponse resp = client.resp;
 
@@ -241,27 +224,24 @@ void test_http_get_chunked(void)
     mock_port_reset();
     reset_accum();
 
-    const char *response =
-        "HTTP/1.1 200 OK\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        "4\r\n"
-        "Wiki\r\n"
-        "5\r\n"
-        "pedia\r\n"
-        "E\r\n"
-        " in\r\n\r\nchunks.\r\n"
-        "0\r\n"
-        "\r\n";
+    const char *response = "HTTP/1.1 200 OK\r\n"
+                           "Transfer-Encoding: chunked\r\n"
+                           "Connection: close\r\n"
+                           "\r\n"
+                           "4\r\n"
+                           "Wiki\r\n"
+                           "5\r\n"
+                           "pedia\r\n"
+                           "E\r\n"
+                           " in\r\n\r\nchunks.\r\n"
+                           "0\r\n"
+                           "\r\n";
 
     mock_sock_set_response(response, strlen(response));
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/chunked",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/chunked", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     SYN_HttpResponse resp = client.resp;
 
@@ -279,20 +259,18 @@ static void on_redirect_connect(const char *host, uint16_t port)
     if (s_redirect_count == 0) {
         /* First request goes to original page, redirecting to destination */
         TEST_ASSERT_EQUAL_STRING("example.com", host);
-        const char *redirect =
-            "HTTP/1.1 302 Found\r\n"
-            "Location: http://dest.com/target\r\n"
-            "Content-Length: 0\r\n"
-            "\r\n";
+        const char *redirect = "HTTP/1.1 302 Found\r\n"
+                               "Location: http://dest.com/target\r\n"
+                               "Content-Length: 0\r\n"
+                               "\r\n";
         mock_sock_set_response(redirect, strlen(redirect));
     } else if (s_redirect_count == 1) {
         /* Second request goes to target destination */
         TEST_ASSERT_EQUAL_STRING("dest.com", host);
-        const char *ok =
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Length: 7\r\n"
-            "\r\n"
-            "Success";
+        const char *ok = "HTTP/1.1 200 OK\r\n"
+                         "Content-Length: 7\r\n"
+                         "\r\n"
+                         "Success";
         mock_sock_set_response(ok, strlen(ok));
     }
     s_redirect_count++;
@@ -306,10 +284,8 @@ void test_http_get_redirect(void)
     mock_sock_connect_cb = on_redirect_connect;
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/redirect-me",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/redirect-me", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     SYN_HttpResponse resp = client.resp;
 
@@ -322,12 +298,12 @@ void test_http_get_redirect(void)
 
 static void on_loop_redirect_connect(const char *host, uint16_t port)
 {
-    (void)host; (void)port;
-    const char *redirect =
-        "HTTP/1.1 302 Found\r\n"
-        "Location: /loop\r\n"
-        "Content-Length: 0\r\n"
-        "\r\n";
+    (void)host;
+    (void)port;
+    const char *redirect = "HTTP/1.1 302 Found\r\n"
+                           "Location: /loop\r\n"
+                           "Content-Length: 0\r\n"
+                           "\r\n";
     mock_sock_set_response(redirect, strlen(redirect));
     s_redirect_count++;
 }
@@ -340,10 +316,8 @@ void test_http_get_redirect_limit(void)
     mock_sock_connect_cb = on_loop_redirect_connect;
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/loop",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/loop", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
 
     /* Should return error and stop after 5 hops */
@@ -357,20 +331,18 @@ static void on_port_redirect_connect(const char *host, uint16_t port)
 {
     if (s_redirect_count == 0) {
         TEST_ASSERT_EQUAL_STRING("example.com", host);
-        const char *redirect =
-            "HTTP/1.1 302 Found\r\n"
-            "Location: http://dest.com:8080/target\r\n"
-            "Content-Length: 0\r\n"
-            "\r\n";
+        const char *redirect = "HTTP/1.1 302 Found\r\n"
+                               "Location: http://dest.com:8080/target\r\n"
+                               "Content-Length: 0\r\n"
+                               "\r\n";
         mock_sock_set_response(redirect, strlen(redirect));
     } else if (s_redirect_count == 1) {
         TEST_ASSERT_EQUAL_STRING("dest.com", host);
         TEST_ASSERT_EQUAL_UINT16(8080, port);
-        const char *ok =
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Length: 7\r\n"
-            "\r\n"
-            "Success";
+        const char *ok = "HTTP/1.1 200 OK\r\n"
+                         "Content-Length: 7\r\n"
+                         "\r\n"
+                         "Success";
         mock_sock_set_response(ok, strlen(ok));
     }
     s_redirect_count++;
@@ -379,20 +351,18 @@ static void on_port_redirect_connect(const char *host, uint16_t port)
 static void on_noslash_redirect_connect(const char *host, uint16_t port)
 {
     if (s_redirect_count == 0) {
-        const char *redirect =
-            "HTTP/1.1 302 Found\r\n"
-            "Location: http://dest.com\r\n"
-            "Content-Length: 0\r\n"
-            "\r\n";
+        const char *redirect = "HTTP/1.1 302 Found\r\n"
+                               "Location: http://dest.com\r\n"
+                               "Content-Length: 0\r\n"
+                               "\r\n";
         mock_sock_set_response(redirect, strlen(redirect));
     } else if (s_redirect_count == 1) {
         TEST_ASSERT_EQUAL_STRING("dest.com", host);
         TEST_ASSERT_EQUAL_UINT16(80, port);
-        const char *ok =
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Length: 7\r\n"
-            "\r\n"
-            "Success";
+        const char *ok = "HTTP/1.1 200 OK\r\n"
+                         "Content-Length: 7\r\n"
+                         "\r\n"
+                         "Success";
         mock_sock_set_response(ok, strlen(ok));
     }
     s_redirect_count++;
@@ -402,19 +372,17 @@ static void on_relative_redirect_connect(const char *host, uint16_t port)
 {
     (void)port;
     if (s_redirect_count == 0) {
-        const char *redirect =
-            "HTTP/1.1 302 Found\r\n"
-            "Location: target\r\n"
-            "Content-Length: 0\r\n"
-            "\r\n";
+        const char *redirect = "HTTP/1.1 302 Found\r\n"
+                               "Location: target\r\n"
+                               "Content-Length: 0\r\n"
+                               "\r\n";
         mock_sock_set_response(redirect, strlen(redirect));
     } else if (s_redirect_count == 1) {
         TEST_ASSERT_EQUAL_STRING("example.com", host);
-        const char *ok =
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Length: 7\r\n"
-            "\r\n"
-            "Success";
+        const char *ok = "HTTP/1.1 200 OK\r\n"
+                         "Content-Length: 7\r\n"
+                         "\r\n"
+                         "Success";
         mock_sock_set_response(ok, strlen(ok));
     }
     s_redirect_count++;
@@ -422,14 +390,16 @@ static void on_relative_redirect_connect(const char *host, uint16_t port)
 
 static void on_body_send_fail_connect(const char *host, uint16_t port)
 {
-    (void)host; (void)port;
+    (void)host;
+    (void)port;
     mock_sock_send_fail_after_bytes = 95;
 }
 
 static bool s_body_cb_fail = false;
 static bool body_cb_rejectable(const uint8_t *data, size_t len, void *ctx)
 {
-    if (s_body_cb_fail) return false;
+    if (s_body_cb_fail)
+        return false;
     return body_accumulate(data, len, ctx);
 }
 
@@ -439,10 +409,8 @@ void test_http_connect_fail(void)
     mock_sock_connect_fail = true;
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
     TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
@@ -454,10 +422,8 @@ void test_http_send_fail(void)
     mock_sock_send_fail = true;
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
     TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
@@ -470,12 +436,8 @@ void test_http_body_send_fail(void)
     mock_sock_connect_cb = on_body_send_fail_connect;
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "POST", "h", 80, "/",
-                          "text/plain",
-                          (const uint8_t *)"hellohello", 10,
-                          NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "POST", "h", 80, "/", "text/plain", (const uint8_t *)"hellohello",
+                         10, NULL, 0, body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
     TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
@@ -490,10 +452,8 @@ void test_http_redirect_formats(void)
     mock_sock_connect_cb = on_port_redirect_connect;
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL(2, s_redirect_count);
@@ -504,10 +464,8 @@ void test_http_redirect_formats(void)
     s_redirect_count = 0;
     mock_sock_connect_cb = on_noslash_redirect_connect;
 
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL(2, s_redirect_count);
@@ -519,10 +477,8 @@ void test_http_redirect_formats(void)
     s_redirect_count = 0;
     mock_sock_connect_cb = on_relative_redirect_connect;
 
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL(2, s_redirect_count);
@@ -534,20 +490,17 @@ void test_http_header_edge_cases(void)
     /* 1. Header tag formatting, case insensitivity and spacing */
     mock_port_reset();
     reset_accum();
-    const char *resp1 =
-        "HTTP/1.1 200 OK\r\n"
-        "CONTENT-LENGTH:   5\r\n"
-        "CONNECTION:  close\r\n"
-        "LOCATION:   http://dest\r\n"
-        "\r\n"
-        "hello";
+    const char *resp1 = "HTTP/1.1 200 OK\r\n"
+                        "CONTENT-LENGTH:   5\r\n"
+                        "CONNECTION:  close\r\n"
+                        "LOCATION:   http://dest\r\n"
+                        "\r\n"
+                        "hello";
     mock_sock_set_response(resp1, strlen(resp1));
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL(5, client.resp.content_length);
@@ -558,10 +511,8 @@ void test_http_header_edge_cases(void)
     mock_port_reset();
     const char *resp2 = "HTTP/1.1_200_OK\r\n\r\n";
     mock_sock_set_response(resp2, strlen(resp2));
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 
@@ -570,10 +521,8 @@ void test_http_header_edge_cases(void)
     mock_sock_eof_on_empty = true;
     const char *resp3 = "HTTP/1.1 200 OK\r\nContent-Length: 5";
     mock_sock_set_response(resp3, strlen(resp3));
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 
@@ -581,16 +530,14 @@ void test_http_header_edge_cases(void)
     mock_port_reset();
     const char *resp4 = "HTTP/1.1 200 OK\r\n";
     mock_sock_set_response(resp4, strlen(resp4));
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
-    
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+
     SYN_PT pt;
     PT_INIT(&pt);
     SYN_Task task;
     task.user_data = &client;
-    
+
     SYN_PT_Status pst;
     while ((pst = syn_http_client_task(&pt, &task)) == PT_WAITING || pst == PT_YIELDED) {
         mock_tick_advance(11000); // Exceed HTTP_RECV_TIMEOUT_MS (10000ms)
@@ -603,10 +550,8 @@ void test_http_header_edge_cases(void)
     memset(resp5, 'A', sizeof(resp5));
     resp5[599] = '\0';
     mock_sock_set_response(resp5, strlen(resp5));
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 }
@@ -615,33 +560,27 @@ void test_http_chunked_errors(void)
 {
     /* 1. Invalid hex characters in chunk size */
     mock_port_reset();
-    const char *resp1 =
-        "HTTP/1.1 200 OK\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "\r\n"
-        "3g\r\ndata\r\n";
+    const char *resp1 = "HTTP/1.1 200 OK\r\n"
+                        "Transfer-Encoding: chunked\r\n"
+                        "\r\n"
+                        "3g\r\ndata\r\n";
     mock_sock_set_response(resp1, strlen(resp1));
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 
     /* 2. Chunk size line overflow */
     mock_port_reset();
-    const char *resp2 =
-        "HTTP/1.1 200 OK\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "\r\n"
-        "1234567890123456789012345678901234567890\r\n";
+    const char *resp2 = "HTTP/1.1 200 OK\r\n"
+                        "Transfer-Encoding: chunked\r\n"
+                        "\r\n"
+                        "1234567890123456789012345678901234567890\r\n";
     mock_sock_set_response(resp2, strlen(resp2));
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, st);
 
@@ -649,16 +588,13 @@ void test_http_chunked_errors(void)
     mock_port_reset();
     reset_accum();
     s_body_cb_fail = true;
-    const char *resp3 =
-        "HTTP/1.1 200 OK\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "\r\n"
-        "5\r\nhello\r\n0\r\n\r\n";
+    const char *resp3 = "HTTP/1.1 200 OK\r\n"
+                        "Transfer-Encoding: chunked\r\n"
+                        "\r\n"
+                        "5\r\nhello\r\n0\r\n\r\n";
     mock_sock_set_response(resp3, strlen(resp3));
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_cb_rejectable, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_cb_rejectable, NULL, work_buf, sizeof(work_buf));
     st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
     s_body_cb_fail = false;
@@ -666,31 +602,25 @@ void test_http_chunked_errors(void)
     /* 4. Premature EOF during chunk */
     mock_port_reset();
     mock_sock_eof_on_empty = true;
-    const char *resp4 =
-        "HTTP/1.1 200 OK\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "\r\n"
-        "a\r\nhello"; // EOF before 10 bytes read
+    const char *resp4 = "HTTP/1.1 200 OK\r\n"
+                        "Transfer-Encoding: chunked\r\n"
+                        "\r\n"
+                        "a\r\nhello"; // EOF before 10 bytes read
     mock_sock_set_response(resp4, strlen(resp4));
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 
     /* 5. Timeout during chunk read */
     mock_port_reset();
-    const char *resp5 =
-        "HTTP/1.1 200 OK\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "\r\n"
-        "a\r\nhello";
+    const char *resp5 = "HTTP/1.1 200 OK\r\n"
+                        "Transfer-Encoding: chunked\r\n"
+                        "\r\n"
+                        "a\r\nhello";
     mock_sock_set_response(resp5, strlen(resp5));
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_PT pt;
     PT_INIT(&pt);
     SYN_Task task;
@@ -708,17 +638,14 @@ void test_http_streaming_errors(void)
     mock_port_reset();
     reset_accum();
     s_body_cb_fail = true;
-    const char *resp1 =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Length: 5\r\n"
-        "\r\n"
-        "hello";
+    const char *resp1 = "HTTP/1.1 200 OK\r\n"
+                        "Content-Length: 5\r\n"
+                        "\r\n"
+                        "hello";
     mock_sock_set_response(resp1, strlen(resp1));
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_cb_rejectable, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_cb_rejectable, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
     s_body_cb_fail = false;
@@ -726,25 +653,22 @@ void test_http_streaming_errors(void)
     /* 2. Body callback rejection for newly read bytes */
     mock_port_reset();
     reset_accum();
-    const char *resp2 =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Length: 10\r\n"
-        "\r\n"
-        "hello";
+    const char *resp2 = "HTTP/1.1 200 OK\r\n"
+                        "Content-Length: 10\r\n"
+                        "\r\n"
+                        "hello";
     mock_sock_set_response(resp2, strlen(resp2));
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_cb_rejectable, NULL,
-                          work_buf, sizeof(work_buf));
-    
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_cb_rejectable, NULL, work_buf, sizeof(work_buf));
+
     SYN_PT pt;
     PT_INIT(&pt);
     SYN_Task task;
     task.user_data = &client;
-    
+
     /* Deliver "hello" first (state changes to reading body) */
     TEST_ASSERT_EQUAL(PT_YIELDED, syn_http_client_task(&pt, &task));
-    
+
     /* Set next response in socket and configure callback to reject */
     s_body_cb_fail = true;
     mock_sock_set_response("world", 5);
@@ -758,32 +682,26 @@ void test_http_streaming_errors(void)
     mock_port_reset();
     reset_accum();
     mock_sock_eof_on_empty = true;
-    const char *resp3 =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Length: 10\r\n"
-        "\r\n"
-        "hello";
+    const char *resp3 = "HTTP/1.1 200 OK\r\n"
+                        "Content-Length: 10\r\n"
+                        "\r\n"
+                        "hello";
     mock_sock_set_response(resp3, strlen(resp3));
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 
     /* 4. Timeout during body streaming */
     mock_port_reset();
     reset_accum();
-    const char *resp4 =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Length: 10\r\n"
-        "\r\n"
-        "hello";
+    const char *resp4 = "HTTP/1.1 200 OK\r\n"
+                        "Content-Length: 10\r\n"
+                        "\r\n"
+                        "hello";
     mock_sock_set_response(resp4, strlen(resp4));
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
     TEST_ASSERT_EQUAL(PT_YIELDED, syn_http_client_task(&pt, &task));
@@ -798,20 +716,17 @@ void test_http_extra_data_in_buffer(void)
     mock_port_reset();
     reset_accum();
 
-    const char *response =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Length: 5\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        "HelloExtraGarbage";
+    const char *response = "HTTP/1.1 200 OK\r\n"
+                           "Content-Length: 5\r\n"
+                           "Connection: close\r\n"
+                           "\r\n"
+                           "HelloExtraGarbage";
 
     mock_sock_set_response(response, strlen(response));
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL(5, body_accum_len);
@@ -823,26 +738,20 @@ void test_http_custom_headers(void)
     mock_port_reset();
     reset_accum();
 
-    const char *response =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Length: 2\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        "OK";
+    const char *response = "HTTP/1.1 200 OK\r\n"
+                           "Content-Length: 2\r\n"
+                           "Connection: close\r\n"
+                           "\r\n"
+                           "OK";
     mock_sock_set_response(response, strlen(response));
 
-    SYN_HttpHeader custom_headers[3] = {
-        {"X-Custom-1", "Value1"},
-        {NULL, NULL}, // Should be skipped
-        {"X-Custom-2", "Value2"}
-    };
+    SYN_HttpHeader custom_headers[3] = {{"X-Custom-1", "Value1"},
+                                        {NULL, NULL}, // Should be skipped
+                                        {"X-Custom-2", "Value2"}};
 
     SYN_HttpClient client;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0,
-                          custom_headers, 3,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, custom_headers, 3,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_Status st = run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_OK, st);
 
@@ -854,11 +763,10 @@ void test_http_custom_headers(void)
 
 void test_http_chunked_boundary_cases(void)
 {
-    const char *headers =
-        "HTTP/1.1 200 OK\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "Connection: close\r\n"
-        "\r\n";
+    const char *headers = "HTTP/1.1 200 OK\r\n"
+                          "Transfer-Encoding: chunked\r\n"
+                          "Connection: close\r\n"
+                          "\r\n";
 
     SYN_HttpClient client;
     SYN_PT pt;
@@ -870,10 +778,8 @@ void test_http_chunked_boundary_cases(void)
     reset_accum();
     mock_sock_connected = true;
 
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
 
     PT_INIT(&pt);
     task.user_data = &client;
@@ -929,10 +835,8 @@ void test_http_chunked_boundary_cases(void)
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
 
@@ -953,10 +857,8 @@ void test_http_chunked_boundary_cases(void)
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
 
@@ -976,10 +878,8 @@ void test_http_chunked_boundary_cases(void)
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
 
@@ -999,10 +899,8 @@ void test_http_chunked_boundary_cases(void)
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
 
@@ -1021,10 +919,8 @@ void test_http_chunked_boundary_cases(void)
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
 
@@ -1044,10 +940,8 @@ void test_http_chunked_boundary_cases(void)
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
 
@@ -1066,10 +960,8 @@ void test_http_chunked_boundary_cases(void)
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
 
@@ -1089,10 +981,8 @@ void test_http_chunked_boundary_cases(void)
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/",
-                          NULL, NULL, 0, NULL, 0,
-                          body_accumulate, NULL,
-                          work_buf, sizeof(work_buf));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
 

@@ -8,14 +8,13 @@
 
 #if defined(PICO_BOARD) && !defined(ARDUINO)
 
-#include "syntropic/common/syn_defs.h"
-#include "syntropic/port/syn_port_system.h"
-#include "syntropic/port/syn_port_gpio.h"
-#include "syntropic/port/syn_port_uart.h"
-
-#include "pico/stdlib.h"
 #include "hardware/sync.h"
 #include "hardware/watchdog.h"
+#include "pico/stdlib.h"
+#include "syntropic/common/syn_defs.h"
+#include "syntropic/port/syn_port_gpio.h"
+#include "syntropic/port/syn_port_system.h"
+#include "syntropic/port/syn_port_uart.h"
 
 /* ── System Port ────────────────────────────────────────────────────────── */
 
@@ -55,7 +54,8 @@ void syn_port_system_reset(void)
 {
     // Reboot immediately using watchdog register control
     watchdog_reboot(0, 0, 0);
-    for (;;);
+    for (;;)
+        ;
 }
 
 /* ── GPIO Port ──────────────────────────────────────────────────────────── */
@@ -64,22 +64,22 @@ SYN_Status syn_port_gpio_init(SYN_GPIO_Pin pin, SYN_GPIO_Mode mode)
 {
     gpio_init(pin);
     switch (mode) {
-        case SYN_GPIO_INPUT:
-            gpio_set_dir(pin, GPIO_IN);
-            break;
-        case SYN_GPIO_OUTPUT:
-            gpio_set_dir(pin, GPIO_OUT);
-            break;
-        case SYN_GPIO_INPUT_PULLUP:
-            gpio_set_dir(pin, GPIO_IN);
-            gpio_pull_up(pin);
-            break;
-        case SYN_GPIO_INPUT_PULLDOWN:
-            gpio_set_dir(pin, GPIO_IN);
-            gpio_pull_down(pin);
-            break;
-        default:
-            return SYN_NOT_IMPLEMENTED;
+    case SYN_GPIO_INPUT:
+        gpio_set_dir(pin, GPIO_IN);
+        break;
+    case SYN_GPIO_OUTPUT:
+        gpio_set_dir(pin, GPIO_OUT);
+        break;
+    case SYN_GPIO_INPUT_PULLUP:
+        gpio_set_dir(pin, GPIO_IN);
+        gpio_pull_up(pin);
+        break;
+    case SYN_GPIO_INPUT_PULLDOWN:
+        gpio_set_dir(pin, GPIO_IN);
+        gpio_pull_down(pin);
+        break;
+    default:
+        return SYN_NOT_IMPLEMENTED;
     }
     return SYN_OK;
 }
@@ -109,20 +109,23 @@ SYN_Status syn_port_gpio_toggle(SYN_GPIO_Pin pin)
 
 /* ── UART Port ──────────────────────────────────────────────────────────── */
 
-static uart_inst_t* get_uart_instance(SYN_UARTInstance instance)
+static uart_inst_t *get_uart_instance(SYN_UARTInstance instance)
 {
-    if (instance == 0) return uart0;
-    if (instance == 1) return uart1;
+    if (instance == 0)
+        return uart0;
+    if (instance == 1)
+        return uart1;
     return NULL;
 }
 
 SYN_Status syn_port_uart_init(SYN_UARTInstance instance, uint32_t baudrate)
 {
-    uart_inst_t* uart = get_uart_instance(instance);
-    if (!uart) return SYN_INVALID_PARAM;
-    
+    uart_inst_t *uart = get_uart_instance(instance);
+    if (!uart)
+        return SYN_INVALID_PARAM;
+
     uart_init(uart, baudrate);
-    
+
     // Set standard GPIO function pins for the UART instance
     if (uart == uart0) {
         gpio_set_function(0, GPIO_FUNC_UART); // TX
@@ -131,39 +134,37 @@ SYN_Status syn_port_uart_init(SYN_UARTInstance instance, uint32_t baudrate)
         gpio_set_function(8, GPIO_FUNC_UART); // TX
         gpio_set_function(9, GPIO_FUNC_UART); // RX
     }
-    
+
     return SYN_OK;
 }
 
 SYN_Status syn_port_uart_deinit(SYN_UARTInstance instance)
 {
-    uart_inst_t* uart = get_uart_instance(instance);
-    if (!uart) return SYN_INVALID_PARAM;
+    uart_inst_t *uart = get_uart_instance(instance);
+    if (!uart)
+        return SYN_INVALID_PARAM;
     uart_deinit(uart);
     return SYN_OK;
 }
 
-SYN_Status syn_port_uart_transmit(SYN_UARTInstance instance,
-                                  const uint8_t *data,
-                                  size_t len,
+SYN_Status syn_port_uart_transmit(SYN_UARTInstance instance, const uint8_t *data, size_t len,
                                   uint32_t timeout_ms)
 {
-    uart_inst_t* uart = get_uart_instance(instance);
-    if (!uart) return SYN_INVALID_PARAM;
+    uart_inst_t *uart = get_uart_instance(instance);
+    if (!uart)
+        return SYN_INVALID_PARAM;
     (void)timeout_ms; // Timeout ignored (SDK blocking transmit does not timeout)
 
     uart_write_blocking(uart, data, len);
     return SYN_OK;
 }
 
-SYN_Status syn_port_uart_receive(SYN_UARTInstance instance,
-                                 uint8_t *data,
-                                 size_t len,
-                                 size_t *received,
-                                 uint32_t timeout_ms)
+SYN_Status syn_port_uart_receive(SYN_UARTInstance instance, uint8_t *data, size_t len,
+                                 size_t *received, uint32_t timeout_ms)
 {
-    uart_inst_t* uart = get_uart_instance(instance);
-    if (!uart) return SYN_INVALID_PARAM;
+    uart_inst_t *uart = get_uart_instance(instance);
+    if (!uart)
+        return SYN_INVALID_PARAM;
 
     size_t count = 0;
     uint32_t start_ms = syn_port_get_tick_ms();
@@ -180,22 +181,25 @@ SYN_Status syn_port_uart_receive(SYN_UARTInstance instance,
         }
     }
 
-    if (received) *received = count;
+    if (received)
+        *received = count;
     return (count > 0) ? SYN_OK : SYN_TIMEOUT;
 }
 
 SYN_Status syn_port_uart_transmit_byte(SYN_UARTInstance instance, uint8_t byte)
 {
-    uart_inst_t* uart = get_uart_instance(instance);
-    if (!uart) return SYN_INVALID_PARAM;
+    uart_inst_t *uart = get_uart_instance(instance);
+    if (!uart)
+        return SYN_INVALID_PARAM;
     uart_putc(uart, (char)byte);
     return SYN_OK;
 }
 
 SYN_Status syn_port_uart_receive_byte(SYN_UARTInstance instance, uint8_t *byte, uint32_t timeout_ms)
 {
-    uart_inst_t* uart = get_uart_instance(instance);
-    if (!uart) return SYN_INVALID_PARAM;
+    uart_inst_t *uart = get_uart_instance(instance);
+    if (!uart)
+        return SYN_INVALID_PARAM;
 
     uint32_t start_ms = syn_port_get_tick_ms();
     while (!uart_is_readable(uart)) {
@@ -232,7 +236,8 @@ SYN_WEAK int syn_port_serial_read(uint8_t *buf, size_t max_len)
     size_t count = 0;
     while (count < max_len) {
         int ch = getchar_timeout_us(0); /* non-blocking */
-        if (ch == PICO_ERROR_TIMEOUT) break;
+        if (ch == PICO_ERROR_TIMEOUT)
+            break;
         buf[count++] = (uint8_t)ch;
     }
     return (int)count;

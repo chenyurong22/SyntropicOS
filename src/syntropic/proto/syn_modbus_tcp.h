@@ -23,23 +23,23 @@
 #include "syn_modbus.h"
 #include "syn_modbus_master.h"
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define SYN_MBAP_HEADER_LEN   7     /**< MBAP header length in bytes */
-#define SYN_MB_TCP_MAX_ADU    260   /**< Max Modbus TCP ADU (7 MBAP + 253 PDU) */
+#define SYN_MBAP_HEADER_LEN 7  /**< MBAP header length in bytes */
+#define SYN_MB_TCP_MAX_ADU 260 /**< Max Modbus TCP ADU (7 MBAP + 253 PDU) */
 
 /** @brief Modbus TCP MBAP Header structure */
 typedef struct {
-    uint16_t transaction_id;  /**< Transaction Identifier */
-    uint16_t protocol_id;     /**< Protocol Identifier (0x0000 = Modbus) */
-    uint16_t length;          /**< Number of following bytes (Unit ID + PDU) */
-    uint8_t  unit_id;         /**< Unit Identifier / Slave address */
+    uint16_t transaction_id; /**< Transaction Identifier */
+    uint16_t protocol_id;    /**< Protocol Identifier (0x0000 = Modbus) */
+    uint16_t length;         /**< Number of following bytes (Unit ID + PDU) */
+    uint8_t unit_id;         /**< Unit Identifier / Slave address */
 } SYN_MBAP_Header;
 
 /**
@@ -73,10 +73,8 @@ bool syn_mbap_decode_header(const uint8_t *buf, SYN_MBAP_Header *hdr);
  * @param resp_len    Out: Length of generated response ADU in bytes.
  * @return true if response ADU generated, false if no response (or invalid ADU).
  */
-bool syn_modbus_tcp_process_slave(SYN_Modbus *mb,
-                                  const uint8_t *req_adu, uint16_t req_len,
-                                  uint8_t *resp_adu, uint16_t resp_max,
-                                  uint16_t *resp_len);
+bool syn_modbus_tcp_process_slave(SYN_Modbus *mb, const uint8_t *req_adu, uint16_t req_len,
+                                  uint8_t *resp_adu, uint16_t resp_max, uint16_t *resp_len);
 
 /**
  * @brief Build a Modbus TCP Master request ADU.
@@ -91,9 +89,8 @@ bool syn_modbus_tcp_process_slave(SYN_Modbus *mb,
  * @return SYN_OK on success, SYN_NO_MEMORY if buffer too small.
  */
 SYN_Status syn_modbus_tcp_build_client_adu(uint16_t transaction_id, uint8_t unit_id,
-                                           const uint8_t *pdu, uint16_t pdu_len,
-                                           uint8_t *req_adu, uint16_t req_max,
-                                           uint16_t *req_len);
+                                           const uint8_t *pdu, uint16_t pdu_len, uint8_t *req_adu,
+                                           uint16_t req_max, uint16_t *req_len);
 
 #ifdef __cplusplus
 }

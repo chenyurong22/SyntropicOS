@@ -3,9 +3,9 @@
  * @brief Unity tests for CoAP message serialization and parsing.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
+#include "unity/unity.h"
 
 static void test_coap_serialization(void)
 {
@@ -61,13 +61,11 @@ static void test_coap_serialization(void)
 
 static void test_coap_extended_options(void)
 {
-    SYN_CoapMsg req = {
-        .type = COAP_TYPE_CON,
-        .code = COAP_CODE_GET,
-        .msg_id = 0x1234,
-        .token_len = 0,
-        .payload_len = 0
-    };
+    SYN_CoapMsg req = {.type = COAP_TYPE_CON,
+                       .code = COAP_CODE_GET,
+                       .msg_id = 0x1234,
+                       .token_len = 0,
+                       .payload_len = 0};
 
     SYN_CoapOption options[1];
     /* Proxy-Uri is option 35, requiring an extended delta because 35 > 12 */
@@ -94,31 +92,27 @@ static void test_coap_extended_options(void)
 static void test_coap_request_task_success(void)
 {
     /* Setup mock response packet */
-    SYN_CoapMsg resp_msg = {
-        .type = COAP_TYPE_ACK,
-        .code = COAP_RESP_CONTENT,
-        .msg_id = 0x5555,
-        .token_len = 2,
-        .token = {0x11, 0x22},
-        .payload = (const uint8_t *)"payload",
-        .payload_len = 7
-    };
+    SYN_CoapMsg resp_msg = {.type = COAP_TYPE_ACK,
+                            .code = COAP_RESP_CONTENT,
+                            .msg_id = 0x5555,
+                            .token_len = 2,
+                            .token = {0x11, 0x22},
+                            .payload = (const uint8_t *)"payload",
+                            .payload_len = 7};
     uint8_t resp_raw[64];
     size_t resp_raw_len = syn_coap_serialize(&resp_msg, NULL, 0, resp_raw, sizeof(resp_raw));
     TEST_ASSERT_TRUE(resp_raw_len > 0);
 
-    SYN_SockAddr from = { .ip = {127, 0, 0, 1}, .port = 5683 };
+    SYN_SockAddr from = {.ip = {127, 0, 0, 1}, .port = 5683};
     mock_udp_set_response(resp_raw, resp_raw_len, &from);
 
     /* Setup CoAP request */
-    SYN_CoapMsg req_msg = {
-        .type = COAP_TYPE_CON,
-        .code = COAP_CODE_GET,
-        .msg_id = 0x5555,
-        .token_len = 2,
-        .token = {0x11, 0x22},
-        .payload_len = 0
-    };
+    SYN_CoapMsg req_msg = {.type = COAP_TYPE_CON,
+                           .code = COAP_CODE_GET,
+                           .msg_id = 0x5555,
+                           .token_len = 2,
+                           .token = {0x11, 0x22},
+                           .payload_len = 0};
 
     SYN_CoapRequest req;
     syn_coap_request_init(&req, &from, &req_msg, 100, 2);
@@ -190,7 +184,8 @@ static void test_coap_serialization_boundaries(void)
     /* C. max_buf_len too small for payload */
     msg.payload = (const uint8_t *)"hello";
     msg.payload_len = 5;
-    TEST_ASSERT_EQUAL_INT(0, syn_coap_serialize(&msg, NULL, 0, buf, 9)); // header 4 + payload 5 + marker 1 = 10 needed
+    TEST_ASSERT_EQUAL_INT(0, syn_coap_serialize(&msg, NULL, 0, buf,
+                                                9)); // header 4 + payload 5 + marker 1 = 10 needed
 
     /* 3. Option count > 16 */
     SYN_CoapOption excess_options[18];
@@ -226,62 +221,71 @@ static void test_coap_serialization_boundaries(void)
 
     /* D. buf_len < 4 + token_len */
     buf[0] = 0x42; // token_len = 2
-    st = syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count, buf, 5); // only 5 bytes, need 6
+    st = syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count, buf,
+                        5); // only 5 bytes, need 6
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
     buf[0] = 0x40; // reset
 
     /* E. Delta extension truncation/error */
     /* Delta val = 13 but EOF */
-    uint8_t bad_delta1[] = { 0x40, 0x01, 0x00, 0x00, 0xD0 };
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count, bad_delta1, sizeof(bad_delta1)));
+    uint8_t bad_delta1[] = {0x40, 0x01, 0x00, 0x00, 0xD0};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count,
+                                                bad_delta1, sizeof(bad_delta1)));
 
     /* Delta val = 14 but EOF */
-    uint8_t bad_delta2[] = { 0x40, 0x01, 0x00, 0x00, 0xE0, 0x00 };
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count, bad_delta2, sizeof(bad_delta2)));
+    uint8_t bad_delta2[] = {0x40, 0x01, 0x00, 0x00, 0xE0, 0x00};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count,
+                                                bad_delta2, sizeof(bad_delta2)));
 
     /* Delta val = 15 (invalid) */
-    uint8_t bad_delta3[] = { 0x40, 0x01, 0x00, 0x00, 0xF0 };
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count, bad_delta3, sizeof(bad_delta3)));
+    uint8_t bad_delta3[] = {0x40, 0x01, 0x00, 0x00, 0xF0};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count,
+                                                bad_delta3, sizeof(bad_delta3)));
 
     /* F. Length extension truncation/error */
     /* Len val = 13 but EOF */
-    uint8_t bad_len1[] = { 0x40, 0x01, 0x00, 0x00, 0x0D };
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count, bad_len1, sizeof(bad_len1)));
+    uint8_t bad_len1[] = {0x40, 0x01, 0x00, 0x00, 0x0D};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count,
+                                                bad_len1, sizeof(bad_len1)));
 
     /* Len val = 14 but EOF */
-    uint8_t bad_len2[] = { 0x40, 0x01, 0x00, 0x00, 0x0E, 0x00 };
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count, bad_len2, sizeof(bad_len2)));
+    uint8_t bad_len2[] = {0x40, 0x01, 0x00, 0x00, 0x0E, 0x00};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count,
+                                                bad_len2, sizeof(bad_len2)));
 
     /* Len val = 15 (invalid) */
-    uint8_t bad_len3[] = { 0x40, 0x01, 0x00, 0x00, 0x0F };
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count, bad_len3, sizeof(bad_len3)));
+    uint8_t bad_len3[] = {0x40, 0x01, 0x00, 0x00, 0x0F};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count,
+                                                bad_len3, sizeof(bad_len3)));
 
     /* G. Length exceeds buffer */
-    uint8_t bad_len_exceed[] = { 0x40, 0x01, 0x00, 0x00, 0x05, 0x01, 0x02 }; // len = 5, only 2 bytes available
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count, bad_len_exceed, sizeof(bad_len_exceed)));
+    uint8_t bad_len_exceed[] = {0x40, 0x01, 0x00, 0x00,
+                                0x05, 0x01, 0x02}; // len = 5, only 2 bytes available
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&resp, parsed_options, 20, &parsed_option_count,
+                                                bad_len_exceed, sizeof(bad_len_exceed)));
 
     /* H. Option count exceeds max_options */
-    uint8_t options_multi[] = { 0x40, 0x01, 0x00, 0x00, 0x11, 0x0A, 0x11, 0x0B }; // 2 options (num=1, len=1, num=2, len=1)
-    st = syn_coap_parse(&resp, parsed_options, 1, &parsed_option_count, options_multi, sizeof(options_multi));
+    uint8_t options_multi[] = {0x40, 0x01, 0x00, 0x00,
+                               0x11, 0x0A, 0x11, 0x0B}; // 2 options (num=1, len=1, num=2, len=1)
+    st = syn_coap_parse(&resp, parsed_options, 1, &parsed_option_count, options_multi,
+                        sizeof(options_multi));
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL_INT(1, parsed_option_count); // parsed 2 options, but only 1 stored in array
 }
 
 static void test_coap_request_task_failures(void)
 {
-    SYN_CoapMsg req_msg = {
-        .type = COAP_TYPE_CON,
-        .code = COAP_CODE_GET,
-        .msg_id = 0x5555,
-        .token_len = 2,
-        .token = {0x11, 0x22},
-        .payload_len = 0
-    };
+    SYN_CoapMsg req_msg = {.type = COAP_TYPE_CON,
+                           .code = COAP_CODE_GET,
+                           .msg_id = 0x5555,
+                           .token_len = 2,
+                           .token = {0x11, 0x22},
+                           .payload_len = 0};
 
-    SYN_SockAddr server_addr = { .ip = {127, 0, 0, 1}, .port = 5683 };
+    SYN_SockAddr server_addr = {.ip = {127, 0, 0, 1}, .port = 5683};
 
     SYN_CoapRequest req;
-    
+
     /* 1. UDP open fails */
     mock_port_reset();
     mock_udp_open_ok = false;
@@ -302,7 +306,7 @@ static void test_coap_request_task_failures(void)
     /* Invalid token length to fail serialization */
     req_msg.token_len = 255;
     syn_coap_request_init(&req, &server_addr, &req_msg, 100, 2);
-    
+
     /* Reset token_len */
     req_msg.token_len = 2;
 
@@ -341,14 +345,12 @@ static void test_coap_request_task_failures(void)
     syn_coap_request_init(&req, &server_addr, &req_msg, 100, 1);
 
     /* Mock response with WRONG token */
-    SYN_CoapMsg resp_msg_bad = {
-        .type = COAP_TYPE_ACK,
-        .code = COAP_RESP_CONTENT,
-        .msg_id = 0x5555,
-        .token_len = 2,
-        .token = {0x99, 0x99}, // wrong token!
-        .payload_len = 0
-    };
+    SYN_CoapMsg resp_msg_bad = {.type = COAP_TYPE_ACK,
+                                .code = COAP_RESP_CONTENT,
+                                .msg_id = 0x5555,
+                                .token_len = 2,
+                                .token = {0x99, 0x99}, // wrong token!
+                                .payload_len = 0};
     uint8_t resp_raw[64];
     size_t resp_raw_len = syn_coap_serialize(&resp_msg_bad, NULL, 0, resp_raw, sizeof(resp_raw));
     TEST_ASSERT_TRUE(resp_raw_len > 0);
@@ -375,20 +377,24 @@ static void test_coap_malformed_parsing(void)
     size_t option_count = 0;
 
     /* 1. Too short buffer (< 4 bytes header) */
-    uint8_t short_buf[] = { 0x40, 0x01, 0x12 };
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&msg, options, 4, &option_count, short_buf, sizeof(short_buf)));
+    uint8_t short_buf[] = {0x40, 0x01, 0x12};
+    TEST_ASSERT_EQUAL(
+        SYN_ERROR, syn_coap_parse(&msg, options, 4, &option_count, short_buf, sizeof(short_buf)));
 
     /* 2. Invalid version (version 2 instead of 1 -> header 0x80) */
-    uint8_t bad_ver_buf[] = { 0x80, 0x01, 0x12, 0x34 };
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&msg, options, 4, &option_count, bad_ver_buf, sizeof(bad_ver_buf)));
+    uint8_t bad_ver_buf[] = {0x80, 0x01, 0x12, 0x34};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&msg, options, 4, &option_count, bad_ver_buf,
+                                                sizeof(bad_ver_buf)));
 
     /* 3. Token length > 8 (e.g. TKL=9 -> header 0x49) */
-    uint8_t bad_tkl_buf[] = { 0x49, 0x01, 0x12, 0x34 };
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&msg, options, 4, &option_count, bad_tkl_buf, sizeof(bad_tkl_buf)));
+    uint8_t bad_tkl_buf[] = {0x49, 0x01, 0x12, 0x34};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&msg, options, 4, &option_count, bad_tkl_buf,
+                                                sizeof(bad_tkl_buf)));
 
     /* 4. Corrupted extended option length 15 (reserved -> SYN_ERROR) */
-    uint8_t bad_opt_buf[] = { 0x40, 0x01, 0x12, 0x34, 0xFF }; /* Payload marker without payload */
-    TEST_ASSERT_EQUAL(SYN_OK, syn_coap_parse(&msg, options, 4, &option_count, bad_opt_buf, sizeof(bad_opt_buf)));
+    uint8_t bad_opt_buf[] = {0x40, 0x01, 0x12, 0x34, 0xFF}; /* Payload marker without payload */
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_coap_parse(&msg, options, 4, &option_count, bad_opt_buf, sizeof(bad_opt_buf)));
     TEST_ASSERT_EQUAL_INT(0, msg.payload_len);
 }
 

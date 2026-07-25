@@ -3,11 +3,11 @@
  * @brief Tests for the JSON reader.
  */
 
-#include "unity/unity.h"
 #include "syntropic/util/syn_json_read.h"
+#include "unity/unity.h"
 
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 /* ── Tests ──────────────────────────────────────────────────────────────── */
 
@@ -210,8 +210,7 @@ void test_json_read_token_overflow_skip_string(void)
     pos += snprintf(json + pos, sizeof(json) - pos, "{");
     int i;
     for (i = 0; i < 32; i++) {
-        pos += snprintf(json + pos, sizeof(json) - pos,
-                        "\"k%d\":%d%s", i, i, i < 31 ? "," : ",");
+        pos += snprintf(json + pos, sizeof(json) - pos, "\"k%d\":%d%s", i, i, i < 31 ? "," : ",");
     }
     /* 33rd key has a string value — exercises skip_value string path */
     pos += snprintf(json + pos, sizeof(json) - pos, "\"extra\":\"overflowed\"}");
@@ -232,8 +231,7 @@ void test_json_read_token_overflow_skip_object(void)
     pos += snprintf(json + pos, sizeof(json) - pos, "{");
     int i;
     for (i = 0; i < 32; i++) {
-        pos += snprintf(json + pos, sizeof(json) - pos,
-                        "\"k%d\":%d%s", i, i, ",");
+        pos += snprintf(json + pos, sizeof(json) - pos, "\"k%d\":%d%s", i, i, ",");
     }
     /* 33rd key has nested object — exercises skip_value obj path */
     pos += snprintf(json + pos, sizeof(json) - pos, "\"nested\":{\"a\":1,\"b\":2}}");

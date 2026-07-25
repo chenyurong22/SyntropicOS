@@ -3,14 +3,13 @@
  * @brief Unity tests for syn_pingpong.
  */
 
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/util/syn_pingpong.h"
+#include "unity/unity.h"
 
 static void test_pingpong(void)
 {
-
     uint8_t a[8], b[8];
     SYN_PingPong pp;
     syn_pingpong_init(&pp, a, b, 8);

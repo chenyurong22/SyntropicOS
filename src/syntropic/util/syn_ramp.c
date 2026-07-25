@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_RAMP) || SYN_USE_RAMP
@@ -9,8 +9,8 @@
  * @brief Ramp / motion profile generator implementation.
  */
 
-#include "syn_ramp.h"
 #include "../util/syn_assert.h"
+#include "syn_ramp.h"
 
 #include <string.h>
 
@@ -20,8 +20,8 @@ void syn_ramp_init(SYN_Ramp *ramp, int32_t initial)
 
     memset(ramp, 0, sizeof(*ramp));
     ramp->current = initial;
-    ramp->target  = initial;
-    ramp->done    = true;
+    ramp->target = initial;
+    ramp->done = true;
 }
 
 void syn_ramp_set_target(SYN_Ramp *ramp, int32_t target, int32_t rate)
@@ -29,50 +29,47 @@ void syn_ramp_set_target(SYN_Ramp *ramp, int32_t target, int32_t rate)
     SYN_ASSERT(ramp != NULL);
     SYN_ASSERT(rate > 0);
 
-    ramp->target   = target;
-    ramp->rate     = rate;
+    ramp->target = target;
+    ramp->rate = rate;
     ramp->velocity = 0;
-    ramp->accel    = 0;
-    ramp->mode     = (uint8_t)SYN_RAMP_LINEAR;
-    ramp->done     = (ramp->current == target);
+    ramp->accel = 0;
+    ramp->mode = (uint8_t)SYN_RAMP_LINEAR;
+    ramp->done = (ramp->current == target);
 }
 
-void syn_ramp_set_target_trapezoid(SYN_Ramp *ramp, int32_t target,
-                                    int32_t max_rate, int32_t accel)
+void syn_ramp_set_target_trapezoid(SYN_Ramp *ramp, int32_t target, int32_t max_rate, int32_t accel)
 {
     SYN_ASSERT(ramp != NULL);
     SYN_ASSERT(max_rate > 0);
     SYN_ASSERT(accel > 0);
 
-    ramp->target     = target;
-    ramp->rate       = max_rate;
-    ramp->accel      = accel;
-    ramp->velocity   = 0;
+    ramp->target = target;
+    ramp->rate = max_rate;
+    ramp->accel = accel;
+    ramp->velocity = 0;
     ramp->frac_accum = 0;
-    ramp->frac_bits  = 0;
-    ramp->mode       = (uint8_t)SYN_RAMP_TRAPEZOID;
-    ramp->done       = (ramp->current == target);
+    ramp->frac_bits = 0;
+    ramp->mode = (uint8_t)SYN_RAMP_TRAPEZOID;
+    ramp->done = (ramp->current == target);
 }
 
-void syn_ramp_set_target_trapezoid_fp(SYN_Ramp *ramp, int32_t target,
-                                      int32_t max_rate, int32_t accel,
-                                      uint8_t frac_bits)
+void syn_ramp_set_target_trapezoid_fp(SYN_Ramp *ramp, int32_t target, int32_t max_rate,
+                                      int32_t accel, uint8_t frac_bits)
 {
     SYN_ASSERT(ramp != NULL);
     SYN_ASSERT(max_rate > 0);
     SYN_ASSERT(accel > 0);
     SYN_ASSERT(frac_bits <= 16);
 
-    ramp->target     = target;
-    ramp->rate       = max_rate;
-    ramp->accel      = accel;
-    ramp->velocity   = 0;
+    ramp->target = target;
+    ramp->rate = max_rate;
+    ramp->accel = accel;
+    ramp->velocity = 0;
     ramp->frac_accum = 0;
-    ramp->frac_bits  = frac_bits;
-    ramp->mode       = (uint8_t)SYN_RAMP_TRAPEZOID;
-    ramp->done       = (ramp->current == target);
+    ramp->frac_bits = frac_bits;
+    ramp->mode = (uint8_t)SYN_RAMP_TRAPEZOID;
+    ramp->done = (ramp->current == target);
 }
-
 
 /**
  * @brief Linear ramp step toward target.
@@ -127,7 +124,7 @@ static int32_t update_trapezoid(SYN_Ramp *ramp)
      * must be in integer units, so: decel_dist = v² / (2*a) >> frac_bits.
      * Use 64-bit to avoid overflow in v².
      */
-    int32_t abs_vel  = SYN_ABS(ramp->velocity);
+    int32_t abs_vel = SYN_ABS(ramp->velocity);
     int32_t abs_diff = SYN_ABS(diff);
     int32_t decel_dist = 0;
     if (ramp->accel > 0) {
@@ -144,10 +141,12 @@ static int32_t update_trapezoid(SYN_Ramp *ramp)
         /* Decelerate (or reverse) */
         if (ramp->velocity > 0) {
             ramp->velocity -= ramp->accel;
-            if (ramp->velocity < 0) ramp->velocity = 0;
+            if (ramp->velocity < 0)
+                ramp->velocity = 0;
         } else if (ramp->velocity < 0) {
             ramp->velocity += ramp->accel;
-            if (ramp->velocity > 0) ramp->velocity = 0;
+            if (ramp->velocity > 0)
+                ramp->velocity = 0;
         }
     } else {
         /* Accelerate toward target */
@@ -169,10 +168,10 @@ static int32_t update_trapezoid(SYN_Ramp *ramp)
     /* Snap to target if we've overshot or are very close */
     int32_t new_diff = ramp->target - ramp->current;
     if ((diff > 0 && new_diff <= 0) || (diff < 0 && new_diff >= 0)) {
-        ramp->current    = ramp->target;
-        ramp->velocity   = 0;
+        ramp->current = ramp->target;
+        ramp->velocity = 0;
         ramp->frac_accum = 0;
-        ramp->done       = true;
+        ramp->done = true;
     }
 
     return ramp->current;
@@ -182,7 +181,8 @@ int32_t syn_ramp_update(SYN_Ramp *ramp)
 {
     SYN_ASSERT(ramp != NULL);
 
-    if (ramp->done) return ramp->current;
+    if (ramp->done)
+        return ramp->current;
 
     switch ((SYN_RampMode)ramp->mode) {
     case SYN_RAMP_TRAPEZOID:
@@ -195,11 +195,11 @@ int32_t syn_ramp_update(SYN_Ramp *ramp)
 void syn_ramp_jump(SYN_Ramp *ramp, int32_t value)
 {
     SYN_ASSERT(ramp != NULL);
-    ramp->current    = value;
-    ramp->target     = value;
-    ramp->velocity   = 0;
+    ramp->current = value;
+    ramp->target = value;
+    ramp->velocity = 0;
     ramp->frac_accum = 0;
-    ramp->done       = true;
+    ramp->done = true;
 }
 
 #endif /* SYN_USE_RAMP */

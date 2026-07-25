@@ -30,9 +30,10 @@
 #ifndef SYN_PORT_SOCKET_H
 #define SYN_PORT_SOCKET_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include "../common/syn_defs.h"
+
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,12 +43,12 @@ extern "C" {
 typedef int SYN_Socket;
 
 /** @brief Sentinel value for an invalid/uninitialized socket. */
-#define SYN_SOCKET_INVALID  (-1)
+#define SYN_SOCKET_INVALID (-1)
 
 /** IPv4 address + port. */
 typedef struct {
-    uint8_t  ip[4];       /**< IPv4 address bytes (network order)       */
-    uint16_t port;        /**< Port number (host order)                  */
+    uint8_t ip[4]; /**< IPv4 address bytes (network order)       */
+    uint16_t port; /**< Port number (host order)                  */
 } SYN_SockAddr;
 
 /* ── Connection ─────────────────────────────────────────────────────────── */
@@ -110,8 +111,7 @@ int syn_port_sock_send_all(SYN_Socket sock, const void *data, size_t len);
  * @param timeout_ms Timeout in milliseconds (0 = non-blocking).
  * @return Number of bytes received, 0 if connection closed, -1 on error/timeout.
  */
-int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len,
-                       uint32_t timeout_ms);
+int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len, uint32_t timeout_ms);
 
 /* ── Server ─────────────────────────────────────────────────────────────── */
 
@@ -156,8 +156,7 @@ SYN_Socket syn_port_udp_open(uint16_t port);
  * @param to    Destination address (IP + port).
  * @return Number of bytes sent, or -1 on error.
  */
-int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len,
-                        const SYN_SockAddr *to);
+int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len, const SYN_SockAddr *to);
 
 /**
  * @brief Receive a UDP packet.
@@ -174,8 +173,8 @@ int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len,
  * @return Number of bytes received, 0 if no data available (non-blocking),
  *         or -1 on error.
  */
-int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len,
-                          SYN_SockAddr *from, uint32_t timeout_ms);
+int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len, SYN_SockAddr *from,
+                          uint32_t timeout_ms);
 
 /**
  * @brief Join a multicast group.
@@ -186,11 +185,7 @@ int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len,
  */
 SYN_Status syn_port_udp_join_multicast(SYN_Socket sock, const char *multicast_ip);
 
-
-
 /* ── Lifecycle ──────────────────────────────────────────────────────────── */
-
-
 
 /**
  * @brief Close a socket and release resources.

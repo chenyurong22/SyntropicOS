@@ -47,38 +47,38 @@ extern "C" {
 /** @brief Actuator configuration. */
 typedef struct {
     /* Motor */
-    SYN_DCMotor    *dc_motor;       /**< DC motor for actuation          */
+    SYN_DCMotor *dc_motor; /**< DC motor for actuation          */
 
     /* Position feedback */
-    SYN_MotorCtrl_ReadPos read_pos;  /**< Read potentiometer (returns int32_t) */
-    void            *read_ctx;        /**< Context for read_pos            */
-    int32_t          stroke_min;      /**< ADC value at fully retracted    */
-    int32_t          stroke_max;      /**< ADC value at fully extended     */
+    SYN_MotorCtrl_ReadPos read_pos; /**< Read potentiometer (returns int32_t) */
+    void *read_ctx;                 /**< Context for read_pos            */
+    int32_t stroke_min;             /**< ADC value at fully retracted    */
+    int32_t stroke_max;             /**< ADC value at fully extended     */
 
     /* Control */
-    uint16_t         update_hz;       /**< Control loop frequency          */
-    int32_t          pid_kp;          /**< PID proportional gain           */
-    int32_t          pid_ki;          /**< PID integral gain               */
-    int32_t          pid_kd;          /**< PID derivative gain             */
-    uint8_t          pid_scale;       /**< Gain divisor = 1 << pid_scale   */
-    int32_t          deadband;        /**< Position deadband (ADC units)   */
+    uint16_t update_hz; /**< Control loop frequency          */
+    int32_t pid_kp;     /**< PID proportional gain           */
+    int32_t pid_ki;     /**< PID integral gain               */
+    int32_t pid_kd;     /**< PID derivative gain             */
+    uint8_t pid_scale;  /**< Gain divisor = 1 << pid_scale   */
+    int32_t deadband;   /**< Position deadband (ADC units)   */
 
     /* Safety */
-    uint16_t         stall_timeout_ms; /**< 0 = disabled                  */
-    int32_t          stall_threshold;  /**< Min motion for "not stalled"  */
-    SYN_ErrLog     *errlog;          /**< Optional error logging          */
+    uint16_t stall_timeout_ms; /**< 0 = disabled                  */
+    int32_t stall_threshold;   /**< Min motion for "not stalled"  */
+    SYN_ErrLog *errlog;        /**< Optional error logging          */
 } SYN_Actuator_Config;
 
 /* ── Actuator instance ──────────────────────────────────────────────────── */
 
 /** @brief Linear actuator instance — motor controller + stroke mapping. */
 typedef struct {
-    SYN_MotorCtrl   ctrl;            /**< Underlying motor controller     */
-    int32_t          stroke_min;      /**< ADC at retracted                */
-    int32_t          stroke_max;      /**< ADC at extended                 */
-    int32_t          stroke_range;    /**< max - min (precomputed)         */
-    int16_t          target_pct;      /**< Target position 0-1000          */
-    int16_t          current_pct;     /**< Current position 0-1000         */
+    SYN_MotorCtrl ctrl;   /**< Underlying motor controller     */
+    int32_t stroke_min;   /**< ADC at retracted                */
+    int32_t stroke_max;   /**< ADC at extended                 */
+    int32_t stroke_range; /**< max - min (precomputed)         */
+    int16_t target_pct;   /**< Target position 0-1000          */
+    int16_t current_pct;  /**< Current position 0-1000         */
 } SYN_Actuator;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -132,8 +132,9 @@ static inline int16_t syn_actuator_position(const SYN_Actuator *act)
 static inline bool syn_actuator_at_target(const SYN_Actuator *act)
 {
     int16_t diff = act->target_pct - act->current_pct;
-    if (diff < 0) diff = (int16_t)(-diff);
-    return diff <= 5;  /* ±0.5% tolerance */
+    if (diff < 0)
+        diff = (int16_t)(-diff);
+    return diff <= 5; /* ±0.5% tolerance */
 }
 
 /**

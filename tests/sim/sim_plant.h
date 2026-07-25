@@ -17,63 +17,63 @@
 #ifndef SIM_PLANT_H
 #define SIM_PLANT_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 /** @brief Physical parameters for the simulated plant. */
-typedef struct {    /* ── Physical parameters ─────────────────────────────────────── */
-    double mass_kg;              /**< Cart mass (e.g., 136 kg = 300 lb)   */
+typedef struct { /* ── Physical parameters ─────────────────────────────────────── */
+    double mass_kg; /**< Cart mass (e.g., 136 kg = 300 lb)   */
 
     /* Motor model: F = Km * (command - Kb * velocity)
      * Km incorporates torque constant, gear ratio, wheel radius.
      * Kb is back-EMF constant (limits top speed). */
-    double motor_Km;             /**< Motor force constant (N per %)      */
-    double motor_Kb;             /**< Back-EMF constant                   */
+    double motor_Km; /**< Motor force constant (N per %)      */
+    double motor_Kb; /**< Back-EMF constant                   */
 
     /* Friction */
-    double friction_static;      /**< Static friction / stiction (N)      */
-    double friction_coulomb;     /**< Dynamic Coulomb friction (N)        */
-    double friction_viscous;     /**< Viscous damping (N·s/m)             */
+    double friction_static;  /**< Static friction / stiction (N)      */
+    double friction_coulomb; /**< Dynamic Coulomb friction (N)        */
+    double friction_viscous; /**< Viscous damping (N·s/m)             */
 
     /* Driver nonlinearity */
-    double driver_deadband;      /**< Output below this produces no torque (%) */
-    double driver_asymmetry;     /**< Reverse gain = (1 - asymmetry) × fwd  */
+    double driver_deadband;  /**< Output below this produces no torque (%) */
+    double driver_asymmetry; /**< Reverse gain = (1 - asymmetry) × fwd  */
 
     /* Encoder */
     double counts_per_meter;     /**< Encoder resolution                  */
     double encoder_noise_counts; /**< ± noise amplitude (counts, uniform) */
 
     /* Track limits (hard endstops) */
-    double track_min_m;          /**< Hard endstop position (m)           */
-    double track_max_m;          /**< Hard endstop position (m)           */
+    double track_min_m; /**< Hard endstop position (m)           */
+    double track_max_m; /**< Hard endstop position (m)           */
 
     /* Simulation */
-    double dt_s;                 /**< Time step (1/update_hz)             */
+    double dt_s; /**< Time step (1/update_hz)             */
 } SimPlantParams;
 
 /** @brief Simulated plant instance (state + parameters). */
 typedef struct {
-    SimPlantParams params;           /**< Physical parameters              */
+    SimPlantParams params; /**< Physical parameters              */
 
     /* State */
-    double position_m;           /**< Position (meters)                   */
-    double velocity_mps;         /**< Velocity (m/s)                      */
-    double acceleration_mps2;    /**< Acceleration (m/s²)                 */
-    double motor_force_N;        /**< Current motor force                 */
+    double position_m;        /**< Position (meters)                   */
+    double velocity_mps;      /**< Velocity (m/s)                      */
+    double acceleration_mps2; /**< Acceleration (m/s²)                 */
+    double motor_force_N;     /**< Current motor force                 */
 
     /* Input */
-    double command_pct;          /**< Motor command (-100 to +100 %)      */
+    double command_pct; /**< Motor command (-100 to +100 %)      */
 
     /* Encoder output */
-    int32_t encoder_counts;      /**< Quantized + noisy encoder reading   */
+    int32_t encoder_counts; /**< Quantized + noisy encoder reading   */
 
     /* Timing */
-    uint32_t tick_ms;            /**< Simulated tick counter              */
-    uint32_t step_count;         /**< Total steps executed                */
+    uint32_t tick_ms;    /**< Simulated tick counter              */
+    uint32_t step_count; /**< Total steps executed                */
 
     /* Crash detection */
-    bool     crashed;            /**< True if hit a hard endstop          */
-    int      crash_end;          /**< -1 = min end, +1 = max end          */
+    bool crashed;  /**< True if hit a hard endstop          */
+    int crash_end; /**< -1 = min end, +1 = max end          */
 
     /** @brief RNG state for encoder noise (xorshift32). */
     uint32_t rng_state;

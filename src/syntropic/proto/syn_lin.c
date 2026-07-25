@@ -34,7 +34,8 @@ bool syn_lin_verify_pid(uint8_t pid)
 
 /* ── LIN Checksum Calculation ────────────────────────────────────────────── */
 
-uint8_t syn_lin_calc_checksum(uint8_t pid, const uint8_t *data, uint8_t len, SYN_LIN_ChecksumMode mode)
+uint8_t syn_lin_calc_checksum(uint8_t pid, const uint8_t *data, uint8_t len,
+                              SYN_LIN_ChecksumMode mode)
 {
     if (data == NULL || len == 0 || len > SYN_LIN_DATA_MAX) {
         return 0;
@@ -67,7 +68,8 @@ uint8_t syn_lin_calc_checksum(uint8_t pid, const uint8_t *data, uint8_t len, SYN
 
 /* ── LIN Master Implementation ───────────────────────────────────────────── */
 
-SYN_Status syn_lin_master_init(SYN_LIN_Master *master, const SYN_LIN_ScheduleSlot *slots, size_t count)
+SYN_Status syn_lin_master_init(SYN_LIN_Master *master, const SYN_LIN_ScheduleSlot *slots,
+                               size_t count)
 {
     if (master == NULL || slots == NULL || count == 0) {
         return SYN_INVALID_PARAM;
@@ -82,7 +84,8 @@ SYN_Status syn_lin_master_init(SYN_LIN_Master *master, const SYN_LIN_ScheduleSlo
     return SYN_OK;
 }
 
-bool syn_lin_master_step(SYN_LIN_Master *master, uint32_t dt_ms, const SYN_LIN_ScheduleSlot **active_slot)
+bool syn_lin_master_step(SYN_LIN_Master *master, uint32_t dt_ms,
+                         const SYN_LIN_ScheduleSlot **active_slot)
 {
     if (master == NULL || !master->running || master->slots == NULL || master->slot_count == 0) {
         if (active_slot != NULL) {
@@ -132,7 +135,8 @@ SYN_Status syn_lin_slave_init(SYN_LIN_Slave *slave, uint8_t nad)
     return SYN_OK;
 }
 
-SYN_Status syn_lin_slave_add_frame(SYN_LIN_Slave *slave, uint8_t id, uint8_t len, SYN_LIN_SlotDirection dir, SYN_LIN_ChecksumMode mode)
+SYN_Status syn_lin_slave_add_frame(SYN_LIN_Slave *slave, uint8_t id, uint8_t len,
+                                   SYN_LIN_SlotDirection dir, SYN_LIN_ChecksumMode mode)
 {
     if (slave == NULL || id > SYN_LIN_ID_MAX || len == 0 || len > SYN_LIN_DATA_MAX) {
         return SYN_INVALID_PARAM;
@@ -166,14 +170,17 @@ SYN_Status syn_lin_slave_add_frame(SYN_LIN_Slave *slave, uint8_t id, uint8_t len
     return SYN_OK;
 }
 
-SYN_Status syn_lin_slave_set_publish_data(SYN_LIN_Slave *slave, uint8_t id, const uint8_t *data, uint8_t len)
+SYN_Status syn_lin_slave_set_publish_data(SYN_LIN_Slave *slave, uint8_t id, const uint8_t *data,
+                                          uint8_t len)
 {
-    if (slave == NULL || data == NULL || len == 0 || len > SYN_LIN_DATA_MAX || id > SYN_LIN_ID_MAX) {
+    if (slave == NULL || data == NULL || len == 0 || len > SYN_LIN_DATA_MAX ||
+        id > SYN_LIN_ID_MAX) {
         return SYN_INVALID_PARAM;
     }
 
     for (size_t i = 0; i < slave->frame_count; i++) {
-        if (slave->frames[i].active && slave->frames[i].id == id && slave->frames[i].dir == SYN_LIN_SLOT_PUBLISH) {
+        if (slave->frames[i].active && slave->frames[i].id == id &&
+            slave->frames[i].dir == SYN_LIN_SLOT_PUBLISH) {
             if (len > slave->frames[i].len) {
                 len = slave->frames[i].len;
             }
@@ -194,78 +201,76 @@ bool syn_lin_slave_process_byte(SYN_LIN_Slave *slave, uint8_t byte, SYN_LIN_Fram
     }
 
     switch (slave->state) {
-        case SYN_LIN_STATE_IDLE:
-            if (byte == SYN_LIN_SYNC_BYTE) {
-                slave->state = SYN_LIN_STATE_PID;
-            }
+    case SYN_LIN_STATE_IDLE:
+        if (byte == SYN_LIN_SYNC_BYTE) {
+            slave->state = SYN_LIN_STATE_PID;
+        }
+        break;
+
+    case SYN_LIN_STATE_SYNC:
+        if (byte == SYN_LIN_SYNC_BYTE) {
+            slave->state = SYN_LIN_STATE_PID;
+        } else {
+            slave->state = SYN_LIN_STATE_IDLE;
+        }
+        break;
+
+    case SYN_LIN_STATE_PID: {
+        slave->rx_frame.pid = byte;
+        slave->rx_frame.id = byte & SYN_LIN_ID_MAX;
+        slave->rx_frame.valid_pid = syn_lin_verify_pid(byte);
+        slave->rx_idx = 0;
+
+        if (!slave->rx_frame.valid_pid) {
+            slave->state = SYN_LIN_STATE_IDLE;
             break;
+        }
 
-        case SYN_LIN_STATE_SYNC:
-            if (byte == SYN_LIN_SYNC_BYTE) {
-                slave->state = SYN_LIN_STATE_PID;
-            } else {
-                slave->state = SYN_LIN_STATE_IDLE;
-            }
-            break;
-
-        case SYN_LIN_STATE_PID: {
-            slave->rx_frame.pid = byte;
-            slave->rx_frame.id = byte & SYN_LIN_ID_MAX;
-            slave->rx_frame.valid_pid = syn_lin_verify_pid(byte);
-            slave->rx_idx = 0;
-
-            if (!slave->rx_frame.valid_pid) {
-                slave->state = SYN_LIN_STATE_IDLE;
+        /* Look up expected frame in configuration table */
+        bool found = false;
+        for (size_t i = 0; i < slave->frame_count; i++) {
+            if (slave->frames[i].active && slave->frames[i].id == slave->rx_frame.id) {
+                slave->expected_len = slave->frames[i].len;
+                slave->expected_checksum_mode = slave->frames[i].checksum_mode;
+                found = true;
                 break;
             }
-
-            /* Look up expected frame in configuration table */
-            bool found = false;
-            for (size_t i = 0; i < slave->frame_count; i++) {
-                if (slave->frames[i].active && slave->frames[i].id == slave->rx_frame.id) {
-                    slave->expected_len = slave->frames[i].len;
-                    slave->expected_checksum_mode = slave->frames[i].checksum_mode;
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                /* Unknown frame ID; default to 8 bytes classic checksum */
-                slave->expected_len = 8;
-                slave->expected_checksum_mode = SYN_LIN_CHECKSUM_CLASSIC;
-            }
-
-            slave->state = SYN_LIN_STATE_DATA;
-            break;
         }
 
-        case SYN_LIN_STATE_DATA:
-            slave->rx_frame.data[slave->rx_idx++] = byte;
-            if (slave->rx_idx >= slave->expected_len) {
-                slave->rx_frame.len = slave->rx_idx;
-                slave->state = SYN_LIN_STATE_CHECKSUM;
-            }
-            break;
-
-        case SYN_LIN_STATE_CHECKSUM: {
-            slave->rx_frame.checksum = byte;
-            uint8_t calc_cs = syn_lin_calc_checksum(slave->rx_frame.pid,
-                                                    slave->rx_frame.data,
-                                                    slave->rx_frame.len,
-                                                    slave->expected_checksum_mode);
-            slave->rx_frame.valid_checksum = (byte == calc_cs);
-            slave->state = SYN_LIN_STATE_IDLE;
-
-            if (out_frame != NULL) {
-                *out_frame = slave->rx_frame;
-            }
-            return slave->rx_frame.valid_pid && slave->rx_frame.valid_checksum;
+        if (!found) {
+            /* Unknown frame ID; default to 8 bytes classic checksum */
+            slave->expected_len = 8;
+            slave->expected_checksum_mode = SYN_LIN_CHECKSUM_CLASSIC;
         }
 
-        default:
-            slave->state = SYN_LIN_STATE_IDLE;
-            break;
+        slave->state = SYN_LIN_STATE_DATA;
+        break;
+    }
+
+    case SYN_LIN_STATE_DATA:
+        slave->rx_frame.data[slave->rx_idx++] = byte;
+        if (slave->rx_idx >= slave->expected_len) {
+            slave->rx_frame.len = slave->rx_idx;
+            slave->state = SYN_LIN_STATE_CHECKSUM;
+        }
+        break;
+
+    case SYN_LIN_STATE_CHECKSUM: {
+        slave->rx_frame.checksum = byte;
+        uint8_t calc_cs = syn_lin_calc_checksum(slave->rx_frame.pid, slave->rx_frame.data,
+                                                slave->rx_frame.len, slave->expected_checksum_mode);
+        slave->rx_frame.valid_checksum = (byte == calc_cs);
+        slave->state = SYN_LIN_STATE_IDLE;
+
+        if (out_frame != NULL) {
+            *out_frame = slave->rx_frame;
+        }
+        return slave->rx_frame.valid_pid && slave->rx_frame.valid_checksum;
+    }
+
+    default:
+        slave->state = SYN_LIN_STATE_IDLE;
+        break;
     }
 
     return false;

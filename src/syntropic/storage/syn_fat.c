@@ -1,17 +1,18 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_FAT) || SYN_USE_FAT
 
 #if defined(SYN_USE_VFS) && !SYN_USE_VFS
-  #error "syn_fat requires SYN_USE_VFS=1"
+#error "syn_fat requires SYN_USE_VFS=1"
 #endif
 
-#include "syn_fat.h"
 #include "../log/syn_log.h"
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
+#include "syn_fat.h"
+
 #include <string.h>
 
 #define TAG "syn_fat"
@@ -20,20 +21,20 @@
 
 /** @brief Internal FAT volume metadata parsed from the boot sector. */
 typedef struct {
-    uint16_t bytes_per_sector;    /**< Bytes per logical sector            */
-    uint8_t  sectors_per_cluster; /**< Sectors per allocation cluster      */
-    uint16_t reserved_sectors;    /**< Reserved sectors before first FAT   */
-    uint8_t  num_fats;            /**< Number of FAT copies               */
-    uint16_t fat16_root_entries;  /**< Root dir entry count (FAT16 only)   */
-    uint32_t fat_sectors;         /**< Sectors occupied by each FAT        */
-    uint32_t root_cluster;        /**< Root directory cluster (FAT32 only) */
-    bool     is_fat32;            /**< true if FAT32, false if FAT16       */
+    uint16_t bytes_per_sector;   /**< Bytes per logical sector            */
+    uint8_t sectors_per_cluster; /**< Sectors per allocation cluster      */
+    uint16_t reserved_sectors;   /**< Reserved sectors before first FAT   */
+    uint8_t num_fats;            /**< Number of FAT copies               */
+    uint16_t fat16_root_entries; /**< Root dir entry count (FAT16 only)   */
+    uint32_t fat_sectors;        /**< Sectors occupied by each FAT        */
+    uint32_t root_cluster;       /**< Root directory cluster (FAT32 only) */
+    bool is_fat32;               /**< true if FAT32, false if FAT16       */
 
     /* Calculated offsets (in sectors) */
-    uint32_t fat_start_sector;    /**< First sector of FAT                 */
-    uint32_t root_start_sector;   /**< First sector of root dir (FAT16)    */
-    uint32_t root_sectors;        /**< Sectors for root dir (FAT16)        */
-    uint32_t data_start_sector;   /**< First sector of data region         */
+    uint32_t fat_start_sector;  /**< First sector of FAT                 */
+    uint32_t root_start_sector; /**< First sector of root dir (FAT16)    */
+    uint32_t root_sectors;      /**< Sectors for root dir (FAT16)        */
+    uint32_t data_start_sector; /**< First sector of data region         */
 } FAT_Volume;
 
 static FAT_Volume g_vol;
@@ -43,14 +44,14 @@ SYN_SD g_sd;
 
 /** @brief Open file tracking context (pooled). */
 typedef struct {
-    char     name[11];       /**< 8.3 FAT directory name                 */
-    uint32_t start_cluster;  /**< First cluster of file data              */
-    uint32_t size;           /**< File size in bytes                      */
-    uint32_t offset;         /**< Current read/write position             */
-    uint32_t dir_sector;     /**< Sector containing the dir entry         */
-    uint32_t dir_offset;     /**< Byte offset of dir entry within sector  */
-    int      mode;           /**< Open mode (read, write, etc.)           */
-    bool     used;           /**< true if this slot is in use             */
+    char name[11];          /**< 8.3 FAT directory name                 */
+    uint32_t start_cluster; /**< First cluster of file data              */
+    uint32_t size;          /**< File size in bytes                      */
+    uint32_t offset;        /**< Current read/write position             */
+    uint32_t dir_sector;    /**< Sector containing the dir entry         */
+    uint32_t dir_offset;    /**< Byte offset of dir entry within sector  */
+    int mode;               /**< Open mode (read, write, etc.)           */
+    bool used;              /**< true if this slot is in use             */
 } SYN_FatFileCtx;
 
 static SYN_FatFileCtx g_fat_files[SYN_VFS_MAX_OPEN_FILES];
@@ -59,12 +60,13 @@ static SYN_FatFileCtx g_fat_files[SYN_VFS_MAX_OPEN_FILES];
 
 static uint32_t find_partition_start(const uint8_t *sector0)
 {
-    if (sector0[510] != 0x55 || sector0[511] != 0xAA) return 0;
+    if (sector0[510] != 0x55 || sector0[511] != 0xAA)
+        return 0;
 
     /* Check MBR partition 0 entry at offset 446 (0x1BE) */
     const uint8_t *part = &sector0[446];
     uint8_t type = part[4];
-    if (type == 0x04 || type == 0x06 || type == 0x0B || type == 0x0C || type == 0x0E || 
+    if (type == 0x04 || type == 0x06 || type == 0x0B || type == 0x0C || type == 0x0E ||
         type == 0x14 || type == 0x16 || type == 0x1B || type == 0x1C) {
         return syn_peek_u32_le(part, 8);
     }
@@ -73,13 +75,16 @@ static uint32_t find_partition_start(const uint8_t *sector0)
 
 static bool fat_parse_bpb(FAT_Volume *vol, const uint8_t *bpb, uint32_t volume_start)
 {
-    if (bpb[510] != 0x55 || bpb[511] != 0xAA) return false;
+    if (bpb[510] != 0x55 || bpb[511] != 0xAA)
+        return false;
 
     vol->bytes_per_sector = syn_peek_u16_le(bpb, 11);
-    if (vol->bytes_per_sector != 512) return false;
+    if (vol->bytes_per_sector != 512)
+        return false;
 
     vol->sectors_per_cluster = bpb[13];
-    if (vol->sectors_per_cluster == 0) return false;
+    if (vol->sectors_per_cluster == 0)
+        return false;
 
     vol->reserved_sectors = syn_peek_u16_le(bpb, 14);
     vol->num_fats = bpb[16];
@@ -113,7 +118,8 @@ static bool fat_parse_bpb(FAT_Volume *vol, const uint8_t *bpb, uint32_t volume_s
 
 static uint32_t cluster_to_sector(const FAT_Volume *vol, uint32_t cluster)
 {
-    if (cluster < 2) return 0;
+    if (cluster < 2)
+        return 0;
     return vol->data_start_sector + (cluster - 2) * vol->sectors_per_cluster;
 }
 
@@ -140,7 +146,8 @@ static uint32_t read_fat_entry(const FAT_Volume *vol, uint32_t cluster)
         return entry & 0x0FFFFFFF;
     } else {
         uint16_t entry = syn_peek_u16_le(sec_buf, offset);
-        if (entry >= 0xFFF8) return 0x0FFFFFFF;
+        if (entry >= 0xFFF8)
+            return 0x0FFFFFFF;
         return entry;
     }
 }
@@ -159,7 +166,8 @@ static bool write_fat_entry(const FAT_Volume *vol, uint32_t cluster, uint32_t va
         offset = (cluster * 2) % 512;
     }
 
-    if (syn_sd_read(&g_sd, fat_sector, sec_buf) != SYN_OK) return false;
+    if (syn_sd_read(&g_sd, fat_sector, sec_buf) != SYN_OK)
+        return false;
 
     if (vol->is_fat32) {
         syn_poke_u32_le(value, sec_buf, offset);
@@ -167,10 +175,12 @@ static bool write_fat_entry(const FAT_Volume *vol, uint32_t cluster, uint32_t va
         syn_poke_u16_le((uint16_t)value, sec_buf, offset);
     }
 
-    if (syn_sd_write(&g_sd, fat_sector, sec_buf) != SYN_OK) return false;
+    if (syn_sd_write(&g_sd, fat_sector, sec_buf) != SYN_OK)
+        return false;
 
     if (vol->num_fats > 1) {
-        if (syn_sd_write(&g_sd, fat_sector + vol->fat_sectors, sec_buf) != SYN_OK) return false;
+        if (syn_sd_write(&g_sd, fat_sector + vol->fat_sectors, sec_buf) != SYN_OK)
+            return false;
     }
 
     return true;
@@ -180,21 +190,24 @@ static uint32_t find_free_cluster(const FAT_Volume *vol)
 {
     for (uint32_t c = 2; c < 65536; c++) {
         uint32_t entry = read_fat_entry(vol, c);
-        if (entry == 0) return c;
+        if (entry == 0)
+            return c;
     }
     return 0;
 }
 
 static void path_to_fat_name(const char *path, char *fat_name)
 {
-    if (path[0] == '/') path++;
+    if (path[0] == '/')
+        path++;
 
     memset(fat_name, ' ', 11);
 
     int i = 0;
     while (path[i] != '\0' && path[i] != '.' && i < 8) {
         char c = path[i];
-        if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+        if (c >= 'a' && c <= 'z')
+            c = c - 'a' + 'A';
         fat_name[i] = c;
         i++;
     }
@@ -208,7 +221,8 @@ static void path_to_fat_name(const char *path, char *fat_name)
         int j = 0;
         while (path[i] != '\0' && j < 3) {
             char c = path[i];
-            if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+            if (c >= 'a' && c <= 'z')
+                c = c - 'a' + 'A';
             fat_name[8 + j] = c;
             i++;
             j++;
@@ -222,10 +236,11 @@ typedef struct {
     uint32_t offset;        /**< Byte offset within that sector           */
     uint32_t start_cluster; /**< First cluster of the found file          */
     uint32_t file_size;     /**< Size in bytes of the found file          */
-    bool     found;         /**< true if a matching entry was found       */
+    bool found;             /**< true if a matching entry was found       */
 } DirEntryLoc;
 
-static bool scan_root_dir(const FAT_Volume *vol, const char *fat_name, DirEntryLoc *loc, bool find_empty_slot)
+static bool scan_root_dir(const FAT_Volume *vol, const char *fat_name, DirEntryLoc *loc,
+                          bool find_empty_slot)
 {
     uint8_t sec_buf[512];
     loc->found = false;
@@ -236,7 +251,8 @@ static bool scan_root_dir(const FAT_Volume *vol, const char *fat_name, DirEntryL
             uint32_t start_sector = cluster_to_sector(vol, cluster);
             for (uint8_t s = 0; s < vol->sectors_per_cluster; s++) {
                 uint32_t current_sector = start_sector + s;
-                if (syn_sd_read(&g_sd, current_sector, sec_buf) != SYN_OK) return false;
+                if (syn_sd_read(&g_sd, current_sector, sec_buf) != SYN_OK)
+                    return false;
 
                 for (uint32_t off = 0; off < 512; off += 32) {
                     uint8_t first_char = sec_buf[off];
@@ -255,8 +271,9 @@ static bool scan_root_dir(const FAT_Volume *vol, const char *fat_name, DirEntryL
                         if (first_char != 0xE5 && memcmp(&sec_buf[off], fat_name, 11) == 0) {
                             loc->sector = current_sector;
                             loc->offset = off;
-                            loc->start_cluster = (uint32_t)syn_peek_u16_le(&sec_buf[off], 26) | 
-                                                 ((uint32_t)syn_peek_u16_le(&sec_buf[off], 20) << 16);
+                            loc->start_cluster =
+                                (uint32_t)syn_peek_u16_le(&sec_buf[off], 26) |
+                                ((uint32_t)syn_peek_u16_le(&sec_buf[off], 20) << 16);
                             loc->file_size = syn_peek_u32_le(&sec_buf[off], 28);
                             loc->found = true;
                             return true;
@@ -269,7 +286,8 @@ static bool scan_root_dir(const FAT_Volume *vol, const char *fat_name, DirEntryL
     } else {
         for (uint32_t s = 0; s < vol->root_sectors; s++) {
             uint32_t current_sector = vol->root_start_sector + s;
-            if (syn_sd_read(&g_sd, current_sector, sec_buf) != SYN_OK) return false;
+            if (syn_sd_read(&g_sd, current_sector, sec_buf) != SYN_OK)
+                return false;
 
             for (uint32_t off = 0; off < 512; off += 32) {
                 uint8_t first_char = sec_buf[off];
@@ -300,7 +318,8 @@ static bool scan_root_dir(const FAT_Volume *vol, const char *fat_name, DirEntryL
     return false;
 }
 
-static uint32_t get_cluster_for_offset(const FAT_Volume *vol, uint32_t start_cluster, uint32_t offset)
+static uint32_t get_cluster_for_offset(const FAT_Volume *vol, uint32_t start_cluster,
+                                       uint32_t offset)
 {
     uint32_t cluster_size = vol->sectors_per_cluster * 512;
     uint32_t target_idx = offset / cluster_size;
@@ -332,7 +351,8 @@ static int syn_fat_vfs_open(SYN_VfsFile *file, const char *path, int flags, void
             break;
         }
     }
-    if (f_idx < 0) return -1;
+    if (f_idx < 0)
+        return -1;
 
     DirEntryLoc loc;
     bool exists = scan_root_dir(&g_vol, fat_name, &loc, false);
@@ -358,7 +378,8 @@ static int syn_fat_vfs_open(SYN_VfsFile *file, const char *path, int flags, void
         }
 
         uint8_t sec_buf[512];
-        if (syn_sd_read(&g_sd, empty_slot.sector, sec_buf) != SYN_OK) return -6;
+        if (syn_sd_read(&g_sd, empty_slot.sector, sec_buf) != SYN_OK)
+            return -6;
 
         uint8_t *entry = &sec_buf[empty_slot.offset];
         memcpy(entry, fat_name, 11);
@@ -369,7 +390,8 @@ static int syn_fat_vfs_open(SYN_VfsFile *file, const char *path, int flags, void
         syn_poke_u16_le((uint16_t)(free_cluster & 0xFFFFU), entry, 26);
         syn_poke_u32_le(0, entry, 28);
 
-        if (syn_sd_write(&g_sd, empty_slot.sector, sec_buf) != SYN_OK) return -7;
+        if (syn_sd_write(&g_sd, empty_slot.sector, sec_buf) != SYN_OK)
+            return -7;
 
         loc.sector = empty_slot.sector;
         loc.offset = empty_slot.offset;
@@ -407,7 +429,8 @@ static int syn_fat_vfs_open(SYN_VfsFile *file, const char *path, int flags, void
 static int syn_fat_vfs_close(SYN_VfsFile *file)
 {
     SYN_FatFileCtx *ctx = (SYN_FatFileCtx *)file->fs_file;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
     ctx->used = false;
     file->fs_file = NULL;
     return 0;
@@ -416,9 +439,11 @@ static int syn_fat_vfs_close(SYN_VfsFile *file)
 static int syn_fat_vfs_read(SYN_VfsFile *file, void *buf, size_t len)
 {
     SYN_FatFileCtx *ctx = (SYN_FatFileCtx *)file->fs_file;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
 
-    if (ctx->offset >= ctx->size) return 0;
+    if (ctx->offset >= ctx->size)
+        return 0;
     if (ctx->offset + len > ctx->size) {
         len = ctx->size - ctx->offset;
     }
@@ -456,7 +481,8 @@ static int syn_fat_vfs_read(SYN_VfsFile *file, void *buf, size_t len)
 static int syn_fat_vfs_write(SYN_VfsFile *file, const void *buf, size_t len)
 {
     SYN_FatFileCtx *ctx = (SYN_FatFileCtx *)file->fs_file;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
 
     uint8_t sec_buf[512];
     uint32_t bytes_written = 0;
@@ -471,10 +497,13 @@ static int syn_fat_vfs_write(SYN_VfsFile *file, const void *buf, size_t len)
             uint32_t next = read_fat_entry(&g_vol, curr_cluster);
             if (next >= (g_vol.is_fat32 ? 0x0FFFFFF8 : 0xFFF8)) {
                 uint32_t new_cluster = find_free_cluster(&g_vol);
-                if (new_cluster == 0) return -2;
+                if (new_cluster == 0)
+                    return -2;
 
-                if (!write_fat_entry(&g_vol, curr_cluster, new_cluster)) return -3;
-                if (!write_fat_entry(&g_vol, new_cluster, 0x0FFFFFFF)) return -4;
+                if (!write_fat_entry(&g_vol, curr_cluster, new_cluster))
+                    return -3;
+                if (!write_fat_entry(&g_vol, new_cluster, 0x0FFFFFFF))
+                    return -4;
 
                 curr_cluster = new_cluster;
             } else {
@@ -524,7 +553,8 @@ static int syn_fat_vfs_write(SYN_VfsFile *file, const void *buf, size_t len)
 static int32_t syn_fat_vfs_seek(SYN_VfsFile *file, int32_t offset, int whence)
 {
     SYN_FatFileCtx *ctx = (SYN_FatFileCtx *)file->fs_file;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
 
     int32_t target_offset = 0;
     if (whence == SYN_SEEK_SET) {
@@ -537,8 +567,10 @@ static int32_t syn_fat_vfs_seek(SYN_VfsFile *file, int32_t offset, int whence)
         return -2;
     }
 
-    if (target_offset < 0) target_offset = 0;
-    if ((uint32_t)target_offset > ctx->size) target_offset = ctx->size;
+    if (target_offset < 0)
+        target_offset = 0;
+    if ((uint32_t)target_offset > ctx->size)
+        target_offset = ctx->size;
 
     ctx->offset = (uint32_t)target_offset;
     return (int32_t)ctx->offset;
@@ -547,7 +579,8 @@ static int32_t syn_fat_vfs_seek(SYN_VfsFile *file, int32_t offset, int whence)
 static int32_t syn_fat_vfs_tell(SYN_VfsFile *file)
 {
     const SYN_FatFileCtx *ctx = (const SYN_FatFileCtx *)file->fs_file;
-    if (!ctx) return -1;
+    if (!ctx)
+        return -1;
     return (int32_t)ctx->offset;
 }
 
@@ -564,9 +597,11 @@ static int syn_fat_vfs_unlink(const char *path, void *fs_data)
     }
 
     uint8_t sec_buf[512];
-    if (syn_sd_read(&g_sd, loc.sector, sec_buf) != SYN_OK) return -2;
+    if (syn_sd_read(&g_sd, loc.sector, sec_buf) != SYN_OK)
+        return -2;
     sec_buf[loc.offset] = 0xE5;
-    if (syn_sd_write(&g_sd, loc.sector, sec_buf) != SYN_OK) return -3;
+    if (syn_sd_write(&g_sd, loc.sector, sec_buf) != SYN_OK)
+        return -3;
 
     uint32_t cluster = loc.start_cluster;
     uint32_t eof_val = g_vol.is_fat32 ? 0x0FFFFFF8 : 0xFFF8;
@@ -579,19 +614,17 @@ static int syn_fat_vfs_unlink(const char *path, void *fs_data)
     return 0;
 }
 
-static const SYN_VfsOps g_fat_vfs_ops = {
-    .open     = syn_fat_vfs_open,
-    .close    = syn_fat_vfs_close,
-    .read     = syn_fat_vfs_read,
-    .write    = syn_fat_vfs_write,
-    .seek     = syn_fat_vfs_seek,
-    .tell     = syn_fat_vfs_tell,
-    .unlink   = syn_fat_vfs_unlink,
-    .mkdir    = NULL,
-    .opendir  = NULL,
-    .readdir  = NULL,
-    .closedir = NULL
-};
+static const SYN_VfsOps g_fat_vfs_ops = {.open = syn_fat_vfs_open,
+                                         .close = syn_fat_vfs_close,
+                                         .read = syn_fat_vfs_read,
+                                         .write = syn_fat_vfs_write,
+                                         .seek = syn_fat_vfs_seek,
+                                         .tell = syn_fat_vfs_tell,
+                                         .unlink = syn_fat_vfs_unlink,
+                                         .mkdir = NULL,
+                                         .opendir = NULL,
+                                         .readdir = NULL,
+                                         .closedir = NULL};
 
 const SYN_VfsOps *syn_fat_get_ops(void)
 {
@@ -629,9 +662,8 @@ SYN_Status syn_fat_init(uint8_t spi_bus, SYN_GPIO_Pin cs)
         return SYN_ERROR;
     }
 
-    SYN_LOG_I(TAG, "Mounted %s filesystem: sectors/cluster=%u reserved=%u", 
-              g_vol.is_fat32 ? "FAT32" : "FAT16", 
-              (unsigned)g_vol.sectors_per_cluster,
+    SYN_LOG_I(TAG, "Mounted %s filesystem: sectors/cluster=%u reserved=%u",
+              g_vol.is_fat32 ? "FAT32" : "FAT16", (unsigned)g_vol.sectors_per_cluster,
               (unsigned)g_vol.reserved_sectors);
 
     memset(g_fat_files, 0, sizeof(g_fat_files));

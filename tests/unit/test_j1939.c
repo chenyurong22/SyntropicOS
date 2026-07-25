@@ -3,8 +3,9 @@
  * @brief Unit test suite for SAE J1939 CAN protocol engine (syn_j1939).
  */
 
-#include "unity/unity.h"
 #include "syntropic/proto/syn_j1939.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 void test_j1939_id_pack_unpack_pdu1_pdu2(void)
@@ -39,17 +40,15 @@ void test_j1939_id_pack_unpack_pdu1_pdu2(void)
 
 void test_j1939_name_encode_decode_roundtrip(void)
 {
-    SYN_J1939_Name name1 = {
-        .identity_number    = 123456U,
-        .manufacturer_code  = 432U,
-        .ecu_instance       = 1U,
-        .function_instance  = 2U,
-        .function           = 128U,
-        .vehicle_system     = 10U,
-        .vehicle_system_inst= 1U,
-        .industry_group     = 1U, /* On-Highway */
-        .arbitrary_addr_cap = true
-    };
+    SYN_J1939_Name name1 = {.identity_number = 123456U,
+                            .manufacturer_code = 432U,
+                            .ecu_instance = 1U,
+                            .function_instance = 2U,
+                            .function = 128U,
+                            .vehicle_system = 10U,
+                            .vehicle_system_inst = 1U,
+                            .industry_group = 1U, /* On-Highway */
+                            .arbitrary_addr_cap = true};
 
     uint8_t buf[8];
     syn_j1939_name_encode(&name1, buf);
@@ -78,7 +77,7 @@ void test_j1939_build_frames(void)
 
     /* Address claim frame */
     SYN_J1939_Node node;
-    SYN_J1939_Name name = { .identity_number = 999U, .manufacturer_code = 100U };
+    SYN_J1939_Name name = {.identity_number = 999U, .manufacturer_code = 100U};
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_j1939_node_init(&node, 0x80, &name));
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_j1939_build_address_claim(&node, &frame));
     TEST_ASSERT_EQUAL_UINT8(8, frame.dlc);
@@ -97,7 +96,7 @@ void test_j1939_build_frames(void)
     TEST_ASSERT_EQUAL_UINT8(4, frame.data[3]); /* 24 bytes / 7 = 4 packets */
 
     /* TP.DT frame */
-    uint8_t payload[7] = { 1, 2, 3, 4, 5, 6, 7 };
+    uint8_t payload[7] = {1, 2, 3, 4, 5, 6, 7};
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_j1939_build_tp_dt(0x10, 1, payload, 7, &frame));
     TEST_ASSERT_EQUAL_UINT8(8, frame.dlc);
     TEST_ASSERT_EQUAL_UINT8(1, frame.data[0]);
@@ -106,17 +105,17 @@ void test_j1939_build_frames(void)
     /* Invalid build params */
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_j1939_build_address_claim(NULL, &frame));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_j1939_build_request(0x10, 0x00, 0, NULL));
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_j1939_build_tp_bam(0x10, 0, 5, &frame)); /* < 9 bytes */
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_j1939_build_tp_dt(0x10, 0, payload, 7, &frame)); /* seq 0 */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_j1939_build_tp_bam(0x10, 0, 5, &frame)); /* < 9 bytes */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_j1939_build_tp_dt(0x10, 0, payload, 7, &frame)); /* seq 0 */
 }
 
 void test_j1939_dm1_encoding(void)
 {
     uint8_t buf[32];
-    SYN_J1939_DTC dtcs[2] = {
-        { .spn = 100, .fmi = 3, .occurrence_count = 1, .conversion_method = 0 },
-        { .spn = 190, .fmi = 2, .occurrence_count = 5, .conversion_method = 0 }
-    };
+    SYN_J1939_DTC dtcs[2] = {{.spn = 100, .fmi = 3, .occurrence_count = 1, .conversion_method = 0},
+                             {.spn = 190, .fmi = 2, .occurrence_count = 5, .conversion_method = 0}};
 
     /* No DTCs */
     size_t len0 = syn_j1939_encode_dm1(buf, sizeof(buf), NULL, 0, 0x00);
@@ -136,7 +135,7 @@ void test_j1939_dm1_encoding(void)
 void test_j1939_tp_bam_multi_packet_assembly(void)
 {
     SYN_J1939_Node receiver;
-    SYN_J1939_Name name = { .identity_number = 1U };
+    SYN_J1939_Name name = {.identity_number = 1U};
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_j1939_node_init(&receiver, 0x20, &name));
 
     /* 1. Build & Process TP.CM_BAM frame for PGN 65262 (ET1), total 14 bytes (2 packets) */
@@ -148,19 +147,22 @@ void test_j1939_tp_bam_multi_packet_assembly(void)
     size_t rxd_len = 0;
 
     /* First BAM control frame should return SYN_BUSY */
-    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_j1939_process_frame(&receiver, &bam_frame, &rxd_pgn, &rxd_data, &rxd_len));
+    TEST_ASSERT_EQUAL_INT(
+        SYN_BUSY, syn_j1939_process_frame(&receiver, &bam_frame, &rxd_pgn, &rxd_data, &rxd_len));
 
     /* 2. Process Packet 1 (TP.DT) */
-    uint8_t payload1[7] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G' };
+    uint8_t payload1[7] = {'A', 'B', 'C', 'D', 'E', 'F', 'G'};
     SYN_CAN_Frame dt_frame1;
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_j1939_build_tp_dt(0x10, 1, payload1, 7, &dt_frame1));
-    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_j1939_process_frame(&receiver, &dt_frame1, &rxd_pgn, &rxd_data, &rxd_len));
+    TEST_ASSERT_EQUAL_INT(
+        SYN_BUSY, syn_j1939_process_frame(&receiver, &dt_frame1, &rxd_pgn, &rxd_data, &rxd_len));
 
     /* 3. Process Packet 2 (TP.DT) -> completes assembly! */
-    uint8_t payload2[7] = { 'H', 'I', 'J', 'K', 'L', 'M', 'N' };
+    uint8_t payload2[7] = {'H', 'I', 'J', 'K', 'L', 'M', 'N'};
     SYN_CAN_Frame dt_frame2;
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_j1939_build_tp_dt(0x10, 2, payload2, 7, &dt_frame2));
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_j1939_process_frame(&receiver, &dt_frame2, &rxd_pgn, &rxd_data, &rxd_len));
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_j1939_process_frame(&receiver, &dt_frame2, &rxd_pgn, &rxd_data, &rxd_len));
 
     TEST_ASSERT_EQUAL_UINT32(SYN_J1939_PGN_ET1, rxd_pgn);
     TEST_ASSERT_EQUAL_UINT32(14, rxd_len);
@@ -168,7 +170,8 @@ void test_j1939_tp_bam_multi_packet_assembly(void)
     TEST_ASSERT_EQUAL_MEMORY("ABCDEFGHIJKLMN", rxd_data, 14);
 
     /* Test null invalid parameters */
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_j1939_process_frame(NULL, &dt_frame2, &rxd_pgn, &rxd_data, &rxd_len));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_j1939_process_frame(NULL, &dt_frame2, &rxd_pgn, &rxd_data, &rxd_len));
 }
 
 void run_j1939_tests(void)

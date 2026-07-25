@@ -1,6 +1,7 @@
-#include "unity/unity.h"
 #include "mocks/mock_port.h"
 #include "syntropic/net/syn_websocket.h"
+#include "unity/unity.h"
+
 #include <string.h>
 
 static int s_msg_callback_count = 0;
@@ -22,13 +23,12 @@ void test_websocket_upgrade(void)
     mock_port_reset();
 
     /* 1. Simulate httpd headers parsed into response buffer */
-    const char *headers =
-        "GET /chat HTTP/1.1\r\n"
-        "Host: localhost\r\n"
-        "Upgrade: websocket\r\n"
-        "Connection: Upgrade\r\n"
-        "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
-        "\r\n";
+    const char *headers = "GET /chat HTTP/1.1\r\n"
+                          "Host: localhost\r\n"
+                          "Upgrade: websocket\r\n"
+                          "Connection: Upgrade\r\n"
+                          "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+                          "\r\n";
 
     SYN_HttpdResponse resp;
     resp.sock = 11;
@@ -92,11 +92,12 @@ void test_websocket_recv_masked_text(void)
 
     /* Text frame: "hello" masked with key 0x11, 0x22, 0x33, 0x44 */
     /* "hello" = 0x68, 0x65, 0x6C, 0x6C, 0x6F */
-    /* Masked: 0x68^0x11 = 0x79, 0x65^0x22 = 0x47, 0x6C^0x33 = 0x5F, 0x6C^0x44 = 0x28, 0x6F^0x11 = 0x7E */
+    /* Masked: 0x68^0x11 = 0x79, 0x65^0x22 = 0x47, 0x6C^0x33 = 0x5F, 0x6C^0x44 = 0x28, 0x6F^0x11 =
+     * 0x7E */
     uint8_t frame[] = {
-        0x81,                   /* FIN=1, Opcode=1 */
-        0x85,                   /* Mask=1, Len=5 */
-        0x11, 0x22, 0x33, 0x44, /* Masking Key */
+        0x81,                        /* FIN=1, Opcode=1 */
+        0x85,                        /* Mask=1, Len=5 */
+        0x11, 0x22, 0x33, 0x44,      /* Masking Key */
         0x79, 0x47, 0x5F, 0x28, 0x7E /* Masked Data */
     };
     mock_sock_set_response(frame, sizeof(frame));
@@ -130,9 +131,9 @@ void test_websocket_ping_pong(void)
 
     /* Ping frame with "ping" data, unmasked for simple server rx simulation */
     uint8_t frame[] = {
-        0x89,                   /* FIN=1, Opcode=9 (ping) */
-        0x04,                   /* Mask=0, Len=4 */
-        0x70, 0x69, 0x6E, 0x67  /* "ping" */
+        0x89,                  /* FIN=1, Opcode=9 (ping) */
+        0x04,                  /* Mask=0, Len=4 */
+        0x70, 0x69, 0x6E, 0x67 /* "ping" */
     };
     mock_sock_set_response(frame, sizeof(frame));
     mock_sock_connected = true;
@@ -167,7 +168,9 @@ static void test_websocket_upgrade_long_key(void)
         "Host: localhost\r\n"
         "Upgrade: websocket\r\n"
         "Connection: Upgrade\r\n"
-        "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_EXTRA\r\n"
+        "Sec-WebSocket-Key: "
+        "dGhlIHNhbXBsZSBub25jZQ==AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_"
+        "EXTRA\r\n"
         "\r\n";
 
     SYN_HttpdResponse resp;
@@ -192,16 +195,14 @@ static void test_websocket_upgrade_long_key(void)
 /** Upgrade without Sec-WebSocket-Key — exercises line 229 */
 static void test_websocket_upgrade_no_key(void)
 {
-
     mock_port_reset();
     mock_sock_connected = true;
 
-    const char *headers =
-        "GET /chat HTTP/1.1\r\n"
-        "Host: localhost\r\n"
-        "Upgrade: websocket\r\n"
-        "Connection: Upgrade\r\n"
-        "\r\n"; /* No Sec-WebSocket-Key */
+    const char *headers = "GET /chat HTTP/1.1\r\n"
+                          "Host: localhost\r\n"
+                          "Upgrade: websocket\r\n"
+                          "Connection: Upgrade\r\n"
+                          "\r\n"; /* No Sec-WebSocket-Key */
 
     SYN_HttpdResponse resp;
     resp.sock = 11;
@@ -298,10 +299,10 @@ static void test_websocket_recv_extended_len(void)
 
     /* Unmasked text frame with 2-byte extended length = 200 bytes */
     uint8_t frame[204];
-    frame[0] = 0x81;  /* FIN=1, text */
-    frame[1] = 0x7E;  /* Mask=0, Len=126 → use 2-byte ext length */
-    frame[2] = 0x00;  /* high byte of 200 */
-    frame[3] = 0xC8;  /* low byte of 200 (0xC8 = 200) */
+    frame[0] = 0x81; /* FIN=1, text */
+    frame[1] = 0x7E; /* Mask=0, Len=126 → use 2-byte ext length */
+    frame[2] = 0x00; /* high byte of 200 */
+    frame[3] = 0xC8; /* low byte of 200 (0xC8 = 200) */
     memset(&frame[4], 'B', 200);
     mock_sock_set_response(frame, sizeof(frame));
 
@@ -328,7 +329,7 @@ static void test_websocket_recv_close(void)
     mock_sock_connected = true;
 
     /* Close frame with 2-byte status code (RFC 6455: close frames carry a 2-byte code) */
-    uint8_t frame[] = { 0x88, 0x02, 0x03, 0xE8 }; /* opcode=8, len=2, status=1000 (normal) */
+    uint8_t frame[] = {0x88, 0x02, 0x03, 0xE8}; /* opcode=8, len=2, status=1000 (normal) */
     mock_sock_set_response(frame, sizeof(frame));
 
     SYN_PT pt;
@@ -374,7 +375,7 @@ static void test_websocket_recv_too_large(void)
     mock_sock_connected = true;
 
     /* Frame with len=127 (8-byte extended length, unsupported) */
-    uint8_t frame[] = { 0x81, 0x7F };
+    uint8_t frame[] = {0x81, 0x7F};
     mock_sock_set_response(frame, sizeof(frame));
 
     SYN_PT pt;

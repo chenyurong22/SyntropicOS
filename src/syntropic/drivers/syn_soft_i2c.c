@@ -1,30 +1,34 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SOFT_I2C) || SYN_USE_SOFT_I2C
 
-#include "syn_soft_i2c.h"
-#include "syn_gpio.h"
 #include "../util/syn_assert.h"
+#include "syn_gpio.h"
+#include "syn_soft_i2c.h"
 
-static void i2c_delay(const SYN_SoftI2C *i2c) {
+static void i2c_delay(const SYN_SoftI2C *i2c)
+{
     for (volatile uint32_t i = 0; i < i2c->delay_loops; i++) {
         // NOP loop
     }
 }
 
-static void sda_high(const SYN_SoftI2C *i2c) {
+static void sda_high(const SYN_SoftI2C *i2c)
+{
     syn_gpio_write(i2c->sda, SYN_GPIO_HIGH);
     // Alternatively: syn_gpio_init(i2c->sda, SYN_GPIO_INPUT) for pseudo open-drain
 }
 
-static void sda_low(const SYN_SoftI2C *i2c) {
+static void sda_low(const SYN_SoftI2C *i2c)
+{
     // syn_gpio_init(i2c->sda, SYN_GPIO_OUTPUT);
     syn_gpio_write(i2c->sda, SYN_GPIO_LOW);
 }
 
-static void scl_high(const SYN_SoftI2C *i2c) {
+static void scl_high(const SYN_SoftI2C *i2c)
+{
     syn_gpio_write(i2c->scl, SYN_GPIO_HIGH);
     // Clock stretching support: wait while SCL is held low by a slave
     // (Requires SCL to be configured as Open-Drain input)
@@ -34,11 +38,13 @@ static void scl_high(const SYN_SoftI2C *i2c) {
     }
 }
 
-static void scl_low(const SYN_SoftI2C *i2c) {
+static void scl_low(const SYN_SoftI2C *i2c)
+{
     syn_gpio_write(i2c->scl, SYN_GPIO_LOW);
 }
 
-void syn_soft_i2c_init(SYN_SoftI2C *i2c, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uint32_t delay_loops) {
+void syn_soft_i2c_init(SYN_SoftI2C *i2c, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uint32_t delay_loops)
+{
     SYN_ASSERT(i2c != NULL);
     i2c->scl = scl;
     i2c->sda = sda;
@@ -52,8 +58,10 @@ void syn_soft_i2c_init(SYN_SoftI2C *i2c, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uin
     scl_high(i2c);
 }
 
-void syn_soft_i2c_start(const SYN_SoftI2C *i2c) {
-    if (!i2c) return;
+void syn_soft_i2c_start(const SYN_SoftI2C *i2c)
+{
+    if (!i2c)
+        return;
     sda_high(i2c);
     scl_high(i2c);
     i2c_delay(i2c);
@@ -63,8 +71,10 @@ void syn_soft_i2c_start(const SYN_SoftI2C *i2c) {
     i2c_delay(i2c);
 }
 
-void syn_soft_i2c_stop(const SYN_SoftI2C *i2c) {
-    if (!i2c) return;
+void syn_soft_i2c_stop(const SYN_SoftI2C *i2c)
+{
+    if (!i2c)
+        return;
     scl_low(i2c);
     i2c_delay(i2c);
     sda_low(i2c);
@@ -75,8 +85,10 @@ void syn_soft_i2c_stop(const SYN_SoftI2C *i2c) {
     i2c_delay(i2c);
 }
 
-bool syn_soft_i2c_write(const SYN_SoftI2C *i2c, uint8_t data) {
-    if (!i2c) return false;
+bool syn_soft_i2c_write(const SYN_SoftI2C *i2c, uint8_t data)
+{
+    if (!i2c)
+        return false;
     for (uint8_t mask = 0x80; mask != 0; mask >>= 1) {
         if (data & mask) {
             sda_high(i2c);
@@ -88,7 +100,7 @@ bool syn_soft_i2c_write(const SYN_SoftI2C *i2c, uint8_t data) {
         i2c_delay(i2c);
         scl_low(i2c);
     }
-    
+
     // Read ACK
     sda_high(i2c); // Release SDA
     i2c_delay(i2c);
@@ -97,14 +109,16 @@ bool syn_soft_i2c_write(const SYN_SoftI2C *i2c, uint8_t data) {
     bool ack = (syn_gpio_read(i2c->sda) == SYN_GPIO_LOW);
     scl_low(i2c);
     i2c_delay(i2c);
-    
+
     return ack;
 }
 
-uint8_t syn_soft_i2c_read(const SYN_SoftI2C *i2c, bool ack) {
-    if (!i2c) return 0;
+uint8_t syn_soft_i2c_read(const SYN_SoftI2C *i2c, bool ack)
+{
+    if (!i2c)
+        return 0;
     uint8_t data = 0;
-    
+
     sda_high(i2c); // Release SDA
     for (uint8_t mask = 0x80; mask != 0; mask >>= 1) {
         i2c_delay(i2c);
@@ -115,7 +129,7 @@ uint8_t syn_soft_i2c_read(const SYN_SoftI2C *i2c, bool ack) {
         }
         scl_low(i2c);
     }
-    
+
     // Send ACK/NACK
     if (ack) {
         sda_low(i2c);
@@ -127,13 +141,12 @@ uint8_t syn_soft_i2c_read(const SYN_SoftI2C *i2c, bool ack) {
     i2c_delay(i2c);
     scl_low(i2c);
     sda_high(i2c);
-    
+
     return data;
 }
 
-bool syn_soft_i2c_write_read(SYN_SoftI2C *i2c, uint8_t dev_addr,
-                              const uint8_t *tx_data, size_t tx_len,
-                              uint8_t *rx_data, size_t rx_len)
+bool syn_soft_i2c_write_read(SYN_SoftI2C *i2c, uint8_t dev_addr, const uint8_t *tx_data,
+                             size_t tx_len, uint8_t *rx_data, size_t rx_len)
 {
     SYN_ASSERT(i2c != NULL);
 
@@ -167,6 +180,5 @@ bool syn_soft_i2c_write_read(SYN_SoftI2C *i2c, uint8_t dev_addr,
     syn_soft_i2c_stop(i2c);
     return true;
 }
-
 
 #endif /* SYN_USE_SOFT_I2C */

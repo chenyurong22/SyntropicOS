@@ -17,13 +17,13 @@
  *   - Flash erase/write/read cycle
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 /* SyntropicOS port functions (provided by port_stm32f4.c) */
-#include "syntropic/syntropic.h"
 #include "syntropic/common/syn_defs.h"
+#include "syntropic/syntropic.h"
 
 /* Forward declarations for port functions we test directly */
 extern SYN_Status syn_port_gpio_init(SYN_GPIO_Pin pin, SYN_GPIO_Mode mode);
@@ -31,26 +31,29 @@ extern SYN_Status syn_port_gpio_write(SYN_GPIO_Pin pin, SYN_GPIO_State state);
 extern SYN_GPIO_State syn_port_gpio_read(SYN_GPIO_Pin pin);
 extern SYN_Status syn_port_uart_init(SYN_UARTInstance inst, uint32_t baud);
 extern SYN_Status syn_port_uart_transmit_byte(SYN_UARTInstance inst, uint8_t byte);
-extern SYN_Status syn_port_uart_receive_byte(SYN_UARTInstance inst, uint8_t *byte, uint32_t timeout);
-extern uint32_t    syn_port_get_tick_ms(void);
-extern void        syn_port_delay_ms(uint32_t ms);
+extern SYN_Status syn_port_uart_receive_byte(SYN_UARTInstance inst, uint8_t *byte,
+                                             uint32_t timeout);
+extern uint32_t syn_port_get_tick_ms(void);
+extern void syn_port_delay_ms(uint32_t ms);
 
 /* ── UART output for Unity ──────────────────────────────────────────────── */
 
 /* USART2 DR register — used for test output */
-#define USART2_BASE  0x40004400UL
-#define USART2_SR   (*(volatile uint32_t *)(USART2_BASE + 0x00))
-#define USART2_DR   (*(volatile uint32_t *)(USART2_BASE + 0x04))
+#define USART2_BASE 0x40004400UL
+#define USART2_SR (*(volatile uint32_t *)(USART2_BASE + 0x00))
+#define USART2_DR (*(volatile uint32_t *)(USART2_BASE + 0x04))
 
 static void uart_putchar(char c)
 {
-    while (!(USART2_SR & (1U << 7))) { /* TXE */ }
+    while (!(USART2_SR & (1U << 7))) { /* TXE */
+    }
     USART2_DR = (uint8_t)c;
 }
 
 __attribute__((used)) static void unity_output_char(int c)
 {
-    if (c == '\n') uart_putchar('\r');
+    if (c == '\n')
+        uart_putchar('\r');
     uart_putchar((char)c);
 }
 
@@ -59,14 +62,18 @@ __attribute__((used)) static void unity_output_char(int c)
 #include "unity/unity.h"
 
 /* Unity requires setUp/tearDown */
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 /* ── GPIO Tests ─────────────────────────────────────────────────────────── */
 
 /* Pin encoding: port << 4 | bit. PD12 = 0x3C (port D = 3, bit 12) */
-#define PIN_PD12  ((3 << 4) | 12)  /* Discovery green LED */
-#define PIN_PD13  ((3 << 4) | 13)  /* Discovery orange LED */
+#define PIN_PD12 ((3 << 4) | 12) /* Discovery green LED */
+#define PIN_PD13 ((3 << 4) | 13) /* Discovery orange LED */
 
 static void test_gpio_output_readback(void)
 {
@@ -206,16 +213,13 @@ static void test_adc_reading(void)
 
 #include "syntropic/util/syn_fsm.h"
 
-#define ST_IDLE  0
-#define ST_BUSY  1
+#define ST_IDLE 0
+#define ST_BUSY 1
 #define EV_START 10
-#define EV_STOP  11
+#define EV_STOP 11
 
 static const SYN_FSM_Transition test_transitions[] = {
-    { ST_IDLE, EV_START, ST_BUSY, NULL, NULL },
-    { ST_BUSY, EV_STOP,  ST_IDLE, NULL, NULL },
-    SYN_FSM_END
-};
+    {ST_IDLE, EV_START, ST_BUSY, NULL, NULL}, {ST_BUSY, EV_STOP, ST_IDLE, NULL, NULL}, SYN_FSM_END};
 
 static void test_fsm_onmcu(void)
 {
@@ -439,7 +443,8 @@ static int timer_fire_count = 0;
 
 static void timer_callback(SYN_Timer *t, void *ctx)
 {
-    (void)t; (void)ctx;
+    (void)t;
+    (void)ctx;
     timer_fire_count++;
 }
 
@@ -497,10 +502,10 @@ static void test_timeout_onmcu(void)
 /* SPI1 pins on STM32F4 Discovery:
  * PA5 = SCK (AF5), PA6 = MISO (AF5), PA7 = MOSI (AF5)
  * We'll use PA4 as CS (manual GPIO). */
-#define PIN_SPI1_CS   ((0 << 4) | 4)  /* PA4 */
-#define PIN_SPI1_SCK  ((0 << 4) | 5)  /* PA5 */
-#define PIN_SPI1_MISO ((0 << 4) | 6)  /* PA6 */
-#define PIN_SPI1_MOSI ((0 << 4) | 7)  /* PA7 */
+#define PIN_SPI1_CS ((0 << 4) | 4)   /* PA4 */
+#define PIN_SPI1_SCK ((0 << 4) | 5)  /* PA5 */
+#define PIN_SPI1_MISO ((0 << 4) | 6) /* PA6 */
+#define PIN_SPI1_MOSI ((0 << 4) | 7) /* PA7 */
 
 static void test_spi_flash_jedec_id(void)
 {
@@ -514,9 +519,9 @@ static void test_spi_flash_jedec_id(void)
     /* Init SPI1 — Mode 0, 1 MHz */
     SYN_SPI_Config cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.bus      = 0; /* SPI1 */
+    cfg.bus = 0; /* SPI1 */
     cfg.clock_hz = 1000000;
-    cfg.mode     = SYN_SPI_MODE_0;
+    cfg.mode = SYN_SPI_MODE_0;
     cfg.bit_order = 0; /* MSB first */
 
     SYN_Status rc = syn_port_spi_init(&cfg);
@@ -583,5 +588,7 @@ int main(void)
     UNITY_END();
 
     /* Halt — Renode will see the final line and stop */
-    for (;;) { __asm volatile("wfi"); }
+    for (;;) {
+        __asm volatile("wfi");
+    }
 }

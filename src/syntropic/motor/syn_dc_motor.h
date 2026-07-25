@@ -45,43 +45,43 @@ extern "C" {
 /** @brief DC motor control wiring mode. */
 typedef enum {
     /**< One PWM pin + one direction pin (most common) */
-    SYN_DC_MODE_PWM_DIR    = 0,
+    SYN_DC_MODE_PWM_DIR = 0,
     /**< Two pins: IN_A (PWM forward), IN_B (PWM reverse) like L298N */
-    SYN_DC_MODE_DUAL_PWM   = 1,
+    SYN_DC_MODE_DUAL_PWM = 1,
 } SYN_DCMotorMode;
 
 /** @brief Default duty cycle range (0.1% resolution). */
-#define SYN_DC_MOTOR_DUTY_MAX_DEFAULT  1000
+#define SYN_DC_MOTOR_DUTY_MAX_DEFAULT 1000
 
 /* ── DC motor descriptor ────────────────────────────────────────────────── */
 
 /** @brief DC motor instance — pins, speed, ramp state. */
 typedef struct {
     /* Configuration */
-    SYN_GPIO_Pin   pin_a;       /**< PWM pin (or IN_A for dual mode)       */
-    SYN_GPIO_Pin   pin_b;       /**< DIR pin (or IN_B for dual mode)       */
-    uint8_t         mode;        /**< SYN_DCMotorMode                      */
-    bool            invert;      /**< Invert direction                      */
+    SYN_GPIO_Pin pin_a; /**< PWM pin (or IN_A for dual mode)       */
+    SYN_GPIO_Pin pin_b; /**< DIR pin (or IN_B for dual mode)       */
+    uint8_t mode;       /**< SYN_DCMotorMode                      */
+    bool invert;        /**< Invert direction                      */
 
     /* State */
-    int32_t         speed;       /**< Current speed (-duty_max to +duty_max) */
-    int32_t         target;      /**< Target speed for ramping              */
-    int32_t         ramp_rate;   /**< Rate of speed change (per ms, Q8)     */
-    uint32_t        last_tick;   /**< Last ramp update tick                 */
-    SYN_Ramp        ramp;        /**< Internal velocity ramp generator      */
+    int32_t speed;      /**< Current speed (-duty_max to +duty_max) */
+    int32_t target;     /**< Target speed for ramping              */
+    int32_t ramp_rate;  /**< Rate of speed change (per ms, Q8)     */
+    uint32_t last_tick; /**< Last ramp update tick                 */
+    SYN_Ramp ramp;      /**< Internal velocity ramp generator      */
 
     /** Maximum duty cycle value. Output range is [-duty_max, +duty_max].
      *  Set to match your PWM timer resolution (e.g., 255 for 8-bit,
      *  1000 for 0.1%, 4095 for 12-bit, 65535 for 16-bit).
      *  Default: SYN_DC_MOTOR_DUTY_MAX_DEFAULT (1000). */
-    int32_t         duty_max;
+    int32_t duty_max;
 
     /** Duty output callback — user provides this to set actual PWM duty.
      *  @param pin   GPIO pin to set duty on.
      *  @param duty  Duty cycle value in range [0, duty_max].
      *  @param ctx   User context. */
-    void          (*set_duty)(SYN_GPIO_Pin pin, uint16_t duty, void *ctx);
-    void           *duty_ctx;   /**< Context for set_duty                  */
+    void (*set_duty)(SYN_GPIO_Pin pin, uint16_t duty, void *ctx);
+    void *duty_ctx; /**< Context for set_duty                  */
 } SYN_DCMotor;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -96,8 +96,8 @@ typedef struct {
  * @param pin_b   Direction pin (or IN_B).
  * @param mode    Control mode.
  */
-void syn_dc_motor_init(SYN_DCMotor *motor, SYN_GPIO_Pin pin_a,
-                        SYN_GPIO_Pin pin_b, SYN_DCMotorMode mode);
+void syn_dc_motor_init(SYN_DCMotor *motor, SYN_GPIO_Pin pin_a, SYN_GPIO_Pin pin_b,
+                       SYN_DCMotorMode mode);
 
 /**
  * @brief Set the PWM duty callback.
@@ -109,9 +109,8 @@ void syn_dc_motor_init(SYN_DCMotor *motor, SYN_GPIO_Pin pin_a,
  * @param cb     Duty callback.
  * @param ctx    User context.
  */
-void syn_dc_motor_set_duty_callback(SYN_DCMotor *motor,
-                                     void (*cb)(SYN_GPIO_Pin, uint16_t, void *),
-                                     void *ctx);
+void syn_dc_motor_set_duty_callback(SYN_DCMotor *motor, void (*cb)(SYN_GPIO_Pin, uint16_t, void *),
+                                    void *ctx);
 
 /**
  * @brief Set motor speed immediately.
@@ -129,8 +128,7 @@ void syn_dc_motor_set_speed(SYN_DCMotor *motor, int32_t speed);
  * @param speed     Target speed [-duty_max, +duty_max].
  * @param duration  Ramp duration in milliseconds.
  */
-void syn_dc_motor_ramp_to(SYN_DCMotor *motor, int32_t speed,
-                           uint16_t duration);
+void syn_dc_motor_ramp_to(SYN_DCMotor *motor, int32_t speed, uint16_t duration);
 
 /**
  * @brief Update motor ramp. Call periodically.

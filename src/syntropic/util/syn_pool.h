@@ -28,15 +28,15 @@
 #define SYN_POOL_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_POOL) || SYN_USE_POOL
 
 #include "../util/syn_assert.h"
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #ifdef __cplusplus
@@ -46,7 +46,7 @@ extern "C" {
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
 /** @brief Round @p x up to the next multiple of 4. */
-#define SYN_POOL_ALIGN4(x)  (((x) + 3u) & ~3u)
+#define SYN_POOL_ALIGN4(x) (((x) + 3u) & ~3u)
 
 /**
  * @brief Compute the buffer size required for a pool.
@@ -54,8 +54,7 @@ extern "C" {
  * @param count       Number of blocks.
  * @return Required buffer size in bytes.
  */
-#define SYN_POOL_BUF_SIZE(block_size, count) \
-    (SYN_POOL_ALIGN4(block_size) * (count))
+#define SYN_POOL_BUF_SIZE(block_size, count) (SYN_POOL_ALIGN4(block_size) * (count))
 
 /* ── Pool struct ────────────────────────────────────────────────────────── */
 
@@ -63,12 +62,12 @@ extern "C" {
  * @brief Fixed-size block memory pool.
  */
 typedef struct {
-    void    *freelist;      /**< Head of the freelist (NULL when empty)    */
-    uint8_t *buf;           /**< Backing storage                          */
-    size_t   block_size;    /**< Aligned block size in bytes              */
-    size_t   block_count;   /**< Total number of blocks                   */
-    size_t   used;          /**< Currently allocated blocks               */
-    size_t   high_water;    /**< Peak allocation count                    */
+    void *freelist;     /**< Head of the freelist (NULL when empty)    */
+    uint8_t *buf;       /**< Backing storage                          */
+    size_t block_size;  /**< Aligned block size in bytes              */
+    size_t block_count; /**< Total number of blocks                   */
+    size_t used;        /**< Currently allocated blocks               */
+    size_t high_water;  /**< Peak allocation count                    */
 } SYN_Pool;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -85,8 +84,7 @@ typedef struct {
  * @param block_size  Desired block size. Rounded up to 4-byte alignment.
  *                    Must be >= sizeof(void*).
  */
-static inline void syn_pool_init(SYN_Pool *pool, void *buf,
-                                  size_t buf_size, size_t block_size)
+static inline void syn_pool_init(SYN_Pool *pool, void *buf, size_t buf_size, size_t block_size)
 {
     SYN_ASSERT(pool != NULL);
     SYN_ASSERT(buf != NULL);
@@ -102,11 +100,11 @@ static inline void syn_pool_init(SYN_Pool *pool, void *buf,
     size_t count = buf_size / block_size;
     SYN_ASSERT(count > 0);
 
-    pool->buf         = (uint8_t *)buf;
-    pool->block_size  = block_size;
+    pool->buf = (uint8_t *)buf;
+    pool->block_size = block_size;
     pool->block_count = count;
-    pool->used        = 0;
-    pool->high_water  = 0;
+    pool->used = 0;
+    pool->high_water = 0;
 
     /* Thread freelist through all blocks */
     pool->freelist = NULL;
@@ -130,7 +128,7 @@ static inline void *syn_pool_alloc(SYN_Pool *pool)
     SYN_ASSERT(pool != NULL);
 
     if (pool->freelist == NULL) {
-        return NULL;  /* exhausted */
+        return NULL; /* exhausted */
     }
 
     /* Pop head of freelist */
@@ -158,7 +156,8 @@ static inline void *syn_pool_alloc(SYN_Pool *pool)
 static inline void syn_pool_free(SYN_Pool *pool, void *block)
 {
     SYN_ASSERT(pool != NULL);
-    if (block == NULL) return;
+    if (block == NULL)
+        return;
 
     /* Push onto freelist head */
     void *next = pool->freelist;

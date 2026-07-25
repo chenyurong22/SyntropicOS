@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_HTTPD) || SYN_USE_HTTPD
@@ -13,9 +13,9 @@
  * timeout=0 exclusively. Stale connections are timed out via the tick clock.
  */
 
-#include "syn_httpd.h"
 #include "../port/syn_port_system.h"
 #include "../util/syn_assert.h"
+#include "syn_httpd.h"
 
 #include <string.h>
 
@@ -26,7 +26,7 @@
  * connecting. Enforced non-blockingly via the tick clock — not passed to
  * any socket recv call.
  */
-#define HTTPD_CLIENT_TIMEOUT_MS  5000
+#define HTTPD_CLIENT_TIMEOUT_MS 5000
 
 /* ── Internal helpers ──────────────────────────────────────────────────── */
 
@@ -57,10 +57,14 @@ static bool sock_write(SYN_Socket sock, const char *str)
  */
 static SYN_HttpMethod parse_method(const char *str, size_t len)
 {
-    if (len == 3 && memcmp(str, "GET", 3) == 0) return SYN_HTTP_GET;
-    if (len == 4 && memcmp(str, "POST", 4) == 0) return SYN_HTTP_POST;
-    if (len == 3 && memcmp(str, "PUT", 3) == 0) return SYN_HTTP_PUT;
-    if (len == 6 && memcmp(str, "DELETE", 6) == 0) return SYN_HTTP_DELETE;
+    if (len == 3 && memcmp(str, "GET", 3) == 0)
+        return SYN_HTTP_GET;
+    if (len == 4 && memcmp(str, "POST", 4) == 0)
+        return SYN_HTTP_POST;
+    if (len == 3 && memcmp(str, "PUT", 3) == 0)
+        return SYN_HTTP_PUT;
+    if (len == 6 && memcmp(str, "DELETE", 6) == 0)
+        return SYN_HTTP_DELETE;
     return SYN_HTTP_GET; /* default fallback */
 }
 
@@ -81,8 +85,8 @@ static inline uint32_t parse_uint(const char *s)
  * @param total     Number of valid bytes in buf.
  * @return 0 on success, -1 on parse error.
  */
-static int parse_headers_from_buf(SYN_Socket sock, SYN_HttpdRequest *req,
-                                   uint8_t *buf, size_t total)
+static int parse_headers_from_buf(SYN_Socket sock, SYN_HttpdRequest *req, uint8_t *buf,
+                                  size_t total)
 {
     memset(req, 0, sizeof(*req));
     req->client_sock = sock;
@@ -90,18 +94,21 @@ static int parse_headers_from_buf(SYN_Socket sock, SYN_HttpdRequest *req,
     buf[total] = '\0';
 
     char *end_of_headers = strstr((const char *)buf, "\r\n\r\n");
-    if (end_of_headers == NULL) return -1;
+    if (end_of_headers == NULL)
+        return -1;
 
     /* Parse request line: "GET /path?query HTTP/1.1\r\n" */
     char *line = (char *)buf;
     char *sp1 = strchr(line, ' ');
-    if (sp1 == NULL) return -1;
+    if (sp1 == NULL)
+        return -1;
 
     req->method = parse_method(line, (size_t)(sp1 - line));
 
     char *path_start = sp1 + 1;
     char *sp2 = strchr(path_start, ' ');
-    if (sp2 == NULL) return -1;
+    if (sp2 == NULL)
+        return -1;
     *sp2 = '\0'; /* null-terminate the path+query */
 
     /* Split path and query */
@@ -124,18 +131,22 @@ static int parse_headers_from_buf(SYN_Socket sock, SYN_HttpdRequest *req,
 
         if (prefix_icase(hdr_start, "content-length:")) {
             const char *val = hdr_start + 15;
-            while (*val == ' ') val++;
+            while (*val == ' ')
+                val++;
             req->content_length = parse_uint(val);
         } else if (prefix_icase(hdr_start, "content-type:")) {
             /* cppcheck-suppress constVariablePointer */
             char *val = hdr_start + 13;
-            while (*val == ' ') val++;
+            while (*val == ' ')
+                val++;
             req->content_type = val;
             /* Null-terminate Content-Type value at end of line */
-            if (next_line) *next_line = '\0';
+            if (next_line)
+                *next_line = '\0';
         }
 
-        if (!next_line) break;
+        if (!next_line)
+            break;
         hdr_start = next_line + 2;
     }
 
@@ -157,13 +168,13 @@ static int parse_headers_from_buf(SYN_Socket sock, SYN_HttpdRequest *req,
  * @param req  Parsed request.
  * @return Matching route, or NULL.
  */
-static const SYN_HttpdRoute *match_route(const SYN_Httpd *srv,
-                                           const SYN_HttpdRequest *req)
+static const SYN_HttpdRoute *match_route(const SYN_Httpd *srv, const SYN_HttpdRequest *req)
 {
     for (size_t i = 0; i < srv->route_count; i++) {
         const SYN_HttpdRoute *r = &srv->routes[i];
 
-        if (r->method != req->method) continue;
+        if (r->method != req->method)
+            continue;
 
         size_t plen = strlen(r->path);
         if (plen > 0 && r->path[plen - 1] == '*') {
@@ -212,15 +223,14 @@ static void drop_client(SYN_Httpd *srv)
         syn_port_sock_close(srv->client);
         srv->client = SYN_SOCKET_INVALID;
     }
-    srv->state    = SYN_HTTPD_IDLE;
+    srv->state = SYN_HTTPD_IDLE;
     srv->rx_total = 0;
 }
 
 /* ── Server API ────────────────────────────────────────────────────────── */
 
-SYN_Status syn_httpd_init(SYN_Httpd *srv, uint16_t port,
-                           const SYN_HttpdRoute *routes, size_t route_count,
-                           uint8_t *work_buf, size_t work_buf_size)
+SYN_Status syn_httpd_init(SYN_Httpd *srv, uint16_t port, const SYN_HttpdRoute *routes,
+                          size_t route_count, uint8_t *work_buf, size_t work_buf_size)
 {
     SYN_ASSERT(srv != NULL);
     SYN_ASSERT(routes != NULL || route_count == 0);
@@ -234,7 +244,7 @@ SYN_Status syn_httpd_init(SYN_Httpd *srv, uint16_t port,
     srv->work_buf_size = work_buf_size;
     srv->port = port;
     srv->client = SYN_SOCKET_INVALID;
-    srv->state  = SYN_HTTPD_IDLE;
+    srv->state = SYN_HTTPD_IDLE;
 
     srv->listener = syn_port_sock_listen(port, 2);
     if (srv->listener == SYN_SOCKET_INVALID) {
@@ -258,8 +268,7 @@ static void dispatch_request(SYN_Httpd *srv)
 {
     /* Parse request from buffered data */
     SYN_HttpdRequest req;
-    if (parse_headers_from_buf(srv->client, &req,
-                                srv->work_buf, srv->rx_total) != 0) {
+    if (parse_headers_from_buf(srv->client, &req, srv->work_buf, srv->rx_total) != 0) {
         send_error(srv->client, 400, "Bad Request");
         drop_client(srv);
         return;
@@ -292,8 +301,8 @@ static void dispatch_request(SYN_Httpd *srv)
         drop_client(srv);
     } else {
         /* Upgraded connection (e.g. WebSocket) — don't close, just reset state */
-        srv->client   = SYN_SOCKET_INVALID;
-        srv->state    = SYN_HTTPD_IDLE;
+        srv->client = SYN_SOCKET_INVALID;
+        srv->state = SYN_HTTPD_IDLE;
         srv->rx_total = 0;
     }
 }
@@ -301,10 +310,10 @@ static void dispatch_request(SYN_Httpd *srv)
 SYN_Status syn_httpd_step(SYN_Httpd *srv)
 {
     SYN_ASSERT(srv != NULL);
-    if (!srv->running) return SYN_ERROR;
+    if (!srv->running)
+        return SYN_ERROR;
 
     switch (srv->state) {
-
     /* ── IDLE: poll for new client (non-blocking) ──────────────────── */
     case SYN_HTTPD_IDLE: {
         SYN_Socket client = syn_port_sock_accept(srv->listener, 0);
@@ -312,10 +321,10 @@ SYN_Status syn_httpd_step(SYN_Httpd *srv)
             return SYN_TIMEOUT; /* No client — caller should yield */
         }
         /* Client connected — start reading headers */
-        srv->client        = client;
-        srv->rx_total      = 0;
+        srv->client = client;
+        srv->rx_total = 0;
         srv->recv_deadline = syn_port_get_tick_ms() + HTTPD_CLIENT_TIMEOUT_MS;
-        srv->state         = SYN_HTTPD_READING_HEADERS;
+        srv->state = SYN_HTTPD_READING_HEADERS;
         /* Fall through — attempt first recv in the same tick */
     }
     /* fallthrough */
@@ -338,9 +347,7 @@ SYN_Status syn_httpd_step(SYN_Httpd *srv)
             return SYN_ERROR;
         }
 
-        int n = syn_port_sock_recv(srv->client,
-                                    srv->work_buf + srv->rx_total,
-                                    space, 0);
+        int n = syn_port_sock_recv(srv->client, srv->work_buf + srv->rx_total, space, 0);
         if (n < 0) {
             /* No data available this tick — yield and retry next tick */
             return SYN_TIMEOUT;
@@ -351,7 +358,6 @@ SYN_Status syn_httpd_step(SYN_Httpd *srv)
             drop_client(srv);
             return SYN_ERROR;
         }
-
 
         srv->rx_total += (size_t)n;
         srv->work_buf[srv->rx_total] = '\0';
@@ -412,8 +418,7 @@ void syn_httpd_status(const SYN_HttpdResponse *resp, int code, const char *reaso
     sock_write(resp->sock, "Connection: close\r\n");
 }
 
-void syn_httpd_header(const SYN_HttpdResponse *resp,
-                       const char *name, const char *value)
+void syn_httpd_header(const SYN_HttpdResponse *resp, const char *name, const char *value)
 {
     SYN_ASSERT(resp != NULL);
     SYN_ASSERT(!resp->headers_sent);
@@ -430,7 +435,8 @@ void syn_httpd_header(const SYN_HttpdResponse *resp,
  */
 static void finalize_headers(SYN_HttpdResponse *resp)
 {
-    if (!resp) return;
+    if (!resp)
+        return;
     if (!resp->headers_sent) {
         sock_write(resp->sock, "\r\n");
         resp->headers_sent = true;
@@ -453,26 +459,29 @@ void syn_httpd_body_str(SYN_HttpdResponse *resp, const char *str)
     syn_httpd_body(resp, str, strlen(str));
 }
 
-int syn_httpd_read_body(const SYN_HttpdRequest *req,
-                        const SYN_HttpdResponse *resp,
-                        void *buf, size_t max_len)
+int syn_httpd_read_body(const SYN_HttpdRequest *req, const SYN_HttpdResponse *resp, void *buf,
+                        size_t max_len)
 {
     SYN_ASSERT(req != NULL);
     SYN_ASSERT(resp != NULL);
 
-    if (req->content_length == 0) return 0;
+    if (req->content_length == 0)
+        return 0;
 
     SYN_HttpdRequest *rw = (SYN_HttpdRequest *)(uintptr_t)req;
 
     size_t remaining = req->content_length - rw->body_consumed;
-    if (remaining == 0) return 0;
+    if (remaining == 0)
+        return 0;
 
     size_t to_read = max_len;
-    if (to_read > remaining) to_read = remaining;
+    if (to_read > remaining)
+        to_read = remaining;
 
     if (rw->body_buffered_len > 0) {
         size_t consume = rw->body_buffered_len;
-        if (consume > to_read) consume = to_read;
+        if (consume > to_read)
+            consume = to_read;
         memcpy(buf, resp->buf + rw->body_buffered_offset, consume);
         rw->body_buffered_offset += consume;
         rw->body_buffered_len -= consume;

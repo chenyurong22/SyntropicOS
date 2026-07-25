@@ -39,7 +39,7 @@
 #define SYN_WG_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_WG) || SYN_USE_WG
@@ -60,27 +60,27 @@ extern "C" {
 
 /** Default tunnel MTU (inner IP packet before encryption). */
 #ifndef SYN_WG_MTU
-#define SYN_WG_MTU  1420
+#define SYN_WG_MTU 1420
 #endif
 
 /** WireGuard transport overhead: type(4) + receiver(4) + counter(8) + tag(16) = 32 */
-#define SYN_WG_TRANSPORT_OVERHEAD  32
+#define SYN_WG_TRANSPORT_OVERHEAD 32
 
 /** WireGuard protocol timers (seconds). */
-#define SYN_WG_REKEY_AFTER_TIME       120   /**< Initiate rekey after this many seconds */
-#define SYN_WG_REJECT_AFTER_TIME      180   /**< Drop session after this many seconds   */
-#define SYN_WG_REKEY_TIMEOUT            5   /**< Retry handshake if no response (s)     */
-#define SYN_WG_KEEPALIVE_TIMEOUT       10   /**< Send keepalive if no outbound (s)      */
+#define SYN_WG_REKEY_AFTER_TIME 120  /**< Initiate rekey after this many seconds */
+#define SYN_WG_REJECT_AFTER_TIME 180 /**< Drop session after this many seconds   */
+#define SYN_WG_REKEY_TIMEOUT 5       /**< Retry handshake if no response (s)     */
+#define SYN_WG_KEEPALIVE_TIMEOUT 10  /**< Send keepalive if no outbound (s)      */
 
 /** WireGuard message types. */
-#define SYN_WG_MSG_INITIATION   1  /**< Handshake initiation message */
-#define SYN_WG_MSG_RESPONSE     2  /**< Handshake response message   */
-#define SYN_WG_MSG_COOKIE       3  /**< Cookie reply message        */
-#define SYN_WG_MSG_TRANSPORT    4  /**< Encrypted transport message */
+#define SYN_WG_MSG_INITIATION 1 /**< Handshake initiation message */
+#define SYN_WG_MSG_RESPONSE 2   /**< Handshake response message   */
+#define SYN_WG_MSG_COOKIE 3     /**< Cookie reply message        */
+#define SYN_WG_MSG_TRANSPORT 4  /**< Encrypted transport message */
 
 /** Message sizes. */
-#define SYN_WG_INITIATION_SIZE  148 /**< Size of initiation message */
-#define SYN_WG_RESPONSE_SIZE     92 /**< Size of response message   */
+#define SYN_WG_INITIATION_SIZE 148 /**< Size of initiation message */
+#define SYN_WG_RESPONSE_SIZE 92    /**< Size of response message   */
 
 /* ── States ─────────────────────────────────────────────────────────────── */
 
@@ -88,9 +88,9 @@ extern "C" {
  * @brief WireGuard client connection state.
  */
 typedef enum {
-    SYN_WG_DISCONNECTED,     /**< No session, no handshake in progress   */
-    SYN_WG_HANDSHAKE_INIT,   /**< Sent initiation, waiting for response  */
-    SYN_WG_ESTABLISHED,      /**< Session active, transport data flowing */
+    SYN_WG_DISCONNECTED,   /**< No session, no handshake in progress   */
+    SYN_WG_HANDSHAKE_INIT, /**< Sent initiation, waiting for response  */
+    SYN_WG_ESTABLISHED,    /**< Session active, transport data flowing */
 } SYN_WgState;
 
 /* ── Configuration ──────────────────────────────────────────────────────── */
@@ -99,11 +99,11 @@ typedef enum {
  * @brief WireGuard peer configuration — set once at init.
  */
 typedef struct {
-    uint8_t      private_key[32];       /**< Our Curve25519 private key      */
-    uint8_t      peer_public_key[32];   /**< Server's public key             */
-    uint8_t      preshared_key[32];     /**< Optional PSK (zero if unused)   */
-    SYN_SockAddr endpoint;              /**< Server IP:port                  */
-    uint16_t     keepalive_interval_s;  /**< Persistent keepalive (0=off)    */
+    uint8_t private_key[32];       /**< Our Curve25519 private key      */
+    uint8_t peer_public_key[32];   /**< Server's public key             */
+    uint8_t preshared_key[32];     /**< Optional PSK (zero if unused)   */
+    SYN_SockAddr endpoint;         /**< Server IP:port                  */
+    uint16_t keepalive_interval_s; /**< Persistent keepalive (0=off)    */
 } SYN_WgConfig;
 
 /* ── Session keys ───────────────────────────────────────────────────────── */
@@ -112,14 +112,14 @@ typedef struct {
  * @brief Active session derived from a completed handshake.
  */
 typedef struct {
-    uint8_t  send_key[32];    /**< ChaCha20-Poly1305 key for outgoing      */
-    uint8_t  recv_key[32];    /**< ChaCha20-Poly1305 key for incoming      */
-    uint64_t send_counter;    /**< Outgoing nonce counter                   */
-    uint64_t recv_counter;    /**< Highest received nonce                   */
-    uint32_t recv_bitmap;     /**< Anti-replay sliding window (32 bits)     */
-    uint32_t sender_index;    /**< Our sender index (in transport headers)  */
-    uint32_t receiver_index;  /**< Peer's sender index                      */
-    uint32_t established_ms;  /**< Tick when session was established        */
+    uint8_t send_key[32];    /**< ChaCha20-Poly1305 key for outgoing      */
+    uint8_t recv_key[32];    /**< ChaCha20-Poly1305 key for incoming      */
+    uint64_t send_counter;   /**< Outgoing nonce counter                   */
+    uint64_t recv_counter;   /**< Highest received nonce                   */
+    uint32_t recv_bitmap;    /**< Anti-replay sliding window (32 bits)     */
+    uint32_t sender_index;   /**< Our sender index (in transport headers)  */
+    uint32_t receiver_index; /**< Peer's sender index                      */
+    uint32_t established_ms; /**< Tick when session was established        */
 } SYN_WgSession;
 
 /* ── Client context ─────────────────────────────────────────────────────── */
@@ -131,34 +131,34 @@ typedef struct {
  * buffer pointers. Approximately ~350 bytes + buffer pointers.
  */
 typedef struct {
-    SYN_WgConfig   config;          /**< Peer configuration                  */
-    SYN_WgState    state;           /**< Connection state                    */
-    SYN_Socket     udp_sock;        /**< UDP socket to the server            */
+    SYN_WgConfig config; /**< Peer configuration                  */
+    SYN_WgState state;   /**< Connection state                    */
+    SYN_Socket udp_sock; /**< UDP socket to the server            */
 
     /* Time source */
-    SYN_SNTP      *sntp;            /**< NTP time source (for TAI64N)        */
+    SYN_SNTP *sntp; /**< NTP time source (for TAI64N)        */
 
     /* Derived keys (computed once at init from config) */
-    uint8_t        public_key[32];  /**< Our public key (from private)       */
+    uint8_t public_key[32]; /**< Our public key (from private)       */
 
     /* Active session */
-    SYN_WgSession  session;          /**< Currently active transport session */
+    SYN_WgSession session; /**< Currently active transport session */
 
     /* Handshake state (scratch — only valid during handshake) */
-    uint8_t        hs_ephemeral_priv[32]; /**< Ephemeral private key         */
-    uint8_t        hs_chaining_key[32];   /**< Noise chaining key (CK)       */
-    uint8_t        hs_hash[32];           /**< Noise handshake hash (H)      */
+    uint8_t hs_ephemeral_priv[32]; /**< Ephemeral private key         */
+    uint8_t hs_chaining_key[32];   /**< Noise chaining key (CK)       */
+    uint8_t hs_hash[32];           /**< Noise handshake hash (H)      */
 
     /* Timers */
-    uint32_t       last_sent_ms;     /**< Tick of last data sent             */
-    uint32_t       last_recv_ms;     /**< Tick of last data received         */
-    uint32_t       last_handshake_ms;/**< Tick of last handshake initiation  */
+    uint32_t last_sent_ms;      /**< Tick of last data sent             */
+    uint32_t last_recv_ms;      /**< Tick of last data received         */
+    uint32_t last_handshake_ms; /**< Tick of last handshake initiation  */
 
     /* Caller-owned I/O buffers */
-    uint8_t       *rx_buf;           /**< Receive buffer                     */
-    size_t         rx_buf_size;      /**< Receive buffer capacity            */
-    uint8_t       *tx_buf;           /**< Transmit buffer                    */
-    size_t         tx_buf_size;      /**< Transmit buffer capacity           */
+    uint8_t *rx_buf;    /**< Receive buffer                     */
+    size_t rx_buf_size; /**< Receive buffer capacity            */
+    uint8_t *tx_buf;    /**< Transmit buffer                    */
+    size_t tx_buf_size; /**< Transmit buffer capacity           */
 
     /**
      * @brief Callback for decrypted IP packets received from the tunnel.
@@ -168,7 +168,7 @@ typedef struct {
      * @param ctx        User context pointer.
      */
     void (*on_recv)(const uint8_t *ip_packet, size_t len, void *ctx);
-    void           *user_ctx;        /**< User context for on_recv           */
+    void *user_ctx; /**< User context for on_recv           */
 } SYN_WG;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -188,10 +188,8 @@ typedef struct {
  * @param tx_buf      Transmit buffer (same sizing).
  * @param tx_buf_size Transmit buffer capacity.
  */
-void syn_wg_init(SYN_WG *wg, const SYN_WgConfig *config,
-                 SYN_SNTP *sntp,
-                 uint8_t *rx_buf, size_t rx_buf_size,
-                 uint8_t *tx_buf, size_t tx_buf_size);
+void syn_wg_init(SYN_WG *wg, const SYN_WgConfig *config, SYN_SNTP *sntp, uint8_t *rx_buf,
+                 size_t rx_buf_size, uint8_t *tx_buf, size_t tx_buf_size);
 
 /**
  * @brief Send an IP packet through the WireGuard tunnel.

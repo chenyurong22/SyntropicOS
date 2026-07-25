@@ -62,15 +62,15 @@
 
 #include "../common/syn_defs.h"
 #include "../control/syn_pid.h"
+#include "../log/syn_datalog.h"
 #include "../motor/syn_motor_output.h"
-#include "../util/syn_ramp.h"
-#include "../util/syn_scurve.h"
 #include "../port/syn_port_system.h"
 #include "../system/syn_errlog.h"
-#include "../log/syn_datalog.h"
+#include "../util/syn_ramp.h"
+#include "../util/syn_scurve.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,21 +94,21 @@ typedef int32_t (*SYN_MotorCtrl_ReadPos)(void *ctx);
 
 /** @brief Control loop operating mode. */
 typedef enum {
-    SYN_MCTRL_MODE_IDLE      = 0,  /**< Motor stopped, controller off     */
-    SYN_MCTRL_MODE_VELOCITY  = 1,  /**< Maintain target velocity          */
-    SYN_MCTRL_MODE_POSITION  = 2,  /**< Move to target position           */
-    SYN_MCTRL_MODE_OPEN_LOOP = 3,  /**< Direct output, no PID feedback    */
+    SYN_MCTRL_MODE_IDLE = 0,      /**< Motor stopped, controller off     */
+    SYN_MCTRL_MODE_VELOCITY = 1,  /**< Maintain target velocity          */
+    SYN_MCTRL_MODE_POSITION = 2,  /**< Move to target position           */
+    SYN_MCTRL_MODE_OPEN_LOOP = 3, /**< Direct output, no PID feedback    */
 } SYN_MotorCtrl_Mode;
 
 /* ── Controller state ───────────────────────────────────────────────────── */
 
 /** @brief Motor controller runtime state. */
 typedef enum {
-    SYN_MCTRL_STOPPED    = 0,  /**< Motor off, controller idle           */
-    SYN_MCTRL_RUNNING    = 1,  /**< Actively driving toward target       */
-    SYN_MCTRL_ON_TARGET  = 2,  /**< Position mode: within deadband       */
-    SYN_MCTRL_STALLED    = 3,  /**< Feedback not changing despite output  */
-    SYN_MCTRL_LIMIT      = 4,  /**< Hit a soft position limit            */
+    SYN_MCTRL_STOPPED = 0,   /**< Motor off, controller idle           */
+    SYN_MCTRL_RUNNING = 1,   /**< Actively driving toward target       */
+    SYN_MCTRL_ON_TARGET = 2, /**< Position mode: within deadband       */
+    SYN_MCTRL_STALLED = 3,   /**< Feedback not changing despite output  */
+    SYN_MCTRL_LIMIT = 4,     /**< Hit a soft position limit            */
 } SYN_MotorCtrl_State;
 
 /* ── Callbacks ──────────────────────────────────────────────────────────── */
@@ -120,16 +120,14 @@ struct SYN_MotorCtrl;
  * @param ctrl  Controller that detected the stall.
  * @param ctx   User context.
  */
-typedef void (*SYN_MotorCtrl_StallCallback)(struct SYN_MotorCtrl *ctrl,
-                                              void *ctx);
+typedef void (*SYN_MotorCtrl_StallCallback)(struct SYN_MotorCtrl *ctrl, void *ctx);
 
 /**
  * @brief Callback invoked when position reaches the target deadband.
  * @param ctrl  Controller that reached target.
  * @param ctx   User context.
  */
-typedef void (*SYN_MotorCtrl_TargetCallback)(struct SYN_MotorCtrl *ctrl,
-                                               void *ctx);
+typedef void (*SYN_MotorCtrl_TargetCallback)(struct SYN_MotorCtrl *ctrl, void *ctx);
 
 /* ── Trajectory input ───────────────────────────────────────────────────── */
 
@@ -140,15 +138,15 @@ typedef void (*SYN_MotorCtrl_TargetCallback)(struct SYN_MotorCtrl *ctrl,
  * or application code) and fed to the controller each update.
  */
 typedef struct {
-    int32_t position;       /**< Target position (feedback units)         */
-    int32_t velocity;       /**< Target velocity (units/sec)              */
-    int32_t acceleration;   /**< Target acceleration (units/sec²)         */
+    int32_t position;     /**< Target position (feedback units)         */
+    int32_t velocity;     /**< Target velocity (units/sec)              */
+    int32_t acceleration; /**< Target acceleration (units/sec²)         */
 } SYN_MotorCtrl_Trajectory;
 
 /* ── Tuning capture sample ──────────────────────────────────────────────── */
 
 /** Datalog stream ID for motor controller telemetry. */
-#define SYN_MCTRL_DATALOG_ID  0x4D43  /* 'MC' */
+#define SYN_MCTRL_DATALOG_ID 0x4D43 /* 'MC' */
 
 /**
  * @brief One sample of control-loop telemetry.
@@ -157,14 +155,14 @@ typedef struct {
  * At 1000 Hz with a 4 KB buffer you get ~1.2 seconds of capture.
  */
 typedef struct {
-    uint32_t tick_ms;         /**< Timestamp                              */
-    int32_t  target_pos;      /**< Trajectory/target position             */
-    int32_t  measured_pos;    /**< Measured position (from feedback)       */
-    int32_t  target_vel;      /**< Trajectory/target velocity             */
-    int32_t  measured_vel;    /**< Measured velocity                      */
-    int32_t  ff_output;       /**< Feedforward contribution               */
-    int32_t  pid_output;      /**< PID feedback contribution              */
-    int32_t  total_output;    /**< Final clamped output to motor          */
+    uint32_t tick_ms;     /**< Timestamp                              */
+    int32_t target_pos;   /**< Trajectory/target position             */
+    int32_t measured_pos; /**< Measured position (from feedback)       */
+    int32_t target_vel;   /**< Trajectory/target velocity             */
+    int32_t measured_vel; /**< Measured velocity                      */
+    int32_t ff_output;    /**< Feedforward contribution               */
+    int32_t pid_output;   /**< PID feedback contribution              */
+    int32_t total_output; /**< Final clamped output to motor          */
 } SYN_MotorCtrl_Sample;
 
 /* ── Move metrics (computed on-the-fly, zero buffer cost) ───────────────── */
@@ -177,13 +175,13 @@ typedef struct {
  * Call syn_motor_ctrl_reset_metrics() before a move to start fresh.
  */
 typedef struct {
-    int32_t  max_error;        /**< Peak |position_error| during move       */
-    int64_t  error_sq_sum;     /**< Sum of error² (for RMS computation)     */
-    int32_t  overshoot;        /**< Max overshoot past target (position)    */
-    int32_t  peak_output;      /**< Peak |output| applied to motor          */
-    uint32_t sample_count;     /**< Number of update() calls in this move   */
-    uint32_t move_start_tick;  /**< Tick when move started                  */
-    uint32_t settle_tick;      /**< Tick when first entered deadband (0=never) */
+    int32_t max_error;        /**< Peak |position_error| during move       */
+    int64_t error_sq_sum;     /**< Sum of error² (for RMS computation)     */
+    int32_t overshoot;        /**< Max overshoot past target (position)    */
+    int32_t peak_output;      /**< Peak |output| applied to motor          */
+    uint32_t sample_count;    /**< Number of update() calls in this move   */
+    uint32_t move_start_tick; /**< Tick when move started                  */
+    uint32_t settle_tick;     /**< Tick when first entered deadband (0=never) */
 } SYN_MotorCtrl_Metrics;
 
 /* ── Configuration ──────────────────────────────────────────────────────── */
@@ -191,49 +189,49 @@ typedef struct {
 /** @brief Motor controller configuration (passed to init, copied internally). */
 typedef struct {
     /* Motor output (mandatory — use syn_dc_motor_output(), etc.) */
-    SYN_MotorOutput         motor;        /**< Motor output interface     */
+    SYN_MotorOutput motor; /**< Motor output interface     */
 
     /* Feedback source (mandatory) */
-    SYN_MotorCtrl_ReadPos read_pos;     /**< Position read function       */
-    void                  *read_pos_ctx; /**< Context for read_pos         */
+    SYN_MotorCtrl_ReadPos read_pos; /**< Position read function       */
+    void *read_pos_ctx;             /**< Context for read_pos         */
 
     /* PID gains (integer, divided by 1 << pid_scale) */
-/** @brief PID proportional gain (÷ 1 << pid_scale). */
-    int32_t             pid_kp;
+    /** @brief PID proportional gain (÷ 1 << pid_scale). */
+    int32_t pid_kp;
     /** @brief PID integral gain (÷ 1 << pid_scale). */
-    int32_t             pid_ki;
+    int32_t pid_ki;
     /** @brief PID derivative gain (÷ 1 << pid_scale). */
-    int32_t             pid_kd;
-    uint8_t             pid_scale;    /**< Gain divisor = 1 << pid_scale   */
+    int32_t pid_kd;
+    uint8_t pid_scale; /**< Gain divisor = 1 << pid_scale   */
 
     /* Feedforward gains (optional — 0 = disabled)
      * Applied when using set_trajectory(). Output contribution:
      *   ff_output = (ff_kv × velocity + ff_ka × acceleration) >> ff_scale
      */
-    int32_t             ff_kv;        /**< Velocity feedforward gain       */
-    int32_t             ff_ka;        /**< Acceleration feedforward gain   */
-    uint8_t             ff_scale;     /**< FF divisor = 1 << ff_scale      */
+    int32_t ff_kv;    /**< Velocity feedforward gain       */
+    int32_t ff_ka;    /**< Acceleration feedforward gain   */
+    uint8_t ff_scale; /**< FF divisor = 1 << ff_scale      */
 
     /* Loop rate */
-    uint16_t            update_hz;    /**< Control loop frequency          */
+    uint16_t update_hz; /**< Control loop frequency          */
 
     /* Output limits */
-    int32_t             output_min;   /**< Min PID output (e.g., -255)     */
-    int32_t             output_max;   /**< Max PID output (e.g., +255)     */
+    int32_t output_min; /**< Min PID output (e.g., -255)     */
+    int32_t output_max; /**< Max PID output (e.g., +255)     */
 
     /* Position mode */
-    int32_t             position_deadband; /**< Units within target = done */
+    int32_t position_deadband; /**< Units within target = done */
 
     /* Soft position limits (0, 0 = disabled) */
-    int32_t             position_min; /**< Min allowed position (soft limit)*/
-    int32_t             position_max; /**< Max allowed position (soft limit)*/
+    int32_t position_min; /**< Min allowed position (soft limit)*/
+    int32_t position_max; /**< Max allowed position (soft limit)*/
 
     /* Stall detection */
-    uint16_t            stall_timeout_ms;  /**< 0 = disabled              */
-    int32_t             stall_threshold;   /**< Min units/period for "not stalled" */
+    uint16_t stall_timeout_ms; /**< 0 = disabled              */
+    int32_t stall_threshold;   /**< Min units/period for "not stalled" */
 
     /* Error logging (optional) */
-    SYN_ErrLog            *errlog;            /**< If set, stall/limit events logged */
+    SYN_ErrLog *errlog; /**< If set, stall/limit events logged */
 } SYN_MotorCtrl_Config;
 
 /**
@@ -257,84 +255,84 @@ typedef struct {
  *   syn_motor_ctrl_init(&ctrl, &cfg);
  * @endcode
  */
-#define SYN_MOTOR_CTRL_DEFAULTS(motor_out, read_fn, read_ctx, hz, out_max)  \
-    ((SYN_MotorCtrl_Config){                                                \
-        .motor             = (motor_out),                                   \
-        .read_pos          = (read_fn),                                     \
-        .read_pos_ctx      = (read_ctx),                                    \
-        .update_hz         = (hz),                                          \
-        .output_min        = -(out_max),                                    \
-        .output_max        = (out_max),                                     \
-        .pid_kp            = 1 << 6,    /* 0.25 effective (conservative) */ \
-        .pid_ki            = 0,         /* no integral by default */        \
-        .pid_kd            = 0,         /* no derivative by default */      \
-        .pid_scale         = 8,         /* gains ÷ 256 */                   \
-        .position_deadband = 2,                                             \
-        .stall_timeout_ms  = 1000,                                          \
-        .stall_threshold   = 1,                                             \
+#define SYN_MOTOR_CTRL_DEFAULTS(motor_out, read_fn, read_ctx, hz, out_max) \
+    ((SYN_MotorCtrl_Config){                                               \
+        .motor = (motor_out),                                              \
+        .read_pos = (read_fn),                                             \
+        .read_pos_ctx = (read_ctx),                                        \
+        .update_hz = (hz),                                                 \
+        .output_min = -(out_max),                                          \
+        .output_max = (out_max),                                           \
+        .pid_kp = 1 << 6, /* 0.25 effective (conservative) */              \
+        .pid_ki = 0,      /* no integral by default */                     \
+        .pid_kd = 0,      /* no derivative by default */                   \
+        .pid_scale = 8,   /* gains ÷ 256 */                               \
+        .position_deadband = 2,                                            \
+        .stall_timeout_ms = 1000,                                          \
+        .stall_threshold = 1,                                              \
     })
 
 /* ── Controller instance ────────────────────────────────────────────────── */
 
 /** @brief Motor controller instance (opaque — use API to access). */
 typedef struct SYN_MotorCtrl {
-    SYN_MotorCtrl_Config  cfg;      /**< Configuration snapshot             */
-    SYN_PID               pid;      /**< Embedded PID controller            */
+    SYN_MotorCtrl_Config cfg; /**< Configuration snapshot             */
+    SYN_PID pid;              /**< Embedded PID controller            */
 
-    SYN_MotorCtrl_Mode    mode;       /**< Current operating mode            */
-    SYN_MotorCtrl_State   state;      /**< Current runtime state             */
+    SYN_MotorCtrl_Mode mode;   /**< Current operating mode            */
+    SYN_MotorCtrl_State state; /**< Current runtime state             */
 
     /* Targets */
-    int32_t                target_velocity;  /**< Units per second         */
-    int32_t                target_position;  /**< Target position value    */
+    int32_t target_velocity; /**< Units per second         */
+    int32_t target_position; /**< Target position value    */
 
     /* Trajectory (feedforward) */
-    SYN_MotorCtrl_Trajectory trajectory;     /**< Current trajectory point */
-    bool                   trajectory_active; /**< True when using set_trajectory */
-    int32_t                ff_output;        /**< Last feedforward output  */
+    SYN_MotorCtrl_Trajectory trajectory; /**< Current trajectory point */
+    bool trajectory_active;              /**< True when using set_trajectory */
+    int32_t ff_output;                   /**< Last feedforward output  */
 
     /* Measurements */
-    int32_t                measured_velocity; /**< Current velocity        */
-    int32_t                measured_position; /**< Current position        */
-    int32_t                last_position;     /**< Position at last update */
-    int32_t                pid_output;        /**< Last PID output         */
-    int32_t                total_output;      /**< Last combined output    */
+    int32_t measured_velocity; /**< Current velocity        */
+    int32_t measured_position; /**< Current position        */
+    int32_t last_position;     /**< Position at last update */
+    int32_t pid_output;        /**< Last PID output         */
+    int32_t total_output;      /**< Last combined output    */
 
     /* Timing */
     /** @brief Tick of last update() call. */
-    uint32_t               last_update_tick;
+    uint32_t last_update_tick;
 
     /** @brief Tick when stall condition was first detected. */
-    uint32_t               stall_start_tick;
+    uint32_t stall_start_tick;
     /** @brief True while output is nonzero but position isn't changing. */
-    bool                   stall_active;
+    bool stall_active;
 
     /** @brief Registered stall callback (NULL = none). */
-    SYN_MotorCtrl_StallCallback  on_stall;
+    SYN_MotorCtrl_StallCallback on_stall;
     /** @brief User context passed to stall callback. */
-    void                         *on_stall_ctx;
+    void *on_stall_ctx;
     /** @brief Registered on-target callback (NULL = none). */
     SYN_MotorCtrl_TargetCallback on_target;
     /** @brief User context passed to on-target callback. */
-    void                         *on_target_ctx;
+    void *on_target_ctx;
 
     /** @brief True when the controller is enabled and driving output. */
-    bool                   enabled;
+    bool enabled;
 
     /* Tuning capture (optional — NULL to disable) */
-    SYN_DataLog           *datalog;          /**< Attached datalog for telemetry */
+    SYN_DataLog *datalog; /**< Attached datalog for telemetry */
 
     /** @brief Move metrics — accumulated during each move, zero buffer cost. */
-    SYN_MotorCtrl_Metrics  metrics;
+    SYN_MotorCtrl_Metrics metrics;
 
     /** @brief Built-in ramp for move_to() (not used when set_trajectory is active). */
-    SYN_Ramp               profile;
+    SYN_Ramp profile;
     /** @brief Built-in S-curve for move_to_scurve(). */
-    SYN_SCurve             scurve_profile;
+    SYN_SCurve scurve_profile;
     /** @brief True when the built-in ramp profile is actively driving. */
-    bool                   profile_active;
+    bool profile_active;
     /** @brief True when the built-in S-curve profile is actively driving. */
-    bool                   scurve_active;
+    bool scurve_active;
 } SYN_MotorCtrl;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -345,8 +343,7 @@ typedef struct SYN_MotorCtrl {
  * @param cfg   Configuration (copied internally).
  * @return SYN_OK on success.
  */
-SYN_Status syn_motor_ctrl_init(SYN_MotorCtrl *ctrl,
-                                 const SYN_MotorCtrl_Config *cfg);
+SYN_Status syn_motor_ctrl_init(SYN_MotorCtrl *ctrl, const SYN_MotorCtrl_Config *cfg);
 
 /**
  * @brief Drive the motor at a fixed output level (open-loop).
@@ -393,8 +390,7 @@ void syn_motor_ctrl_set_position(SYN_MotorCtrl *ctrl, int32_t target);
  * @param ctrl  Controller instance.
  * @param traj  Trajectory point (position, velocity, acceleration).
  */
-void syn_motor_ctrl_set_trajectory(SYN_MotorCtrl *ctrl,
-                                    const SYN_MotorCtrl_Trajectory *traj);
+void syn_motor_ctrl_set_trajectory(SYN_MotorCtrl *ctrl, const SYN_MotorCtrl_Trajectory *traj);
 
 /**
  * @brief Move to position with a built-in trapezoidal velocity profile.
@@ -413,8 +409,8 @@ void syn_motor_ctrl_set_trajectory(SYN_MotorCtrl *ctrl,
  * @param max_velocity   Maximum velocity (units/second).
  * @param acceleration   Acceleration (units/second²).
  */
-void syn_motor_ctrl_move_to(SYN_MotorCtrl *ctrl, int32_t target,
-                             int32_t max_velocity, int32_t acceleration);
+void syn_motor_ctrl_move_to(SYN_MotorCtrl *ctrl, int32_t target, int32_t max_velocity,
+                            int32_t acceleration);
 
 /**
  * @brief Move to position with a built-in jerk-limited S-curve profile.
@@ -435,9 +431,8 @@ void syn_motor_ctrl_move_to(SYN_MotorCtrl *ctrl, int32_t target,
  * @param max_accel      Maximum acceleration (units/second²).
  * @param max_jerk       Maximum jerk (units/second³).
  */
-void syn_motor_ctrl_move_to_scurve(SYN_MotorCtrl *ctrl, int32_t target,
-                                    int32_t max_velocity, int32_t max_accel,
-                                    int32_t max_jerk);
+void syn_motor_ctrl_move_to_scurve(SYN_MotorCtrl *ctrl, int32_t target, int32_t max_velocity,
+                                   int32_t max_accel, int32_t max_jerk);
 
 /**
  * @brief Stop the motor and enter idle mode.
@@ -468,8 +463,7 @@ SYN_MotorCtrl_State syn_motor_ctrl_update(SYN_MotorCtrl *ctrl);
  * @param cb    Callback function, or NULL to unregister.
  * @param ctx   User context passed to callback.
  */
-void syn_motor_ctrl_on_stall(SYN_MotorCtrl *ctrl,
-                               SYN_MotorCtrl_StallCallback cb, void *ctx);
+void syn_motor_ctrl_on_stall(SYN_MotorCtrl *ctrl, SYN_MotorCtrl_StallCallback cb, void *ctx);
 
 /**
  * @brief Register on-target callback (position mode).
@@ -477,8 +471,7 @@ void syn_motor_ctrl_on_stall(SYN_MotorCtrl *ctrl,
  * @param cb    Callback function, or NULL to unregister.
  * @param ctx   User context passed to callback.
  */
-void syn_motor_ctrl_on_target(SYN_MotorCtrl *ctrl,
-                                SYN_MotorCtrl_TargetCallback cb, void *ctx);
+void syn_motor_ctrl_on_target(SYN_MotorCtrl *ctrl, SYN_MotorCtrl_TargetCallback cb, void *ctx);
 
 /**
  * @brief Update PID gains at runtime.
@@ -487,8 +480,7 @@ void syn_motor_ctrl_on_target(SYN_MotorCtrl *ctrl,
  * @param ki    Integral gain (÷ 1 << pid_scale).
  * @param kd    Derivative gain (÷ 1 << pid_scale).
  */
-void syn_motor_ctrl_set_gains(SYN_MotorCtrl *ctrl,
-                                int32_t kp, int32_t ki, int32_t kd);
+void syn_motor_ctrl_set_gains(SYN_MotorCtrl *ctrl, int32_t kp, int32_t ki, int32_t kd);
 
 /**
  * @brief Update feedforward gains at runtime.
@@ -496,8 +488,7 @@ void syn_motor_ctrl_set_gains(SYN_MotorCtrl *ctrl,
  * @param ff_kv  Velocity feedforward gain (÷ 1 << ff_scale).
  * @param ff_ka  Acceleration feedforward gain (÷ 1 << ff_scale).
  */
-void syn_motor_ctrl_set_ff_gains(SYN_MotorCtrl *ctrl,
-                                  int32_t ff_kv, int32_t ff_ka);
+void syn_motor_ctrl_set_ff_gains(SYN_MotorCtrl *ctrl, int32_t ff_kv, int32_t ff_ka);
 
 /**
  * @brief Clear a stall condition and return to idle.
@@ -526,64 +517,80 @@ void syn_motor_ctrl_set_datalog(SYN_MotorCtrl *ctrl, SYN_DataLog *log);
  * @param ctrl  Controller.
  * @return Runtime state.
  */
-static inline SYN_MotorCtrl_State
-syn_motor_ctrl_state(const SYN_MotorCtrl *ctrl)     { return ctrl->state; }
+static inline SYN_MotorCtrl_State syn_motor_ctrl_state(const SYN_MotorCtrl *ctrl)
+{
+    return ctrl->state;
+}
 
 /**
  * @brief Get the current operating mode.
  * @param ctrl  Controller.
  * @return Operating mode.
  */
-static inline SYN_MotorCtrl_Mode
-syn_motor_ctrl_mode(const SYN_MotorCtrl *ctrl)      { return ctrl->mode; }
+static inline SYN_MotorCtrl_Mode syn_motor_ctrl_mode(const SYN_MotorCtrl *ctrl)
+{
+    return ctrl->mode;
+}
 
 /**
  * @brief Get measured velocity.
  * @param ctrl  Controller.
  * @return Velocity in feedback units/second.
  */
-static inline int32_t
-syn_motor_ctrl_velocity(const SYN_MotorCtrl *ctrl)  { return ctrl->measured_velocity; }
+static inline int32_t syn_motor_ctrl_velocity(const SYN_MotorCtrl *ctrl)
+{
+    return ctrl->measured_velocity;
+}
 
 /**
  * @brief Get measured position.
  * @param ctrl  Controller.
  * @return Position in feedback units.
  */
-static inline int32_t
-syn_motor_ctrl_position(const SYN_MotorCtrl *ctrl)  { return ctrl->measured_position; }
+static inline int32_t syn_motor_ctrl_position(const SYN_MotorCtrl *ctrl)
+{
+    return ctrl->measured_position;
+}
 
 /**
  * @brief Get total output (PID + feedforward).
  * @param ctrl  Controller.
  * @return Combined output.
  */
-static inline int32_t
-syn_motor_ctrl_output(const SYN_MotorCtrl *ctrl)    { return ctrl->total_output; }
+static inline int32_t syn_motor_ctrl_output(const SYN_MotorCtrl *ctrl)
+{
+    return ctrl->total_output;
+}
 
 /**
  * @brief Get last PID output component.
  * @param ctrl  Controller.
  * @return PID output.
  */
-static inline int32_t
-syn_motor_ctrl_pid_output(const SYN_MotorCtrl *ctrl) { return ctrl->pid_output; }
+static inline int32_t syn_motor_ctrl_pid_output(const SYN_MotorCtrl *ctrl)
+{
+    return ctrl->pid_output;
+}
 
 /**
  * @brief Get last feedforward output component.
  * @param ctrl  Controller.
  * @return Feedforward output.
  */
-static inline int32_t
-syn_motor_ctrl_ff_output(const SYN_MotorCtrl *ctrl)  { return ctrl->ff_output; }
+static inline int32_t syn_motor_ctrl_ff_output(const SYN_MotorCtrl *ctrl)
+{
+    return ctrl->ff_output;
+}
 
 /**
  * @brief Get last position error.
  * @param ctrl  Controller.
  * @return Position error in feedback units.
  */
-static inline int32_t
-syn_motor_ctrl_error(const SYN_MotorCtrl *ctrl)     { return ctrl->pid.prev_error; }
+static inline int32_t syn_motor_ctrl_error(const SYN_MotorCtrl *ctrl)
+{
+    return ctrl->pid.prev_error;
+}
 
 /* ── Metrics ───────────────────────────────────────────────────────────── */
 
@@ -603,8 +610,10 @@ void syn_motor_ctrl_reset_metrics(SYN_MotorCtrl *ctrl);
  * @param ctrl  Controller.
  * @return Pointer to metrics struct.
  */
-static inline const SYN_MotorCtrl_Metrics *
-syn_motor_ctrl_get_metrics(const SYN_MotorCtrl *ctrl) { return &ctrl->metrics; }
+static inline const SYN_MotorCtrl_Metrics *syn_motor_ctrl_get_metrics(const SYN_MotorCtrl *ctrl)
+{
+    return &ctrl->metrics;
+}
 
 /**
  * @brief Compute RMS tracking error from accumulated metrics.
@@ -622,10 +631,10 @@ int32_t syn_motor_ctrl_rms_error(const SYN_MotorCtrl *ctrl);
  * @param ctrl  Controller.
  * @return Duration in ms, or 0 if no move started.
  */
-static inline uint32_t
-syn_motor_ctrl_move_duration(const SYN_MotorCtrl *ctrl)
+static inline uint32_t syn_motor_ctrl_move_duration(const SYN_MotorCtrl *ctrl)
 {
-    if (ctrl->metrics.move_start_tick == 0) return 0;
+    if (ctrl->metrics.move_start_tick == 0)
+        return 0;
     return syn_port_get_tick_ms() - ctrl->metrics.move_start_tick;
 }
 
@@ -634,8 +643,7 @@ syn_motor_ctrl_move_duration(const SYN_MotorCtrl *ctrl)
  * @param ctrl  Controller.
  * @return Settle time in ms.
  */
-static inline uint32_t
-syn_motor_ctrl_settle_time(const SYN_MotorCtrl *ctrl)
+static inline uint32_t syn_motor_ctrl_settle_time(const SYN_MotorCtrl *ctrl)
 {
     if (ctrl->metrics.settle_tick == 0 || ctrl->metrics.move_start_tick == 0)
         return 0;

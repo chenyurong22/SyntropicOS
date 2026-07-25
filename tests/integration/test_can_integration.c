@@ -1,22 +1,25 @@
+#include "mock_port.h"
+#include "syntropic/proto/syn_canopen.h"
+#include "syntropic/proto/syn_cia402.h"
+#include "unity/unity.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "syntropic/proto/syn_canopen.h"
-#include "syntropic/proto/syn_cia402.h"
-#include "mock_port.h"
-#include "unity/unity.h"
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_canopen_cia402_integration(void)
 {
     printf("[Integration Test] Testing CANopen CiA 402 Drive Profile State Machine...\n");
 
     static uint32_t dev_type = 0x00020192;
-    SYN_CANOpenODEntry od_table[] = {
-        { 0x1000, 0x00, SYN_CANOPEN_ACCESS_RO, 4, &dev_type }
-    };
+    SYN_CANOpenODEntry od_table[] = {{0x1000, 0x00, SYN_CANOPEN_ACCESS_RO, 4, &dev_type}};
 
     SYN_CANOpenNode node;
     SYN_CANOpenNodeConfig cfg;
@@ -28,7 +31,7 @@ void test_canopen_cia402_integration(void)
     TEST_ASSERT_EQUAL_INT(SYN_OK, status);
 
     /* Process NMT Command (COB-ID 0x000, Payload {0x01, 0x01} -> Start Node 1) */
-    uint8_t nmt_cmd[2] = { 0x01, 0x01 };
+    uint8_t nmt_cmd[2] = {0x01, 0x01};
     status = syn_canopen_process_rx(&node, 0x000, nmt_cmd, sizeof(nmt_cmd));
     TEST_ASSERT_EQUAL_INT(SYN_OK, status);
     TEST_ASSERT_EQUAL_INT(SYN_CANOPEN_NMT_STATE_OPERATIONAL, node.nmt_state);
@@ -51,8 +54,10 @@ void test_canopen_cia402_integration(void)
     uint16_t statusword = syn_cia402_get_statusword(&drive);
     printf("[Integration Test] CiA 402 Statusword: 0x%04X\n", statusword);
 
-    /* Controlword Enable Operation: Bits (SWITCH_ON | ENABLE_VOLTAGE | QUICK_STOP | ENABLE_OP) = 0x000F */
-    uint16_t cw_enable = SYN_CIA402_CW_SWITCH_ON | SYN_CIA402_CW_ENABLE_VOLTAGE | SYN_CIA402_CW_QUICK_STOP | SYN_CIA402_CW_ENABLE_OP;
+    /* Controlword Enable Operation: Bits (SWITCH_ON | ENABLE_VOLTAGE | QUICK_STOP | ENABLE_OP) =
+     * 0x000F */
+    uint16_t cw_enable = SYN_CIA402_CW_SWITCH_ON | SYN_CIA402_CW_ENABLE_VOLTAGE |
+                         SYN_CIA402_CW_QUICK_STOP | SYN_CIA402_CW_ENABLE_OP;
     status = syn_cia402_set_controlword(&drive, cw_enable);
     TEST_ASSERT_EQUAL_INT(SYN_OK, status);
 

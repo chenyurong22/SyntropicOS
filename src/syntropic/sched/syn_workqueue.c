@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_WORKQUEUE) || SYN_USE_WORKQUEUE
@@ -9,13 +9,12 @@
  * @brief Deferred work queue implementation.
  */
 
-#include "syn_workqueue.h"
 #include "../util/syn_assert.h"
+#include "syn_workqueue.h"
 
 #include <string.h>
 
-void syn_workqueue_init(SYN_WorkQueue *wq,
-                         SYN_WorkItem *buf, size_t capacity)
+void syn_workqueue_init(SYN_WorkQueue *wq, SYN_WorkItem *buf, size_t capacity)
 {
     SYN_ASSERT(wq != NULL);
     SYN_ASSERT(buf != NULL);
@@ -27,10 +26,10 @@ void syn_workqueue_init(SYN_WorkQueue *wq,
     memset(buf, 0, sizeof(SYN_WorkItem) * capacity);
 }
 
-bool syn_workqueue_post(SYN_WorkQueue *wq,
-                         SYN_WorkFunc func, void *ctx)
+bool syn_workqueue_post(SYN_WorkQueue *wq, SYN_WorkFunc func, void *ctx)
 {
-    if (!wq || !func) return false;
+    if (!wq || !func)
+        return false;
 
     SYN_WorkItem item = {.func = func, .ctx = ctx};
     SYN_Status status = syn_spsc_queue_push(&wq->queue, &item);
@@ -45,7 +44,8 @@ bool syn_workqueue_post(SYN_WorkQueue *wq,
 
 size_t syn_workqueue_process(SYN_WorkQueue *wq)
 {
-    if (!wq) return 0;
+    if (!wq)
+        return 0;
     size_t count = 0;
     SYN_WorkItem item;
 

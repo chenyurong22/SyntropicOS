@@ -34,17 +34,17 @@
 #define SYN_SNTP_H
 
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SNTP) || SYN_USE_SNTP
 
 #include "../common/syn_defs.h"
+#include "../dsp/syn_filter.h"
 #include "../port/syn_port_socket.h"
 #include "../pt/syn_pt.h"
 #include "../sched/syn_task.h"
 #include "../util/syn_backoff.h"
-#include "../dsp/syn_filter.h"
 
 #include <stdbool.h>
 
@@ -55,19 +55,19 @@ extern "C" {
 /* ── Constants ──────────────────────────────────────────────────────────── */
 
 /** NTP packet size (both request and response). */
-#define SYN_SNTP_PACKET_SIZE    48
+#define SYN_SNTP_PACKET_SIZE 48
 
 /** NTP epoch offset: seconds between 1900-01-01 and 1970-01-01. */
-#define SYN_SNTP_EPOCH_OFFSET   2208988800UL
+#define SYN_SNTP_EPOCH_OFFSET 2208988800UL
 
 /** Default receive timeout for NTP response (ms). */
 #ifndef SYN_SNTP_TIMEOUT_MS
-#define SYN_SNTP_TIMEOUT_MS     3000
+#define SYN_SNTP_TIMEOUT_MS 3000
 #endif
 
 /** Maximum retry attempts per sync cycle. */
 #ifndef SYN_SNTP_MAX_RETRIES
-#define SYN_SNTP_MAX_RETRIES    3
+#define SYN_SNTP_MAX_RETRIES 3
 #endif
 
 /* ── Context ────────────────────────────────────────────────────────────── */
@@ -76,22 +76,22 @@ extern "C" {
  * @brief SNTP client context — caller-owned.
  */
 typedef struct {
-    SYN_SockAddr server;            /**< NTP server address (IP + port)     */
-    SYN_Socket   udp_sock;          /**< UDP socket handle                  */
+    SYN_SockAddr server; /**< NTP server address (IP + port)     */
+    SYN_Socket udp_sock; /**< UDP socket handle                  */
 
-    uint32_t     epoch_s;           /**< Last synced UTC epoch (seconds)    */
-    uint32_t     epoch_frac;        /**< Fractional seconds (NTP format)    */
-    uint32_t     sync_tick_ms;      /**< Local tick at time of last sync    */
-    uint32_t     sync_interval_s;   /**< Re-sync interval in seconds        */
+    uint32_t epoch_s;         /**< Last synced UTC epoch (seconds)    */
+    uint32_t epoch_frac;      /**< Fractional seconds (NTP format)    */
+    uint32_t sync_tick_ms;    /**< Local tick at time of last sync    */
+    uint32_t sync_interval_s; /**< Re-sync interval in seconds        */
 
-    bool         synced;            /**< true after first successful sync   */
-    uint32_t     recv_deadline;     /**< Tick deadline for non-blocking recv */
-    SYN_Backoff  backoff;           /**< Retry backoff state                */
+    bool synced;            /**< true after first successful sync   */
+    uint32_t recv_deadline; /**< Tick deadline for non-blocking recv */
+    SYN_Backoff backoff;    /**< Retry backoff state                */
 
-    int32_t      drift_ppm;         /**< Calculated & filtered clock drift in PPM (+ = fast, - = slow) */
-    SYN_FilterEMA drift_filter;     /**< EMA filter for clock drift PPM smoothing */
-    uint32_t     prev_sync_epoch;   /**< Epoch at previous sync for PPM calculation */
-    uint32_t     prev_sync_tick_ms; /**< Local tick at previous sync for PPM calculation */
+    int32_t drift_ppm; /**< Calculated & filtered clock drift in PPM (+ = fast, - = slow) */
+    SYN_FilterEMA drift_filter; /**< EMA filter for clock drift PPM smoothing */
+    uint32_t prev_sync_epoch;   /**< Epoch at previous sync for PPM calculation */
+    uint32_t prev_sync_tick_ms; /**< Local tick at previous sync for PPM calculation */
 } SYN_SNTP;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -103,8 +103,7 @@ typedef struct {
  * @param server          NTP server address (typically port 123).
  * @param sync_interval_s Seconds between re-syncs (e.g. 3600 for hourly).
  */
-void syn_sntp_init(SYN_SNTP *sntp, const SYN_SockAddr *server,
-                   uint32_t sync_interval_s);
+void syn_sntp_init(SYN_SNTP *sntp, const SYN_SockAddr *server, uint32_t sync_interval_s);
 
 /**
  * @brief Perform a single blocking NTP query.

@@ -4,12 +4,12 @@
  *        Extended to achieve 100% line coverage.
  */
 
-#include "unity/unity.h"
-#include "syntropic/net/syn_httpd.h"
 #include "mocks/mock_port.h"
+#include "syntropic/net/syn_httpd.h"
+#include "unity/unity.h"
 
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
@@ -21,8 +21,7 @@ static char last_query[64];
 static size_t last_content_length;
 static char last_content_type[64];
 
-static void test_handler(const SYN_HttpdRequest *req,
-                           SYN_HttpdResponse *resp, void *ctx)
+static void test_handler(const SYN_HttpdRequest *req, SYN_HttpdResponse *resp, void *ctx)
 {
     (void)ctx;
     handler_called = true;
@@ -33,8 +32,7 @@ static void test_handler(const SYN_HttpdRequest *req,
         strncpy(last_query, req->query, sizeof(last_query) - 1);
     }
     if (req->content_type) {
-        strncpy(last_content_type, req->content_type,
-                sizeof(last_content_type) - 1);
+        strncpy(last_content_type, req->content_type, sizeof(last_content_type) - 1);
     }
 
     syn_httpd_status(resp, 200, "OK");
@@ -42,10 +40,10 @@ static void test_handler(const SYN_HttpdRequest *req,
     syn_httpd_body_str(resp, "Hello!");
 }
 
-static void json_handler(const SYN_HttpdRequest *req,
-                           SYN_HttpdResponse *resp, void *ctx)
+static void json_handler(const SYN_HttpdRequest *req, SYN_HttpdResponse *resp, void *ctx)
 {
-    (void)req; (void)ctx;
+    (void)req;
+    (void)ctx;
     handler_called = true;
     syn_httpd_status(resp, 200, "OK");
     syn_httpd_header(resp, "Content-Type", "application/json");
@@ -54,18 +52,16 @@ static void json_handler(const SYN_HttpdRequest *req,
 
 /* Handler that reads request body using syn_httpd_read_body */
 static char body_buf[256];
-static int  body_read_len;
+static int body_read_len;
 
-static void body_handler(const SYN_HttpdRequest *req,
-                          SYN_HttpdResponse *resp, void *ctx)
+static void body_handler(const SYN_HttpdRequest *req, SYN_HttpdResponse *resp, void *ctx)
 {
     (void)ctx;
     handler_called = true;
     last_content_length = req->content_length;
 
     /* Read available body bytes */
-    body_read_len = syn_httpd_read_body(req, resp, body_buf,
-                                         sizeof(body_buf) - 1);
+    body_read_len = syn_httpd_read_body(req, resp, body_buf, sizeof(body_buf) - 1);
     if (body_read_len > 0) {
         body_buf[body_read_len] = '\0';
     }
@@ -75,8 +71,8 @@ static void body_handler(const SYN_HttpdRequest *req,
 }
 
 /* Handler that reads body twice (hits remaining==0 path) */
-static void body_handler_double_read(const SYN_HttpdRequest *req,
-                                      SYN_HttpdResponse *resp, void *ctx)
+static void body_handler_double_read(const SYN_HttpdRequest *req, SYN_HttpdResponse *resp,
+                                     void *ctx)
 {
     (void)ctx;
     handler_called = true;
@@ -92,24 +88,25 @@ static void body_handler_double_read(const SYN_HttpdRequest *req,
 }
 
 /* Handler that sends nothing — exercises 204 No Content path */
-static void silent_handler(const SYN_HttpdRequest *req,
-                             SYN_HttpdResponse *resp, void *ctx)
+static void silent_handler(const SYN_HttpdRequest *req, SYN_HttpdResponse *resp, void *ctx)
 {
-    (void)req; (void)resp; (void)ctx;
+    (void)req;
+    (void)resp;
+    (void)ctx;
     handler_called = true;
     /* Deliberately do not call syn_httpd_status/body */
 }
 
 static const SYN_HttpdRoute test_routes[] = {
-    { SYN_HTTP_GET,    "/",            test_handler,  NULL },
-    { SYN_HTTP_GET,    "/api/status",  json_handler,  NULL },
-    { SYN_HTTP_POST,   "/api/config",  test_handler,  NULL },
-    { SYN_HTTP_GET,    "/api/*",       test_handler,  NULL },
-    { SYN_HTTP_PUT,    "/resource",    test_handler,  NULL },
-    { SYN_HTTP_DELETE, "/resource",    test_handler,  NULL },
-    { SYN_HTTP_POST,   "/body",        body_handler,  NULL },
-    { SYN_HTTP_POST,   "/body2",       body_handler_double_read, NULL },
-    { SYN_HTTP_GET,    "/silent",      silent_handler, NULL },
+    {SYN_HTTP_GET, "/", test_handler, NULL},
+    {SYN_HTTP_GET, "/api/status", json_handler, NULL},
+    {SYN_HTTP_POST, "/api/config", test_handler, NULL},
+    {SYN_HTTP_GET, "/api/*", test_handler, NULL},
+    {SYN_HTTP_PUT, "/resource", test_handler, NULL},
+    {SYN_HTTP_DELETE, "/resource", test_handler, NULL},
+    {SYN_HTTP_POST, "/body", body_handler, NULL},
+    {SYN_HTTP_POST, "/body2", body_handler_double_read, NULL},
+    {SYN_HTTP_GET, "/silent", silent_handler, NULL},
 };
 static const size_t NUM_ROUTES = 9;
 
@@ -126,8 +123,7 @@ static void setup_server(void)
     memset(body_buf, 0, sizeof(body_buf));
     last_content_length = 0;
 
-    syn_httpd_init(&srv, 80, test_routes, NUM_ROUTES, work_buf,
-                   sizeof(work_buf));
+    syn_httpd_init(&srv, 80, test_routes, NUM_ROUTES, work_buf, sizeof(work_buf));
 }
 
 /* ── Original tests (preserved) ─────────────────────────────────────────── */
@@ -169,12 +165,11 @@ void test_httpd_post_route(void)
 {
     setup_server();
 
-    const char *request =
-        "POST /api/config HTTP/1.1\r\n"
-        "Content-Type: application/json\r\n"
-        "Content-Length: 13\r\n"
-        "\r\n"
-        "{\"key\":\"val\"}";
+    const char *request = "POST /api/config HTTP/1.1\r\n"
+                          "Content-Type: application/json\r\n"
+                          "Content-Length: 13\r\n"
+                          "\r\n"
+                          "{\"key\":\"val\"}";
     mock_sock_set_response(request, strlen(request));
 
     syn_httpd_step(&srv);
@@ -304,12 +299,11 @@ void test_httpd_content_length_parsing(void)
     setup_server();
 
     /* Body sent inline with headers (body buffered in work_buf) */
-    const char *request =
-        "POST /body HTTP/1.1\r\n"
-        "Content-Length: 11\r\n"
-        "Content-Type: text/plain\r\n"
-        "\r\n"
-        "hello world";
+    const char *request = "POST /body HTTP/1.1\r\n"
+                          "Content-Length: 11\r\n"
+                          "Content-Type: text/plain\r\n"
+                          "\r\n"
+                          "hello world";
     mock_sock_set_response(request, strlen(request));
 
     syn_httpd_step(&srv);
@@ -326,11 +320,10 @@ void test_httpd_content_length_with_spaces(void)
 {
     setup_server();
 
-    const char *request =
-        "POST /body HTTP/1.1\r\n"
-        "Content-Length:   5\r\n"    /* extra spaces after colon */
-        "\r\n"
-        "abcde";
+    const char *request = "POST /body HTTP/1.1\r\n"
+                          "Content-Length:   5\r\n" /* extra spaces after colon */
+                          "\r\n"
+                          "abcde";
     mock_sock_set_response(request, strlen(request));
 
     syn_httpd_step(&srv);
@@ -345,11 +338,10 @@ void test_httpd_body_read_partial_buffered(void)
 
     /* Large body inline so buffered_len > small max_len */
     /* We'll read with a small buffer — triggers "consume > to_read" branch */
-    const char *request =
-        "POST /body HTTP/1.1\r\n"
-        "Content-Length: 50\r\n"
-        "\r\n"
-        "0123456789012345678901234567890123456789012345678X";
+    const char *request = "POST /body HTTP/1.1\r\n"
+                          "Content-Length: 50\r\n"
+                          "\r\n"
+                          "0123456789012345678901234567890123456789012345678X";
     mock_sock_set_response(request, strlen(request));
 
     syn_httpd_step(&srv);
@@ -364,11 +356,10 @@ void test_httpd_body_read_already_consumed(void)
     /* Enable EOF on empty so second socket recv returns 0 (not -1) */
     mock_sock_eof_on_empty = true;
 
-    const char *request =
-        "POST /body2 HTTP/1.1\r\n"
-        "Content-Length: 4\r\n"
-        "\r\n"
-        "data";
+    const char *request = "POST /body2 HTTP/1.1\r\n"
+                          "Content-Length: 4\r\n"
+                          "\r\n"
+                          "data";
     mock_sock_set_response(request, strlen(request));
 
     syn_httpd_step(&srv);
@@ -412,7 +403,6 @@ void test_httpd_bad_request(void)
     /* Should have sent 400 */
     TEST_ASSERT_NOT_NULL(strstr((char *)mock_sock_tx_buf, "400"));
 }
-
 
 /** Handler sends nothing → 204 No Content */
 void test_httpd_no_content_response(void)
@@ -460,10 +450,9 @@ void test_httpd_body_read_from_socket(void)
     /* Headers only (body NOT inline) — body_buffered_len will be 0 */
     /* We set content_length=5 but don't include body inline, then
      * the body_handler will try socket recv for the remaining bytes. */
-    const char *headers =
-        "POST /body HTTP/1.1\r\n"
-        "Content-Length: 5\r\n"
-        "\r\n";
+    const char *headers = "POST /body HTTP/1.1\r\n"
+                          "Content-Length: 5\r\n"
+                          "\r\n";
     /* Append body data separately so it arrives via socket recv */
     char full[256];
     size_t hlen = strlen(headers);
@@ -491,15 +480,15 @@ void test_httpd_read_body_buffered_direct(void)
 
     SYN_HttpdRequest req;
     memset(&req, 0, sizeof(req));
-    req.content_length      = body_len;
+    req.content_length = body_len;
     req.body_buffered_offset = body_off;
-    req.body_buffered_len    = body_len;
-    req.body_consumed        = 0;
+    req.body_buffered_len = body_len;
+    req.body_consumed = 0;
 
     SYN_HttpdResponse resp;
     memset(&resp, 0, sizeof(resp));
-    resp.sock     = 0; /* mock socket */
-    resp.buf      = fake_buf;
+    resp.sock = 0; /* mock socket */
+    resp.buf = fake_buf;
     resp.buf_size = sizeof(fake_buf);
 
     /* First read — from buffered portion */
@@ -515,9 +504,9 @@ void test_httpd_read_body_buffered_direct(void)
 
     /* Partial buffered read — consume > to_read branch */
     memset(&req, 0, sizeof(req));
-    req.content_length       = 10;
+    req.content_length = 10;
     req.body_buffered_offset = body_off;
-    req.body_buffered_len    = 10; /* 10 buffered but max_len=3 */
+    req.body_buffered_len = 10; /* 10 buffered but max_len=3 */
     memcpy(fake_buf + body_off, "0123456789", 10);
     n = syn_httpd_read_body(&req, &resp, out, 3); /* to_read=3, consume=3 */
     TEST_ASSERT_EQUAL_INT(3, n);
@@ -531,8 +520,7 @@ void test_httpd_init_listen_fail(void)
 
     SYN_Httpd srv2;
     uint8_t buf[256];
-    SYN_Status st = syn_httpd_init(&srv2, 80, test_routes, NUM_ROUTES,
-                                    buf, sizeof(buf));
+    SYN_Status st = syn_httpd_init(&srv2, 80, test_routes, NUM_ROUTES, buf, sizeof(buf));
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 }
 
@@ -549,20 +537,20 @@ void test_httpd_read_body_socket_recv_consumed(void)
 
     SYN_HttpdRequest req;
     memset(&req, 0, sizeof(req));
-    req.content_length       = 5;
-    req.body_buffered_len    = 0; /* no buffered — goes to socket recv */
-    req.body_consumed        = 0;
+    req.content_length = 5;
+    req.body_buffered_len = 0; /* no buffered — goes to socket recv */
+    req.body_consumed = 0;
 
     SYN_HttpdResponse resp;
     memset(&resp, 0, sizeof(resp));
     resp.sock = 0;
     static uint8_t resp_buf[64];
-    resp.buf      = resp_buf;
+    resp.buf = resp_buf;
     resp.buf_size = sizeof(resp_buf);
 
     char out[32];
     int n = syn_httpd_read_body(&req, &resp, out, sizeof(out));
-    TEST_ASSERT_EQUAL_INT(5, n); /* socket recv returned 5 */
+    TEST_ASSERT_EQUAL_INT(5, n);                      /* socket recv returned 5 */
     TEST_ASSERT_EQUAL_INT(5, (int)req.body_consumed); /* line 414 executed */
 }
 /** httpd_task protothread — non-blocking step + yield */
@@ -592,9 +580,6 @@ static void test_httpd_task_protothread(void)
     st = syn_httpd_task(&pt, &task);
     TEST_ASSERT_EQUAL(PT_YIELDED, st);
 }
-
-
-
 
 void test_httpd_extra_coverage(void)
 {
@@ -649,7 +634,7 @@ void test_httpd_extra_coverage(void)
 static void test_httpd_body_str_direct(void)
 {
     setup_server();
-    SYN_HttpdResponse resp = { .sock = 1, .buf = work_buf, .headers_sent = false };
+    SYN_HttpdResponse resp = {.sock = 1, .buf = work_buf, .headers_sent = false};
     syn_httpd_status(&resp, 200, "OK");
     syn_httpd_header(&resp, "Content-Type", "text/plain");
     syn_httpd_body_str(&resp, "Body String Direct Test");

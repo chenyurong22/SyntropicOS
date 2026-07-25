@@ -1,11 +1,14 @@
-#include <stdint.h>
-#include <stddef.h>
-#include <string.h>
 #include "syntropic/proto/syn_modbus.h"
 #include "tests/mocks/mock_port.h"
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    if (size == 0 || size > 256) return 0;
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+{
+    if (size == 0 || size > 256)
+        return 0;
 
     // Reset mock state
     mock_port_reset();

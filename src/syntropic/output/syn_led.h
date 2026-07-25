@@ -33,19 +33,19 @@ extern "C" {
 
 /** @brief LED output polarity. */
 typedef enum {
-    SYN_LED_ACTIVE_HIGH = 0,  /**< LED on when GPIO high */
-    SYN_LED_ACTIVE_LOW  = 1,  /**< LED on when GPIO low (common anode) */
+    SYN_LED_ACTIVE_HIGH = 0, /**< LED on when GPIO high */
+    SYN_LED_ACTIVE_LOW = 1,  /**< LED on when GPIO low (common anode) */
 } SYN_LEDPolarity;
 
 /* ── LED mode ───────────────────────────────────────────────────────────── */
 
 /** @brief LED operating mode. */
 typedef enum {
-    SYN_LED_MODE_OFF     = 0,  /**< LED is off                        */
-    SYN_LED_MODE_ON      = 1,  /**< LED is on (steady)                */
-    SYN_LED_MODE_BLINK   = 2,  /**< Continuous blink                  */
-    SYN_LED_MODE_FLASH   = 3,  /**< Flash N times then stop           */
-    SYN_LED_MODE_PATTERN = 4,  /**< Play a pattern string             */
+    SYN_LED_MODE_OFF = 0,     /**< LED is off                        */
+    SYN_LED_MODE_ON = 1,      /**< LED is on (steady)                */
+    SYN_LED_MODE_BLINK = 2,   /**< Continuous blink                  */
+    SYN_LED_MODE_FLASH = 3,   /**< Flash N times then stop           */
+    SYN_LED_MODE_PATTERN = 4, /**< Play a pattern string             */
 } SYN_LEDMode;
 
 /* ── LED descriptor ─────────────────────────────────────────────────────── */
@@ -53,23 +53,23 @@ typedef enum {
 /** @brief LED instance — pin, mode, blink/flash/pattern state. */
 typedef struct {
     /* Configuration */
-    SYN_GPIO_Pin       pin;            /**< GPIO pin                    */
-    uint8_t             polarity;      /**< SYN_LEDPolarity             */
+    SYN_GPIO_Pin pin; /**< GPIO pin                    */
+    uint8_t polarity; /**< SYN_LEDPolarity             */
 
     /* State */
-    uint8_t             mode;          /**< SYN_LEDMode                 */
-    bool                lit;           /**< Current output state          */
-    uint32_t            tick;          /**< Last transition tick           */
+    uint8_t mode;  /**< SYN_LEDMode                 */
+    bool lit;      /**< Current output state          */
+    uint32_t tick; /**< Last transition tick           */
 
     /* Blink / flash */
-    uint16_t            on_ms;         /**< On duration (ms)              */
-    uint16_t            off_ms;        /**< Off duration (ms)             */
-    uint8_t             flash_remain;  /**< Remaining flashes             */
+    uint16_t on_ms;       /**< On duration (ms)              */
+    uint16_t off_ms;      /**< Off duration (ms)             */
+    uint8_t flash_remain; /**< Remaining flashes             */
 
     /* Pattern */
-    const char         *pattern;       /**< Pattern string pointer        */
-    uint8_t             pattern_idx;   /**< Current position in pattern   */
-    uint16_t            pattern_unit;  /**< Base unit time (ms)           */
+    const char *pattern;   /**< Pattern string pointer        */
+    uint8_t pattern_idx;   /**< Current position in pattern   */
+    uint16_t pattern_unit; /**< Base unit time (ms)           */
 } SYN_LED;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -118,8 +118,7 @@ void syn_led_blink(SYN_LED *led, uint16_t on_ms, uint16_t off_ms);
  * @param off_ms  Off time between flashes (ms).
  * @param count   Number of flashes.
  */
-void syn_led_flash(SYN_LED *led, uint16_t on_ms, uint16_t off_ms,
-                    uint8_t count);
+void syn_led_flash(SYN_LED *led, uint16_t on_ms, uint16_t off_ms, uint8_t count);
 
 /**
  * @brief Play a pattern string.

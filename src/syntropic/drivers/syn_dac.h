@@ -17,9 +17,10 @@
 #ifndef SYN_DAC_H
 #define SYN_DAC_H
 
-#include <stdint.h>
 #include "../common/syn_defs.h"
 #include "../port/syn_port_dac.h"
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +28,7 @@ extern "C" {
 
 /** @brief DAC channel handle.  Caller allocates; zero heap. */
 typedef struct {
-    uint8_t channel;  /**< Platform DAC channel index */
+    uint8_t channel; /**< Platform DAC channel index */
 } SYN_DAC;
 
 /**

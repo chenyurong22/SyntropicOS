@@ -39,8 +39,8 @@ extern "C" {
 
 /** @brief Non-blocking timeout — tick wrap-around safe. */
 typedef struct {
-    uint32_t start;       /**< Tick at which the timeout was started */
-    uint32_t duration;    /**< Timeout duration in milliseconds      */
+    uint32_t start;    /**< Tick at which the timeout was started */
+    uint32_t duration; /**< Timeout duration in milliseconds      */
 } SYN_Timeout;
 
 /* ── API (all inline) ───────────────────────────────────────────────────── */
@@ -53,7 +53,7 @@ typedef struct {
  */
 static inline void syn_timeout_start(SYN_Timeout *to, uint32_t duration)
 {
-    to->start    = syn_port_get_tick_ms();
+    to->start = syn_port_get_tick_ms();
     to->duration = duration;
 }
 
@@ -125,8 +125,7 @@ static inline bool syn_timeout_periodic(SYN_Timeout *to)
 /**
  * @brief Block a protothread until the timeout expires.
  */
-#define PT_WAIT_TIMEOUT(pt, to) \
-    PT_WAIT_UNTIL(pt, syn_timeout_expired(to))
+#define PT_WAIT_TIMEOUT(pt, to) PT_WAIT_UNTIL(pt, syn_timeout_expired(to))
 
 #ifdef __cplusplus
 }

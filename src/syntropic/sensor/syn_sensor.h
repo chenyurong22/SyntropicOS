@@ -28,9 +28,9 @@
 #define SYN_SENSOR_H
 
 #include "../common/syn_defs.h"
-#include "../port/syn_port_system.h"
 #include "../dsp/syn_filter.h"
 #include "../dsp/syn_signal.h"
+#include "../port/syn_port_system.h"
 #include "../util/syn_hysteresis.h"
 
 #include <stdbool.h>
@@ -56,17 +56,16 @@ typedef int16_t (*SYN_SensorReadFunc)(void *ctx);
  * @param value   Current filtered value.
  * @param ctx     User context pointer.
  */
-typedef void (*SYN_SensorThresholdCallback)(struct SYN_Sensor *sensor,
-                                              int16_t value, void *ctx);
+typedef void (*SYN_SensorThresholdCallback)(struct SYN_Sensor *sensor, int16_t value, void *ctx);
 
 /* ── Filter type ────────────────────────────────────────────────────────── */
 
 /** @brief Filter type selector for sensor pipeline. */
 typedef enum {
-    SYN_SENSOR_FILTER_NONE   = 0,  /**< No filter.              */
-    SYN_SENSOR_FILTER_MA     = 1,  /**< Moving average.         */
-    SYN_SENSOR_FILTER_EMA    = 2,  /**< Exponential moving avg. */
-    SYN_SENSOR_FILTER_MEDIAN = 3,  /**< Median filter.          */
+    SYN_SENSOR_FILTER_NONE = 0,   /**< No filter.              */
+    SYN_SENSOR_FILTER_MA = 1,     /**< Moving average.         */
+    SYN_SENSOR_FILTER_EMA = 2,    /**< Exponential moving avg. */
+    SYN_SENSOR_FILTER_MEDIAN = 3, /**< Median filter.          */
 } SYN_SensorFilterType;
 
 /* ── Sensor descriptor ──────────────────────────────────────────────────── */
@@ -74,34 +73,34 @@ typedef enum {
 /** @brief Sensor descriptor — owns the full read→filter→threshold pipeline. */
 typedef struct SYN_Sensor {
     /* Identity */
-    const char         *name;           /**< Human-readable name           */
+    const char *name; /**< Human-readable name           */
 
     /* Read function */
-    SYN_SensorReadFunc read_func;       /**< Hardware read callback        */
-    void               *read_ctx;       /**< Context for read callback     */
+    SYN_SensorReadFunc read_func; /**< Hardware read callback        */
+    void *read_ctx;               /**< Context for read callback     */
 
     /* Polling */
-    uint32_t            interval_ms;    /**< Poll interval in ms           */
-    uint32_t            last_poll_tick;  /**< Tick of last poll             */
-    bool                enabled;        /**< Polling enabled flag          */
+    uint32_t interval_ms;    /**< Poll interval in ms           */
+    uint32_t last_poll_tick; /**< Tick of last poll             */
+    bool enabled;            /**< Polling enabled flag          */
 
     /* Values */
-    int16_t             raw;            /**< Last raw reading              */
-    int16_t             filtered;       /**< Last filtered reading         */
+    int16_t raw;      /**< Last raw reading              */
+    int16_t filtered; /**< Last filtered reading         */
 
     /* Filter (union would save RAM but complicates API) */
-    uint8_t             filter_type;    /**< SYN_SensorFilterType          */
-    void               *filter;         /**< Pointer to filter instance    */
+    uint8_t filter_type; /**< SYN_SensorFilterType          */
+    void *filter;        /**< Pointer to filter instance    */
 
     /* Threshold */
-    bool                threshold_enabled; /**< Threshold monitoring on    */
-    SYN_Hysteresis     hyst;            /**< Hysteresis state              */
+    bool threshold_enabled;              /**< Threshold monitoring on    */
+    SYN_Hysteresis hyst;                 /**< Hysteresis state              */
     SYN_SensorThresholdCallback on_high; /**< Above-threshold callback    */
     SYN_SensorThresholdCallback on_low;  /**< Below-threshold callback    */
-    void               *threshold_ctx;  /**< Context for threshold cbs    */
+    void *threshold_ctx;                 /**< Context for threshold cbs    */
 
     /* Statistics (optional — set via syn_sensor_set_stats) */
-    SYN_Signal        *stats;           /**< Sliding window stats (if set)*/
+    SYN_Signal *stats; /**< Sliding window stats (if set)*/
 } SYN_Sensor;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -114,8 +113,7 @@ typedef struct SYN_Sensor {
  * @param read_func  Function that reads the sensor hardware.
  * @param ctx        Context passed to read_func.
  */
-void syn_sensor_init(SYN_Sensor *sensor, const char *name,
-                      SYN_SensorReadFunc read_func, void *ctx);
+void syn_sensor_init(SYN_Sensor *sensor, const char *name, SYN_SensorReadFunc read_func, void *ctx);
 
 /**
  * @brief Set polling interval in milliseconds.
@@ -172,11 +170,9 @@ void syn_sensor_clear_filter(SYN_Sensor *sensor);
  * @param on_low     Called when value drops below (threshold - band).
  * @param ctx        Context for callbacks.
  */
-void syn_sensor_set_threshold(SYN_Sensor *sensor,
-                               int32_t threshold, int32_t band,
-                               SYN_SensorThresholdCallback on_high,
-                               SYN_SensorThresholdCallback on_low,
-                               void *ctx);
+void syn_sensor_set_threshold(SYN_Sensor *sensor, int32_t threshold, int32_t band,
+                              SYN_SensorThresholdCallback on_high,
+                              SYN_SensorThresholdCallback on_low, void *ctx);
 
 /**
  * @brief Disable threshold monitoring.

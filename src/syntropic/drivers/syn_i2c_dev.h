@@ -26,8 +26,8 @@
 #include "../common/syn_defs.h"
 #include "../port/syn_port_i2c.h"
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,8 +37,8 @@ extern "C" {
 
 /** @brief I2C device descriptor — bus number + 7-bit address. */
 typedef struct {
-    uint8_t  bus;      /**< I2C bus number                              */
-    uint8_t  addr;     /**< 7-bit device address                        */
+    uint8_t bus;  /**< I2C bus number                              */
+    uint8_t addr; /**< 7-bit device address                        */
 } SYN_I2CDev;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -49,10 +49,9 @@ typedef struct {
  * @param bus   I2C bus number.
  * @param addr  7-bit device address.
  */
-static inline void syn_i2c_dev_init(SYN_I2CDev *dev,
-                                     uint8_t bus, uint8_t addr)
+static inline void syn_i2c_dev_init(SYN_I2CDev *dev, uint8_t bus, uint8_t addr)
 {
-    dev->bus  = bus;
+    dev->bus = bus;
     dev->addr = addr;
 }
 
@@ -62,8 +61,7 @@ static inline void syn_i2c_dev_init(SYN_I2CDev *dev,
  * @param reg  Register address.
  * @return Register value.
  */
-static inline uint8_t syn_i2c_dev_read8(const SYN_I2CDev *dev,
-                                         uint8_t reg)
+static inline uint8_t syn_i2c_dev_read8(const SYN_I2CDev *dev, uint8_t reg)
 {
     uint8_t val = 0;
     syn_port_i2c_write_read(dev->bus, dev->addr, &reg, 1, &val, 1);
@@ -77,10 +75,9 @@ static inline uint8_t syn_i2c_dev_read8(const SYN_I2CDev *dev,
  * @param val  Value to write.
  * @return SYN_OK on success.
  */
-static inline SYN_Status syn_i2c_dev_write8(const SYN_I2CDev *dev,
-                                               uint8_t reg, uint8_t val)
+static inline SYN_Status syn_i2c_dev_write8(const SYN_I2CDev *dev, uint8_t reg, uint8_t val)
 {
-    uint8_t buf[2] = { reg, val };
+    uint8_t buf[2] = {reg, val};
     return syn_port_i2c_write(dev->bus, dev->addr, buf, 2);
 }
 
@@ -90,8 +87,7 @@ static inline SYN_Status syn_i2c_dev_write8(const SYN_I2CDev *dev,
  * @param reg  Register address.
  * @return 16-bit value (MSB first).
  */
-static inline uint16_t syn_i2c_dev_read16_be(const SYN_I2CDev *dev,
-                                               uint8_t reg)
+static inline uint16_t syn_i2c_dev_read16_be(const SYN_I2CDev *dev, uint8_t reg)
 {
     uint8_t buf[2] = {0, 0};
     syn_port_i2c_write_read(dev->bus, dev->addr, &reg, 1, buf, 2);
@@ -104,8 +100,7 @@ static inline uint16_t syn_i2c_dev_read16_be(const SYN_I2CDev *dev,
  * @param reg  Register address.
  * @return 16-bit value (LSB first).
  */
-static inline uint16_t syn_i2c_dev_read16_le(const SYN_I2CDev *dev,
-                                               uint8_t reg)
+static inline uint16_t syn_i2c_dev_read16_le(const SYN_I2CDev *dev, uint8_t reg)
 {
     uint8_t buf[2] = {0, 0};
     syn_port_i2c_write_read(dev->bus, dev->addr, &reg, 1, buf, 2);
@@ -119,10 +114,9 @@ static inline uint16_t syn_i2c_dev_read16_le(const SYN_I2CDev *dev,
  * @param val  16-bit value to write.
  * @return SYN_OK on success.
  */
-static inline SYN_Status syn_i2c_dev_write16_be(const SYN_I2CDev *dev,
-                                                    uint8_t reg, uint16_t val)
+static inline SYN_Status syn_i2c_dev_write16_be(const SYN_I2CDev *dev, uint8_t reg, uint16_t val)
 {
-    uint8_t buf[3] = { reg, (uint8_t)(val >> 8), (uint8_t)(val & 0xFF) };
+    uint8_t buf[3] = {reg, (uint8_t)(val >> 8), (uint8_t)(val & 0xFF)};
     return syn_port_i2c_write(dev->bus, dev->addr, buf, 3);
 }
 
@@ -134,9 +128,8 @@ static inline SYN_Status syn_i2c_dev_write16_be(const SYN_I2CDev *dev,
  * @param len  Number of bytes to read.
  * @return SYN_OK on success.
  */
-static inline SYN_Status syn_i2c_dev_read_burst(const SYN_I2CDev *dev,
-                                                    uint8_t reg,
-                                                    uint8_t *buf, size_t len)
+static inline SYN_Status syn_i2c_dev_read_burst(const SYN_I2CDev *dev, uint8_t reg, uint8_t *buf,
+                                                size_t len)
 {
     return syn_port_i2c_write_read(dev->bus, dev->addr, &reg, 1, buf, len);
 }
@@ -149,17 +142,17 @@ static inline SYN_Status syn_i2c_dev_read_burst(const SYN_I2CDev *dev,
  * @param len   Number of bytes (max 32).
  * @return SYN_OK on success, SYN_ERROR if len > 32.
  */
-static inline SYN_Status syn_i2c_dev_write_burst(const SYN_I2CDev *dev,
-                                                     uint8_t reg,
-                                                     const uint8_t *data,
-                                                     size_t len)
+static inline SYN_Status syn_i2c_dev_write_burst(const SYN_I2CDev *dev, uint8_t reg,
+                                                 const uint8_t *data, size_t len)
 {
     /* Must prepend register address — use stack for small writes */
     uint8_t buf[33]; /* 1 reg + up to 32 data bytes */
-    if (len > 32) return SYN_ERROR;
+    if (len > 32)
+        return SYN_ERROR;
     buf[0] = reg;
     size_t i;
-    for (i = 0; i < len; i++) buf[i + 1] = data[i];
+    for (i = 0; i < len; i++)
+        buf[i + 1] = data[i];
     return syn_port_i2c_write(dev->bus, dev->addr, buf, len + 1);
 }
 
@@ -171,9 +164,8 @@ static inline SYN_Status syn_i2c_dev_write_burst(const SYN_I2CDev *dev,
  * @param val   New values for masked bits.
  * @return SYN_OK on success.
  */
-static inline SYN_Status syn_i2c_dev_modify8(const SYN_I2CDev *dev,
-                                                 uint8_t reg,
-                                                 uint8_t mask, uint8_t val)
+static inline SYN_Status syn_i2c_dev_modify8(const SYN_I2CDev *dev, uint8_t reg, uint8_t mask,
+                                             uint8_t val)
 {
     uint8_t cur = syn_i2c_dev_read8(dev, reg);
     cur = (uint8_t)((cur & ~mask) | (val & mask));

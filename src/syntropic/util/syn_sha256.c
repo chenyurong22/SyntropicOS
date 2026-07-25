@@ -1,5 +1,5 @@
 #if __has_include("syn_config.h")
-  #include "syn_config.h"
+#include "syn_config.h"
 #endif
 
 #if !defined(SYN_USE_SHA256) || SYN_USE_SHA256
@@ -12,39 +12,30 @@
  * Static K[64] round constants table consumes ~256 bytes of ROM.
  */
 
-#include "syn_sha256.h"
 #include "syn_assert.h"
 #include "syn_pack.h"
+#include "syn_sha256.h"
 
 #include <string.h>
 
 /* ── Constants ──────────────────────────────────────────────────────────── */
 
 /** FIPS 180-4 initial hash values (H0–H7). */
-static const uint32_t H_INIT[8] = {
-    0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u, 0xa54ff53au,
-    0x510e527fu, 0x9b05688cu, 0x1f83d9abu, 0x5be0cd19u
-};
+static const uint32_t H_INIT[8] = {0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u, 0xa54ff53au,
+                                   0x510e527fu, 0x9b05688cu, 0x1f83d9abu, 0x5be0cd19u};
 
 /** FIPS 180-4 round constants (K0–K63). */
 static const uint32_t K[64] = {
-    0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u,
-    0x3956c25bu, 0x59f111f1u, 0x923f82a4u, 0xab1c5ed5u,
-    0xd807aa98u, 0x12835b01u, 0x243185beu, 0x550c7dc3u,
-    0x72be5d74u, 0x80deb1feu, 0x9bdc06a7u, 0xc19bf174u,
-    0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu,
-    0x2de92c6fu, 0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau,
-    0x983e5152u, 0xa831c66du, 0xb00327c8u, 0xbf597fc7u,
-    0xc6e00bf3u, 0xd5a79147u, 0x06ca6351u, 0x14292967u,
-    0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu, 0x53380d13u,
-    0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u,
-    0xa2bfe8a1u, 0xa81a664bu, 0xc24b8b70u, 0xc76c51a3u,
-    0xd192e819u, 0xd6990624u, 0xf40e3585u, 0x106aa070u,
-    0x19a4c116u, 0x1e376c08u, 0x2748774cu, 0x34b0bcb5u,
-    0x391c0cb3u, 0x4ed8aa4au, 0x5b9cca4fu, 0x682e6ff3u,
-    0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u,
-    0x90befffau, 0xa4506cebu, 0xbef9a3f7u, 0xc67178f2u
-};
+    0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u, 0x3956c25bu, 0x59f111f1u, 0x923f82a4u,
+    0xab1c5ed5u, 0xd807aa98u, 0x12835b01u, 0x243185beu, 0x550c7dc3u, 0x72be5d74u, 0x80deb1feu,
+    0x9bdc06a7u, 0xc19bf174u, 0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu, 0x2de92c6fu,
+    0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau, 0x983e5152u, 0xa831c66du, 0xb00327c8u, 0xbf597fc7u,
+    0xc6e00bf3u, 0xd5a79147u, 0x06ca6351u, 0x14292967u, 0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu,
+    0x53380d13u, 0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u, 0xa2bfe8a1u, 0xa81a664bu,
+    0xc24b8b70u, 0xc76c51a3u, 0xd192e819u, 0xd6990624u, 0xf40e3585u, 0x106aa070u, 0x19a4c116u,
+    0x1e376c08u, 0x2748774cu, 0x34b0bcb5u, 0x391c0cb3u, 0x4ed8aa4au, 0x5b9cca4fu, 0x682e6ff3u,
+    0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u, 0x90befffau, 0xa4506cebu, 0xbef9a3f7u,
+    0xc67178f2u};
 
 /* ── Bit operations (FIPS 180-4 §4.1.2) ───────────────────────────────── */
 
@@ -145,20 +136,38 @@ static void sha256_transform(uint32_t state[8], const uint8_t block[64])
     }
 
     /* Working variables */
-    a = state[0]; b = state[1]; c = state[2]; d = state[3];
-    e = state[4]; f = state[5]; g = state[6]; h = state[7];
+    a = state[0];
+    b = state[1];
+    c = state[2];
+    d = state[3];
+    e = state[4];
+    f = state[5];
+    g = state[6];
+    h = state[7];
 
     /* 64 rounds */
     for (i = 0; i < 64; i++) {
         uint32_t t1 = h + sigma1(e) + ch(e, f, g) + K[i] + W[i];
         uint32_t t2 = sigma0(a) + maj(a, b, c);
-        h = g; g = f; f = e; e = d + t1;
-        d = c; c = b; b = a; a = t1 + t2;
+        h = g;
+        g = f;
+        f = e;
+        e = d + t1;
+        d = c;
+        c = b;
+        b = a;
+        a = t1 + t2;
     }
 
     /* Update state */
-    state[0] += a; state[1] += b; state[2] += c; state[3] += d;
-    state[4] += e; state[5] += f; state[6] += g; state[7] += h;
+    state[0] += a;
+    state[1] += b;
+    state[2] += c;
+    state[3] += d;
+    state[4] += e;
+    state[5] += f;
+    state[6] += g;
+    state[7] += h;
 }
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -167,7 +176,7 @@ void syn_sha256_init(SYN_SHA256 *ctx)
 {
     SYN_ASSERT(ctx != NULL);
     memcpy(ctx->state, H_INIT, sizeof(H_INIT));
-    ctx->buf_len      = 0;
+    ctx->buf_len = 0;
     ctx->total_len_lo = 0;
     ctx->total_len_hi = 0;
 }
@@ -175,7 +184,8 @@ void syn_sha256_init(SYN_SHA256 *ctx)
 void syn_sha256_update(SYN_SHA256 *ctx, const void *data, size_t len)
 {
     SYN_ASSERT(ctx != NULL);
-    if (data == NULL || len == 0) return;
+    if (data == NULL || len == 0)
+        return;
 
     const uint8_t *p = (const uint8_t *)data;
 
@@ -183,7 +193,7 @@ void syn_sha256_update(SYN_SHA256 *ctx, const void *data, size_t len)
     uint32_t len_bits_lo = (uint32_t)((uint64_t)len << 3);
     ctx->total_len_lo += len_bits_lo;
     if (ctx->total_len_lo < len_bits_lo) {
-        ctx->total_len_hi++;  /* carry */
+        ctx->total_len_hi++; /* carry */
     }
     ctx->total_len_hi += (uint32_t)((uint64_t)len >> 29);
 
@@ -193,7 +203,7 @@ void syn_sha256_update(SYN_SHA256 *ctx, const void *data, size_t len)
         uint32_t fill = (len < space) ? (uint32_t)len : space;
         memcpy(ctx->buf + ctx->buf_len, p, fill);
         ctx->buf_len += fill;
-        p   += fill;
+        p += fill;
         len -= fill;
 
         if (ctx->buf_len == SYN_SHA256_BLOCK_SIZE) {
@@ -205,7 +215,7 @@ void syn_sha256_update(SYN_SHA256 *ctx, const void *data, size_t len)
     /* Process full blocks directly from input */
     while (len >= SYN_SHA256_BLOCK_SIZE) {
         sha256_transform(ctx->state, p);
-        p   += SYN_SHA256_BLOCK_SIZE;
+        p += SYN_SHA256_BLOCK_SIZE;
         len -= SYN_SHA256_BLOCK_SIZE;
     }
 
@@ -226,8 +236,7 @@ void syn_sha256_final(SYN_SHA256 *ctx, uint8_t hash[SYN_SHA256_DIGEST_SIZE])
 
     if (ctx->buf_len > 56) {
         /* Not enough room for length — fill this block and process */
-        memset(ctx->buf + ctx->buf_len, 0,
-               SYN_SHA256_BLOCK_SIZE - ctx->buf_len);
+        memset(ctx->buf + ctx->buf_len, 0, SYN_SHA256_BLOCK_SIZE - ctx->buf_len);
         sha256_transform(ctx->state, ctx->buf);
         ctx->buf_len = 0;
     }

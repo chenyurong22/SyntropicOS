@@ -233,4 +233,46 @@ int32_t syn_signal_std_dev_q16(const SYN_Signal *sig)
     return q16_sqrt(var);
 }
 
+int32_t syn_signal_power_q16(const SYN_Signal *sig)
+{
+    if (sig->count == 0)
+        return 0;
+
+    int64_t sum_sq = 0;
+    size_t start = (sig->count < sig->capacity) ? 0 : sig->head;
+
+    size_t i;
+    for (i = 0; i < sig->count; i++) {
+        size_t idx = (start + i) % sig->capacity;
+        int64_t v = (int64_t)sig->buf[idx];
+        sum_sq += v * v;
+    }
+
+    int64_t mean_sq_q16 = (sum_sq << 16) / (int64_t)sig->count;
+    if (mean_sq_q16 > INT32_MAX)
+        return INT32_MAX;
+
+    return (int32_t)mean_sq_q16;
+}
+
+int32_t syn_signal_crest_factor_q16(SYN_Signal *sig)
+{
+    int32_t rms = syn_signal_rms_q16(sig);
+    if (rms <= 0)
+        return 0;
+
+    int32_t peak = syn_signal_max(sig);
+    int32_t min_v = syn_signal_min(sig);
+    if (-min_v > peak)
+        peak = -min_v;
+
+    int64_t peak_q16 = (int64_t)peak << 16;
+    int64_t cf_q16 = (peak_q16 << 16) / (int64_t)rms;
+
+    if (cf_q16 > INT32_MAX)
+        return INT32_MAX;
+
+    return (int32_t)cf_q16;
+}
+
 #endif /* SYN_USE_SIGNAL */

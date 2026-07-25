@@ -145,10 +145,32 @@ static void test_signal_edge_cases(void)
     TEST_ASSERT_EQUAL_INT(10, syn_signal_delta(&sig));
 }
 
+static void test_signal_crest_factor_and_power(void)
+{
+    int32_t samples[4];
+    SYN_Signal sig;
+    syn_signal_init(&sig, samples, 4);
+
+    TEST_ASSERT_EQUAL_INT(0, syn_signal_power_q16(&sig));
+    TEST_ASSERT_EQUAL_INT(0, syn_signal_crest_factor_q16(&sig));
+
+    /* Constant 10 -> power = 100 in Q16: 100 * 65536 = 6553600 */
+    syn_signal_push(&sig, 10);
+    syn_signal_push(&sig, 10);
+    syn_signal_push(&sig, 10);
+    syn_signal_push(&sig, 10);
+
+    TEST_ASSERT_EQUAL_INT(6553600, syn_signal_power_q16(&sig));
+
+    /* Constant signal peak/RMS = 1.0 (65536 in Q16.16) */
+    TEST_ASSERT_INT_WITHIN(100, 65536, syn_signal_crest_factor_q16(&sig));
+}
+
 void run_signal_tests(void)
 {
     RUN_TEST(test_signal);
     RUN_TEST(test_signal_wrapped_stats);
     RUN_TEST(test_signal_rms_std_dev);
     RUN_TEST(test_signal_edge_cases);
+    RUN_TEST(test_signal_crest_factor_and_power);
 }

@@ -204,6 +204,27 @@ int32_t syn_signal_rms_q16(const SYN_Signal *sig);
  */
 int32_t syn_signal_std_dev_q16(const SYN_Signal *sig);
 
+/**
+ * @brief Signal Crest Factor in Q16.16: Peak / RMS.
+ *
+ * Measures signal peakiness (e.g. 1.414 for sine wave).
+ * Returns 0 if RMS is 0 or window is empty.
+ *
+ * @param sig  Signal instance.
+ * @return Crest Factor in Q16.16 format.
+ */
+int32_t syn_signal_crest_factor_q16(SYN_Signal *sig);
+
+/**
+ * @brief Mean signal power in Q16.16: Σ(x²) / N.
+ *
+ * Returns 0 if the window is empty.
+ *
+ * @param sig  Signal instance.
+ * @return Mean power in Q16.16 format.
+ */
+int32_t syn_signal_power_q16(const SYN_Signal *sig);
+
 #ifdef __cplusplus
 }
 #endif

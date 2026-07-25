@@ -43,6 +43,9 @@ extern "C" {
 #define SYN_J1939_PGN_PROPRIETARY_A 61184U /**< Destination-Specific Proprietary A (0x00EF00) */
 #define SYN_J1939_PGN_EEC1 61444U          /**< Electronic Engine Controller 1 (0x00F004) */
 #define SYN_J1939_PGN_DM1 65226U           /**< Active Diagnostic Trouble Codes (0x00FECA) */
+#define SYN_J1939_PGN_DM2 65227U           /**< Previously Active Diagnostic Trouble Codes (0x00FECB) */
+#define SYN_J1939_PGN_DM3 65228U           /**< Clear Previously Active Diagnostic Trouble Codes (0x00FECC) */
+#define SYN_J1939_PGN_DM11 65235U          /**< Clear Active Diagnostic Trouble Codes (0x00FED3) */
 #define SYN_J1939_PGN_BMS 65251U           /**< High Voltage Battery Pack Status (0x00FEE3) */
 #define SYN_J1939_PGN_ET1 65262U           /**< Engine Temperature 1 (0x00FEEE) */
 #define SYN_J1939_PGN_PROPRIETARY_B 65280U /**< Broadcast Proprietary B Start (0x00FF00) */
@@ -253,6 +256,42 @@ SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node, const SYN_CAN_Frame *fr
  */
 size_t syn_j1939_encode_dm2(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *dtc_list,
                             size_t dtc_count, uint8_t mil_lamp_status);
+
+#ifndef SYN_J1939_MAX_LOGGED_DTCS
+#define SYN_J1939_MAX_LOGGED_DTCS 16
+#endif
+
+typedef struct {
+    SYN_J1939_DTC active_dtcs[SYN_J1939_MAX_LOGGED_DTCS];
+    size_t active_count;
+    SYN_J1939_DTC prev_dtcs[SYN_J1939_MAX_LOGGED_DTCS];
+    size_t prev_count;
+} SYN_J1939_DTCLog;
+
+/**
+ * @brief Initialize a J1939 Diagnostic Trouble Code logger.
+ */
+void syn_j1939_dtc_log_init(SYN_J1939_DTCLog *log);
+
+/**
+ * @brief Add an active Diagnostic Trouble Code (DM1).
+ */
+SYN_Status syn_j1939_dtc_add_active(SYN_J1939_DTCLog *log, uint32_t spn, uint8_t fmi);
+
+/**
+ * @brief Clear an active DTC and move it to previously active log (DM2).
+ */
+SYN_Status syn_j1939_dtc_clear_active(SYN_J1939_DTCLog *log, uint32_t spn, uint8_t fmi);
+
+/**
+ * @brief Clear all previously active DTCs (DM3 Request handling).
+ */
+void syn_j1939_dtc_clear_dm3(SYN_J1939_DTCLog *log);
+
+/**
+ * @brief Clear all active DTCs (DM11 Request handling).
+ */
+void syn_j1939_dtc_clear_dm11(SYN_J1939_DTCLog *log);
 
 #ifdef __cplusplus
 }

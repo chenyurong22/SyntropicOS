@@ -182,6 +182,34 @@ static void test_j1939_dm2_encoding(void)
     TEST_ASSERT_EQUAL_UINT32(6, len);
 }
 
+static void test_j1939_dtc_log_manager(void)
+{
+    SYN_J1939_DTCLog log;
+    syn_j1939_dtc_log_init(&log);
+
+    TEST_ASSERT_EQUAL(0, log.active_count);
+    TEST_ASSERT_EQUAL(0, log.prev_count);
+
+    /* Add active DTC (SPN 190 Engine Speed, FMI 2 Data Erratic) */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_j1939_dtc_add_active(&log, 190, 2));
+    TEST_ASSERT_EQUAL(1, log.active_count);
+    TEST_ASSERT_EQUAL(1, log.active_dtcs[0].occurrence_count);
+
+    /* Add duplicate -> increases occurrence count */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_j1939_dtc_add_active(&log, 190, 2));
+    TEST_ASSERT_EQUAL(1, log.active_count);
+    TEST_ASSERT_EQUAL(2, log.active_dtcs[0].occurrence_count);
+
+    /* Clear active -> moves to prev_dtcs (DM2) */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_j1939_dtc_clear_active(&log, 190, 2));
+    TEST_ASSERT_EQUAL(0, log.active_count);
+    TEST_ASSERT_EQUAL(1, log.prev_count);
+
+    /* DM3 Clear -> clears prev_dtcs */
+    syn_j1939_dtc_clear_dm3(&log);
+    TEST_ASSERT_EQUAL(0, log.prev_count);
+}
+
 void run_j1939_tests(void)
 {
     RUN_TEST(test_j1939_id_pack_unpack_pdu1_pdu2);
@@ -190,4 +218,5 @@ void run_j1939_tests(void)
     RUN_TEST(test_j1939_dm1_encoding);
     RUN_TEST(test_j1939_tp_bam_multi_packet_assembly);
     RUN_TEST(test_j1939_dm2_encoding);
+    RUN_TEST(test_j1939_dtc_log_manager);
 }

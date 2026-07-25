@@ -307,4 +307,81 @@ size_t syn_j1939_encode_dm2(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *
     return syn_j1939_encode_dm1(buf, buf_size, dtc_list, dtc_count, mil_lamp_status);
 }
 
+void syn_j1939_dtc_log_init(SYN_J1939_DTCLog *log)
+{
+    if (log != NULL) {
+        (void)memset(log, 0, sizeof(*log));
+    }
+}
+
+SYN_Status syn_j1939_dtc_add_active(SYN_J1939_DTCLog *log, uint32_t spn, uint8_t fmi)
+{
+    if (log == NULL) {
+        return SYN_INVALID_PARAM;
+    }
+
+    /* Check if already active */
+    for (size_t i = 0; i < log->active_count; i++) {
+        if (log->active_dtcs[i].spn == spn && log->active_dtcs[i].fmi == fmi) {
+            if (log->active_dtcs[i].occurrence_count < 126U) {
+                log->active_dtcs[i].occurrence_count++;
+            }
+            return SYN_OK;
+        }
+    }
+
+    if (log->active_count >= SYN_J1939_MAX_LOGGED_DTCS) {
+        return SYN_ERROR;
+    }
+
+    log->active_dtcs[log->active_count].spn = spn;
+    log->active_dtcs[log->active_count].fmi = fmi;
+    log->active_dtcs[log->active_count].occurrence_count = 1;
+    log->active_dtcs[log->active_count].conversion_method = 0;
+    log->active_count++;
+
+    return SYN_OK;
+}
+
+SYN_Status syn_j1939_dtc_clear_active(SYN_J1939_DTCLog *log, uint32_t spn, uint8_t fmi)
+{
+    if (log == NULL) {
+        return SYN_INVALID_PARAM;
+    }
+
+    for (size_t i = 0; i < log->active_count; i++) {
+        if (log->active_dtcs[i].spn == spn && log->active_dtcs[i].fmi == fmi) {
+            /* Copy to prev_dtcs if space exists */
+            if (log->prev_count < SYN_J1939_MAX_LOGGED_DTCS) {
+                log->prev_dtcs[log->prev_count] = log->active_dtcs[i];
+                log->prev_count++;
+            }
+            /* Remove from active_dtcs */
+            for (size_t j = i; j + 1 < log->active_count; j++) {
+                log->active_dtcs[j] = log->active_dtcs[j + 1];
+            }
+            log->active_count--;
+            return SYN_OK;
+        }
+    }
+
+    return SYN_ERROR;
+}
+
+void syn_j1939_dtc_clear_dm3(SYN_J1939_DTCLog *log)
+{
+    if (log != NULL) {
+        log->prev_count = 0;
+        (void)memset(log->prev_dtcs, 0, sizeof(log->prev_dtcs));
+    }
+}
+
+void syn_j1939_dtc_clear_dm11(SYN_J1939_DTCLog *log)
+{
+    if (log != NULL) {
+        log->active_count = 0;
+        (void)memset(log->active_dtcs, 0, sizeof(log->active_dtcs));
+    }
+}
+
 #endif /* SYN_USE_J1939 */

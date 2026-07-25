@@ -16,7 +16,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(SYN_USE_SMBUS) && SYN_USE_SMBUS
+#if __has_include("syn_config.h")
+#include "syn_config.h"
+#endif
+
+#if !defined(SYN_USE_SMBUS) || SYN_USE_SMBUS
 
 #ifdef __cplusplus
 extern "C" {

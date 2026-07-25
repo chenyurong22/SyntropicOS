@@ -51,6 +51,12 @@
 #ifndef SYN_MODBUS_H
 #define SYN_MODBUS_H
 
+#if __has_include("syn_config.h")
+#include "syn_config.h"
+#endif
+
+#if !defined(SYN_USE_MODBUS) || SYN_USE_MODBUS
+
 #include "../common/syn_defs.h"
 #include "../drivers/syn_uart.h"
 #include "../port/syn_port_system.h"
@@ -248,5 +254,7 @@ void syn_modbus_reset(SYN_Modbus *mb);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* SYN_USE_MODBUS */
 
 #endif /* SYN_MODBUS_H */

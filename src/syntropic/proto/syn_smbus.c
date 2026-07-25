@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#if defined(SYN_USE_SMBUS) && SYN_USE_SMBUS
+#if !defined(SYN_USE_SMBUS) || SYN_USE_SMBUS
 
 uint8_t syn_smbus_calc_pec(uint8_t init_crc, const uint8_t *data, size_t len)
 {

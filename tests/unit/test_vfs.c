@@ -362,9 +362,50 @@ static void test_vfs_edge_cases(void)
     TEST_ASSERT_EQUAL_INT(0, syn_vfs_closedir(dd_nocb));
 }
 
+static int mock_stat(const char *path, SYN_VfsDirEnt *ent, void *fs_data)
+{
+    (void)path; (void)fs_data;
+    if (ent) {
+        strcpy(ent->name, "stat_file.txt");
+        ent->size = 1024;
+        ent->is_dir = false;
+    }
+    return 0;
+}
+
+static int mock_rename(const char *old_path, const char *new_path, void *fs_data)
+{
+    (void)old_path; (void)new_path; (void)fs_data;
+    return 0;
+}
+
+static void test_vfs_unmount_stat_rename(void)
+{
+    syn_vfs_init();
+
+    static const SYN_VfsOps ops = {
+        .open = mock_open,
+        .close = mock_close,
+        .stat = mock_stat,
+        .rename = mock_rename
+    };
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/flash", &ops, NULL));
+
+    SYN_VfsDirEnt ent;
+    TEST_ASSERT_EQUAL_INT(0, syn_vfs_stat("/flash/data.bin", &ent));
+    TEST_ASSERT_EQUAL_STRING("stat_file.txt", ent.name);
+
+    TEST_ASSERT_EQUAL_INT(0, syn_vfs_rename("/flash/old.txt", "/flash/new.txt"));
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_unmount("/flash"));
+    TEST_ASSERT_EQUAL_INT(-1, syn_vfs_open("/flash/data.bin", SYN_O_RDONLY));
+}
+
 void run_vfs_tests(void)
 {
     RUN_TEST(test_vfs_basic);
     RUN_TEST(test_vfs_exhaustion);
     RUN_TEST(test_vfs_edge_cases);
+    RUN_TEST(test_vfs_unmount_stat_rename);
 }

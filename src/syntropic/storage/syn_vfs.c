@@ -53,6 +53,25 @@ SYN_Status syn_vfs_mount(const char *prefix, const SYN_VfsOps *ops, void *fs_dat
     return SYN_OK;
 }
 
+SYN_Status syn_vfs_unmount(const char *prefix)
+{
+    SYN_ASSERT(prefix != NULL);
+
+    for (size_t i = 0; i < g_mount_count; i++) {
+        if (strcmp(g_mounts[i].prefix, prefix) == 0) {
+            /* Shift down remaining mounts */
+            for (size_t j = i; j < g_mount_count - 1; j++) {
+                g_mounts[j] = g_mounts[j + 1];
+            }
+            g_mount_count--;
+            memset(&g_mounts[g_mount_count], 0, sizeof(SYN_VfsMount));
+            return SYN_OK;
+        }
+    }
+
+    return SYN_ERROR;
+}
+
 /**
  * @brief Find the mount point for a given path.
  * @param path      Absolute path.
@@ -85,6 +104,32 @@ static const SYN_VfsMount *find_mount(const char *path, const char **rel_path)
     }
 
     return matched;
+}
+
+int syn_vfs_stat(const char *path, SYN_VfsDirEnt *ent)
+{
+    SYN_ASSERT(path != NULL && ent != NULL);
+    const char *rel_path = NULL;
+    const SYN_VfsMount *m = find_mount(path, &rel_path);
+    if (!m || !m->ops->stat) {
+        return -1;
+    }
+    return m->ops->stat(rel_path, ent, m->fs_data);
+}
+
+int syn_vfs_rename(const char *old_path, const char *new_path)
+{
+    SYN_ASSERT(old_path != NULL && new_path != NULL);
+    const char *rel_old = NULL;
+    const char *rel_new = NULL;
+    const SYN_VfsMount *m_old = find_mount(old_path, &rel_old);
+    const SYN_VfsMount *m_new = find_mount(new_path, &rel_new);
+
+    if (!m_old || !m_new || m_old != m_new || !m_old->ops->rename) {
+        return -1; /* Rename requires same filesystem mount */
+    }
+
+    return m_old->ops->rename(rel_old, rel_new, m_old->fs_data);
 }
 
 int syn_vfs_open(const char *path, int flags)

@@ -72,6 +72,8 @@ typedef struct {
     int (*write)(SYN_VfsFile *file, const void *buf, size_t len);     /**< Write to a file      */
     int32_t (*seek)(SYN_VfsFile *file, int32_t offset, int whence);   /**< Seek in a file       */
     int32_t (*tell)(SYN_VfsFile *file);                               /**< Get file position    */
+    int (*stat)(const char *path, SYN_VfsDirEnt *ent, void *fs_data); /**< Stat a file or directory */
+    int (*rename)(const char *old_path, const char *new_path, void *fs_data); /**< Rename a file */
     int (*unlink)(const char *path, void *fs_data);                   /**< Delete a file        */
     int (*mkdir)(const char *path, void *fs_data);                    /**< Create a directory   */
     int (*opendir)(SYN_VfsDir *dir, const char *path, void *fs_data); /**< Open a directory     */
@@ -120,6 +122,29 @@ void syn_vfs_init(void);
  * @return SYN_OK on success, SYN_ERROR if table is full or prefix exists.
  */
 SYN_Status syn_vfs_mount(const char *prefix, const SYN_VfsOps *ops, void *fs_data);
+
+/**
+ * @brief Unmount a filesystem by path prefix.
+ * @param prefix Mount path prefix.
+ * @return SYN_OK on success, SYN_ERROR if not found or busy.
+ */
+SYN_Status syn_vfs_unmount(const char *prefix);
+
+/**
+ * @brief Get status information for a file or directory.
+ * @param path Absolute path including mount prefix.
+ * @param ent  [out] Status information.
+ * @return 0 on success, or negative error code.
+ */
+int syn_vfs_stat(const char *path, SYN_VfsDirEnt *ent);
+
+/**
+ * @brief Rename or move a file.
+ * @param old_path Absolute source path.
+ * @param new_path Absolute destination path.
+ * @return 0 on success, or negative error code.
+ */
+int syn_vfs_rename(const char *old_path, const char *new_path);
 
 /**
  * @brief Open a file.

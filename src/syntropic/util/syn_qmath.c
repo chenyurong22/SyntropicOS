@@ -53,6 +53,45 @@ q16_t q16_cos(q16_t x)
     return q16_sin(x + Q16_PI_2);
 }
 
+q16_t q16_sin_fast(q16_t x)
+{
+    /* Parabolic approximation: sin(x) ≈ B*x + C*x*|x| for x in [-PI, PI] */
+    while (x > Q16_PI)
+        x -= Q16_2_PI;
+    while (x < -Q16_PI)
+        x += Q16_2_PI;
+
+    /* B = 4/PI = 1.2732395447 (83443 in Q16)
+       C = -4/PI^2 = -0.4052847346 (-26560 in Q16) */
+    int64_t B = 83443;
+    int64_t C = -26560;
+
+    int64_t abs_x = (x >= 0) ? x : -x;
+    int64_t x_abs_x = ((int64_t)x * abs_x) >> 16;
+    int64_t y = ((B * x) >> 16) + ((C * x_abs_x) >> 16);
+
+    /* Extra precision smoothing step: y = P*(y*|y| - y) + y where P = 0.225 (14745 in Q16) */
+    int64_t abs_y = (y >= 0) ? y : -y;
+    int64_t y_abs_y = (y * abs_y) >> 16;
+    int64_t P = 14745;
+    int64_t fine_y = (P * (y_abs_y - y)) >> 16;
+
+    return (q16_t)(y + fine_y);
+}
+
+q16_t q16_cos_fast(q16_t x)
+{
+    return q16_sin_fast(x + Q16_PI_2);
+}
+
+void q16_sincos_fast(q16_t x, q16_t *sin_out, q16_t *cos_out)
+{
+    if (sin_out)
+        *sin_out = q16_sin_fast(x);
+    if (cos_out)
+        *cos_out = q16_cos_fast(x);
+}
+
 q16_t q16_tan(q16_t x)
 {
     q16_t c = q16_cos(x);

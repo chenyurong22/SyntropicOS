@@ -146,6 +146,22 @@ static void test_q16_math_edge_cases(void)
     TEST_ASSERT_EQUAL(Q16_FROM_INT(5), q16_pow(Q16_FROM_INT(5), Q16_ONE));
 }
 
+static void test_q16_trig_fast(void)
+{
+    q16_t s_fast = q16_sin_fast(Q16_PI_2);
+    q16_t c_fast = q16_cos_fast(0);
+    q16_t s_out, c_out;
+
+    q16_sincos_fast(Q16_PI / 4, &s_out, &c_out);
+
+    /* sin(pi/2) ≈ 1.0, cos(0) ≈ 1.0 */
+    TEST_ASSERT_INT32_WITHIN(100, Q16_ONE, s_fast);
+    TEST_ASSERT_INT32_WITHIN(100, Q16_ONE, c_fast);
+
+    /* sin(pi/4) == cos(pi/4) ≈ 0.7071 */
+    TEST_ASSERT_INT32_WITHIN(100, s_out, c_out);
+}
+
 void run_math_tests(void)
 {
     RUN_TEST(test_qmath);
@@ -153,5 +169,6 @@ void run_math_tests(void)
     RUN_TEST(test_q16_saturating);
     RUN_TEST(test_q16_poly_eval);
     RUN_TEST(test_q16_math_edge_cases);
+    RUN_TEST(test_q16_trig_fast);
     RUN_TEST(test_rate_limit);
 }

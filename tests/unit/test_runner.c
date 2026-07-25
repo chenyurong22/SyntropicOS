@@ -319,8 +319,12 @@ int main(void)
     /* Streams */
     run_stream_tests();
 
-    /* Fixed-point math & matrix */
+    /* Fixed-point math, matrix, vector & quaternion */
     run_matrix_tests();
+    void run_quaternion_tests(void);
+    void run_vector_tests(void);
+    run_quaternion_tests();
+    run_vector_tests();
 
     /* Kalman filter */
     run_kalman_tests();

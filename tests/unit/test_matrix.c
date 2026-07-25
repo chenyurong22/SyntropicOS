@@ -340,6 +340,29 @@ static void test_mat_inverse_3x3(void)
     }
 }
 
+static void test_mat_inverse_lu_nn(void)
+{
+    /* 4×4 Pascal matrix inverse test */
+    SYN_MAT_DECL(A, 4, 4);
+    SYN_MAT_DECL(Ainv, 4, 4);
+    SYN_MAT_DECL(I_check, 4, 4);
+
+    A.data[0] = Q16_ONE; A.data[1] = Q16_ONE; A.data[2] = Q16_ONE; A.data[3] = Q16_ONE;
+    A.data[4] = Q16_ONE; A.data[5] = Q16_FROM_INT(2); A.data[6] = Q16_FROM_INT(3); A.data[7] = Q16_FROM_INT(4);
+    A.data[8] = Q16_ONE; A.data[9] = Q16_FROM_INT(3); A.data[10] = Q16_FROM_INT(6); A.data[11] = Q16_FROM_INT(10);
+    A.data[12] = Q16_ONE; A.data[13] = Q16_FROM_INT(4); A.data[14] = Q16_FROM_INT(10); A.data[15] = Q16_FROM_INT(20);
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_inv_lu(&A, &Ainv));
+    syn_matrix_mul(&A, &Ainv, &I_check);
+
+    for (uint8_t i = 0; i < 4; i++) {
+        for (uint8_t j = 0; j < 4; j++) {
+            q16_t expected = (i == j) ? Q16_ONE : 0;
+            ASSERT_Q16_NEAR(expected, SYN_MAT_AT(&I_check, i, j), Q16_MAT_TOL);
+        }
+    }
+}
+
 static void test_mat_singular(void)
 {
     /* Singular matrix: [[1, 2], [2, 4]] → det = 0 */
@@ -1005,6 +1028,7 @@ void run_matrix_tests(void)
     RUN_TEST(test_mat_det_2x2);
     RUN_TEST(test_mat_inverse_2x2);
     RUN_TEST(test_mat_inverse_3x3);
+    RUN_TEST(test_mat_inverse_lu_nn);
     RUN_TEST(test_mat_singular);
     RUN_TEST(test_mat_rotate_2d);
     RUN_TEST(test_mat_nonsquare_mul);

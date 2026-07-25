@@ -82,6 +82,8 @@ SYN_SRCS := \
 	src/syntropic/util/syn_metrics.c \
 	src/syntropic/util/syn_qmath.c \
 	src/syntropic/util/syn_matrix.c \
+	src/syntropic/util/syn_quaternion.c \
+	src/syntropic/util/syn_vector.c \
 	src/syntropic/dsp/syn_kalman.c src/syntropic/motor/syn_foc.c \
 	src/syntropic/motor/syn_foc_observer.c \
 	src/syntropic/proto/syn_modbus_tcp.c src/syntropic/proto/syn_nmea.c \

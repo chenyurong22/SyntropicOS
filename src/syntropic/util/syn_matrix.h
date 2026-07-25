@@ -198,6 +198,34 @@ q16_t syn_matrix_det(const SYN_Matrix *m);
  */
 SYN_Status syn_matrix_inv(const SYN_Matrix *m, SYN_Matrix *out);
 
+/**
+ * @brief Invert a 3×3 matrix in-place or out-of-place via Cramer's rule.
+ * @param src Input 3×3 matrix.
+ * @param dst Output 3×3 inverse matrix. May alias src.
+ * @return SYN_OK on success, SYN_ERROR if matrix is singular (det == 0).
+ */
+SYN_Status syn_matrix_inv_3x3(const SYN_Matrix *src, SYN_Matrix *dst);
+
+/**
+ * @brief Invert an arbitrary N×N matrix via LU decomposition using caller-supplied workspace.
+ * @param src      Input square matrix (N×N).
+ * @param dst      Output inverse matrix (N×N). Must not alias src.
+ * @param lu_work  Caller-supplied N×N buffer (N*N elements).
+ * @param p_work   Caller-supplied N pivot buffer (N elements).
+ * @param col_work Caller-supplied N vector buffer (N elements).
+ * @return SYN_OK on success, SYN_ERROR if src is singular or dimensions invalid.
+ */
+SYN_Status syn_matrix_inv_lu_work(const SYN_Matrix *src, SYN_Matrix *dst,
+                                  q16_t *lu_work, uint8_t *p_work, q16_t *col_work);
+
+/**
+ * @brief Invert an arbitrary N×N matrix via LU decomposition (convenience wrapper).
+ * @param src  Input square matrix (N×N).
+ * @param dst  Output inverse matrix (N×N).
+ * @return SYN_OK on success, SYN_ERROR if src is singular or dimensions invalid.
+ */
+SYN_Status syn_matrix_inv_lu(const SYN_Matrix *src, SYN_Matrix *dst);
+
 /* ── 2D transforms (3×3 homogeneous) ────────────────────────────────────── */
 
 /**

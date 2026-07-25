@@ -432,8 +432,55 @@ SYN_Status syn_matrix_inv(const SYN_Matrix *m, SYN_Matrix *out)
     case 4:
         return inv_4x4(m, out);
     default:
-        return SYN_ERROR; /* Unsupported dimension */
+        return syn_matrix_inv_lu(m, out);
     }
+}
+
+SYN_Status syn_matrix_inv_lu_work(const SYN_Matrix *src, SYN_Matrix *dst,
+                                  q16_t *lu_work, uint8_t *p_work, q16_t *y_work)
+{
+    SYN_ASSERT(src != NULL && dst != NULL);
+    SYN_ASSERT(lu_work != NULL && p_work != NULL && y_work != NULL);
+
+    uint8_t n = src->rows;
+    if (src->cols != n || dst->rows != n || dst->cols != n || n > SYN_SOLVER_MAX_N) {
+        return SYN_INVALID_PARAM;
+    }
+
+    for (uint8_t j = 0; j < n; j++) {
+        q16_t ej_data[SYN_SOLVER_MAX_N];
+        for (uint8_t i = 0; i < n; i++) {
+            ej_data[i] = (i == j) ? Q16_ONE : 0;
+        }
+        SYN_Matrix ej = {ej_data, n, 1};
+
+        q16_t x_data[SYN_SOLVER_MAX_N];
+        SYN_Matrix xj = {x_data, n, 1};
+
+        SYN_Status status = syn_matrix_solve_lu_work(src, &ej, &xj, lu_work, p_work, y_work);
+        if (status != SYN_OK) {
+            return status;
+        }
+
+        for (uint8_t i = 0; i < n; i++) {
+            SYN_MAT_AT(dst, i, j) = xj.data[i];
+        }
+    }
+
+    return SYN_OK;
+}
+
+SYN_Status syn_matrix_inv_lu(const SYN_Matrix *src, SYN_Matrix *dst)
+{
+    SYN_ASSERT(src != NULL && dst != NULL);
+    uint8_t n = src->rows;
+    if (src->cols != n || dst->rows != n || dst->cols != n || n > SYN_SOLVER_MAX_N) {
+        return SYN_INVALID_PARAM;
+    }
+    q16_t lu_work[n * n];
+    uint8_t p_work[n];
+    q16_t col_work[n];
+    return syn_matrix_inv_lu_work(src, dst, lu_work, p_work, col_work);
 }
 
 /* ════════════════════════════════════════════════════════════════════════ */

@@ -239,6 +239,28 @@ q16_t q16_sin(q16_t x);
 q16_t q16_cos(q16_t x);
 
 /**
+ * @brief Ultra-fast Parabolic/Chebyshev Sine approximation (<20 CPU cycles).
+ * @param x  Angle in Q16 radians.
+ * @return sin(x) in Q16.
+ */
+q16_t q16_sin_fast(q16_t x);
+
+/**
+ * @brief Ultra-fast Parabolic/Chebyshev Cosine approximation (<20 CPU cycles).
+ * @param x  Angle in Q16 radians.
+ * @return cos(x) in Q16.
+ */
+q16_t q16_cos_fast(q16_t x);
+
+/**
+ * @brief Simultaneous ultra-fast sine and cosine calculation (<30 CPU cycles).
+ * @param x        Angle in Q16 radians.
+ * @param sin_out  Output sin(x) in Q16.
+ * @param cos_out  Output cos(x) in Q16.
+ */
+void q16_sincos_fast(q16_t x, q16_t *sin_out, q16_t *cos_out);
+
+/**
  * @brief Tangent: sin(x) / cos(x).
  * @param x  Angle in Q16 radians. Must not be near ±π/2.
  * @return tan(x) in Q16.

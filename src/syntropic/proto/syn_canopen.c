@@ -1,3 +1,9 @@
+#if __has_include("syn_config.h")
+#include "syn_config.h"
+#endif
+
+#if !defined(SYN_USE_CANOPEN) || SYN_USE_CANOPEN
+
 /**
  * @file syn_canopen.c
  * @brief CANopen DS301 Slave Protocol Engine implementation.
@@ -362,3 +368,31 @@ bool syn_canopen_get_tx(SYN_CANOpenNode *node, uint32_t *out_cob_id, uint8_t *ou
 
     return true;
 }
+
+SYN_Status syn_canopen_tpdo_trigger(SYN_CANOpenNode *node, uint8_t pdo_num)
+{
+    if (node == NULL || pdo_num < 1 || pdo_num > 4) {
+        return SYN_INVALID_PARAM;
+    }
+
+    if (node->nmt_state != SYN_CANOPEN_NMT_STATE_OPERATIONAL) {
+        return SYN_ERROR; /* TPDOs only transmitted in Operational state */
+    }
+
+    SYN_CANOpenPDOMap *map = &node->cfg.tpdo[pdo_num - 1];
+    if (!map->enabled || map->cob_id == 0) {
+        return SYN_ERROR; /* Unmapped */
+    }
+
+    uint8_t payload[8];
+    size_t len = 0;
+    SYN_Status st = syn_canopen_od_read(node, map->od_index, map->od_subindex, payload, sizeof(payload), &len);
+    if (st == SYN_OK && len > 0) {
+        canopen_queue_tx(node, map->cob_id, payload, (uint8_t)len);
+        return SYN_OK;
+    }
+
+    return SYN_ERROR;
+}
+
+#endif /* SYN_USE_CANOPEN */

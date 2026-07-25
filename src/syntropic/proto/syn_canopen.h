@@ -10,6 +10,12 @@
 #ifndef SYN_CANOPEN_H
 #define SYN_CANOPEN_H
 
+#if __has_include("syn_config.h")
+#include "syn_config.h"
+#endif
+
+#if !defined(SYN_USE_CANOPEN) || SYN_USE_CANOPEN
+
 #include "../common/syn_defs.h"
 #include "../drivers/syn_can.h"
 
@@ -189,8 +195,18 @@ SYN_Status syn_canopen_od_write(SYN_CANOpenNode *node, uint16_t index, uint8_t s
 bool syn_canopen_get_tx(SYN_CANOpenNode *node, uint32_t *out_cob_id, uint8_t *out_data,
                         uint8_t *out_len);
 
+/**
+ * @brief Manually trigger transmission of a specific TPDO (1..4).
+ * @param node Pointer to node handle.
+ * @param pdo_num TPDO number (1..4).
+ * @return SYN_OK on success, SYN_INVALID_PARAM if pdo_num invalid or unmapped.
+ */
+SYN_Status syn_canopen_tpdo_trigger(SYN_CANOpenNode *node, uint8_t pdo_num);
+
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* SYN_USE_CANOPEN */
 
 #endif /* SYN_CANOPEN_H */

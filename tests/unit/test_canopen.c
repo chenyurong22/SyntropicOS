@@ -373,6 +373,37 @@ static void test_cia303_indicators(void)
     syn_cia303_step(&null_ind);
 }
 
+static void test_canopen_tpdo_trigger(void)
+{
+    SYN_CANOpenNode node;
+    SYN_CANOpenNodeConfig cfg = {.node_id = 5,
+                                 .heartbeat_ms = 0,
+                                 .tpdo = {{0x185U, 0x2001U, 0x01U, 1U}}};
+
+    syn_canopen_init(&node, &cfg, test_od, sizeof(test_od) / sizeof(test_od[0]));
+    uint32_t dummy_id;
+    uint8_t dummy_buf[8], dummy_len;
+    syn_canopen_get_tx(&node, &dummy_id, dummy_buf, &dummy_len);
+
+    /* In PreOp, trigger should return SYN_ERROR */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_canopen_tpdo_trigger(&node, 1));
+
+    /* NMT Start -> Operational */
+    uint8_t nmt_start[2] = {0x01U, 0x05U};
+    syn_canopen_process_rx(&node, 0x000U, nmt_start, 2);
+
+    /* Trigger TPDO 1 */
+    od_target_speed = 1200;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_tpdo_trigger(&node, 1));
+
+    uint32_t tx_id = 0;
+    uint8_t tx_buf[8] = {0}, tx_len = 0;
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x185U, tx_id);
+    TEST_ASSERT_EQUAL(2, tx_len);
+    TEST_ASSERT_EQUAL_UINT16(1200, (uint16_t)(tx_buf[0] | (tx_buf[1] << 8)));
+}
+
 void run_canopen_tests(void)
 {
     RUN_TEST(test_canopen_init_and_bootup);
@@ -382,4 +413,5 @@ void run_canopen_tests(void)
     RUN_TEST(test_canopen_rpdo_tpdo_emcy);
     RUN_TEST(test_canopen_invalid_params);
     RUN_TEST(test_cia303_indicators);
+    RUN_TEST(test_canopen_tpdo_trigger);
 }

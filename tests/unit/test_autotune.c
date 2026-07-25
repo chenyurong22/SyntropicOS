@@ -619,6 +619,15 @@ void test_autotune_relay_zero_crossings(void)
     TEST_ASSERT_EQUAL(50, at.relay_output);
 }
 
+static void test_autotune_calc_relay_gains(void)
+{
+    int32_t kp = 0, ki = 0, kd = 0;
+    syn_autotune_calc_relay_gains(1000, 500, SYN_ATUNE_ZN_CLASSIC, 100, &kp, &ki, &kd);
+    TEST_ASSERT_TRUE(kp > 0);
+    TEST_ASSERT_TRUE(ki > 0);
+    TEST_ASSERT_TRUE(kd > 0);
+}
+
 void run_autotune_tests(void)
 {
     RUN_TEST(test_autotune_probe_phase);
@@ -640,4 +649,5 @@ void run_autotune_tests(void)
     RUN_TEST(test_autotune_abort_watchdog);
     RUN_TEST(test_autotune_ka_tuning);
     RUN_TEST(test_autotune_relay_zero_crossings);
+    RUN_TEST(test_autotune_calc_relay_gains);
 }

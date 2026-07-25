@@ -611,4 +611,43 @@ SYN_Status syn_autotune_start(SYN_AutoTune *at, SYN_MotorCtrl *ctrl,
     return syn_autotune_init(at, ctrl, &cfg);
 }
 
+void syn_autotune_calc_relay_gains(int32_t Ku, uint32_t Tu_ms, SYN_AutoTune_Method method,
+                                   uint16_t multiplier_pct, int32_t *kp, int32_t *ki, int32_t *kd)
+{
+    if (!kp || !ki || !kd || Tu_ms == 0)
+        return;
+
+    int32_t p = 0, i = 0, d = 0;
+    int32_t tu = (int32_t)Tu_ms;
+
+    switch (method) {
+        case SYN_ATUNE_ZN_CLASSIC:
+            p = (Ku * 60) / 100;
+            i = (p * 2000) / tu;
+            d = (p * tu) / 8000;
+            break;
+        case SYN_ATUNE_TYREUS_LUYBEN:
+            p = (Ku * 45) / 100;
+            i = (p * 1000) / ((tu * 22) / 10);
+            d = (p * tu) / 6300;
+            break;
+        case SYN_ATUNE_ZN_NO_OVERSHOOT:
+        default:
+            p = (Ku * 20) / 100;
+            i = (p * 2000) / tu;
+            d = (p * tu) / 3000;
+            break;
+    }
+
+    if (multiplier_pct != 100 && multiplier_pct > 0) {
+        p = (p * multiplier_pct) / 100;
+        i = (i * multiplier_pct) / 100;
+        d = (d * multiplier_pct) / 100;
+    }
+
+    *kp = p;
+    *ki = i;
+    *kd = d;
+}
+
 #endif /* SYN_USE_AUTOTUNE */

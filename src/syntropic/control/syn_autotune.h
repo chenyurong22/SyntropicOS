@@ -342,6 +342,20 @@ SYN_Status syn_autotune_start(SYN_AutoTune *at, SYN_MotorCtrl *ctrl,
                               const SYN_AutoTune_Limits *limits, SYN_AutoTune_Flags flags,
                               uint16_t gain_multiplier);
 
+/**
+ * @brief Calculate Ziegler-Nichols / Tyreus-Luyben PID gains from ultimate gain (Ku) and period (Tu_ms).
+ *
+ * @param Ku            Ultimate gain (scaled by pid_scale).
+ * @param Tu_ms         Ultimate period in milliseconds.
+ * @param method        Tuning rule (Ziegler-Nichols, Tyreus-Luyben, No-Overshoot).
+ * @param multiplier_pct Gain safety multiplier percentage (1-200, e.g. 80 for 80%).
+ * @param kp            Output proportional gain.
+ * @param ki            Output integral gain.
+ * @param kd            Output derivative gain.
+ */
+void syn_autotune_calc_relay_gains(int32_t Ku, uint32_t Tu_ms, SYN_AutoTune_Method method,
+                                   uint16_t multiplier_pct, int32_t *kp, int32_t *ki, int32_t *kd);
+
 #ifdef __cplusplus
 }
 #endif

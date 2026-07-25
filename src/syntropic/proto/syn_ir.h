@@ -39,7 +39,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(SYN_USE_IR) && SYN_USE_IR
+#if !defined(SYN_USE_IR) || SYN_USE_IR
 
 #ifdef __cplusplus
 extern "C" {

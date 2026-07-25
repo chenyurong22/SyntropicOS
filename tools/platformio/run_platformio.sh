@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Script to validate SyntropicOS PlatformIO library manifest and packaging
+# Script to validate SyntropicOS PlatformIO library manifest and build inside a real PlatformIO project
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
@@ -18,6 +18,13 @@ pio pkg pack --output build/SyntropicOS-pio.tar.gz
 
 echo "=== 2. Inspecting PlatformIO Package Contents ==="
 tar -tzf build/SyntropicOS-pio.tar.gz > build/tar_contents.txt
-head -n 30 build/tar_contents.txt
+head -n 25 build/tar_contents.txt
 
-echo "=== PlatformIO Packaging Audit PASS ==="
+echo "=== 3. Building Real Sample PlatformIO Project ==="
+cd tests/platformio/sample_project
+pio run -e native
+
+echo "=== 4. Executing PlatformIO Compiled Binary ==="
+./.pio/build/native/program
+
+echo "=== PlatformIO Real Project Integration Audit PASS ==="

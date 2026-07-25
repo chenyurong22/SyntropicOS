@@ -36,6 +36,8 @@ void run_pubsub_tests(void);
 void run_pack_tests(void);
 void run_cobs_tests(void);
 void run_lin_tests(void);
+void run_smbus_tests(void);
+void run_pmbus_tests(void);
 void run_timer_tests(void);
 void run_timer_wheel_tests(void);
 void run_netbuf_tests(void);
@@ -352,6 +354,10 @@ int main(void)
 
     /* NMEA 2000 Marine CAN Protocol */
     run_n2k_tests();
+
+    /* SMBus & PMBus Protocols */
+    run_smbus_tests();
+    run_pmbus_tests();
 
     /* Task Profiler & DDS Synthesizer */
     run_task_profile_tests();

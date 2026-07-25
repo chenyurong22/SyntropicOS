@@ -30,6 +30,8 @@ SYN_SRCS := \
 	$(SYN_DIR)/src/syntropic/motor/syn_dc_motor.c \
 	$(SYN_DIR)/src/syntropic/motor/syn_motor_ctrl.c \
 	$(SYN_DIR)/src/syntropic/proto/syn_cobs.c \
+	$(SYN_DIR)/src/syntropic/proto/syn_smbus.c \
+	$(SYN_DIR)/src/syntropic/proto/syn_pmbus.c \
 	$(SYN_DIR)/src/syntropic/sensor/syn_sensor.c \
 	$(SYN_DIR)/src/syntropic/storage/syn_param.c \
 	$(SYN_DIR)/src/syntropic/input/syn_encoder.c \

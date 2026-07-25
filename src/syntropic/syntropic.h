@@ -311,6 +311,14 @@ extern "C" {
   #include "proto/syn_dali.h"
 #endif
 
+#if !defined(SYN_USE_SMBUS) || SYN_USE_SMBUS
+  #include "proto/syn_smbus.h"
+#endif
+
+#if !defined(SYN_USE_PMBUS) || SYN_USE_PMBUS
+  #include "proto/syn_pmbus.h"
+#endif
+
 #if !defined(SYN_USE_MODBUS) || SYN_USE_MODBUS
   #include "proto/syn_modbus.h"
 #endif

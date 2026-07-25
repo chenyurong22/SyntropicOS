@@ -1,7 +1,7 @@
 # SyntropicOS multi-node test — two STM32F4 nodes connected via UART
 # Tests the router + heartbeat networking stack end-to-end.
 #
-# Usage: renode --disable-gui --disable-xwt -e "i @port/stm32f4/syn_multinode.resc; start"
+# Usage: renode --disable-gui --disable-xwt -e "i @tests/emulation/renode/syn_multinode.resc; start"
 
 # Create UART hub (virtual wire between the two nodes)
 emulation CreateUARTHub "netHub"

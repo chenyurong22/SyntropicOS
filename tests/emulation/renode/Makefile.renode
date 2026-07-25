@@ -1,5 +1,5 @@
 # Makefile for STM32F4 Renode test firmware
-# Usage: make -f port/stm32f4/Makefile.renode
+# Usage: make -f tests/emulation/renode/Makefile.renode
 
 PREFIX   ?= arm-none-eabi-
 CC        = $(PREFIX)gcc
@@ -7,9 +7,10 @@ OBJCOPY   = $(PREFIX)objcopy
 SIZE      = $(PREFIX)size
 
 # Directories
-PORT_DIR  = port/stm32f4
-SYN_DIR  = src/syntropic
-TEST_DIR  = tests
+PORT_DIR  = src/port/stm32f4
+EMU_DIR   = tests/emulation/renode
+SYN_DIR   = src/syntropic
+TEST_DIR  = tests/unit
 
 # CPU flags
 CPU_FLAGS = -mcpu=cortex-m4 -mthumb -mfloat-abi=soft
@@ -38,7 +39,7 @@ PORT_SRC  = $(PORT_DIR)/startup_stm32f407.c \
             $(PORT_DIR)/port_stm32f4.c
 
 # Test firmware main
-FW_SRC    = $(PORT_DIR)/test_firmware.c
+FW_SRC    = $(EMU_DIR)/test_firmware.c
 
 # Unity
 UNITY_SRC = $(TEST_DIR)/unity/unity.c
@@ -80,20 +81,20 @@ $(TARGET).elf: $(OBJS)
 $(TARGET).bin: $(TARGET).elf
 	$(OBJCOPY) -O binary $< $@
 
-test_firmware_node0.elf: port/stm32f4/test_firmware_node0.o $(MULTINODE_OBJS)
+test_firmware_node0.elf: $(EMU_DIR)/test_firmware_node0.o $(MULTINODE_OBJS)
 	$(CC) $^ $(LDFLAGS) -o $@
 
 test_firmware_node0.elf: LDFLAGS := $(subst test_firmware.map,test_firmware_node0.map,$(LDFLAGS))
 
-test_firmware_node1.elf: port/stm32f4/test_firmware_node1.o $(MULTINODE_OBJS)
+test_firmware_node1.elf: $(EMU_DIR)/test_firmware_node1.o $(MULTINODE_OBJS)
 	$(CC) $^ $(LDFLAGS) -o $@
 
 test_firmware_node1.elf: LDFLAGS := $(subst test_firmware.map,test_firmware_node1.map,$(LDFLAGS))
 
-port/stm32f4/test_firmware_node0.o: port/stm32f4/test_firmware_multinode.c
+$(EMU_DIR)/test_firmware_node0.o: $(EMU_DIR)/test_firmware_multinode.c
 	$(CC) $(CFLAGS) -DNODE_ID=1 -c $< -o $@
 
-port/stm32f4/test_firmware_node1.o: port/stm32f4/test_firmware_multinode.c
+$(EMU_DIR)/test_firmware_node1.o: $(EMU_DIR)/test_firmware_multinode.c
 	$(CC) $(CFLAGS) -DNODE_ID=2 -c $< -o $@
 
 %.o: %.c
@@ -101,7 +102,7 @@ port/stm32f4/test_firmware_node1.o: port/stm32f4/test_firmware_multinode.c
 
 clean:
 	rm -f $(OBJS) $(TARGET).elf $(TARGET).bin $(TARGET).map \
-	      $(MULTINODE_OBJS) port/stm32f4/test_firmware_node0.o port/stm32f4/test_firmware_node1.o \
+	      $(MULTINODE_OBJS) $(EMU_DIR)/test_firmware_node0.o $(EMU_DIR)/test_firmware_node1.o \
 	      test_firmware_node0.elf test_firmware_node1.elf \
 	      test_firmware_node0.map test_firmware_node1.map
 
@@ -112,12 +113,13 @@ RENODE_FLAGS ?= --show-log
 
 renode: $(TARGET).elf
 	$(RENODE) --disable-gui --disable-xwt \
-		-e "i @port/stm32f4/syn_test.resc; start" \
+		-e "i @$(EMU_DIR)/syn_test.resc; start" \
 		--console
 
 renode-test: $(TARGET).elf
-	$(RENODE)-test $(RENODE_FLAGS) port/stm32f4/syn_test.robot
+	$(RENODE)-test $(RENODE_FLAGS) $(EMU_DIR)/syn_test.robot
 
 renode-multinode-test: test_firmware_node0.elf test_firmware_node1.elf
-	$(RENODE)-test $(RENODE_FLAGS) port/stm32f4/syn_multinode.robot
+	$(RENODE)-test $(RENODE_FLAGS) $(EMU_DIR)/syn_multinode.robot
+
 

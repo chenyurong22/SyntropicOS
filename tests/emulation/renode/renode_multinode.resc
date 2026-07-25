@@ -1,0 +1,25 @@
+# Renode Multi-Node Hardware Network Emulation Script
+using sysbus
+
+# Create Virtual UART Bus Hub
+emulation CreateUartHub "uartHub"
+
+# Node 0 (STM32F4 Discovery)
+mach create "node0"
+machine LoadPlatformDescription @platforms/boards/stm32f4_discovery-kit.repl
+connector Connect sysbus.usart1 uartHub
+
+# Node 1 (STM32F4 Discovery)
+mach create "node1"
+machine LoadPlatformDescription @platforms/boards/stm32f4_discovery-kit.repl
+connector Connect sysbus.usart1 uartHub
+
+macro reset
+"""
+    mach set "node0"
+    sysbus LoadELF $bin0
+    mach set "node1"
+    sysbus LoadELF $bin1
+"""
+
+runMacro $reset

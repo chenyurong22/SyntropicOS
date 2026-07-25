@@ -24,25 +24,25 @@ static void test_actuator(void)
         .pid_kp = 100, .pid_scale = 4,
     };
     syn_actuator_init(&act, &acfg);
-    TEST_ASSERT_TRUE(syn_actuator_position(&act) == 500);
+    TEST_ASSERT_EQUAL_INT32(500, syn_actuator_position(&act));
     syn_actuator_set_position(&act, 750);
     act_mock_pos = 700;
     syn_actuator_update(&act);
-    TEST_ASSERT_TRUE(syn_actuator_position(&act) == 750);
+    TEST_ASSERT_EQUAL_INT32(750, syn_actuator_position(&act));
     syn_actuator_stop(&act);
-    TEST_ASSERT_TRUE(act.ctrl.state == SYN_MCTRL_STOPPED);
+    TEST_ASSERT_EQUAL_INT(SYN_MCTRL_STOPPED, act.ctrl.state);
     syn_actuator_set_position(&act, 0);
     act_mock_pos = 100;
     syn_actuator_update(&act);
-    TEST_ASSERT_TRUE(syn_actuator_position(&act) == 0);
+    TEST_ASSERT_EQUAL_INT32(0, syn_actuator_position(&act));
     syn_actuator_set_position(&act, 1000);
     act_mock_pos = 900;
     syn_actuator_update(&act);
-    TEST_ASSERT_TRUE(syn_actuator_position(&act) == 1000);
+    TEST_ASSERT_EQUAL_INT32(1000, syn_actuator_position(&act));
     syn_actuator_set_position(&act, 2000);
-    TEST_ASSERT_TRUE(act.target_pct == 1000);
+    TEST_ASSERT_EQUAL_INT32(1000, act.target_pct);
     syn_actuator_set_position(&act, -500);
-    TEST_ASSERT_TRUE(act.target_pct == 0);
+    TEST_ASSERT_EQUAL_INT32(0, act.target_pct);
 }
 
 /** syn_actuator_clear_stall — exercises lines 120-124 */

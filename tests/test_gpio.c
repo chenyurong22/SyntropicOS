@@ -48,6 +48,24 @@ static void test_gpio_write_multiple_fail(void)
     TEST_ASSERT_NOT_EQUAL(SYN_OK, st);
 }
 
+/** single pin ops via port layer */
+static void test_gpio_single_ops(void)
+{
+    mock_port_reset();
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gpio_init(5, SYN_GPIO_OUTPUT));
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gpio_write(5, SYN_GPIO_HIGH));
+    TEST_ASSERT_EQUAL_INT(SYN_GPIO_HIGH, syn_gpio_read(5));
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gpio_toggle(5));
+    TEST_ASSERT_EQUAL_INT(SYN_GPIO_LOW, syn_gpio_read(5));
+
+    /* Invalid pin check */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_gpio_init(99, SYN_GPIO_INPUT));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_gpio_write(99, SYN_GPIO_HIGH));
+    TEST_ASSERT_EQUAL_INT(SYN_GPIO_LOW, syn_gpio_read(99));
+}
+
 void run_gpio_tests(void)
 {
     RUN_TEST(test_gpio_init_multiple);
@@ -56,4 +74,5 @@ void run_gpio_tests(void)
     RUN_TEST(test_gpio_write_multiple);
     RUN_TEST(test_gpio_write_multiple_zero);
     RUN_TEST(test_gpio_write_multiple_fail);
+    RUN_TEST(test_gpio_single_ops);
 }

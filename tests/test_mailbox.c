@@ -15,7 +15,6 @@ typedef struct {
 
 static void test_mailbox(void)
 {
-
     /* Static definition */
     SYN_MAILBOX_DEFINE(mbox, TestMsg, 4);
 
@@ -75,7 +74,40 @@ static void test_mailbox(void)
     TEST_ASSERT_TRUE(syn_mailbox_empty(&mb2));
 }
 
+static void test_mailbox_wraparound_and_notify(void)
+{
+    uint8_t buf[3 * sizeof(TestMsg)];
+    SYN_Mailbox mb;
+    syn_mailbox_init(&mb, buf, sizeof(TestMsg), 3); /* capacity = 3 (2 usable) */
+
+#if defined(SYN_USE_MULTICORE) && SYN_USE_MULTICORE
+    syn_mailbox_set_notify(&mb, true);
+    TEST_ASSERT_TRUE(mb.notify);
+#endif
+
+    TestMsg m1 = { .id = 10, .value = 1000 };
+    TestMsg m2 = { .id = 20, .value = 2000 };
+    TestMsg m3 = { .id = 30, .value = 3000 };
+    TestMsg rx;
+
+    /* Push 2, pop 1, push 1 (wraps head back to index 0) */
+    TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &m1));
+    TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &m2));
+    TEST_ASSERT_TRUE(syn_mailbox_receive(&mb, &rx));
+    TEST_ASSERT_EQUAL_UINT16(10, rx.id);
+
+    TEST_ASSERT_TRUE(syn_mailbox_post(&mb, &m3));
+    TEST_ASSERT_TRUE(syn_mailbox_full(&mb));
+
+    TEST_ASSERT_TRUE(syn_mailbox_receive(&mb, &rx));
+    TEST_ASSERT_EQUAL_UINT16(20, rx.id);
+    TEST_ASSERT_TRUE(syn_mailbox_receive(&mb, &rx));
+    TEST_ASSERT_EQUAL_UINT16(30, rx.id);
+    TEST_ASSERT_TRUE(syn_mailbox_empty(&mb));
+}
+
 void run_mailbox_tests(void)
 {
     RUN_TEST(test_mailbox);
+    RUN_TEST(test_mailbox_wraparound_and_notify);
 }

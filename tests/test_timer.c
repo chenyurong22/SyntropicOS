@@ -128,10 +128,34 @@ static void test_timer_extensions(void)
     syn_timer_stop(&periodic_tmr);
 }
 
+static void test_timer_tick_wraparound(void)
+{
+    SYN_Timer tmr;
+    SYN_Timeout to;
+
+    /* Start tick near 32-bit overflow */
+    mock_tick_ms = 0xFFFFFFE0u;
+
+    syn_timer_init(&tmr, 50, false, timer_callback, NULL);
+    syn_timer_start(&tmr); /* target_tick = 0xFFFFFFE0 + 50 = 18 */
+    TEST_ASSERT_FALSE(syn_timer_expired(&tmr));
+
+    syn_timeout_start(&to, 50); /* target_tick = 18 */
+    TEST_ASSERT_FALSE(syn_timeout_expired(&to));
+
+    /* Advance across 0xFFFFFFFF overflow boundary by 60ms (tick becomes 28) */
+    mock_tick_advance(60);
+
+    TEST_ASSERT_TRUE(syn_timer_expired(&tmr));
+    TEST_ASSERT_TRUE(syn_timeout_expired(&to));
+    TEST_ASSERT_EQUAL_UINT32(0, syn_timeout_remaining(&to));
+}
+
 void run_timer_tests(void)
 {
     RUN_TEST(test_software_timer);
     RUN_TEST(test_timeout);
     RUN_TEST(test_timer_extensions);
+    RUN_TEST(test_timer_tick_wraparound);
 }
 

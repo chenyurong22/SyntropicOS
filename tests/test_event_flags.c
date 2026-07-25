@@ -31,10 +31,29 @@ void test_event_flags_set_clear_wait(void)
     TEST_ASSERT_EQUAL_UINT32(0, syn_event_flags_get(&ef)); /* Flags auto-cleared */
 
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_event_flags_clear(&ef, 0xFFFFFFFFU));
+}
+
+void test_event_flags_null_and_invalid_params(void)
+{
+    SYN_EventFlags ef;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_event_flags_init(&ef));
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_event_flags_set(&ef, 0x01U));
+
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_event_flags_init(NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_event_flags_set(NULL, 0x01U));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_event_flags_clear(NULL, 0x01U));
+    TEST_ASSERT_EQUAL_UINT32(0, syn_event_flags_get(NULL));
+
+    /* Wait with NULL context or wait_mask == 0 */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_event_flags_wait(NULL, 0x01U, SYN_EVENT_FLAGS_WAIT_ANY, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_event_flags_wait(&ef, 0, SYN_EVENT_FLAGS_WAIT_ANY, NULL));
+
+    /* Wait with out_flags == NULL (valid call) */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_event_flags_wait(&ef, 0x01U, SYN_EVENT_FLAGS_WAIT_ANY, NULL));
 }
 
 void run_event_flags_tests(void)
 {
     RUN_TEST(test_event_flags_set_clear_wait);
+    RUN_TEST(test_event_flags_null_and_invalid_params);
 }

@@ -1,0 +1,22 @@
+# SyntropicOS Lightweight Containerized Testing & Emulation Environment
+FROM debian:bookworm-slim
+
+# Install minimal toolchain without GUI/doc recommended bloated packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    clang \
+    make \
+    cmake \
+    git \
+    libasan8 \
+    libubsan1 \
+    gcc-arm-none-eabi \
+    libnewlib-arm-none-eabi \
+    qemu-system-arm \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+CMD ["make", "-C", "toolchain/testing", "help"]

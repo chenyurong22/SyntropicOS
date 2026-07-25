@@ -297,6 +297,20 @@ q16_t q16_acos(q16_t x);
 q16_t q16_sqrt(q16_t x);
 
 /**
+ * @brief Fast reciprocal 1/x in Q16.16 using Newton-Raphson iterations.
+ * @param x  Input in Q16 (must be > 0).
+ * @return 1/x in Q16. Returns INT32_MAX on x == 0.
+ */
+q16_t q16_inv(q16_t x);
+
+/**
+ * @brief Fast inverse square root 1/√x in Q16.16 (Fast Quake/Newton-Raphson algorithm).
+ * @param x  Input in Q16 (must be > 0).
+ * @return 1/√x in Q16. Returns 0 if x <= 0.
+ */
+q16_t q16_rsqrt(q16_t x);
+
+/**
  * @brief Overflow-safe hypotenuse: √(x² + y²).
  * @param x  First coordinate in Q16.
  * @param y  Second coordinate in Q16.

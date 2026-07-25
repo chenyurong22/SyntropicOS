@@ -54,13 +54,16 @@ q16_t syn_quat_norm(const SYN_Quaternion *q)
 SYN_Status syn_quat_normalize(SYN_Quaternion *q)
 {
     SYN_ASSERT(q != NULL);
-    q16_t n = syn_quat_norm(q);
-    if (n == 0) return SYN_ERROR;
+    int64_t sum = (int64_t)q->w * q->w + (int64_t)q->x * q->x +
+                  (int64_t)q->y * q->y + (int64_t)q->z * q->z;
+    q16_t norm_sq = (q16_t)(sum >> Q16_SHIFT);
+    if (norm_sq == 0) return SYN_ERROR;
 
-    q->w = q16_div(q->w, n);
-    q->x = q16_div(q->x, n);
-    q->y = q16_div(q->y, n);
-    q->z = q16_div(q->z, n);
+    q16_t inv_norm = q16_rsqrt(norm_sq);
+    q->w = q16_mul(q->w, inv_norm);
+    q->x = q16_mul(q->x, inv_norm);
+    q->y = q16_mul(q->y, inv_norm);
+    q->z = q16_mul(q->z, inv_norm);
     return SYN_OK;
 }
 

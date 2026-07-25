@@ -254,6 +254,30 @@ q16_t q16_sqrt(q16_t x)
     return (q16_t)syn_isqrt64((uint64_t)(uint32_t)x << 16);
 }
 
+q16_t q16_inv(q16_t x)
+{
+    if (x == 0)
+        return INT32_MAX;
+    if (x < 0) {
+        if (x == INT32_MIN) return 0;
+        return -q16_inv(-x);
+    }
+    int64_t inv = ((int64_t)1 << 32) / x;
+    if (inv > INT32_MAX)
+        return INT32_MAX;
+    return (q16_t)inv;
+}
+
+q16_t q16_rsqrt(q16_t x)
+{
+    if (x <= 0)
+        return 0;
+    q16_t sqrt_x = q16_sqrt(x);
+    if (sqrt_x == 0)
+        return INT32_MAX;
+    return q16_inv(sqrt_x);
+}
+
 q16_t q16_hypot(q16_t x, q16_t y)
 {
     /*

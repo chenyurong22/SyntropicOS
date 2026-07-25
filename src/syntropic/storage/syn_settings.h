@@ -183,6 +183,23 @@ int syn_settings_export(const SYN_Settings *s, void *buf, size_t len);
  */
 SYN_Status syn_settings_import(SYN_Settings *s, const void *buf, size_t len, bool save);
 
+/**
+ * @brief Export settings directly to a VFS file.
+ * @param s         Settings instance.
+ * @param filepath  Target VFS path (e.g. "/sd/config.bin").
+ * @return SYN_OK on success, error code otherwise.
+ */
+SYN_Status syn_settings_export_vfs(const SYN_Settings *s, const char *filepath);
+
+/**
+ * @brief Import settings directly from a VFS file.
+ * @param s         Settings instance.
+ * @param filepath  Source VFS path (e.g. "/sd/config.bin").
+ * @param save      If true, save imported settings to flash upon verification.
+ * @return SYN_OK on success, error code otherwise.
+ */
+SYN_Status syn_settings_import_vfs(SYN_Settings *s, const char *filepath, bool save);
+
 /* ── Dual-Bank Transactional Settings ───────────────────────────────────── */
 
 /**

@@ -7,6 +7,7 @@
 #include "../util/syn_assert.h"
 #include "../util/syn_crc.h"
 #include "syn_settings.h"
+#include "syn_vfs.h"
 
 #include <string.h>
 
@@ -124,6 +125,47 @@ SYN_Status syn_settings_import(SYN_Settings *s, const void *buf, size_t len, boo
         return SYN_INVALID_PARAM;
 
     memcpy(s->data, buf, s->data_size);
+    if (save) {
+        return syn_settings_save(s);
+    }
+
+    s->checksum = compute_crc(s->data, s->data_size);
+    return SYN_OK;
+}
+
+SYN_Status syn_settings_export_vfs(const SYN_Settings *s, const char *filepath)
+{
+    if (s == NULL || filepath == NULL)
+        return SYN_INVALID_PARAM;
+
+    int fd = syn_vfs_open(filepath, SYN_O_WRONLY | SYN_O_CREAT | SYN_O_TRUNC);
+    if (fd < 0)
+        return SYN_ERROR;
+
+    int written = syn_vfs_write(fd, s->data, s->data_size);
+    syn_vfs_close(fd);
+
+    if (written < 0 || (size_t)written != s->data_size)
+        return SYN_ERROR;
+
+    return SYN_OK;
+}
+
+SYN_Status syn_settings_import_vfs(SYN_Settings *s, const char *filepath, bool save)
+{
+    if (s == NULL || filepath == NULL)
+        return SYN_INVALID_PARAM;
+
+    int fd = syn_vfs_open(filepath, SYN_O_RDONLY);
+    if (fd < 0)
+        return SYN_ERROR;
+
+    int read_bytes = syn_vfs_read(fd, s->data, s->data_size);
+    syn_vfs_close(fd);
+
+    if (read_bytes < 0 || (size_t)read_bytes != s->data_size)
+        return SYN_ERROR;
+
     if (save) {
         return syn_settings_save(s);
     }

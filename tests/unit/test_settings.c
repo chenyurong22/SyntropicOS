@@ -8,6 +8,7 @@
 
 #include "mocks/mock_port.h"
 #include "syntropic/storage/syn_settings.h"
+#include "syntropic/storage/syn_vfs.h"
 #include "unity/unity.h"
 
 #include <string.h>
@@ -252,6 +253,71 @@ static void test_settings_dual_bank(void)
     TEST_ASSERT_EQUAL_INT(1, db.active_bank);
 }
 
+static uint8_t ram_vfs_buf[128];
+static size_t ram_vfs_len = 0;
+
+static int settings_vfs_open(SYN_VfsFile *file, const char *path, int flags, void *fs_data)
+{
+    (void)file; (void)path; (void)flags; (void)fs_data;
+    return 0;
+}
+
+static int settings_vfs_close(SYN_VfsFile *file)
+{
+    (void)file;
+    return 0;
+}
+
+static int settings_vfs_write(SYN_VfsFile *file, const void *buf, size_t len)
+{
+    (void)file;
+    if (len > sizeof(ram_vfs_buf)) len = sizeof(ram_vfs_buf);
+    memcpy(ram_vfs_buf, buf, len);
+    ram_vfs_len = len;
+    return (int)len;
+}
+
+static int settings_vfs_read(SYN_VfsFile *file, void *buf, size_t len)
+{
+    (void)file;
+    if (len > ram_vfs_len) len = ram_vfs_len;
+    memcpy(buf, ram_vfs_buf, len);
+    return (int)len;
+}
+
+static const SYN_VfsOps settings_vfs_ops = {
+    .open = settings_vfs_open,
+    .close = settings_vfs_close,
+    .read = settings_vfs_read,
+    .write = settings_vfs_write,
+    .seek = NULL
+};
+
+static void test_settings_vfs_export_import(void)
+{
+    syn_vfs_init();
+    syn_vfs_mount("/cfg", &settings_vfs_ops, NULL);
+
+    TestSettings settings;
+    SYN_Settings store;
+
+    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
+    settings.velocity = 7777;
+    settings.accel = 333;
+
+    /* Export to VFS */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_export_vfs(&store, "/cfg/settings.bin"));
+
+    /* Import from VFS into clean instance */
+    TestSettings settings2;
+    SYN_Settings store2;
+    syn_settings_init(&store2, FLASH_BASE + 2048, SECTOR_COUNT, &settings2, sizeof(settings2), &defaults);
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_import_vfs(&store2, "/cfg/settings.bin", true));
+    TEST_ASSERT_EQUAL_INT32(7777, settings2.velocity);
+    TEST_ASSERT_EQUAL_INT32(333, settings2.accel);
+}
+
 void run_settings_tests(void)
 {
     RUN_TEST(test_settings_init_blank_flash);
@@ -264,4 +330,5 @@ void run_settings_tests(void)
     RUN_TEST(test_settings_checksum_changes_on_save);
     RUN_TEST(test_settings_export_and_import);
     RUN_TEST(test_settings_dual_bank);
+    RUN_TEST(test_settings_vfs_export_import);
 }

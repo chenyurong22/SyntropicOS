@@ -101,12 +101,12 @@ services:
       syn_net:
         ipv4_address: 172.28.0.90
 
-  # 9. EtherCAT Industrial Daemon
-  ethercat:
+  # 9. EtherCAT SOEM Master Daemon
+  ethercat-soem:
     build:
       context: ./services/ethercat
       dockerfile: Containerfile
-    container_name: syntropicos-ethercat
+    container_name: syntropicos-ethercat-soem
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -115,6 +115,21 @@ services:
     networks:
       syn_net:
         ipv4_address: 172.28.0.100
+
+  # 10. EtherCAT SOES Slave Daemon (OpenEtherCATSociety SOES C Slave)
+  ethercat-soes:
+    build:
+      context: ./services/ethercat
+      dockerfile: soes_Containerfile
+    container_name: syntropicos-ethercat-soes
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    ports:
+      - "10885:10885"
+    networks:
+      syn_net:
+        ipv4_address: 172.28.0.101
 
 networks:
   syn_net:

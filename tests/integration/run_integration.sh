@@ -88,6 +88,13 @@ gcc ${CFLAGS} \
     tests/integration/test_ecat_integration.c \
     -o test_ecat_integration -lm
 
+gcc ${CFLAGS} \
+    ${SRC_FILES} \
+    tests/unit/unity/unity.c \
+    tests/unit/mocks/mock_port.c \
+    tests/integration/test_soes_integration.c \
+    -o test_soes_integration -lm
+
 if [ -n "${COMPOSE_TOOL}" ]; then
     echo "=== Starting Genuine 3rd-Party Daemons via ${COMPOSE_TOOL} ==="
     ${COMPOSE_TOOL} -f tests/integration/docker-compose.yml down || true
@@ -104,6 +111,7 @@ if [ -n "${COMPOSE_TOOL}" ]; then
     WG_HOST=127.0.0.1 ./test_wg_integration || true
     MODBUS_HOST=127.0.0.1 ./test_modbus_integration || true
     ETHERCAT_HOST=127.0.0.1 ./test_ecat_integration || true
+    ETHERCAT_SOES_HOST=127.0.0.1 ./test_soes_integration || true
 
     echo "=== Teardown 3rd-Party Containers ==="
     ${COMPOSE_TOOL} -f tests/integration/docker-compose.yml down || true
@@ -118,7 +126,8 @@ else
     ./test_wg_integration || true
     ./test_modbus_integration || true
     ./test_ecat_integration || true
+    ./test_soes_integration || true
 fi
 
-rm -f test_mqtt_integration test_sntp_integration test_http_integration test_ws_integration test_dns_integration test_can_integration test_wg_integration test_modbus_integration test_ecat_integration
+rm -f test_mqtt_integration test_sntp_integration test_http_integration test_ws_integration test_dns_integration test_can_integration test_wg_integration test_modbus_integration test_ecat_integration test_soes_integration
 echo "=== 3rd-Party Integration Test Suite Complete ==="

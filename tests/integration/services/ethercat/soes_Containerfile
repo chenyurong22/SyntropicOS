@@ -1,27 +1,19 @@
-# 3rd-Party EtherCAT Container Service
-# Uses pysoem (official SOEM Master) and OpenEtherCATSociety SOES (Simple Open EtherCAT Slave)
 FROM docker.io/library/debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
     gcc \
     make \
     git \
-    cmake \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-
-RUN pip install pysoem --break-system-packages
 
 WORKDIR /app
 RUN git clone --depth 1 https://github.com/OpenEtherCATSociety/SOES.git /app/soes
 
-COPY pysoem_daemon.py /app/pysoem_daemon.py
 COPY soes_daemon.c /app/soes_daemon.c
 
 RUN gcc -O2 -I/app/soes/soes -I/app/soes/soes/hal/linux /app/soes_daemon.c -o /app/soes_daemon
 
-EXPOSE 10884 10885
+EXPOSE 10885
 
-CMD ["python3", "/app/pysoem_daemon.py"]
+CMD ["/app/soes_daemon"]

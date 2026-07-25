@@ -383,5 +383,8 @@ int main(void)
     run_slab_tests();
     run_event_flags_tests();
 
+    /* Stepper Motor Driver */
+    run_stepper_tests();
+
     return UNITY_END();
 }

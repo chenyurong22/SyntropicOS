@@ -135,6 +135,62 @@ static void test_stepper_dir_invert(void)
     TEST_ASSERT_EQUAL_INT(5, syn_stepper_position(&s));
 }
 
+static void test_stepper_zero_move(void)
+{
+    SYN_Stepper s;
+    syn_stepper_init(&s, 5, 6);
+    syn_stepper_set_speed(&s, 100, 1000);
+    syn_stepper_move(&s, 0);
+    TEST_ASSERT_FALSE(syn_stepper_is_moving(&s));
+
+    /* Enable with pin == -1 (no-op) */
+    syn_stepper_enable(&s, true);
+}
+
+static void test_stepper_reverse_move(void)
+{
+    mock_tick_ms = 0;
+    SYN_Stepper s;
+    syn_stepper_init(&s, 5, 6);
+    syn_stepper_set_speed(&s, 100, 1000);
+
+    syn_stepper_move(&s, -10);
+    TEST_ASSERT_TRUE(syn_stepper_is_moving(&s));
+
+    int ticks = 0;
+    while (syn_stepper_is_moving(&s) && ticks < 10000) {
+        mock_tick_advance(1);
+        syn_stepper_tick(&s);
+        ticks++;
+    }
+    TEST_ASSERT_FALSE(syn_stepper_is_moving(&s));
+    TEST_ASSERT_EQUAL_INT(-10, syn_stepper_position(&s));
+}
+
+static void test_stepper_motor_output_adapter(void)
+{
+    mock_tick_ms = 0;
+    SYN_Stepper s;
+    syn_stepper_init(&s, 5, 6);
+    syn_stepper_set_speed(&s, 100, 1000);
+
+    SYN_MotorOutput out = syn_stepper_output(&s);
+    TEST_ASSERT_NOT_NULL(out.set_output);
+    TEST_ASSERT_NOT_NULL(out.coast);
+    TEST_ASSERT_NOT_NULL(out.brake);
+
+    /* Start move */
+    syn_stepper_move(&s, 5);
+    out.set_output(out.ctx, 100);
+
+    out.coast(out.ctx);
+    TEST_ASSERT_FALSE(syn_stepper_is_moving(&s));
+
+    syn_stepper_move(&s, 5);
+    out.brake(out.ctx);
+    TEST_ASSERT_FALSE(syn_stepper_is_moving(&s));
+}
+
 void run_stepper_tests(void)
 {
     RUN_TEST(test_stepper);
@@ -142,4 +198,7 @@ void run_stepper_tests(void)
     RUN_TEST(test_stepper_tick_idle);
     RUN_TEST(test_stepper_accel_clamp);
     RUN_TEST(test_stepper_dir_invert);
+    RUN_TEST(test_stepper_zero_move);
+    RUN_TEST(test_stepper_reverse_move);
+    RUN_TEST(test_stepper_motor_output_adapter);
 }

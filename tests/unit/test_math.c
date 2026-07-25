@@ -177,6 +177,22 @@ static void test_q16_inv_and_rsqrt(void)
     TEST_ASSERT_EQUAL_INT32(Q16_ONE, q16_rsqrt(Q16_ONE));
 }
 
+static void test_q16_exp_log_fast(void)
+{
+    /* e^0 = 1.0 */
+    TEST_ASSERT_EQUAL_INT32(Q16_ONE, q16_exp_fast(0));
+    /* ln(1.0) = 0 */
+    TEST_ASSERT_EQUAL_INT32(0, q16_log_fast(Q16_ONE));
+
+    /* e^1.0 ≈ 2.718 */
+    q16_t ef = q16_exp_fast(Q16_ONE);
+    TEST_ASSERT_INT32_WITHIN(1000, Q16_FROM_FRAC(2718, 1000), ef);
+
+    /* ln(2.0) ≈ 0.693 */
+    q16_t lf = q16_log_fast(Q16_FROM_INT(2));
+    TEST_ASSERT_INT32_WITHIN(1000, Q16_LN2, lf);
+}
+
 void run_math_tests(void)
 {
     RUN_TEST(test_qmath);
@@ -186,5 +202,6 @@ void run_math_tests(void)
     RUN_TEST(test_q16_math_edge_cases);
     RUN_TEST(test_q16_trig_fast);
     RUN_TEST(test_q16_inv_and_rsqrt);
+    RUN_TEST(test_q16_exp_log_fast);
     RUN_TEST(test_rate_limit);
 }

@@ -332,11 +332,25 @@ q16_t q16_hypot(q16_t x, q16_t y);
 q16_t q16_exp(q16_t x);
 
 /**
+ * @brief Ultra-fast hybrid LUT exponential e^x (~15 CPU cycles).
+ * @param x  Exponent in Q16.
+ * @return e^x in Q16. Returns INT32_MAX on overflow.
+ */
+q16_t q16_exp_fast(q16_t x);
+
+/**
  * @brief Fixed-point natural logarithm ln(x) (CLZ + minimax polynomial).
  * @param x  Input in Q16 (must be > 0).
  * @return ln(x) in Q16.
  */
 q16_t q16_log(q16_t x);
+
+/**
+ * @brief Ultra-fast hybrid LUT natural logarithm ln(x) (~15 CPU cycles).
+ * @param x  Input in Q16 (must be > 0).
+ * @return ln(x) in Q16.
+ */
+q16_t q16_log_fast(q16_t x);
 
 /**
  * @brief Fixed-point power: base^exp = exp(exp * log(base)).

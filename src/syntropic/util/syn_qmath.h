@@ -83,7 +83,13 @@ typedef int32_t q16_t;
  */
 static inline q16_t q16_mul(q16_t a, q16_t b)
 {
+#if defined(__arm__) && defined(__GNUC__) && !defined(__SOFTFP__)
+    int32_t res_lo, res_hi;
+    __asm__("smull %0, %1, %2, %3" : "=r"(res_lo), "=r"(res_hi) : "r"(a), "r"(b));
+    return (q16_t)(((uint32_t)res_lo >> 16) | ((uint32_t)res_hi << 16));
+#else
     return (q16_t)(((int64_t)a * b) >> Q16_SHIFT);
+#endif
 }
 
 /**

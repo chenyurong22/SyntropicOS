@@ -339,7 +339,7 @@ q16_t q16_exp(q16_t x)
         q16_t pos = q16_exp(-x);
         if (pos == 0)
             return INT32_MAX; /* -x overflowed */
-        return q16_div(Q16_ONE, pos);
+        return q16_inv(pos);
     }
 
     /* Overflow guard: e^10 ≈ 22026, which is near the Q16 integer limit */

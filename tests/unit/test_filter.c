@@ -122,10 +122,32 @@ static void test_filter_fir(void)
     TEST_ASSERT_EQUAL(0, syn_filter_fir_update(&fir, 0));
 }
 
+static void test_biquad_process_block(void)
+{
+    SYN_FilterBiquad f1, f2;
+    syn_filter_biquad_lowpass(&f1, Q16_FROM_INT(100), Q16_FROM_INT(1000));
+    syn_filter_biquad_lowpass(&f2, Q16_FROM_INT(100), Q16_FROM_INT(1000));
+
+    q16_t in[5] = {Q16_ONE, Q16_ONE, Q16_ONE, Q16_ONE, Q16_ONE};
+    q16_t out_sample[5];
+    q16_t out_block[5];
+
+    for (int i = 0; i < 5; i++) {
+        out_sample[i] = syn_filter_biquad_update(&f1, in[i]);
+    }
+
+    syn_filter_biquad_process_block(&f2, in, out_block, 5);
+
+    for (int i = 0; i < 5; i++) {
+        TEST_ASSERT_EQUAL_INT32(out_sample[i], out_block[i]);
+    }
+}
+
 void run_filter_tests(void)
 {
     RUN_TEST(test_filters);
     RUN_TEST(test_filter_ema_reset);
     RUN_TEST(test_filter_median_reset);
     RUN_TEST(test_filter_fir);
+    RUN_TEST(test_biquad_process_block);
 }

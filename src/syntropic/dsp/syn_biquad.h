@@ -57,6 +57,15 @@ void syn_filter_biquad_reset(SYN_FilterBiquad *f);
 q16_t syn_filter_biquad_update(SYN_FilterBiquad *f, q16_t sample);
 
 /**
+ * @brief Process a block of samples through the biquad filter.
+ * @param f      Biquad filter instance.
+ * @param in     Input sample array (n elements).
+ * @param out    Output sample array (n elements). May alias in.
+ * @param count  Number of samples to process.
+ */
+void syn_filter_biquad_process_block(SYN_FilterBiquad *f, const q16_t *in, q16_t *out, uint16_t count);
+
+/**
  * @brief Initialize a biquad lowpass filter.
  *
  * Computes standard Butterworth coefficients in Q16.16.

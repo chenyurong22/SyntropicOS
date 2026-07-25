@@ -56,6 +56,32 @@ q16_t syn_filter_biquad_update(SYN_FilterBiquad *f, q16_t sample)
     return output;
 }
 
+void syn_filter_biquad_process_block(SYN_FilterBiquad *f, const q16_t *in, q16_t *out, uint16_t count)
+{
+    SYN_ASSERT(f != NULL && in != NULL && out != NULL);
+    q16_t b0 = f->b0, b1 = f->b1, b2 = f->b2;
+    q16_t a1 = f->a1, a2 = f->a2;
+    q16_t x1 = f->x1, x2 = f->x2;
+    q16_t y1 = f->y1, y2 = f->y2;
+
+    for (uint16_t i = 0; i < count; i++) {
+        q16_t sample = in[i];
+        int64_t acc = ((int64_t)b0 * sample) + ((int64_t)b1 * x1) + ((int64_t)b2 * x2) -
+                      ((int64_t)a1 * y1) - ((int64_t)a2 * y2);
+        q16_t output = (q16_t)(acc >> 16);
+        x2 = x1;
+        x1 = sample;
+        y2 = y1;
+        y1 = output;
+        out[i] = output;
+    }
+
+    f->x1 = x1;
+    f->x2 = x2;
+    f->y1 = y1;
+    f->y2 = y2;
+}
+
 void syn_filter_biquad_lowpass(SYN_FilterBiquad *f, q16_t fc, q16_t fs)
 {
     SYN_ASSERT(f != NULL);

@@ -95,6 +95,46 @@ void syn_matrix_mul(const SYN_Matrix *a, const SYN_Matrix *b, SYN_Matrix *out)
     SYN_ASSERT(out->rows == a->rows && out->cols == b->cols);
 
     uint8_t i, j, k;
+
+    /* Unrolled fast-paths for common control/DSP matrix sizes */
+    if (a->rows == 2 && a->cols == 2 && b->cols == 2) {
+        q16_t a00 = a->data[0], a01 = a->data[1], a10 = a->data[2], a11 = a->data[3];
+        q16_t b00 = b->data[0], b01 = b->data[1], b10 = b->data[2], b11 = b->data[3];
+        out->data[0] = (q16_t)(((int64_t)a00 * b00 + (int64_t)a01 * b10) >> Q16_SHIFT);
+        out->data[1] = (q16_t)(((int64_t)a00 * b01 + (int64_t)a01 * b11) >> Q16_SHIFT);
+        out->data[2] = (q16_t)(((int64_t)a10 * b00 + (int64_t)a11 * b10) >> Q16_SHIFT);
+        out->data[3] = (q16_t)(((int64_t)a10 * b01 + (int64_t)a11 * b11) >> Q16_SHIFT);
+        return;
+    }
+
+    if (a->rows == 3 && a->cols == 3 && b->cols == 3) {
+        const q16_t *ad = a->data;
+        const q16_t *bd = b->data;
+        q16_t *od = out->data;
+        for (i = 0; i < 3; i++) {
+            q16_t a0 = ad[i * 3], a1 = ad[i * 3 + 1], a2 = ad[i * 3 + 2];
+            od[i * 3]     = (q16_t)(((int64_t)a0 * bd[0] + (int64_t)a1 * bd[3] + (int64_t)a2 * bd[6]) >> Q16_SHIFT);
+            od[i * 3 + 1] = (q16_t)(((int64_t)a0 * bd[1] + (int64_t)a1 * bd[4] + (int64_t)a2 * bd[7]) >> Q16_SHIFT);
+            od[i * 3 + 2] = (q16_t)(((int64_t)a0 * bd[2] + (int64_t)a1 * bd[5] + (int64_t)a2 * bd[8]) >> Q16_SHIFT);
+        }
+        return;
+    }
+
+    if (a->rows == 4 && a->cols == 4 && b->cols == 4) {
+        const q16_t *ad = a->data;
+        const q16_t *bd = b->data;
+        q16_t *od = out->data;
+        for (i = 0; i < 4; i++) {
+            q16_t a0 = ad[i * 4], a1 = ad[i * 4 + 1], a2 = ad[i * 4 + 2], a3 = ad[i * 4 + 3];
+            od[i * 4]     = (q16_t)(((int64_t)a0 * bd[0]  + (int64_t)a1 * bd[4]  + (int64_t)a2 * bd[8]  + (int64_t)a3 * bd[12]) >> Q16_SHIFT);
+            od[i * 4 + 1] = (q16_t)(((int64_t)a0 * bd[1]  + (int64_t)a1 * bd[5]  + (int64_t)a2 * bd[9]  + (int64_t)a3 * bd[13]) >> Q16_SHIFT);
+            od[i * 4 + 2] = (q16_t)(((int64_t)a0 * bd[2]  + (int64_t)a1 * bd[6]  + (int64_t)a2 * bd[10] + (int64_t)a3 * bd[14]) >> Q16_SHIFT);
+            od[i * 4 + 3] = (q16_t)(((int64_t)a0 * bd[3]  + (int64_t)a1 * bd[7]  + (int64_t)a2 * bd[11] + (int64_t)a3 * bd[15]) >> Q16_SHIFT);
+        }
+        return;
+    }
+
+    /* General M×N×K matrix multiplication */
     for (i = 0; i < a->rows; i++) {
         for (j = 0; j < b->cols; j++) {
             int64_t acc = 0;

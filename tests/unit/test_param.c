@@ -90,8 +90,33 @@ static void test_param_data_too_large(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 }
 
+static void test_param_sector_wrap(void)
+{
+    mock_port_reset();
+    SYN_ParamStore store;
+    TestParams p = {.brightness = 100, .offset = 20, .mode = 1};
+
+    /* 2 sectors of 1024 bytes */
+    SYN_Status st = syn_param_init(&store, 0, 2, sizeof(TestParams));
+    TEST_ASSERT_EQUAL(SYN_ERROR, st); /* blank flash */
+
+    /* Perform enough saves to fill sector 0 and wrap to sector 1 */
+    uint16_t slots_per_sec = store.slots_per_sector;
+    for (uint16_t i = 0; i <= slots_per_sec; i++) {
+        p.brightness = (uint16_t)i;
+        st = syn_param_save(&store, &p);
+        TEST_ASSERT_EQUAL(SYN_OK, st);
+    }
+
+    TestParams loaded = {0};
+    st = syn_param_load(&store, &loaded);
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+    TEST_ASSERT_EQUAL_UINT16(slots_per_sec, loaded.brightness);
+}
+
 void run_param_tests(void)
 {
     RUN_TEST(test_param_store);
     RUN_TEST(test_param_data_too_large);
+    RUN_TEST(test_param_sector_wrap);
 }

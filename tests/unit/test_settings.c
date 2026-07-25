@@ -251,6 +251,31 @@ static void test_settings_dual_bank(void)
     settings.velocity = 888;
     TEST_ASSERT_EQUAL(SYN_OK, syn_settings_dual_bank_save(&db));
     TEST_ASSERT_EQUAL_INT(1, db.active_bank);
+
+    /* Saving unchanged data returns OK immediately */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_dual_bank_save(&db));
+    TEST_ASSERT_EQUAL_INT(1, db.active_bank);
+}
+
+static void test_settings_edge_cases(void)
+{
+    TestSettings settings;
+    SYN_Settings store;
+
+    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
+
+    /* Invalid parameters for export & import */
+    TEST_ASSERT_EQUAL(-1, syn_settings_export(NULL, &settings, sizeof(settings)));
+    TEST_ASSERT_EQUAL(-2, syn_settings_export(&store, &settings, 2));
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_settings_import(NULL, &settings, sizeof(settings), false));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_settings_import(&store, &settings, 2, false));
+
+    /* VFS invalid parameters */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_settings_export_vfs(NULL, "/cfg/set.bin"));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_settings_import_vfs(NULL, "/cfg/set.bin", false));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_settings_export_vfs(&store, "/invalid/path"));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_settings_import_vfs(&store, "/invalid/path", false));
 }
 
 static uint8_t ram_vfs_buf[128];
@@ -330,5 +355,6 @@ void run_settings_tests(void)
     RUN_TEST(test_settings_checksum_changes_on_save);
     RUN_TEST(test_settings_export_and_import);
     RUN_TEST(test_settings_dual_bank);
+    RUN_TEST(test_settings_edge_cases);
     RUN_TEST(test_settings_vfs_export_import);
 }

@@ -1,11 +1,12 @@
-# SyntropicOS Lightweight Containerized Testing & Emulation Environment
+# SyntropicOS Lightweight Test Container
 FROM debian:bookworm-slim
 
-# Install minimal toolchain without GUI/doc recommended bloated packages
+# Install compilation tools, sanitizers, cross-compilers, QEMU ARM, and libFuzzer RT libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     clang \
+    libclang-rt-dev \
     make \
     cmake \
     git \

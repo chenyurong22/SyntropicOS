@@ -1,7 +1,7 @@
-# SyntropicOS Lightweight Test Container
+# SyntropicOS Lightweight Test & Tooling Container
 FROM debian:bookworm-slim
 
-# Install compilation tools, sanitizers, cross-compilers, QEMU ARM, libFuzzer, static analysis & coverage tools
+# Install compilation tools, sanitizers, cross-compilers, QEMU ARM, libFuzzer, static analysis, coverage & Doxygen tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
@@ -19,9 +19,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     lcov \
     gcovr \
     cppcheck \
+    doxygen \
+    graphviz \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
 
-CMD ["make", "-C", "toolchain/testing", "help"]
+CMD ["make", "-C", "tools/containers", "help"]

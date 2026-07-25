@@ -156,11 +156,11 @@ SYN_Status syn_fft_window_hanning(q16_t *out, uint16_t n)
         return SYN_INVALID_PARAM;
 
     q16_t two_pi = Q16_2_PI;
-    q16_t n_minus_1 = Q16_FROM_INT(n - 1);
+    q16_t inv_n1 = q16_inv(Q16_FROM_INT(n - 1));
 
     for (uint16_t i = 0; i < n; i++) {
-        q16_t theta = q16_div(q16_mul(two_pi, Q16_FROM_INT(i)), n_minus_1);
-        q16_t cos_t = q16_cos(theta);
+        q16_t theta = q16_mul(q16_mul(two_pi, Q16_FROM_INT(i)), inv_n1);
+        q16_t cos_t = q16_cos_fast(theta);
         out[i] = q16_mul(Q16_HALF, Q16_ONE - cos_t);
     }
     return SYN_OK;
@@ -172,13 +172,13 @@ SYN_Status syn_fft_window_hamming(q16_t *out, uint16_t n)
         return SYN_INVALID_PARAM;
 
     q16_t two_pi = Q16_2_PI;
-    q16_t n_minus_1 = Q16_FROM_INT(n - 1);
+    q16_t inv_n1 = q16_inv(Q16_FROM_INT(n - 1));
     q16_t a0 = Q16_FROM_FRAC(54, 100);
     q16_t a1 = Q16_FROM_FRAC(46, 100);
 
     for (uint16_t i = 0; i < n; i++) {
-        q16_t theta = q16_div(q16_mul(two_pi, Q16_FROM_INT(i)), n_minus_1);
-        q16_t cos_t = q16_cos(theta);
+        q16_t theta = q16_mul(q16_mul(two_pi, Q16_FROM_INT(i)), inv_n1);
+        q16_t cos_t = q16_cos_fast(theta);
         out[i] = a0 - q16_mul(a1, cos_t);
     }
     return SYN_OK;
@@ -190,15 +190,15 @@ SYN_Status syn_fft_window_blackman(q16_t *out, uint16_t n)
         return SYN_INVALID_PARAM;
 
     q16_t two_pi = Q16_2_PI;
-    q16_t n_minus_1 = Q16_FROM_INT(n - 1);
+    q16_t inv_n1 = q16_inv(Q16_FROM_INT(n - 1));
     q16_t a0 = Q16_FROM_FRAC(42, 100);
-    q16_t a1 = Q16_HALF;
+    q16_t a1 = Q16_FROM_FRAC(50, 100);
     q16_t a2 = Q16_FROM_FRAC(8, 100);
 
     for (uint16_t i = 0; i < n; i++) {
-        q16_t theta = q16_div(q16_mul(two_pi, Q16_FROM_INT(i)), n_minus_1);
-        q16_t cos_t1 = q16_cos(theta);
-        q16_t cos_t2 = q16_cos(q16_mul(Q16_FROM_INT(2), theta));
+        q16_t theta = q16_mul(q16_mul(two_pi, Q16_FROM_INT(i)), inv_n1);
+        q16_t cos_t1 = q16_cos_fast(theta);
+        q16_t cos_t2 = q16_cos_fast(q16_mul(Q16_FROM_INT(2), theta));
         out[i] = a0 - q16_mul(a1, cos_t1) + q16_mul(a2, cos_t2);
     }
     return SYN_OK;

@@ -49,8 +49,7 @@
       "-Isrc/syntropic"
     ],
     "srcFilter": [
-      "+<*>",
-      "-<syntropic/port_stubs/>"
+      "+<*>"
     ]
   }
 }

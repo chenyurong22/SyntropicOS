@@ -75,6 +75,9 @@ static:
 dox:
 	@bash $(ROOT_DIR)/tools/docs/run_doxygen.sh
 
+pio:
+	@bash $(ROOT_DIR)/tools/platformio/run_platformio.sh
+
 integration:
 	@bash $(ROOT_DIR)/tests/integration/run_integration.sh
 
@@ -133,6 +136,10 @@ container-static: container-build
 container-dox: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
 	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers dox
+
+container-pio: container-build
+	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
+	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers pio
 
 container-integration: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \

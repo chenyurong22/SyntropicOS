@@ -96,5 +96,8 @@ container-static:
 container-dox:
 	@make -C tools/containers container-dox
 
+container-pio:
+	@make -C tools/containers container-pio
+
 container-integration:
 	@make -C tools/containers container-integration

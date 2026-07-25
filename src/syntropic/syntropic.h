@@ -300,6 +300,10 @@ extern "C" {
 
 /* ── Protocols ──────────────────────────────────────────────────────────── */
 
+#if !defined(SYN_USE_AT_PARSER) || SYN_USE_AT_PARSER
+#include "proto/syn_at_parser.h"
+#endif
+
 #if !defined(SYN_USE_COBS) || SYN_USE_COBS
 #include "proto/syn_cobs.h"
 #endif

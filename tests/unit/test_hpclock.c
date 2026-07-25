@@ -18,18 +18,6 @@
 
 /* ── Simulated hardware ────────────────────────────────────────────────── */
 
-static volatile uint32_t fake_timer_cnt;
-
-volatile uint32_t *syn_port_hpclock_lsb_ptr(void)
-{
-    return &fake_timer_cnt;
-}
-
-uint32_t syn_port_hpclock_freq_hz(void)
-{
-    return 16000000UL; /* 16 MHz — typical AVR/ARM clock */
-}
-
 /* ── Resolve tests ─────────────────────────────────────────────────────── */
 
 static void test_resolve_no_overflow(void)
@@ -185,7 +173,7 @@ static void test_elapsed_across_overflow(void)
 static void test_capture_macro(void)
 {
     syn_hpclock_msb = 42;
-    fake_timer_cnt = 12345;
+    mock_hpclock_lsb = 12345;
 
     SYN_HPTimestamp ts;
     SYN_HPCLOCK_CAPTURE(ts);
@@ -215,21 +203,9 @@ static void test_overflow_tick_macro(void)
     TEST_ASSERT_EQUAL_UINT32(3, syn_hpclock_msb);
 }
 
-/* ── Runner ────────────────────────────────────────────────────────────── */
-
-void setUp(void)
+void run_hpclock_tests(void)
 {
     syn_hpclock_msb = 0;
-    fake_timer_cnt = 0;
-}
-
-void tearDown(void)
-{
-}
-
-int main(void)
-{
-    UNITY_BEGIN();
 
     /* Resolve */
     RUN_TEST(test_resolve_no_overflow);
@@ -250,6 +226,4 @@ int main(void)
     RUN_TEST(test_capture_macro);
     RUN_TEST(test_is_zero);
     RUN_TEST(test_overflow_tick_macro);
-
-    return UNITY_END();
 }

@@ -9,20 +9,6 @@
 #include "syntropic/syntropic.h"
 #include "unity/unity.h"
 
-/* ── Simulated Hardware Clock ──────────────────────────────────────────── */
-
-static volatile uint32_t fake_timer_cnt;
-
-volatile uint32_t *syn_port_hpclock_lsb_ptr(void)
-{
-    return &fake_timer_cnt;
-}
-
-uint32_t syn_port_hpclock_freq_hz(void)
-{
-    return 16000000UL; /* 16 MHz hardware timer */
-}
-
 /* ── Test Suite ────────────────────────────────────────────────────────── */
 
 static void test_timesync_init(void)
@@ -255,20 +241,9 @@ static void test_timesync_is_pps_locked(void)
     TEST_ASSERT_TRUE(syn_timesync_is_pps_locked(&tsync));
 }
 
-/* ── Runner ────────────────────────────────────────────────────────────── */
-
-void setUp(void)
+void run_timesync_tests(void)
 {
-    fake_timer_cnt = 0;
-}
-
-void tearDown(void)
-{
-}
-
-int main(void)
-{
-    UNITY_BEGIN();
+    syn_hpclock_msb = 0;
     RUN_TEST(test_timesync_init);
     RUN_TEST(test_timesync_unsynced_fallback);
     RUN_TEST(test_timesync_locked_resolution);
@@ -279,5 +254,4 @@ int main(void)
     RUN_TEST(test_timesync_to_epoch_ns_helper);
     RUN_TEST(test_timesync_null_params);
     RUN_TEST(test_timesync_is_pps_locked);
-    return UNITY_END();
 }

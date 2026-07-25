@@ -46,7 +46,7 @@ SYN_Status syn_timesync_bind_pps(SYN_TimeSync *tsync, const SYN_HPTimestamp *pps
     uint64_t curr_ticks = syn_hpclock_resolve(pps_ts);
     uint32_t nominal_freq = syn_port_hpclock_freq_hz();
 
-    if (tsync->has_pps_lock && tsync->prev_pps_ticks > 0 && nominal_freq > 0) {
+    if (tsync->has_pps_lock && tsync->pps_count > 0 && nominal_freq > 0) {
         /*
          * Measure actual ticks elapsed between PPS pulses.
          * For a 1-second interval, expected ticks = nominal_freq.

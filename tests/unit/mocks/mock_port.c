@@ -18,6 +18,17 @@
 /* ── Tick source ────────────────────────────────────────────────────────── */
 
 uint32_t mock_tick_ms = 0;
+volatile uint32_t mock_hpclock_lsb = 0;
+
+volatile uint32_t *syn_port_hpclock_lsb_ptr(void)
+{
+    return &mock_hpclock_lsb;
+}
+
+uint32_t syn_port_hpclock_freq_hz(void)
+{
+    return 16000000UL;
+}
 
 void mock_tick_advance(uint32_t ms)
 {
@@ -835,6 +846,7 @@ SYN_WEAK SYN_Socket syn_port_sock_accept(SYN_Socket listener, uint32_t timeout_m
 void mock_port_reset(void)
 {
     mock_tick_ms = 0;
+    mock_hpclock_lsb = 0;
     memset(mock_gpio_states, 0, sizeof(mock_gpio_states));
     memset(mock_gpio_modes, 0, sizeof(mock_gpio_modes));
     for (int i = 0; i < 32; i++) {

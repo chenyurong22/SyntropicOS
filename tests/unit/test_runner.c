@@ -17,6 +17,7 @@
 void setUp(void)
 {
     mock_port_reset();
+    syn_hpclock_msb = 0;
 }
 void tearDown(void)
 { /* nothing */
@@ -41,6 +42,7 @@ void run_ramp_tests(void);
 void run_pubsub_tests(void);
 void run_pack_tests(void);
 void run_cobs_tests(void);
+void run_at_parser_tests(void);
 void run_lin_tests(void);
 void run_smbus_tests(void);
 void run_pmbus_tests(void);
@@ -107,6 +109,9 @@ void run_heartbeat_tests(void);
 void run_protothread_tests(void);
 void run_sched_tests(void);
 void run_exti_tests(void);
+void run_geo_tests(void);
+void run_hpclock_tests(void);
+void run_timesync_tests(void);
 void run_dma_tests(void);
 void run_mailbox_tests(void);
 void run_sleep_tests(void);
@@ -320,8 +325,9 @@ int main(void)
     /* Storage */
     run_settings_tests();
 
-    /* Streams */
+    /* Streams & AT Parser */
     run_stream_tests();
+    run_at_parser_tests();
 
     /* Fixed-point math, matrix, vector & quaternion */
     run_matrix_tests();
@@ -387,6 +393,11 @@ int main(void)
 
     /* Stepper Motor Driver */
     run_stepper_tests();
+
+    /* Geodetic, High-Precision Clock & TimeSync */
+    run_geo_tests();
+    run_hpclock_tests();
+    run_timesync_tests();
 
     return UNITY_END();
 }

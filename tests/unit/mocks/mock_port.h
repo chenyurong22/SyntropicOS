@@ -21,6 +21,7 @@ extern "C" {
 /* ── Tick source ────────────────────────────────────────────────────────── */
 
 extern uint32_t mock_tick_ms;
+extern volatile uint32_t mock_hpclock_lsb;
 
 /** Advance the mock system tick by @p ms milliseconds. */
 void mock_tick_advance(uint32_t ms);

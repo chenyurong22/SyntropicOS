@@ -1,13 +1,15 @@
 /**
  * @file main.c
  * @brief PlatformIO Real Project Integration Test for SyntropicOS.
- * Verifies includes, Q16 fixed-point math, Biquad IIR DSP filter, FOC motor transforms, and EtherCAT.
+ * Verifies includes, Q16 fixed-point math, Biquad IIR DSP filter, FOC motor transforms, and
+ * EtherCAT.
  */
+
+#include "SyntropicOS.h"
+#include "syntropic/motor/syn_foc.h"
 
 #include <stdio.h>
 #include <time.h>
-#include "SyntropicOS.h"
-#include "syntropic/motor/syn_foc.h"
 
 /* Provide POSIX time tick implementation for PlatformIO native test host */
 uint32_t syn_port_get_tick_ms(void)

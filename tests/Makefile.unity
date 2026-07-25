@@ -2,10 +2,11 @@
 # Usage: make -f tests/Makefile.unity [test|clean]
 
 CC      := gcc
-CFLAGS  := -std=c99 -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests/unit -Itests/unit/mocks -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1
+CFLAGS  := -std=c99 -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests/unit -Itests/unit/mocks -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_AT_PARSER=1
 
 # All SyntropicOS source files
 SYN_SRCS := \
+	src/syntropic/proto/syn_at_parser.c \
 	src/syntropic/drivers/syn_gpio.c src/syntropic/drivers/syn_uart.c \
 	src/syntropic/drivers/syn_adc.c src/syntropic/drivers/syn_exti.c \
 	src/syntropic/drivers/syn_can.c src/syntropic/drivers/syn_soft_i2c.c \
@@ -89,7 +90,10 @@ SYN_SRCS := \
 	src/syntropic/dsp/syn_kalman.c src/syntropic/motor/syn_foc.c \
 	src/syntropic/motor/syn_foc_observer.c \
 	src/syntropic/proto/syn_modbus_tcp.c src/syntropic/proto/syn_nmea.c \
-	src/syntropic/motor/syn_interpolator.c
+	src/syntropic/motor/syn_interpolator.c \
+	src/syntropic/util/syn_geo.c \
+	src/syntropic/drivers/syn_hpclock.c \
+	src/syntropic/drivers/syn_timesync.c
 
 # Unity framework
 UNITY_SRCS := tests/unit/unity/unity.c
@@ -98,7 +102,7 @@ UNITY_SRCS := tests/unit/unity/unity.c
 MOCK_SRCS := tests/unit/mocks/mock_port.c
 
 # All per-module test files
-TEST_SRCS := $(filter-out tests/unit/test_timesync.c tests/unit/test_hpclock.c tests/unit/test_geo.c, $(wildcard tests/unit/test_*.c))
+TEST_SRCS := $(wildcard tests/unit/test_*.c)
 
 ALL_SRCS := $(SYN_SRCS) $(UNITY_SRCS) $(MOCK_SRCS) $(TEST_SRCS)
 

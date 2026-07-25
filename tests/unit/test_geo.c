@@ -152,18 +152,8 @@ static void test_geo_null_params(void)
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_pos_from_gga(NULL, NULL));
 }
 
-/* ── Runner ────────────────────────────────────────────────────────────── */
-
-void setUp(void)
+void run_geo_tests(void)
 {
-}
-void tearDown(void)
-{
-}
-
-int main(void)
-{
-    UNITY_BEGIN();
     RUN_TEST(test_wgs84_to_ecef_prime_meridian_equator);
     RUN_TEST(test_wgs84_to_ecef_north_pole);
     RUN_TEST(test_ecef_to_wgs84_round_trip);
@@ -173,5 +163,4 @@ int main(void)
     RUN_TEST(test_3d_distance);
     RUN_TEST(test_pos_from_gga_fix_qualities);
     RUN_TEST(test_geo_null_params);
-    return UNITY_END();
 }

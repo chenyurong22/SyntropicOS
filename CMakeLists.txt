@@ -22,6 +22,7 @@ set(SYN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/motor/syn_servo.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/motor/syn_dc_motor.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/motor/syn_motor_ctrl.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/proto/syn_at_parser.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/proto/syn_cobs.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/proto/syn_lin.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/proto/syn_dali.c

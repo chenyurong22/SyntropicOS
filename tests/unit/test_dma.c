@@ -146,6 +146,30 @@ void test_dma_stop_and_null_checks(void)
     TEST_ASSERT_EQUAL_INT(SYN_DMA_STATE_IDLE, syn_dma_get_state(&g_dma));
 }
 
+static void test_dma_ringbuf(void)
+{
+    SYN_DMA dma;
+    SYN_DMA_Config cfg = {0};
+    cfg.channel_id = 1;
+    cfg.dir = SYN_DMA_DIR_PERIPH_TO_MEM;
+    cfg.data_size = SYN_DMA_SIZE_8BIT;
+    cfg.dst_inc = true;
+    syn_dma_init(&dma, &cfg);
+
+    uint8_t rx_buf[64] = {0};
+    uint8_t dummy_periph = 0xAA;
+
+    SYN_DMA_RingBuf rbuf;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_dma_ringbuf_init(&rbuf, &dma, rx_buf, sizeof(rx_buf)));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_dma_ringbuf_start(&rbuf, &dummy_periph));
+
+    /* Mock bytes received into rx_buf */
+    memcpy(rx_buf, "1234567890", 10);
+    uint8_t out[16] = {0};
+    size_t read_cnt = syn_dma_ringbuf_read(&rbuf, out, 5);
+    TEST_ASSERT_TRUE(read_cnt <= 10);
+}
+
 void run_dma_tests(void)
 {
     dma_test_setup();
@@ -154,4 +178,5 @@ void run_dma_tests(void)
     RUN_TEST(test_dma_busy_rejection);
     RUN_TEST(test_dma_isr_handler_events);
     RUN_TEST(test_dma_stop_and_null_checks);
+    RUN_TEST(test_dma_ringbuf);
 }

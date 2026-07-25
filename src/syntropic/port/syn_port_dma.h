@@ -67,6 +67,13 @@ SYN_Status syn_port_dma_stop(uint8_t channel_id);
 bool syn_port_dma_is_busy(uint8_t channel_id);
 
 /**
+ * @brief Get remaining transfer counter for hardware DMA channel.
+ * @param channel_id Hardware DMA channel index.
+ * @return Number of remaining transfer elements.
+ */
+uint32_t syn_port_dma_get_counter(uint8_t channel_id);
+
+/**
  * @brief Flush/clean data cache for source RAM region before DMA read.
  * @param addr Start address.
  * @param len Byte length.

@@ -117,6 +117,52 @@ SYN_DMA_State syn_dma_get_state(const SYN_DMA *dma);
  */
 void syn_dma_isr_handler(SYN_DMA *dma, SYN_DMA_Event event);
 
+/* ── Circular DMA Ring Buffer Stream Receiver ────────────────────────────── */
+
+/**
+ * @brief Continuous circular DMA reception stream controller.
+ */
+typedef struct {
+    SYN_DMA *dma;          /**< Underlying DMA channel                    */
+    uint8_t *buf;          /**< Caller-allocated circular reception buffer */
+    size_t capacity;       /**< Total capacity of buffer in bytes         */
+    volatile size_t tail;  /**< Application read pointer index            */
+} SYN_DMA_RingBuf;
+
+/**
+ * @brief Initialize a circular DMA ring buffer receiver.
+ * @param r        Ring buffer instance.
+ * @param dma      Initialized DMA channel instance.
+ * @param buf      Reception buffer (aligned to dma data size).
+ * @param capacity Buffer capacity in bytes.
+ * @return SYN_OK on success.
+ */
+SYN_Status syn_dma_ringbuf_init(SYN_DMA_RingBuf *r, SYN_DMA *dma, uint8_t *buf, size_t capacity);
+
+/**
+ * @brief Start continuous circular DMA stream reception.
+ * @param r          Ring buffer instance.
+ * @param periph_src Peripheral data register source address.
+ * @return SYN_OK on success.
+ */
+SYN_Status syn_dma_ringbuf_start(SYN_DMA_RingBuf *r, const void *periph_src);
+
+/**
+ * @brief Get total bytes available to read from the circular DMA stream.
+ * @param r Ring buffer instance.
+ * @return Number of unread bytes.
+ */
+size_t syn_dma_ringbuf_bytes_available(const SYN_DMA_RingBuf *r);
+
+/**
+ * @brief Read bytes from the circular DMA reception buffer into destination.
+ * @param r     Ring buffer instance.
+ * @param dest  Output data buffer.
+ * @param len   Maximum bytes to read.
+ * @return Actual bytes read.
+ */
+size_t syn_dma_ringbuf_read(SYN_DMA_RingBuf *r, uint8_t *dest, size_t len);
+
 #ifdef __cplusplus
 }
 #endif

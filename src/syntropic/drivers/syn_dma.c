@@ -120,3 +120,77 @@ void syn_dma_isr_handler(SYN_DMA *dma, SYN_DMA_Event event)
         dma->cfg.callback(dma, event, dma->cfg.user_ctx);
     }
 }
+
+/* ── Circular DMA Ring Buffer Implementation ─────────────────────────────── */
+
+SYN_Status syn_dma_ringbuf_init(SYN_DMA_RingBuf *r, SYN_DMA *dma, uint8_t *buf, size_t capacity)
+{
+    if (!r || !dma || !buf || capacity == 0) {
+        return SYN_INVALID_PARAM;
+    }
+
+    memset(r, 0, sizeof(*r));
+    r->dma = dma;
+    r->buf = buf;
+    r->capacity = capacity;
+    r->tail = 0;
+
+    return SYN_OK;
+}
+
+SYN_Status syn_dma_ringbuf_start(SYN_DMA_RingBuf *r, const void *periph_src)
+{
+    if (!r || !periph_src) {
+        return SYN_INVALID_PARAM;
+    }
+
+    r->tail = 0;
+    return syn_dma_start(r->dma, periph_src, r->buf, r->capacity);
+}
+
+size_t syn_dma_ringbuf_bytes_available(const SYN_DMA_RingBuf *r)
+{
+    if (!r || !r->dma) {
+        return 0;
+    }
+
+    uint32_t remaining = syn_port_dma_get_counter(r->dma->cfg.channel_id);
+    size_t head = (remaining <= r->capacity) ? (r->capacity - remaining) : 0;
+    size_t tail = r->tail;
+
+    if (head >= tail) {
+        return head - tail;
+    } else {
+        return r->capacity - (tail - head);
+    }
+}
+
+size_t syn_dma_ringbuf_read(SYN_DMA_RingBuf *r, uint8_t *dest, size_t len)
+{
+    if (!r || !dest || len == 0) {
+        return 0;
+    }
+
+    size_t avail = syn_dma_ringbuf_bytes_available(r);
+    if (avail == 0) {
+        return 0;
+    }
+
+    size_t to_read = (len < avail) ? len : avail;
+    size_t tail = r->tail;
+    size_t read_bytes = 0;
+
+    while (read_bytes < to_read) {
+        size_t chunk = r->capacity - tail;
+        if (chunk > to_read - read_bytes) {
+            chunk = to_read - read_bytes;
+        }
+
+        memcpy(dest + read_bytes, r->buf + tail, chunk);
+        tail = (tail + chunk) % r->capacity;
+        read_bytes += chunk;
+    }
+
+    r->tail = tail;
+    return read_bytes;
+}

@@ -974,6 +974,13 @@ bool syn_port_dma_is_busy(uint8_t channel_id)
     return mock_dma[channel_id].busy;
 }
 
+uint32_t syn_port_dma_get_counter(uint8_t channel_id)
+{
+    if (channel_id >= MOCK_DMA_MAX_CHANNELS)
+        return 0;
+    return (uint32_t)mock_dma[channel_id].remaining;
+}
+
 void syn_port_cache_clean(const void *addr, size_t len)
 {
     (void)addr;

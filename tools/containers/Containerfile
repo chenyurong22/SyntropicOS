@@ -1,11 +1,12 @@
 # SyntropicOS Lightweight Test Container
 FROM debian:bookworm-slim
 
-# Install compilation tools, sanitizers, cross-compilers, QEMU ARM, and libFuzzer RT libraries
+# Install compilation tools, sanitizers, cross-compilers, QEMU ARM, libFuzzer, static analysis & coverage tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     clang \
+    clang-tools \
     libclang-rt-dev \
     make \
     cmake \
@@ -15,6 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc-arm-none-eabi \
     libnewlib-arm-none-eabi \
     qemu-system-arm \
+    lcov \
+    gcovr \
+    cppcheck \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 

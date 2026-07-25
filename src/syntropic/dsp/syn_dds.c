@@ -128,7 +128,7 @@ SYN_Status syn_dds_fill_u16(SYN_DDS *dds, uint16_t *buf, size_t count, uint16_t 
 
     for (size_t i = 0; i < count; i++) {
         q16_t sample = syn_dds_step(dds); /* normalized roughly -1.0 to +1.0 */
-        int32_t val = (int32_t)dac_center + (int32_t)Q16_TO_INT(sample * dac_span);
+        int32_t val = (int32_t)dac_center + (int32_t)Q16_TO_INT((int64_t)sample * dac_span);
         if (val < 0) val = 0;
         if (val > 65535) val = 65535;
         buf[i] = (uint16_t)val;

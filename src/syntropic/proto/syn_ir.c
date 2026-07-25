@@ -225,12 +225,15 @@ SYN_Status syn_ir_decoder_init(SYN_IR_Decoder *decoder)
     if (decoder == NULL) {
         return SYN_INVALID_PARAM;
     }
+    uint8_t have_raw = 0;
+    memcpy(&have_raw, &decoder->have_last, 1);
     SYN_IR_Frame last_f = decoder->last_frame;
-    bool have_f = decoder->have_last;
 
     memset(decoder, 0, sizeof(SYN_IR_Decoder));
-    decoder->last_frame = last_f;
-    decoder->have_last = have_f;
+    if (have_raw == 1) {
+        decoder->have_last = true;
+        decoder->last_frame = last_f;
+    }
     decoder->state = SYN_IR_STATE_IDLE;
     decoder->active_proto = SYN_IR_PROTO_UNKNOWN;
     return SYN_OK;
@@ -239,6 +242,9 @@ SYN_Status syn_ir_decoder_init(SYN_IR_Decoder *decoder)
 static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
 {
     SYN_IR_Protocol proto = decoder->active_proto;
+    if ((int)proto < 0 || proto >= SYN_IR_PROTO_COUNT) {
+        return false;
+    }
     const SYN_IR_ProtoDesc *desc = &proto_table[proto];
 
     frame_out->protocol = proto;

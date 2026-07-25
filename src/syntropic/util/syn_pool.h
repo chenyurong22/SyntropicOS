@@ -37,6 +37,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -112,9 +113,10 @@ static inline void syn_pool_init(SYN_Pool *pool, void *buf,
     size_t i = count;
     while (i > 0) {
         i--;
-        void **blk = (void **)(pool->buf + i * block_size);
-        *blk = pool->freelist;
-        pool->freelist = blk;
+        uint8_t *blk = pool->buf + i * block_size;
+        void *next = pool->freelist;
+        memcpy(blk, &next, sizeof(void *));
+        pool->freelist = (void *)blk;
     }
 }
 
@@ -133,7 +135,9 @@ static inline void *syn_pool_alloc(SYN_Pool *pool)
 
     /* Pop head of freelist */
     void *blk = pool->freelist;
-    pool->freelist = *(void **)blk;
+    void *next = NULL;
+    memcpy(&next, blk, sizeof(void *));
+    pool->freelist = next;
 
     pool->used++;
     if (pool->used > pool->high_water) {
@@ -157,7 +161,8 @@ static inline void syn_pool_free(SYN_Pool *pool, void *block)
     if (block == NULL) return;
 
     /* Push onto freelist head */
-    *(void **)block = pool->freelist;
+    void *next = pool->freelist;
+    memcpy(block, &next, sizeof(void *));
     pool->freelist = block;
 
     SYN_ASSERT(pool->used > 0);

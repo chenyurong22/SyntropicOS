@@ -2,7 +2,7 @@
 # Usage: make -f tests/Makefile.unity [test|clean]
 
 CC      := gcc
-CFLAGS  := -std=c99 -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests -Itests/mocks -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1
+CFLAGS  := -std=c99 -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests/unit -Itests/unit/mocks -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1
 
 # All SyntropicOS source files
 SYN_SRCS := \
@@ -87,38 +87,36 @@ SYN_SRCS := \
 	src/syntropic/motor/syn_foc_observer.c \
 	src/syntropic/proto/syn_modbus_tcp.c src/syntropic/proto/syn_nmea.c \
 	src/syntropic/proto/syn_dmx512.c \
-	tests/test_isotp.c \
+	tests/unit/test_isotp.c \
 	src/syntropic/motor/syn_interpolator.c
 
 # Unity framework
-UNITY_SRCS := tests/unity/unity.c
+UNITY_SRCS := tests/unit/unity/unity.c
 
 # Mock port layer
-MOCK_SRCS := tests/mocks/mock_port.c
+MOCK_SRCS := tests/unit/mocks/mock_port.c
 
-# All per-module test files (exclude standalone tests with their own main())
-TEST_SRCS := $(filter-out tests/test_wg_integration.c tests/test_timesync.c tests/test_hpclock.c tests/test_geo.c, $(wildcard tests/test_*.c))
+# All per-module test files
+TEST_SRCS := $(filter-out tests/unit/test_timesync.c tests/unit/test_hpclock.c tests/unit/test_geo.c, $(wildcard tests/unit/test_*.c))
 
 ALL_SRCS := $(SYN_SRCS) $(UNITY_SRCS) $(MOCK_SRCS) $(TEST_SRCS)
-TARGET   := test_unity
 
-.PHONY: test clean coverage
+.PHONY: all test test-cov clean
 
-test: $(TARGET)
-	./$(TARGET)
+all: test
 
-$(TARGET): $(ALL_SRCS)
-	$(CC) $(CFLAGS) $^ -o $@ -lm
+test_unity: $(ALL_SRCS)
+	$(CC) $(CFLAGS) $(ALL_SRCS) -o $@ -lm
+
+test: test_unity
+	./test_unity
+
+test-cov: CFLAGS += --coverage
+test-cov: clean test_unity
+	./test_unity
+	@echo "Coverage data generated (.gcda files)."
 
 clean:
-	rm -f $(TARGET) test_unity_cov coverage.info coverage_src.info
+	rm -f test_unity test_unity_cov coverage.info coverage_src.info
 	rm -rf coverage_html
 	find . \( -name "*.gcda" -o -name "*.gcno" -o -name "*.su" \) -delete
-
-coverage:
-	find . \( -name "*.gcda" -o -name "*.gcno" \) -delete
-	$(MAKE) -f tests/Makefile.unity test CFLAGS="$(CFLAGS) --coverage -O0 -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1" TARGET="test_unity_cov"
-	lcov --capture --directory . --output-file coverage.info --no-external
-	lcov --remove coverage.info '*/tests/*' '*/unity/*' '*/mocks/*' --output-file coverage_filtered.info
-	genhtml coverage_filtered.info --output-directory coverage_html
-	@echo "Coverage report generated in coverage_html/index.html"

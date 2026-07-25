@@ -31,7 +31,6 @@ REPLY.md
 .agents/
 build/
 site/
-tools/
 
 # Renode and Robot Framework simulation files
 .renode-root

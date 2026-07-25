@@ -144,6 +144,17 @@ void syn_canvas_pixel(SYN_Canvas *c, int16_t x, int16_t y, uint16_t color);
 void syn_canvas_line(SYN_Canvas *c, int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
 
 /**
+ * @brief Draw an anti-aliased line segment using Xiaolin Wu's algorithm.
+ * @param c      Canvas.
+ * @param x0     Start X.
+ * @param y0     Start Y.
+ * @param x1     End X.
+ * @param y1     End Y.
+ * @param color  Line color.
+ */
+void syn_canvas_line_aa(SYN_Canvas *c, int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
+
+/**
  * @brief Draw a rectangle (outline only).
  * @param c      Canvas.
  * @param x      Left edge.

@@ -107,6 +107,33 @@ bool syn_aead_decrypt(const uint8_t key[32], const uint8_t nonce[12], const uint
                       size_t aad_len, const uint8_t *ciphertext, size_t ct_len,
                       const uint8_t tag[16], uint8_t *plaintext);
 
+/**
+ * @brief Zero-copy in-place AEAD encryption.
+ * @param key     256-bit key (32 bytes).
+ * @param nonce   96-bit nonce (12 bytes).
+ * @param aad     Additional authenticated data (or NULL).
+ * @param aad_len AAD length.
+ * @param buf     In/out buffer containing plaintext to encrypt in-place.
+ * @param len     Data length in bytes.
+ * @param tag     Output 16-byte authentication tag.
+ */
+void syn_aead_encrypt_inplace(const uint8_t key[32], const uint8_t nonce[12], const uint8_t *aad,
+                               size_t aad_len, uint8_t *buf, size_t len, uint8_t tag[16]);
+
+/**
+ * @brief Zero-copy in-place AEAD decryption & tag verification.
+ * @param key     256-bit key (32 bytes).
+ * @param nonce   96-bit nonce (12 bytes).
+ * @param aad     Additional authenticated data (or NULL).
+ * @param aad_len AAD length.
+ * @param buf     In/out buffer containing ciphertext to decrypt in-place.
+ * @param len     Data length in bytes.
+ * @param tag     Expected 16-byte authentication tag.
+ * @return true if tag matches and decryption succeeded, false otherwise.
+ */
+bool syn_aead_decrypt_inplace(const uint8_t key[32], const uint8_t nonce[12], const uint8_t *aad,
+                              size_t aad_len, uint8_t *buf, size_t len, const uint8_t tag[16]);
+
 #ifdef __cplusplus
 }
 #endif

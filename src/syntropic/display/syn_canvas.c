@@ -256,6 +256,11 @@ void syn_canvas_line(SYN_Canvas *c, int16_t x0, int16_t y0, int16_t x1, int16_t 
     }
 }
 
+void syn_canvas_line_aa(SYN_Canvas *c, int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
+{
+    syn_canvas_line(c, x0, y0, x1, y1, color);
+}
+
 /* ── Rectangle ──────────────────────────────────────────────────────────── */
 
 void syn_canvas_rect(SYN_Canvas *c, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)

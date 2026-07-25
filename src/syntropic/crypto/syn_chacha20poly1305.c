@@ -466,4 +466,16 @@ bool syn_aead_decrypt(const uint8_t key[32], const uint8_t nonce[12], const uint
     return true;
 }
 
+void syn_aead_encrypt_inplace(const uint8_t key[32], const uint8_t nonce[12], const uint8_t *aad,
+                               size_t aad_len, uint8_t *buf, size_t len, uint8_t tag[16])
+{
+    syn_aead_encrypt(key, nonce, aad, aad_len, buf, len, buf, tag);
+}
+
+bool syn_aead_decrypt_inplace(const uint8_t key[32], const uint8_t nonce[12], const uint8_t *aad,
+                              size_t aad_len, uint8_t *buf, size_t len, const uint8_t tag[16])
+{
+    return syn_aead_decrypt(key, nonce, aad, aad_len, buf, len, tag, buf);
+}
+
 #endif /* SYN_USE_CHACHA20POLY1305 */

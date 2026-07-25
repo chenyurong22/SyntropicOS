@@ -133,6 +133,20 @@ static void test_scurve3d(void)
     TEST_ASSERT_EQUAL(400, y);
 }
 
+static void test_interpolator_bezier(void)
+{
+    SYN_Interpolator interp;
+    syn_interpolator_init(&interp);
+
+    SYN_Vector3F p0 = {0.0f, 0.0f, 0.0f};
+    SYN_Vector3F p1 = {10.0f, 20.0f, 0.0f};
+    SYN_Vector3F p2 = {30.0f, 20.0f, 0.0f};
+    SYN_Vector3F p3 = {40.0f, 0.0f, 0.0f};
+
+    SYN_Status st = syn_interpolator_plan_bezier(&interp, p0, p1, p2, p3, 10.0f, 5.0f, 2.0f, 0.1f);
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+}
+
 void run_interpolator_tests(void)
 {
     RUN_TEST(test_interpolator_linear_planning);
@@ -141,4 +155,5 @@ void run_interpolator_tests(void)
     RUN_TEST(test_interpolator_edge_cases);
     RUN_TEST(test_interpolator_additional_coverage);
     RUN_TEST(test_scurve3d);
+    RUN_TEST(test_interpolator_bezier);
 }

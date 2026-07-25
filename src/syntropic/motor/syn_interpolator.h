@@ -125,6 +125,25 @@ bool syn_interpolator_step(SYN_Interpolator *interp, SYN_Vector3F *out_pos);
 bool syn_interpolator_eval_at_time(SYN_Interpolator *interp, float t_sec, SYN_Vector3F *out_pos,
                                    SYN_Vector3F *out_vel);
 
+/**
+ * @brief Plan a Cubic 3D Bezier curve trajectory.
+ *
+ * @param interp    Pointer to interpolator struct.
+ * @param p0        Start point P0.
+ * @param p1        Control point P1.
+ * @param p2        Control point P2.
+ * @param p3        End point P3.
+ * @param feedrate  Desired tangential speed (units/sec).
+ * @param max_accel Max acceleration (units/sec^2).
+ * @param max_jerk  Max jerk (units/sec^3).
+ * @param step_res  Spatial resolution per step.
+ * @return SYN_OK on success.
+ */
+SYN_Status syn_interpolator_plan_bezier(SYN_Interpolator *interp, SYN_Vector3F p0,
+                                        SYN_Vector3F p1, SYN_Vector3F p2, SYN_Vector3F p3,
+                                        float feedrate, float max_accel, float max_jerk,
+                                        float step_res);
+
 #ifdef __cplusplus
 }
 #endif

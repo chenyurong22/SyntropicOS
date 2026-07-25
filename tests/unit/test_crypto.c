@@ -427,6 +427,26 @@ static void test_aead_wrong_key(void)
     TEST_ASSERT_FALSE(ok);
 }
 
+static void test_aead_inplace(void)
+{
+    uint8_t key[32], nonce[12], tag[16];
+    memset(key, 0xAB, 32);
+    memset(nonce, 0x01, 12);
+
+    uint8_t buf[32];
+    memset(buf, 0x55, 32);
+    uint8_t orig[32];
+    memcpy(orig, buf, 32);
+
+    syn_aead_encrypt_inplace(key, nonce, NULL, 0, buf, 32, tag);
+    /* In-place buffer should now contain ciphertext */
+    TEST_ASSERT_FALSE(memcmp(orig, buf, 32) == 0);
+
+    bool ok = syn_aead_decrypt_inplace(key, nonce, NULL, 0, buf, 32, tag);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(orig, buf, 32);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
  *  X25519
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -594,6 +614,7 @@ void run_crypto_tests(void)
     RUN_TEST(test_aead_empty_aad);
     RUN_TEST(test_aead_large);
     RUN_TEST(test_aead_wrong_key);
+    RUN_TEST(test_aead_inplace);
 
     /* X25519 */
     RUN_TEST(test_x25519_vector1);

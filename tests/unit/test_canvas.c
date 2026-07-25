@@ -312,6 +312,9 @@ static void test_canvas_polar_and_arc(void)
     syn_canvas_clear(&c);
     syn_canvas_arc(&c, 32, 32, 15, 0, 90, 1);
     TEST_ASSERT_TRUE(c.buf_size > 0);
+
+    /* Draw anti-aliased line */
+    syn_canvas_line_aa(&c, 0, 0, 31, 31, 1);
 }
 
 void run_canvas_tests(void)

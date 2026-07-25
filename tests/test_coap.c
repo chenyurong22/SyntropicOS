@@ -368,6 +368,30 @@ static void test_coap_request_task_failures(void)
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, req.status);
 }
 
+static void test_coap_malformed_parsing(void)
+{
+    SYN_CoapMsg msg;
+    SYN_CoapOption options[4];
+    size_t option_count = 0;
+
+    /* 1. Too short buffer (< 4 bytes header) */
+    uint8_t short_buf[] = { 0x40, 0x01, 0x12 };
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&msg, options, 4, &option_count, short_buf, sizeof(short_buf)));
+
+    /* 2. Invalid version (version 2 instead of 1 -> header 0x80) */
+    uint8_t bad_ver_buf[] = { 0x80, 0x01, 0x12, 0x34 };
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&msg, options, 4, &option_count, bad_ver_buf, sizeof(bad_ver_buf)));
+
+    /* 3. Token length > 8 (e.g. TKL=9 -> header 0x49) */
+    uint8_t bad_tkl_buf[] = { 0x49, 0x01, 0x12, 0x34 };
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&msg, options, 4, &option_count, bad_tkl_buf, sizeof(bad_tkl_buf)));
+
+    /* 4. Corrupted extended option length 15 (reserved -> SYN_ERROR) */
+    uint8_t bad_opt_buf[] = { 0x40, 0x01, 0x12, 0x34, 0xFF }; /* Payload marker without payload */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_coap_parse(&msg, options, 4, &option_count, bad_opt_buf, sizeof(bad_opt_buf)));
+    TEST_ASSERT_EQUAL_INT(0, msg.payload_len);
+}
+
 void run_coap_tests(void)
 {
     RUN_TEST(test_coap_serialization);
@@ -375,4 +399,5 @@ void run_coap_tests(void)
     RUN_TEST(test_coap_request_task_success);
     RUN_TEST(test_coap_serialization_boundaries);
     RUN_TEST(test_coap_request_task_failures);
+    RUN_TEST(test_coap_malformed_parsing);
 }

@@ -107,4 +107,29 @@ SYN_Status syn_settings_reload(SYN_Settings *s)
     return st;
 }
 
+int syn_settings_export(const SYN_Settings *s, void *buf, size_t len)
+{
+    if (s == NULL || buf == NULL)
+        return -1;
+    if (len < s->data_size)
+        return -2;
+
+    memcpy(buf, s->data, s->data_size);
+    return (int)s->data_size;
+}
+
+SYN_Status syn_settings_import(SYN_Settings *s, const void *buf, size_t len, bool save)
+{
+    if (s == NULL || buf == NULL || len != s->data_size)
+        return SYN_INVALID_PARAM;
+
+    memcpy(s->data, buf, s->data_size);
+    if (save) {
+        return syn_settings_save(s);
+    }
+
+    s->checksum = compute_crc(s->data, s->data_size);
+    return SYN_OK;
+}
+
 #endif /* SYN_USE_SETTINGS */

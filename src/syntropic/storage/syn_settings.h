@@ -164,6 +164,25 @@ void syn_settings_on_change(SYN_Settings *s, SYN_SettingsChangeCallback cb, void
  */
 SYN_Status syn_settings_reload(SYN_Settings *s);
 
+/**
+ * @brief Export current settings to a binary buffer.
+ * @param s     Settings instance.
+ * @param buf   Destination buffer.
+ * @param len   Capacity of buffer.
+ * @return Bytes written on success, or negative error code if buffer too small.
+ */
+int syn_settings_export(const SYN_Settings *s, void *buf, size_t len);
+
+/**
+ * @brief Import settings from a binary buffer and validate.
+ * @param s     Settings instance.
+ * @param buf   Source buffer containing exported settings.
+ * @param len   Length of buffer.
+ * @param save  If true, automatically save to flash if valid.
+ * @return SYN_OK on success, SYN_INVALID_PARAM on size mismatch.
+ */
+SYN_Status syn_settings_import(SYN_Settings *s, const void *buf, size_t len, bool save);
+
 #ifdef __cplusplus
 }
 #endif

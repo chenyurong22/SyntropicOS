@@ -214,6 +214,27 @@ static void test_settings_checksum_changes_on_save(void)
 
 /* ── Runner ─────────────────────────────────────────────────────────────── */
 
+static void test_settings_export_and_import(void)
+{
+    TestSettings settings;
+    SYN_Settings store;
+
+    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
+    settings.velocity = 1234;
+
+    uint8_t buf[64];
+    int exported_len = syn_settings_export(&store, buf, sizeof(buf));
+    TEST_ASSERT_EQUAL_INT(sizeof(TestSettings), exported_len);
+
+    TestSettings settings2;
+    SYN_Settings store2;
+    syn_settings_init(&store2, FLASH_BASE, SECTOR_COUNT, &settings2, sizeof(settings2), &defaults);
+
+    SYN_Status st = syn_settings_import(&store2, buf, exported_len, true);
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+    TEST_ASSERT_EQUAL_INT32(1234, settings2.velocity);
+}
+
 void run_settings_tests(void)
 {
     RUN_TEST(test_settings_init_blank_flash);
@@ -224,4 +245,5 @@ void run_settings_tests(void)
     RUN_TEST(test_settings_change_callback);
     RUN_TEST(test_settings_reload_discards_changes);
     RUN_TEST(test_settings_checksum_changes_on_save);
+    RUN_TEST(test_settings_export_and_import);
 }

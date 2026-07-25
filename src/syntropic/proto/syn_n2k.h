@@ -10,6 +10,12 @@
 #ifndef SYN_N2K_H
 #define SYN_N2K_H
 
+#if __has_include("syn_config.h")
+#include "syn_config.h"
+#endif
+
+#if !defined(SYN_USE_N2K) || SYN_USE_N2K
+
 #include "../common/syn_defs.h"
 #include "../drivers/syn_can.h"
 #include "syn_j1939.h"
@@ -268,5 +274,7 @@ SYN_Status syn_n2k_fastpacket_process(SYN_N2K_FastPacketRx *rx, const SYN_CAN_Fr
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* SYN_USE_N2K */
 
 #endif /* SYN_N2K_H */

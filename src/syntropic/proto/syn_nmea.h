@@ -16,6 +16,12 @@
 #ifndef SYN_NMEA_H
 #define SYN_NMEA_H
 
+#if __has_include("syn_config.h")
+#include "syn_config.h"
+#endif
+
+#if !defined(SYN_USE_NMEA) || SYN_USE_NMEA
+
 #include "../common/syn_defs.h"
 
 #include <stdbool.h>
@@ -206,5 +212,7 @@ bool syn_nmea_parse_zda(const char *sentence, SYN_NMEA_ZDA *zda);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* SYN_USE_NMEA */
 
 #endif /* SYN_NMEA_H */

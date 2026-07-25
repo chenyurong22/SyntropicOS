@@ -1,3 +1,9 @@
+#if __has_include("syn_config.h")
+#include "syn_config.h"
+#endif
+
+#if !defined(SYN_USE_N2K) || SYN_USE_N2K
+
 /**
  * @file syn_n2k.c
  * @brief NMEA 2000 Marine CAN Protocol Stack implementation.
@@ -282,3 +288,5 @@ SYN_Status syn_n2k_fastpacket_process(SYN_N2K_FastPacketRx *rx, const SYN_CAN_Fr
 
     return SYN_INVALID_PARAM;
 }
+
+#endif /* SYN_USE_N2K */

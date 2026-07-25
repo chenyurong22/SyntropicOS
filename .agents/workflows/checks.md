@@ -4,32 +4,32 @@ description: Automated Quality & Testing Checks Workflow
 
 # SyntropicOS Comprehensive Checks Workflow
 
-Follow this sequence to verify software formatting, MISRA C safety compliance, memory safety, static analysis, coverage, and documentation.
+Follow this sequence for maximum feedback speed, cache reuse, and fail-fast verification.
 
-## Step 0: Code Formatting, Linting & MISRA C:2023 Compliance
-Run code polish, AST linting, and MISRA C:2023 compliance checkers:
+## Step 0: Code Formatting, Static Analysis & MISRA Safety (Fail-Fast Static Pipeline)
+Run code polish, AST linting, MISRA C:2023 compliance, and static analysis *first* to catch errors before compiling binaries or running emulators:
 - **Code Formatting**: `make format` (or `make container-format`)
 - **AST Structural Linter**: `make lint` (or `make container-lint`)
-- **MISRA C:2023 Compliance Scan**: `make misra` (or `make container-misra`)
+- **MISRA C:2023 Compliance Scan**: `make misra` (or `make container-misra`) *(Uses `build/cppcheck` AST cache)*
+- **Clang `scan-build` Static Analyzer**: `make static` (or `make container-static`) *(Uses `build/cppcheck` AST cache)*
 
-## Step 1: Unit Testing & Dynamic Sanitizers
-Run host and containerized test suites:
+## Step 1: Unit Testing & Dynamic Sanitizer Audit
+Run fast unit tests and sanitizer builds to verify runtime memory safety:
 - **Unit Test Suite**: `make test` (or `make container-test`)
 - **Containerized Sanitizer Audit**: `make san` (or `make container-san`)
-- **QEMU Bare-Metal Emulation**: `make qemu` (or `make container-qemu`)
+
+## Step 2: Bare-Metal & Hardware Board Emulation
+Verify microcontroller execution across virtual hardware targets:
+- **QEMU Bare-Metal ARM Cortex-M4**: `make qemu` (or `make container-qemu`)
 - **Renode STM32F4 Board Emulation**: `make renode` (or `make container-renode`)
 - **Protocol libFuzzer Targets**: `make fuzz` (or `make container-fuzz`)
 
-## Step 2: 3rd-Party Production Container Integration Suite
-Execute integration tests against 8 genuine production container daemons (Mosquitto MQTT, Chrony SNTP, Nginx HTTP, Node.js WS, CoreDNS, SocketCAN, WireGuard, Modbus TCP):
+## Step 3: 3rd-Party Production Container Integration Suite
+Execute end-to-end integration tests against 8 production container daemons (Mosquitto MQTT, Chrony SNTP, Nginx HTTP, Node.js WS, CoreDNS, SocketCAN, WireGuard, Modbus TCP):
 - **Integration Test Battery**: `make integration` (or `make container-integration`)
 
-## Step 3: Static Analysis
-Run static analysis checks:
-- **Cppcheck & Clang scan-build**: `make static` (or `make container-static`)
-
 ## Step 4: Code Coverage Analysis
-Measure line and branch coverage:
+Measure line and branch coverage (wipes and recompiles binaries with `-fprofile-arcs` instrumentation):
 - **LCOV HTML Report**: `make cov` (or `make container-cov`)
 
 ## Step 5: Doxygen API Documentation Coverage

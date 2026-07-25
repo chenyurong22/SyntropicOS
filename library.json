@@ -35,7 +35,7 @@
     "type": "git",
     "url": "https://github.com/outlookhazy/SyntropicOS.git"
   },
-  "homepage": "https://github.com/outlookhazy/SyntropicOS",
+  "homepage": "https://outlookhazy.github.io/SyntropicOS/",
   "license": "Apache-2.0",
   "frameworks": "*",
   "platforms": "*",

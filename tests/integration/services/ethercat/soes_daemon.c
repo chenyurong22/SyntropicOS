@@ -45,7 +45,8 @@ int main(void)
         return 1;
     }
 
-    printf("[3rd-Party SOES Slave Daemon] OpenEtherCATSociety SOES Slave listening on port %d...\n", port);
+    printf("[3rd-Party SOES Slave Daemon] OpenEtherCATSociety SOES Slave listening on port %d...\n",
+           port);
     fflush(stdout);
 
     while (1) {
@@ -55,7 +56,8 @@ int main(void)
         if (client_fd < 0)
             continue;
 
-        printf("[3rd-Party SOES Slave Daemon] Connection accepted from %s\n", inet_ntoa(client_addr.sin_addr));
+        printf("[3rd-Party SOES Slave Daemon] Connection accepted from %s\n",
+               inet_ntoa(client_addr.sin_addr));
         fflush(stdout);
 
         uint8_t rx_buf[1024];
@@ -69,7 +71,8 @@ int main(void)
                 uint16_t length = ecat_hdr & 0x07FF;
                 uint16_t frame_type = (ecat_hdr >> 12) & 0x0F;
 
-                printf("[SOES Slave Daemon] Received EtherCAT Frame: type=%d, len=%d\n", frame_type, length);
+                printf("[SOES Slave Daemon] Received EtherCAT Frame: type=%d, len=%d\n", frame_type,
+                       length);
                 fflush(stdout);
 
                 /* Echo frame back with Working Counter WKC = 1 */

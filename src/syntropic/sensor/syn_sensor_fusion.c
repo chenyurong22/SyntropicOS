@@ -108,17 +108,16 @@ SYN_Status syn_sensor_fusion_update(SYN_SensorFusion *f, q16_t gx, q16_t gy, q16
     qy += dqy;
     qz += dqz;
 
-    /* Normalize quaternion to preserve unit length */
-    int64_t q_sq =
+    /* Fast single-cycle reciprocal square root quaternion normalization */
+    int64_t q_sq_64 =
         ((int64_t)qw * qw) + ((int64_t)qx * qx) + ((int64_t)qy * qy) + ((int64_t)qz * qz);
-    q_sq >>= Q16_SHIFT;
-    q16_t q_norm = q16_sqrt((q16_t)q_sq);
-
-    if (q_norm > 0) {
-        qw = q16_div(qw, q_norm);
-        qx = q16_div(qx, q_norm);
-        qy = q16_div(qy, q_norm);
-        qz = q16_div(qz, q_norm);
+    q16_t q_sq = (q16_t)(q_sq_64 >> Q16_SHIFT);
+    q16_t inv_norm = q16_rsqrt(q_sq);
+    if (inv_norm > 0) {
+        qw = q16_mul(qw, inv_norm);
+        qx = q16_mul(qx, inv_norm);
+        qy = q16_mul(qy, inv_norm);
+        qz = q16_mul(qz, inv_norm);
     }
 
     f->q.w = qw;

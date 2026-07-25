@@ -88,6 +88,21 @@ void syn_rtc_from_epoch(uint32_t epoch, SYN_RTC_DateTime *dt);
  */
 void syn_rtc_set_drift_ppm(int32_t drift_ppm);
 
+/**
+ * @brief Set the target alarm date/time on the RTC.
+ * @param dt Target alarm date/time. Must be valid.
+ * @return SYN_OK on success, error code otherwise.
+ */
+SYN_Status syn_rtc_set_alarm(const SYN_RTC_DateTime *dt);
+
+/**
+ * @brief Schedule an alarm relative to current time by seconds.
+ * @param seconds_from_now Seconds to add to current time.
+ * @param alarm_dt Output target alarm date/time structure.
+ * @return SYN_OK on success, error code otherwise.
+ */
+SYN_Status syn_rtc_schedule_alarm_seconds(uint32_t seconds_from_now, SYN_RTC_DateTime *alarm_dt);
+
 #ifdef __cplusplus
 }
 #endif

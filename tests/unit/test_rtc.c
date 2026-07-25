@@ -151,6 +151,25 @@ static void test_rtc_drift_ppm(void)
     TEST_ASSERT_FALSE(syn_rtc_is_valid(&bad_year));
 }
 
+static void test_rtc_schedule_alarm(void)
+{
+    mock_rtc_init_ok = true;
+    syn_rtc_init();
+    SYN_RTC_DateTime now = {2026u, 7u, 25u, 10u, 0u, 0u};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_rtc_set(&now));
+
+    SYN_RTC_DateTime alarm_dt;
+    /* Schedule alarm 3600 seconds (1 hour) from now: 10:00 -> 11:00 */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_rtc_schedule_alarm_seconds(3600, &alarm_dt));
+
+    TEST_ASSERT_EQUAL_UINT16(2026u, alarm_dt.year);
+    TEST_ASSERT_EQUAL_UINT8(7u, alarm_dt.month);
+    TEST_ASSERT_EQUAL_UINT8(25u, alarm_dt.day);
+    TEST_ASSERT_EQUAL_UINT8(11u, alarm_dt.hour);
+    TEST_ASSERT_EQUAL_UINT8(0u, alarm_dt.minute);
+    TEST_ASSERT_EQUAL_UINT8(0u, alarm_dt.second);
+}
+
 void run_rtc_tests(void)
 {
     RUN_TEST(test_rtc_init_ok);
@@ -167,4 +186,5 @@ void run_rtc_tests(void)
     RUN_TEST(test_rtc_from_epoch_roundtrip);
     RUN_TEST(test_rtc_drift_ppm);
     RUN_TEST(test_rtc_from_epoch_zero);
+    RUN_TEST(test_rtc_schedule_alarm);
 }

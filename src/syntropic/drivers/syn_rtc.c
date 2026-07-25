@@ -167,4 +167,32 @@ void syn_rtc_from_epoch(uint32_t epoch, SYN_RTC_DateTime *dt)
     dt->day = (uint8_t)(days + 1u);
 }
 
+SYN_Status syn_rtc_set_alarm(const SYN_RTC_DateTime *dt)
+{
+    if (dt == NULL || !syn_rtc_is_valid(dt))
+        return SYN_INVALID_PARAM;
+
+    return syn_port_rtc_set_alarm(dt);
+}
+
+SYN_Status syn_rtc_schedule_alarm_seconds(uint32_t seconds_from_now, SYN_RTC_DateTime *alarm_dt)
+{
+    SYN_RTC_DateTime now;
+    SYN_Status status = syn_rtc_get(&now);
+    if (status != SYN_OK)
+        return status;
+
+    uint32_t current_epoch = syn_rtc_to_epoch(&now);
+    uint32_t target_epoch = current_epoch + seconds_from_now;
+
+    SYN_RTC_DateTime target_dt;
+    syn_rtc_from_epoch(target_epoch, &target_dt);
+
+    if (alarm_dt != NULL) {
+        *alarm_dt = target_dt;
+    }
+
+    return syn_rtc_set_alarm(&target_dt);
+}
+
 #endif /* SYN_USE_RTC */

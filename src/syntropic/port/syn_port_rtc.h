@@ -58,6 +58,13 @@ SYN_Status syn_port_rtc_set(const SYN_RTC_DateTime *dt);
  */
 void syn_port_rtc_set_drift_ppm(int32_t drift_ppm);
 
+/**
+ * @brief Set hardware RTC alarm target date/time for low-power wakeup.
+ * @param dt Target alarm date/time.
+ * @return SYN_OK on success, error code otherwise.
+ */
+SYN_Status syn_port_rtc_set_alarm(const SYN_RTC_DateTime *dt);
+
 #ifdef __cplusplus
 }
 #endif

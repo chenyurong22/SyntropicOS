@@ -492,6 +492,15 @@ SYN_Status syn_port_rtc_set(const SYN_RTC_DateTime *dt)
     return SYN_OK;
 }
 
+static SYN_RTC_DateTime mock_rtc_alarm_time;
+SYN_Status syn_port_rtc_set_alarm(const SYN_RTC_DateTime *dt)
+{
+    if (dt == NULL)
+        return SYN_INVALID_PARAM;
+    mock_rtc_alarm_time = *dt;
+    return SYN_OK;
+}
+
 /* ── Hardware Watchdog port ─────────────────────────────────────────────── */
 
 #include "syntropic/port/syn_port_wdt.h"

@@ -24,4 +24,4 @@ jobs:
       - name: Publish Package to PlatformIO Registry
         env:
           PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
-        run: pio pkg publish --no-prompt
+        run: pio pkg publish --no-interactive

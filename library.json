@@ -1,6 +1,6 @@
 {
   "name": "SyntropicOS",
-  "version": "2026.7.1",
+  "version": "2026.7.2",
   "description": "Zero-overhead C99 bare-metal framework & cooperative OS. Features protothreads, zero heap allocation, fixed-point math, DSP, FOC motor control, EtherCAT, CANopen, J1939, Modbus, and WireGuard.",
   "keywords": [
     "protothreads",

@@ -13,6 +13,7 @@
 #include "syn_biquad.h"
 
 #include <stddef.h>
+#include <string.h>
 
 /* ── Biquad Filter API ──────────────────────────────────────────────────── */
 
@@ -200,6 +201,55 @@ void syn_filter_biquad_notch(SYN_FilterBiquad *f, q16_t fc, q16_t fs, q16_t q)
     f->a2 = q16_div(a2, a0);
 
     syn_filter_biquad_reset(f);
+}
+
+/* ── Cascaded Biquad Filter Bank ─────────────────────────────────────────── */
+
+SYN_Status syn_filter_biquad_cascade_init(SYN_FilterBiquadCascade *c, uint8_t num_stages)
+{
+    SYN_ASSERT(c != NULL);
+    if (num_stages == 0 || num_stages > SYN_BIQUAD_CASCADE_MAX_STAGES) {
+        return SYN_INVALID_PARAM;
+    }
+
+    memset(c, 0, sizeof(*c));
+    c->num_stages = num_stages;
+
+    for (uint8_t i = 0; i < num_stages; i++) {
+        c->stages[i].b0 = Q16_ONE; /* Passthrough by default */
+    }
+
+    return SYN_OK;
+}
+
+void syn_filter_biquad_cascade_reset(SYN_FilterBiquadCascade *c)
+{
+    SYN_ASSERT(c != NULL);
+    for (uint8_t i = 0; i < c->num_stages; i++) {
+        syn_filter_biquad_reset(&c->stages[i]);
+    }
+}
+
+q16_t syn_filter_biquad_cascade_update(SYN_FilterBiquadCascade *c, q16_t sample)
+{
+    SYN_ASSERT(c != NULL);
+    q16_t s = sample;
+    for (uint8_t i = 0; i < c->num_stages; i++) {
+        s = syn_filter_biquad_update(&c->stages[i], s);
+    }
+    return s;
+}
+
+void syn_filter_biquad_cascade_process_block(SYN_FilterBiquadCascade *c, const q16_t *in,
+                                              q16_t *out, uint16_t count)
+{
+    SYN_ASSERT(c != NULL);
+    SYN_ASSERT(in != NULL);
+    SYN_ASSERT(out != NULL);
+
+    for (uint16_t n = 0; n < count; n++) {
+        out[n] = syn_filter_biquad_cascade_update(c, in[n]);
+    }
 }
 
 #endif /* SYN_USE_BIQUAD */

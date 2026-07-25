@@ -345,10 +345,33 @@ static void test_fft_spectrum_analytics(void)
     TEST_ASSERT_EQUAL_INT(1, peaks[1].bin); /* Smaller peak (100) sorted second */
 }
 
+static void test_biquad_cascade(void)
+{
+    SYN_FilterBiquadCascade cascade;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_filter_biquad_cascade_init(&cascade, 2));
+
+    /* Stage 0: lowpass filter at 100Hz, sample rate 1000Hz */
+    syn_filter_biquad_lowpass(&cascade.stages[0], Q16_FROM_INT(100), Q16_FROM_INT(1000));
+    /* Stage 1: lowpass filter at 100Hz, sample rate 1000Hz (4th-order response) */
+    syn_filter_biquad_lowpass(&cascade.stages[1], Q16_FROM_INT(100), Q16_FROM_INT(1000));
+
+    /* Process block of samples */
+    q16_t in[10] = {Q16_ONE, Q16_ONE, Q16_ONE, Q16_ONE, Q16_ONE,
+                    Q16_ONE, Q16_ONE, Q16_ONE, Q16_ONE, Q16_ONE};
+    q16_t out[10] = {0};
+
+    syn_filter_biquad_cascade_process_block(&cascade, in, out, 10);
+    TEST_ASSERT_TRUE(out[0] != 0);
+
+    syn_filter_biquad_cascade_reset(&cascade);
+    TEST_ASSERT_EQUAL_INT32(0, syn_filter_biquad_cascade_update(&cascade, 0));
+}
+
 void run_biquad_tests(void)
 {
     RUN_TEST(test_biquad_filter);
     RUN_TEST(test_biquad_attenuation);
+    RUN_TEST(test_biquad_cascade);
     RUN_TEST(test_trig_math);
 }
 

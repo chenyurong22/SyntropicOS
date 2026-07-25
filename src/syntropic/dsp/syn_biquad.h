@@ -7,6 +7,7 @@
 #ifndef SYN_BIQUAD_H
 #define SYN_BIQUAD_H
 
+#include "../common/syn_defs.h"
 #include "../util/syn_qmath.h"
 
 #ifdef __cplusplus
@@ -110,6 +111,50 @@ void syn_filter_biquad_bandpass(SYN_FilterBiquad *f, q16_t fc, q16_t fs, q16_t q
  * @param q      Quality factor in Q16.16 (higher = narrower notch).
  */
 void syn_filter_biquad_notch(SYN_FilterBiquad *f, q16_t fc, q16_t fs, q16_t q);
+
+/* ── Cascaded Biquad Filter Bank ─────────────────────────────────────────── */
+
+#define SYN_BIQUAD_CASCADE_MAX_STAGES 8
+
+/**
+ * @brief Multi-stage cascaded biquad filter structure for high-order filtering.
+ */
+typedef struct {
+    SYN_FilterBiquad stages[SYN_BIQUAD_CASCADE_MAX_STAGES];
+    uint8_t num_stages;
+} SYN_FilterBiquadCascade;
+
+/**
+ * @brief Initialize a cascaded biquad filter structure.
+ * @param c          Cascade instance.
+ * @param num_stages Number of active biquad stages (1 to SYN_BIQUAD_CASCADE_MAX_STAGES).
+ * @return SYN_OK on success.
+ */
+SYN_Status syn_filter_biquad_cascade_init(SYN_FilterBiquadCascade *c, uint8_t num_stages);
+
+/**
+ * @brief Reset all delay lines across all stages in the biquad cascade.
+ * @param c Cascade instance.
+ */
+void syn_filter_biquad_cascade_reset(SYN_FilterBiquadCascade *c);
+
+/**
+ * @brief Process a single sample sequentially through all active biquad stages.
+ * @param c      Cascade instance.
+ * @param sample Input sample in Q16.16.
+ * @return Filtered output in Q16.16.
+ */
+q16_t syn_filter_biquad_cascade_update(SYN_FilterBiquadCascade *c, q16_t sample);
+
+/**
+ * @brief Process a block of samples through all active biquad stages.
+ * @param c     Cascade instance.
+ * @param in    Input sample array.
+ * @param out   Output sample array (may alias in).
+ * @param count Number of samples to process.
+ */
+void syn_filter_biquad_cascade_process_block(SYN_FilterBiquadCascade *c, const q16_t *in,
+                                              q16_t *out, uint16_t count);
 
 #ifdef __cplusplus
 }

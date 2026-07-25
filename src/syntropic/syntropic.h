@@ -110,6 +110,7 @@ extern "C" {
 
 #if !defined(SYN_USE_SHA256) || SYN_USE_SHA256
 #include "util/syn_hmac.h"
+#include "util/syn_aes128.h"
 #include "util/syn_sha256.h"
 #endif
 

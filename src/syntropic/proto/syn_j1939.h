@@ -11,6 +11,12 @@
 #ifndef SYN_J1939_H
 #define SYN_J1939_H
 
+#if __has_include("syn_config.h")
+#include "syn_config.h"
+#endif
+
+#if !defined(SYN_USE_J1939) || SYN_USE_J1939
+
 #include "../common/syn_defs.h"
 #include "../drivers/syn_can.h"
 
@@ -242,8 +248,16 @@ size_t syn_j1939_encode_dm1(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *
 SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node, const SYN_CAN_Frame *frame,
                                    uint32_t *out_pgn, const uint8_t **out_data, size_t *out_len);
 
+/**
+ * @brief Encode a J1939 DM2 payload (Previously Active Diagnostic Trouble Codes).
+ */
+size_t syn_j1939_encode_dm2(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *dtc_list,
+                            size_t dtc_count, uint8_t mil_lamp_status);
+
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* SYN_USE_J1939 */
 
 #endif /* SYN_J1939_H */

@@ -174,6 +174,14 @@ void test_j1939_tp_bam_multi_packet_assembly(void)
                           syn_j1939_process_frame(NULL, &dt_frame2, &rxd_pgn, &rxd_data, &rxd_len));
 }
 
+static void test_j1939_dm2_encoding(void)
+{
+    uint8_t buf[8];
+    SYN_J1939_DTC dtc = {.spn = 100, .fmi = 3, .occurrence_count = 1, .conversion_method = 0};
+    size_t len = syn_j1939_encode_dm2(buf, sizeof(buf), &dtc, 1, 0x04);
+    TEST_ASSERT_EQUAL_UINT32(6, len);
+}
+
 void run_j1939_tests(void)
 {
     RUN_TEST(test_j1939_id_pack_unpack_pdu1_pdu2);
@@ -181,4 +189,5 @@ void run_j1939_tests(void)
     RUN_TEST(test_j1939_build_frames);
     RUN_TEST(test_j1939_dm1_encoding);
     RUN_TEST(test_j1939_tp_bam_multi_packet_assembly);
+    RUN_TEST(test_j1939_dm2_encoding);
 }

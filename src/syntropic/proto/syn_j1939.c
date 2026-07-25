@@ -1,3 +1,9 @@
+#if __has_include("syn_config.h")
+#include "syn_config.h"
+#endif
+
+#if !defined(SYN_USE_J1939) || SYN_USE_J1939
+
 /**
  * @file syn_j1939.c
  * @brief SAE J1939 Heavy-Duty Vehicle CAN Protocol Stack implementation.
@@ -294,3 +300,11 @@ SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node, const SYN_CAN_Frame *fr
 
     return SYN_OK;
 }
+
+size_t syn_j1939_encode_dm2(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *dtc_list,
+                            size_t dtc_count, uint8_t mil_lamp_status)
+{
+    return syn_j1939_encode_dm1(buf, buf_size, dtc_list, dtc_count, mil_lamp_status);
+}
+
+#endif /* SYN_USE_J1939 */

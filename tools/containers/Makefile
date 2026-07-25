@@ -25,11 +25,17 @@ help:
 	@echo "  make container-dox         Execute doxygen coverage inside Podman container"
 	@echo "  make container-integration Execute 3rd-party container integration suite"
 
+test:
+	@make -f $(ROOT_DIR)/tests/Makefile.unity test
+
 san:
 	@bash $(ROOT_DIR)/tools/containers/run_sanitizers.sh
 
 qemu:
 	@bash $(ROOT_DIR)/tests/emulation/run_qemu_arm.sh
+
+renode:
+	@bash $(ROOT_DIR)/tests/emulation/renode/run_renode.sh
 
 fuzz:
 	@bash $(ROOT_DIR)/tests/fuzz/run_fuzz.sh
@@ -57,6 +63,10 @@ container-san: container-build
 container-qemu: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
 	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers qemu
+
+container-renode: container-build
+	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
+	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers renode
 
 container-fuzz: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \

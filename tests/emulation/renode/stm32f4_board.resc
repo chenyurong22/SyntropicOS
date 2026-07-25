@@ -1,0 +1,25 @@
+# Renode Emulation Script for SyntropicOS STM32F4 Peripheral Validation
+using sysbus
+
+$name?="stm32f4_discovery"
+mach create $name
+
+machine LoadPlatformDescription @platforms/boards/stm32f4_discovery-kit.repl
+
+# Attach SPI NOR Flash (W25Q64 8MB) on SPI1
+spi1:
+    flash: SPI.W25Q64 @ spi1 0
+
+# Attach I2C Accelerometer/Gyro (MPU6050) on I2C1
+i2c1:
+    mpu6050: Sensors.MPU6050 @ i2c1 0x68
+
+# Create automated test log watcher
+showAnalyzer sysbus.usart1
+
+macro reset
+"""
+    sysbus LoadELF $bin
+"""
+
+runMacro $reset

@@ -28,8 +28,6 @@ Thumbs.db
 .gemini/
 reply.md
 REPLY.md
-.agents/*
-!.agents/workflows/
 build/
 site/
 

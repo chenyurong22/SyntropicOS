@@ -178,16 +178,17 @@ int syn_port_sock_send_all(SYN_Socket sock, const void *data, size_t len)
 int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len,
                        uint32_t timeout_ms)
 {
-    struct timeval tv = {
-        .tv_sec  = timeout_ms / 1000,
-        .tv_usec = (timeout_ms % 1000) * 1000
-    };
+    int flags = 0;
     if (timeout_ms == 0) {
-        tv.tv_sec  = 0;
-        tv.tv_usec = 0;
+        flags = MSG_DONTWAIT;
+    } else {
+        struct timeval tv = {
+            .tv_sec  = timeout_ms / 1000,
+            .tv_usec = (timeout_ms % 1000) * 1000
+        };
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     }
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-    int n = recv(sock, buf, max_len, 0);
+    int n = recv(sock, buf, max_len, flags);
     if (n < 0) return -1;
     return n;
 }

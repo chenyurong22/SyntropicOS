@@ -1,0 +1,12 @@
+FROM docker.io/library/debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    can-utils \
+    iproute2 \
+    python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY can_daemon.py /app/can_daemon.py
+
+CMD ["python3", "/app/can_daemon.py"]

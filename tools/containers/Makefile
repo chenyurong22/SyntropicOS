@@ -1,27 +1,29 @@
 # SyntropicOS Tools Container Makefile
-# Run containerized sanitizers, QEMU ARM emulation, protocol fuzzing, coverage, static analysis, and doxygen documentation.
+# Run containerized sanitizers, QEMU ARM emulation, protocol fuzzing, coverage, static analysis, doxygen, and 3rd-party integration.
 
 SHELL := /bin/bash
 ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
 
-.PHONY: help san qemu fuzz cov static dox container-build container-san container-qemu container-fuzz container-cov container-static container-dox
+.PHONY: help san qemu fuzz cov static dox integration container-build container-san container-qemu container-fuzz container-cov container-static container-dox container-integration
 
 help:
 	@echo "SyntropicOS Containerized Execution & Tooling Framework"
 	@echo "--------------------------------------------------------"
-	@echo "  make san              Run test suite under ASan + UBSan"
-	@echo "  make qemu             Run QEMU ARM Cortex-M4 bare-metal emulation"
-	@echo "  make fuzz             Run libFuzzer protocol targets"
-	@echo "  make cov              Generate test coverage analysis & HTML report"
-	@echo "  make static           Run Cppcheck & Clang scan-build static analysis"
-	@echo "  make dox             Run Doxygen API documentation coverage check"
-	@echo "  make container-build  Build testing container image via Podman/Docker"
-	@echo "  make container-san    Execute sanitizer suite inside Podman container"
-	@echo "  make container-qemu   Execute QEMU ARM Cortex-M4 inside Podman container"
-	@echo "  make container-fuzz   Execute libFuzzer suite inside Podman container"
-	@echo "  make container-cov    Execute coverage analysis inside Podman container"
-	@echo "  make container-static Execute static analysis inside Podman container"
-	@echo "  make container-dox    Execute doxygen coverage inside Podman container"
+	@echo "  make san                   Run test suite under ASan + UBSan"
+	@echo "  make qemu                  Run QEMU ARM Cortex-M4 bare-metal emulation"
+	@echo "  make fuzz                  Run libFuzzer protocol targets"
+	@echo "  make cov                   Generate test coverage analysis & HTML report"
+	@echo "  make static                Run Cppcheck & Clang scan-build static analysis"
+	@echo "  make dox                  Run Doxygen API documentation coverage check"
+	@echo "  make integration           Run 3rd-party container integration tests (Mosquitto/Chrony/Modbus)"
+	@echo "  make container-build       Build testing container image via Podman/Docker"
+	@echo "  make container-san         Execute sanitizer suite inside Podman container"
+	@echo "  make container-qemu        Execute QEMU ARM Cortex-M4 inside Podman container"
+	@echo "  make container-fuzz        Execute libFuzzer suite inside Podman container"
+	@echo "  make container-cov         Execute coverage analysis inside Podman container"
+	@echo "  make container-static      Execute static analysis inside Podman container"
+	@echo "  make container-dox         Execute doxygen coverage inside Podman container"
+	@echo "  make container-integration Execute 3rd-party container integration suite"
 
 san:
 	@bash $(ROOT_DIR)/tools/containers/run_sanitizers.sh
@@ -40,6 +42,9 @@ static:
 
 dox:
 	@bash $(ROOT_DIR)/tools/docs/run_doxygen.sh
+
+integration:
+	@bash $(ROOT_DIR)/tests/integration/run_integration.sh
 
 container-build:
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
@@ -68,3 +73,7 @@ container-static: container-build
 container-dox: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
 	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers dox
+
+container-integration: container-build
+	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
+	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers integration

@@ -8,22 +8,26 @@ Follow this sequence to verify software correctness, memory safety, static analy
 
 ## Step 1: Unit Testing & Dynamic Sanitizers
 Run host and containerized test suites:
-- **Unit Test Suite**: `make -f tests/Makefile.unity test`
-- **Containerized Sanitizer Audit**: `make -C tools/containers container-san`
-- **QEMU Bare-Metal Emulation**: `make -C tools/containers container-qemu`
-- **Protocol libFuzzer Targets**: `make -C tools/containers container-fuzz`
+- **Unit Test Suite**: `make test` (or `make container-test`)
+- **Containerized Sanitizer Audit**: `make san` (or `make container-san`)
+- **QEMU Bare-Metal Emulation**: `make qemu` (or `make container-qemu`)
+- **Protocol libFuzzer Targets**: `make fuzz` (or `make container-fuzz`)
 
-## Step 2: Static Analysis
+## Step 2: 3rd-Party Production Container Integration Suite
+Execute integration tests against 8 genuine production container daemons (Mosquitto MQTT, Chrony SNTP, Nginx HTTP, Node.js WS, CoreDNS, SocketCAN, WireGuard, Modbus TCP):
+- **Integration Test Battery**: `make integration` (or `make container-integration`)
+
+## Step 3: Static Analysis
 Run static analysis checks:
-- **Containerized Cppcheck & scan-build**: `make -C tools/containers container-static`
+- **Cppcheck & Clang scan-build**: `make static` (or `make container-static`)
 
-## Step 3: Code Coverage Analysis
+## Step 4: Code Coverage Analysis
 Measure line and branch coverage:
-- **Containerized LCOV HTML Report**: `make -C tools/containers container-cov`
+- **LCOV HTML Report**: `make cov` (or `make container-cov`)
 
-## Step 4: Doxygen API Documentation Coverage
+## Step 5: Doxygen API Documentation Coverage
 Verify API documentation completeness:
-- **Containerized Doxygen Check**: `make -C tools/containers container-dox`
+- **Doxygen Check**: `make dox` (or `make container-dox`)
 
-## Step 5: Markdown Documentation
+## Step 6: Markdown Documentation
 Inspect project documentation (`README.md`, `docs/`, `mkdocs.yml`) for structural consistency.

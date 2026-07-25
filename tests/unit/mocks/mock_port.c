@@ -514,7 +514,7 @@ void mock_sock_set_response(const void *data, size_t len)
 
 void (*mock_sock_connect_cb)(const char *host, uint16_t port) = NULL;
 
-SYN_Socket syn_port_sock_connect(const SYN_SockAddr *addr)
+SYN_WEAK SYN_Socket syn_port_sock_connect(const SYN_SockAddr *addr)
 {
     if (mock_sock_connect_fail) {
         mock_sock_connected = false;
@@ -531,7 +531,7 @@ SYN_Socket syn_port_sock_connect(const SYN_SockAddr *addr)
     return 0;
 }
 
-SYN_Socket syn_port_sock_connect_host(const char *host, uint16_t port)
+SYN_WEAK SYN_Socket syn_port_sock_connect_host(const char *host, uint16_t port)
 {
     if (mock_sock_connect_fail) {
         mock_sock_connected = false;
@@ -546,7 +546,7 @@ SYN_Socket syn_port_sock_connect_host(const char *host, uint16_t port)
     return 0;
 }
 
-int syn_port_sock_send(SYN_Socket sock, const void *data, size_t len)
+SYN_WEAK int syn_port_sock_send(SYN_Socket sock, const void *data, size_t len)
 {
     (void)sock;
     if (!mock_sock_connected || mock_sock_send_fail) return -1;
@@ -562,7 +562,7 @@ int syn_port_sock_send(SYN_Socket sock, const void *data, size_t len)
     return (int)len;
 }
 
-int syn_port_sock_send_all(SYN_Socket sock, const void *data, size_t len)
+SYN_WEAK int syn_port_sock_send_all(SYN_Socket sock, const void *data, size_t len)
 {
     (void)sock;
     if (!mock_sock_connected || mock_sock_send_fail) return -1;
@@ -574,7 +574,7 @@ int syn_port_sock_send_all(SYN_Socket sock, const void *data, size_t len)
     return (int)len;
 }
 
-int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len,
+SYN_WEAK int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len,
                        uint32_t timeout_ms)
 {
     (void)sock; (void)timeout_ms;
@@ -590,7 +590,7 @@ int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len,
     return (int)max_len;
 }
 
-void syn_port_sock_close(SYN_Socket sock)
+SYN_WEAK void syn_port_sock_close(SYN_Socket sock)
 {
     (void)sock;
     mock_sock_connected = false;
@@ -613,13 +613,13 @@ void mock_udp_set_response(const void *data, size_t len, const SYN_SockAddr *fro
     mock_udp_inject_packet(data, len, from);
 }
 
-SYN_Socket syn_port_udp_open(uint16_t port)
+SYN_WEAK SYN_Socket syn_port_udp_open(uint16_t port)
 {
     (void)port;
     return mock_udp_open_ok ? 20 : SYN_SOCKET_INVALID;
 }
 
-int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len,
+SYN_WEAK int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len,
                         const SYN_SockAddr *to)
 {
     (void)sock;
@@ -634,7 +634,7 @@ int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len,
     return (int)len;
 }
 
-int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len,
+SYN_WEAK int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len,
                           SYN_SockAddr *from, uint32_t timeout_ms)
 {
     (void)sock;
@@ -649,19 +649,19 @@ int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len,
     return (int)to_copy;
 }
 
-SYN_Status syn_port_udp_join_multicast(SYN_Socket sock, const char *multicast_ip)
+SYN_WEAK SYN_Status syn_port_udp_join_multicast(SYN_Socket sock, const char *multicast_ip)
 {
     (void)sock; (void)multicast_ip;
     return mock_udp_multicast_join_ok ? SYN_OK : SYN_ERROR;
 }
 
-SYN_Socket syn_port_sock_listen(uint16_t port, int backlog)
+SYN_WEAK SYN_Socket syn_port_sock_listen(uint16_t port, int backlog)
 {
     (void)port; (void)backlog;
     return mock_sock_listen_ok ? 10 : SYN_SOCKET_INVALID;
 }
 
-SYN_Socket syn_port_sock_accept(SYN_Socket listener, uint32_t timeout_ms)
+SYN_WEAK SYN_Socket syn_port_sock_accept(SYN_Socket listener, uint32_t timeout_ms)
 {
     (void)listener; (void)timeout_ms;
     if (!mock_sock_accept_ok) return SYN_SOCKET_INVALID;

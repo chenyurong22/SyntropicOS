@@ -117,7 +117,22 @@ SyntropicOS includes a comprehensive Q16.16 fixed-point math library — no floa
 - [Getting Started](https://outlookhazy.github.io/SyntropicOS/getting-started/)
 - [Module Reference](https://outlookhazy.github.io/SyntropicOS/modules/core/)
 - [Porting Guide](https://outlookhazy.github.io/SyntropicOS/porting-guide/)
-- [Testing](https://outlookhazy.github.io/SyntropicOS/testing/)
+- [Testing Guide](https://outlookhazy.github.io/SyntropicOS/testing/)
+
+## Containerized Testing & Verification
+
+SyntropicOS features a containerized multi-tier testing workflow:
+
+```bash
+make test         # Run Unity unit test suite (1000+ tests passing 100%)
+make san          # AddressSanitizer & UBSan runtime memory safety audit
+make qemu         # QEMU Cortex-M4 bare-metal boot emulation
+make fuzz         # LLVM libFuzzer protocol targets (COBS, Modbus, MQTT, HTTP, IR)
+make cov          # LCOV HTML code coverage reports
+make static       # Cppcheck & Clang scan-build static analysis
+make dox          # Doxygen API documentation check (0 warnings tolerance)
+make integration  # E2E tests against 8 genuine production container daemons
+```
 
 ## Supported Platforms
 

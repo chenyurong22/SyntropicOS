@@ -1,0 +1,5 @@
+syntropic.local:53 {
+    file /etc/coredns/db.syntropic.local
+    log
+    errors
+}

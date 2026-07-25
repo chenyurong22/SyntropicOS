@@ -84,7 +84,8 @@ void syn_quat_rotate_vec3(const SYN_Quaternion *q, const q16_t *v, q16_t *out);
 void syn_quat_to_mat3x3(const SYN_Quaternion *q, SYN_Matrix *out);
 
 /**
- * @brief Create orientation quaternion from Euler angles (roll, pitch, yaw) in Q16 radians (Z-Y-X sequence).
+ * @brief Create orientation quaternion from Euler angles (roll, pitch, yaw) in Q16 radians (Z-Y-X
+ * sequence).
  */
 void syn_quat_from_euler(SYN_Quaternion *q, q16_t roll, q16_t pitch, q16_t yaw);
 
@@ -100,7 +101,8 @@ void syn_quat_to_euler(const SYN_Quaternion *q, q16_t *roll, q16_t *pitch, q16_t
  * @param t    Interpolation parameter [0, Q16_ONE].
  * @param out  Output interpolated unit quaternion.
  */
-void syn_quat_slerp(const SYN_Quaternion *q1, const SYN_Quaternion *q2, q16_t t, SYN_Quaternion *out);
+void syn_quat_slerp(const SYN_Quaternion *q1, const SYN_Quaternion *q2, q16_t t,
+                    SYN_Quaternion *out);
 
 #ifdef __cplusplus
 }

@@ -57,7 +57,8 @@ q16_t syn_filter_biquad_update(SYN_FilterBiquad *f, q16_t sample)
     return output;
 }
 
-void syn_filter_biquad_process_block(SYN_FilterBiquad *f, const q16_t *in, q16_t *out, uint16_t count)
+void syn_filter_biquad_process_block(SYN_FilterBiquad *f, const q16_t *in, q16_t *out,
+                                     uint16_t count)
 {
     SYN_ASSERT(f != NULL && in != NULL && out != NULL);
     q16_t b0 = f->b0, b1 = f->b1, b2 = f->b2;
@@ -241,7 +242,7 @@ q16_t syn_filter_biquad_cascade_update(SYN_FilterBiquadCascade *c, q16_t sample)
 }
 
 void syn_filter_biquad_cascade_process_block(SYN_FilterBiquadCascade *c, const q16_t *in,
-                                              q16_t *out, uint16_t count)
+                                             q16_t *out, uint16_t count)
 {
     SYN_ASSERT(c != NULL);
     SYN_ASSERT(in != NULL);

@@ -368,7 +368,8 @@ void syn_modbus_master_queue_init(SYN_ModbusMasterQueue *q, uint8_t max_retries)
     q->max_retries = max_retries;
 }
 
-SYN_Status syn_modbus_master_queue_push(SYN_ModbusMasterQueue *q, const SYN_ModbusMasterQuery *query)
+SYN_Status syn_modbus_master_queue_push(SYN_ModbusMasterQueue *q,
+                                        const SYN_ModbusMasterQuery *query)
 {
     if (q == NULL || query == NULL) {
         return SYN_INVALID_PARAM;
@@ -385,7 +386,8 @@ SYN_Status syn_modbus_master_queue_push(SYN_ModbusMasterQueue *q, const SYN_Modb
     return SYN_OK;
 }
 
-SYN_Status syn_modbus_master_queue_step(SYN_ModbusMaster *m, SYN_ModbusMasterQueue *q, uint32_t now_ms)
+SYN_Status syn_modbus_master_queue_step(SYN_ModbusMaster *m, SYN_ModbusMasterQueue *q,
+                                        uint32_t now_ms)
 {
     if (m == NULL || q == NULL) {
         return SYN_INVALID_PARAM;
@@ -405,13 +407,15 @@ SYN_Status syn_modbus_master_queue_step(SYN_ModbusMaster *m, SYN_ModbusMasterQue
             st = syn_modbus_master_read_input(m, qry->slave_addr, qry->start_addr, qry->count);
             break;
         case SYN_MB_FC_WRITE_SINGLE:
-            st = syn_modbus_master_write_single(m, qry->slave_addr, qry->start_addr, qry->write_value);
+            st = syn_modbus_master_write_single(m, qry->slave_addr, qry->start_addr,
+                                                qry->write_value);
             break;
         case SYN_MB_FC_READ_COILS:
             st = syn_modbus_master_read_coils(m, qry->slave_addr, qry->start_addr, qry->count);
             break;
         case SYN_MB_FC_READ_DISCRETE_INPUTS:
-            st = syn_modbus_master_read_discrete_inputs(m, qry->slave_addr, qry->start_addr, qry->count);
+            st = syn_modbus_master_read_discrete_inputs(m, qry->slave_addr, qry->start_addr,
+                                                        qry->count);
             break;
         default:
             break;
@@ -423,13 +427,15 @@ SYN_Status syn_modbus_master_queue_step(SYN_ModbusMaster *m, SYN_ModbusMasterQue
     } else if (state == SYN_MB_MASTER_STATE_COMPLETE && q->count > 0) {
         SYN_ModbusMasterQuery *qry = &q->queries[q->head];
         if (qry->callback != NULL) {
-            qry->callback(qry->slave_addr, qry->func_code, m->read_data, m->read_count, SYN_OK, qry->user_ctx);
+            qry->callback(qry->slave_addr, qry->func_code, m->read_data, m->read_count, SYN_OK,
+                          qry->user_ctx);
         }
         q->head = (uint8_t)((q->head + 1U) % SYN_MODBUS_QUEUE_SIZE);
         q->count--;
         q->retry_count = 0;
         m->state = SYN_MB_MASTER_STATE_IDLE;
-    } else if ((state == SYN_MB_MASTER_STATE_TIMEOUT || state == SYN_MB_MASTER_STATE_ERROR) && q->count > 0) {
+    } else if ((state == SYN_MB_MASTER_STATE_TIMEOUT || state == SYN_MB_MASTER_STATE_ERROR) &&
+               q->count > 0) {
         SYN_ModbusMasterQuery *qry = &q->queries[q->head];
         if (q->retry_count < q->max_retries) {
             q->retry_count++;

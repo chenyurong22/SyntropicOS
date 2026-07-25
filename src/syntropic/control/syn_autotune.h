@@ -343,7 +343,8 @@ SYN_Status syn_autotune_start(SYN_AutoTune *at, SYN_MotorCtrl *ctrl,
                               uint16_t gain_multiplier);
 
 /**
- * @brief Calculate Ziegler-Nichols / Tyreus-Luyben PID gains from ultimate gain (Ku) and period (Tu_ms).
+ * @brief Calculate Ziegler-Nichols / Tyreus-Luyben PID gains from ultimate gain (Ku) and period
+ * (Tu_ms).
  *
  * @param Ku            Ultimate gain (scaled by pid_scale).
  * @param Tu_ms         Ultimate period in milliseconds.

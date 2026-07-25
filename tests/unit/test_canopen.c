@@ -375,9 +375,8 @@ static void test_cia303_indicators(void)
 static void test_canopen_tpdo_trigger(void)
 {
     SYN_CANOpenNode node;
-    SYN_CANOpenNodeConfig cfg = {.node_id = 5,
-                                 .heartbeat_ms = 0,
-                                 .tpdo = {{0x185U, 0x2001U, 0x01U, 1U}}};
+    SYN_CANOpenNodeConfig cfg = {
+        .node_id = 5, .heartbeat_ms = 0, .tpdo = {{0x185U, 0x2001U, 0x01U, 1U}}};
 
     syn_canopen_init(&node, &cfg, test_od, sizeof(test_od) / sizeof(test_od[0]));
     uint32_t dummy_id;

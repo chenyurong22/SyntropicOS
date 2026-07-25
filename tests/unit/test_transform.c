@@ -3,8 +3,8 @@
  * @brief Unit tests for coordinate transformations.
  */
 
-#include "unity/unity.h"
 #include "syntropic/util/syn_transform.h"
+#include "unity/unity.h"
 
 #define Q16_TOL 600
 

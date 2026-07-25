@@ -64,7 +64,8 @@ q16_t syn_filter_biquad_update(SYN_FilterBiquad *f, q16_t sample);
  * @param out    Output sample array (n elements). May alias in.
  * @param count  Number of samples to process.
  */
-void syn_filter_biquad_process_block(SYN_FilterBiquad *f, const q16_t *in, q16_t *out, uint16_t count);
+void syn_filter_biquad_process_block(SYN_FilterBiquad *f, const q16_t *in, q16_t *out,
+                                     uint16_t count);
 
 /**
  * @brief Initialize a biquad lowpass filter.
@@ -154,7 +155,7 @@ q16_t syn_filter_biquad_cascade_update(SYN_FilterBiquadCascade *c, q16_t sample)
  * @param count Number of samples to process.
  */
 void syn_filter_biquad_cascade_process_block(SYN_FilterBiquadCascade *c, const q16_t *in,
-                                              q16_t *out, uint16_t count);
+                                             q16_t *out, uint16_t count);
 
 #ifdef __cplusplus
 }

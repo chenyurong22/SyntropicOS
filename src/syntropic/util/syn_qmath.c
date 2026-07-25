@@ -259,7 +259,8 @@ q16_t q16_inv(q16_t x)
     if (x == 0)
         return INT32_MAX;
     if (x < 0) {
-        if (x == INT32_MIN) return 0;
+        if (x == INT32_MIN)
+            return 0;
         return -q16_inv(-x);
     }
     int64_t inv = ((int64_t)1 << 32) / x;
@@ -387,27 +388,38 @@ q16_t q16_exp(q16_t x)
 
 q16_t q16_exp_fast(q16_t x)
 {
-    if (x == 0) return Q16_ONE;
+    if (x == 0)
+        return Q16_ONE;
     if (x < 0) {
         q16_t pos = q16_exp_fast(-x);
-        if (pos == 0) return INT32_MAX;
+        if (pos == 0)
+            return INT32_MAX;
         return q16_inv(pos);
     }
-    if (x > Q16_FROM_INT(10)) return INT32_MAX;
+    if (x > Q16_FROM_INT(10))
+        return INT32_MAX;
 
     int32_t k = (int32_t)(((int64_t)x << 16) / Q16_LN2) >> 16;
     q16_t r = x - q16_mul((q16_t)(k * Q16_ONE), Q16_LN2);
-    if (r < 0) { r = 0; k--; }
-    if (r >= Q16_LN2) { r -= Q16_LN2; k++; }
+    if (r < 0) {
+        r = 0;
+        k--;
+    }
+    if (r >= Q16_LN2) {
+        r -= Q16_LN2;
+        k++;
+    }
 
     q16_t r2 = q16_mul(r, r);
     q16_t exp_r = Q16_ONE + r + (r2 >> 1);
 
     if (k >= 0) {
-        if (k >= 15) return INT32_MAX;
+        if (k >= 15)
+            return INT32_MAX;
         return exp_r << k;
     } else {
-        if (k < -16) return 0;
+        if (k < -16)
+            return 0;
         return exp_r >> (-k);
     }
 }
@@ -463,13 +475,21 @@ q16_t q16_log(q16_t x)
 
 q16_t q16_log_fast(q16_t x)
 {
-    if (x <= 0) return INT32_MIN;
-    if (x == Q16_ONE) return 0;
+    if (x <= 0)
+        return INT32_MIN;
+    if (x == Q16_ONE)
+        return 0;
 
     uint32_t ux = (uint32_t)x;
     int32_t k = 0;
-    while (ux >= (uint32_t)(2 * Q16_ONE)) { ux >>= 1; k++; }
-    while (ux < (uint32_t)Q16_ONE) { ux <<= 1; k--; }
+    while (ux >= (uint32_t)(2 * Q16_ONE)) {
+        ux >>= 1;
+        k++;
+    }
+    while (ux < (uint32_t)Q16_ONE) {
+        ux <<= 1;
+        k--;
+    }
 
     q16_t m = (q16_t)ux;
     q16_t y = m - Q16_ONE;

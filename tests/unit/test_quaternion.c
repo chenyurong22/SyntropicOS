@@ -3,8 +3,8 @@
  * @brief Unit tests for fixed-point 3D Quaternion algebra.
  */
 
-#include "unity/unity.h"
 #include "syntropic/util/syn_quaternion.h"
+#include "unity/unity.h"
 
 #define Q16_TOL 50 /* ~0.0007 in Q16 */
 
@@ -56,9 +56,9 @@ void test_quaternion_mul_and_rotate(void)
 
 void test_quaternion_euler_roundtrip(void)
 {
-    q16_t roll_in = Q16_FROM_FRAC(1, 4);   /* 0.25 rad */
-    q16_t pitch_in = Q16_FROM_FRAC(1, 5);  /* 0.20 rad */
-    q16_t yaw_in = Q16_FROM_FRAC(1, 2);    /* 0.50 rad */
+    q16_t roll_in = Q16_FROM_FRAC(1, 4);  /* 0.25 rad */
+    q16_t pitch_in = Q16_FROM_FRAC(1, 5); /* 0.20 rad */
+    q16_t yaw_in = Q16_FROM_FRAC(1, 2);   /* 0.50 rad */
 
     SYN_Quaternion q;
     syn_quat_from_euler(&q, roll_in, pitch_in, yaw_in);

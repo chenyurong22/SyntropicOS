@@ -113,9 +113,14 @@ void syn_matrix_mul(const SYN_Matrix *a, const SYN_Matrix *b, SYN_Matrix *out)
         q16_t *od = out->data;
         for (i = 0; i < 3; i++) {
             q16_t a0 = ad[i * 3], a1 = ad[i * 3 + 1], a2 = ad[i * 3 + 2];
-            od[i * 3]     = (q16_t)(((int64_t)a0 * bd[0] + (int64_t)a1 * bd[3] + (int64_t)a2 * bd[6]) >> Q16_SHIFT);
-            od[i * 3 + 1] = (q16_t)(((int64_t)a0 * bd[1] + (int64_t)a1 * bd[4] + (int64_t)a2 * bd[7]) >> Q16_SHIFT);
-            od[i * 3 + 2] = (q16_t)(((int64_t)a0 * bd[2] + (int64_t)a1 * bd[5] + (int64_t)a2 * bd[8]) >> Q16_SHIFT);
+            od[i * 3] = (q16_t)(((int64_t)a0 * bd[0] + (int64_t)a1 * bd[3] + (int64_t)a2 * bd[6]) >>
+                                Q16_SHIFT);
+            od[i * 3 + 1] =
+                (q16_t)(((int64_t)a0 * bd[1] + (int64_t)a1 * bd[4] + (int64_t)a2 * bd[7]) >>
+                        Q16_SHIFT);
+            od[i * 3 + 2] =
+                (q16_t)(((int64_t)a0 * bd[2] + (int64_t)a1 * bd[5] + (int64_t)a2 * bd[8]) >>
+                        Q16_SHIFT);
         }
         return;
     }
@@ -126,10 +131,18 @@ void syn_matrix_mul(const SYN_Matrix *a, const SYN_Matrix *b, SYN_Matrix *out)
         q16_t *od = out->data;
         for (i = 0; i < 4; i++) {
             q16_t a0 = ad[i * 4], a1 = ad[i * 4 + 1], a2 = ad[i * 4 + 2], a3 = ad[i * 4 + 3];
-            od[i * 4]     = (q16_t)(((int64_t)a0 * bd[0]  + (int64_t)a1 * bd[4]  + (int64_t)a2 * bd[8]  + (int64_t)a3 * bd[12]) >> Q16_SHIFT);
-            od[i * 4 + 1] = (q16_t)(((int64_t)a0 * bd[1]  + (int64_t)a1 * bd[5]  + (int64_t)a2 * bd[9]  + (int64_t)a3 * bd[13]) >> Q16_SHIFT);
-            od[i * 4 + 2] = (q16_t)(((int64_t)a0 * bd[2]  + (int64_t)a1 * bd[6]  + (int64_t)a2 * bd[10] + (int64_t)a3 * bd[14]) >> Q16_SHIFT);
-            od[i * 4 + 3] = (q16_t)(((int64_t)a0 * bd[3]  + (int64_t)a1 * bd[7]  + (int64_t)a2 * bd[11] + (int64_t)a3 * bd[15]) >> Q16_SHIFT);
+            od[i * 4] = (q16_t)(((int64_t)a0 * bd[0] + (int64_t)a1 * bd[4] + (int64_t)a2 * bd[8] +
+                                 (int64_t)a3 * bd[12]) >>
+                                Q16_SHIFT);
+            od[i * 4 + 1] = (q16_t)(((int64_t)a0 * bd[1] + (int64_t)a1 * bd[5] +
+                                     (int64_t)a2 * bd[9] + (int64_t)a3 * bd[13]) >>
+                                    Q16_SHIFT);
+            od[i * 4 + 2] = (q16_t)(((int64_t)a0 * bd[2] + (int64_t)a1 * bd[6] +
+                                     (int64_t)a2 * bd[10] + (int64_t)a3 * bd[14]) >>
+                                    Q16_SHIFT);
+            od[i * 4 + 3] = (q16_t)(((int64_t)a0 * bd[3] + (int64_t)a1 * bd[7] +
+                                     (int64_t)a2 * bd[11] + (int64_t)a3 * bd[15]) >>
+                                    Q16_SHIFT);
         }
         return;
     }
@@ -476,8 +489,8 @@ SYN_Status syn_matrix_inv(const SYN_Matrix *m, SYN_Matrix *out)
     }
 }
 
-SYN_Status syn_matrix_inv_lu_work(const SYN_Matrix *src, SYN_Matrix *dst,
-                                  q16_t *lu_work, uint8_t *p_work, q16_t *y_work)
+SYN_Status syn_matrix_inv_lu_work(const SYN_Matrix *src, SYN_Matrix *dst, q16_t *lu_work,
+                                  uint8_t *p_work, q16_t *y_work)
 {
     SYN_ASSERT(src != NULL && dst != NULL);
     SYN_ASSERT(lu_work != NULL && p_work != NULL && y_work != NULL);
@@ -766,7 +779,8 @@ SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Mat
 {
     SYN_ASSERT(A != NULL && b != NULL && x != NULL);
     uint8_t n = A->rows;
-    if (n > SYN_SOLVER_MAX_N) return SYN_INVALID_PARAM;
+    if (n > SYN_SOLVER_MAX_N)
+        return SYN_INVALID_PARAM;
     q16_t lu[n * n];
     uint8_t P[n];
     q16_t y[n];
@@ -774,7 +788,7 @@ SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Mat
 }
 
 SYN_Status syn_matrix_solve_cholesky_work(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x,
-                                           q16_t *L, q16_t *y)
+                                          q16_t *L, q16_t *y)
 {
     SYN_ASSERT(A != NULL && b != NULL && x != NULL);
     SYN_ASSERT(L != NULL && y != NULL);
@@ -832,15 +846,16 @@ SYN_Status syn_matrix_solve_cholesky(const SYN_Matrix *A, const SYN_Matrix *b, S
 {
     SYN_ASSERT(A != NULL && b != NULL && x != NULL);
     uint8_t n = A->rows;
-    if (n > SYN_SOLVER_MAX_N) return SYN_INVALID_PARAM;
+    if (n > SYN_SOLVER_MAX_N)
+        return SYN_INVALID_PARAM;
     q16_t L[n * n];
     q16_t y[n];
     return syn_matrix_solve_cholesky_work(A, b, x, L, y);
 }
 
 SYN_Status syn_matrix_least_squares_work(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x,
-                                          q16_t *ata_data, q16_t *atb_data, q16_t *at_data,
-                                          q16_t *solver_lu, q16_t *solver_y)
+                                         q16_t *ata_data, q16_t *atb_data, q16_t *at_data,
+                                         q16_t *solver_lu, q16_t *solver_y)
 {
     SYN_ASSERT(A != NULL && b != NULL && x != NULL);
 
@@ -872,7 +887,8 @@ SYN_Status syn_matrix_least_squares(const SYN_Matrix *A, const SYN_Matrix *b, SY
     SYN_ASSERT(A != NULL && b != NULL && x != NULL);
     uint8_t m = A->rows;
     uint8_t n = A->cols;
-    if (m < n) return SYN_INVALID_PARAM;
+    if (m < n)
+        return SYN_INVALID_PARAM;
 
     q16_t ata_data[n * n];
     q16_t atb_data[n];

@@ -233,10 +233,9 @@ bool syn_interpolator_eval_at_time(SYN_Interpolator *interp, float t_sec, SYN_Ve
     return !syn_scurve_done(&interp->scurve);
 }
 
-SYN_Status syn_interpolator_plan_bezier(SYN_Interpolator *interp, SYN_Vector3F p0,
-                                        SYN_Vector3F p1, SYN_Vector3F p2, SYN_Vector3F p3,
-                                        float feedrate, float max_accel, float max_jerk,
-                                        float step_res)
+SYN_Status syn_interpolator_plan_bezier(SYN_Interpolator *interp, SYN_Vector3F p0, SYN_Vector3F p1,
+                                        SYN_Vector3F p2, SYN_Vector3F p3, float feedrate,
+                                        float max_accel, float max_jerk, float step_res)
 {
     if (!interp || feedrate <= 0.0f || max_accel <= 0.0f || max_jerk <= 0.0f || step_res <= 0.0f)
         return SYN_INVALID_PARAM;
@@ -253,11 +252,9 @@ SYN_Status syn_interpolator_plan_bezier(SYN_Interpolator *interp, SYN_Vector3F p
         float b2 = 3.0f * u_inv * u * u;
         float b3 = u * u * u;
 
-        SYN_Vector3F pt = {
-            .x = b0 * p0.x + b1 * p1.x + b2 * p2.x + b3 * p3.x,
-            .y = b0 * p0.y + b1 * p1.y + b2 * p2.y + b3 * p3.y,
-            .z = b0 * p0.z + b1 * p1.z + b2 * p2.z + b3 * p3.z
-        };
+        SYN_Vector3F pt = {.x = b0 * p0.x + b1 * p1.x + b2 * p2.x + b3 * p3.x,
+                           .y = b0 * p0.y + b1 * p1.y + b2 * p2.y + b3 * p3.y,
+                           .z = b0 * p0.z + b1 * p1.z + b2 * p2.z + b3 * p3.z};
 
         float dx = pt.x - prev.x;
         float dy = pt.y - prev.y;

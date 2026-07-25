@@ -241,9 +241,8 @@ static void test_settings_dual_bank(void)
     TestSettings settings;
     SYN_DualBankSettings db;
 
-    TEST_ASSERT_EQUAL(
-        SYN_OK, syn_settings_dual_bank_init(&db, FLASH_BASE, FLASH_BASE + 2048, 2,
-                                            &settings, sizeof(settings), &defaults));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_dual_bank_init(&db, FLASH_BASE, FLASH_BASE + 2048, 2,
+                                                          &settings, sizeof(settings), &defaults));
 
     TEST_ASSERT_EQUAL_INT(0, db.active_bank);
 
@@ -268,7 +267,8 @@ static void test_settings_edge_cases(void)
     TEST_ASSERT_EQUAL(-1, syn_settings_export(NULL, &settings, sizeof(settings)));
     TEST_ASSERT_EQUAL(-2, syn_settings_export(&store, &settings, 2));
 
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_settings_import(NULL, &settings, sizeof(settings), false));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_settings_import(NULL, &settings, sizeof(settings), false));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_settings_import(&store, &settings, 2, false));
 
     /* VFS invalid parameters */
@@ -283,7 +283,10 @@ static size_t ram_vfs_len = 0;
 
 static int settings_vfs_open(SYN_VfsFile *file, const char *path, int flags, void *fs_data)
 {
-    (void)file; (void)path; (void)flags; (void)fs_data;
+    (void)file;
+    (void)path;
+    (void)flags;
+    (void)fs_data;
     return 0;
 }
 
@@ -296,7 +299,8 @@ static int settings_vfs_close(SYN_VfsFile *file)
 static int settings_vfs_write(SYN_VfsFile *file, const void *buf, size_t len)
 {
     (void)file;
-    if (len > sizeof(ram_vfs_buf)) len = sizeof(ram_vfs_buf);
+    if (len > sizeof(ram_vfs_buf))
+        len = sizeof(ram_vfs_buf);
     memcpy(ram_vfs_buf, buf, len);
     ram_vfs_len = len;
     return (int)len;
@@ -305,18 +309,17 @@ static int settings_vfs_write(SYN_VfsFile *file, const void *buf, size_t len)
 static int settings_vfs_read(SYN_VfsFile *file, void *buf, size_t len)
 {
     (void)file;
-    if (len > ram_vfs_len) len = ram_vfs_len;
+    if (len > ram_vfs_len)
+        len = ram_vfs_len;
     memcpy(buf, ram_vfs_buf, len);
     return (int)len;
 }
 
-static const SYN_VfsOps settings_vfs_ops = {
-    .open = settings_vfs_open,
-    .close = settings_vfs_close,
-    .read = settings_vfs_read,
-    .write = settings_vfs_write,
-    .seek = NULL
-};
+static const SYN_VfsOps settings_vfs_ops = {.open = settings_vfs_open,
+                                            .close = settings_vfs_close,
+                                            .read = settings_vfs_read,
+                                            .write = settings_vfs_write,
+                                            .seek = NULL};
 
 static void test_settings_vfs_export_import(void)
 {
@@ -336,7 +339,8 @@ static void test_settings_vfs_export_import(void)
     /* Import from VFS into clean instance */
     TestSettings settings2;
     SYN_Settings store2;
-    syn_settings_init(&store2, FLASH_BASE + 2048, SECTOR_COUNT, &settings2, sizeof(settings2), &defaults);
+    syn_settings_init(&store2, FLASH_BASE + 2048, SECTOR_COUNT, &settings2, sizeof(settings2),
+                      &defaults);
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_settings_import_vfs(&store2, "/cfg/settings.bin", true));
     TEST_ASSERT_EQUAL_INT32(7777, settings2.velocity);

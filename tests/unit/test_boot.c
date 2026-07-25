@@ -17,6 +17,7 @@ static void test_boot(void)
 
     SYN_ParamStore boot_store;
     SYN_Status st = syn_param_init(&boot_store, 0, 2, sizeof(SYN_BootData));
+    (void)st;
     /* No data yet */
 
     SYN_Boot boot;

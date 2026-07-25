@@ -82,6 +82,7 @@ static void test_pid_edge_cases(void)
     syn_pid_reset(&pid);
     pid.cfg.d_filter_alpha = 255;
     out = syn_pid_update(&pid, 100, 0, 10); // first call
+    (void)out;
     out = syn_pid_update(&pid, 200, 0, 10); // second call (derivative is active)
     TEST_ASSERT_EQUAL_INT(500, out);
     TEST_ASSERT_EQUAL_INT(0, pid.prev_d_filtered); // should not be updated since bypass

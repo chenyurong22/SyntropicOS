@@ -256,7 +256,8 @@ void syn_canvas_line(SYN_Canvas *c, int16_t x0, int16_t y0, int16_t x1, int16_t 
     }
 }
 
-void syn_canvas_line_aa(SYN_Canvas *c, int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
+void syn_canvas_line_aa(SYN_Canvas *c, int16_t x0, int16_t y0, int16_t x1, int16_t y1,
+                        uint16_t color)
 {
     syn_canvas_line(c, x0, y0, x1, y1, color);
 }
@@ -590,8 +591,8 @@ void syn_canvas_flush_partial(SYN_Canvas *c, size_t offset, size_t len)
     c->flush_fn(c->framebuf + offset, len, c->flush_ctx);
 }
 
-void syn_canvas_line_polar(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t angle_deg,
-                           int16_t length, uint16_t color)
+void syn_canvas_line_polar(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t angle_deg, int16_t length,
+                           uint16_t color)
 {
     SYN_ASSERT(c != NULL);
     if (length <= 0)

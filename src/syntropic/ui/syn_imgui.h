@@ -240,8 +240,6 @@ void syn_imgui_label(SYN_IMGUI_Context *ctx, const char *text, int16_t x, int16_
  */
 void syn_imgui_separator(SYN_IMGUI_Context *ctx, int16_t x, int16_t y, int16_t w);
 
-
-
 /**
  * @brief Integer numeric spinner widget.
  *

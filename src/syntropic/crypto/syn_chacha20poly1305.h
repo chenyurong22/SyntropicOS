@@ -118,7 +118,7 @@ bool syn_aead_decrypt(const uint8_t key[32], const uint8_t nonce[12], const uint
  * @param tag     Output 16-byte authentication tag.
  */
 void syn_aead_encrypt_inplace(const uint8_t key[32], const uint8_t nonce[12], const uint8_t *aad,
-                               size_t aad_len, uint8_t *buf, size_t len, uint8_t tag[16]);
+                              size_t aad_len, uint8_t *buf, size_t len, uint8_t tag[16]);
 
 /**
  * @brief Zero-copy in-place AEAD decryption & tag verification.

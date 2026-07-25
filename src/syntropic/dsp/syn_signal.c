@@ -266,8 +266,8 @@ int32_t syn_signal_crest_factor_q16(SYN_Signal *sig)
     if (-min_v > peak)
         peak = -min_v;
 
-    int64_t peak_q16 = (int64_t)peak << 16;
-    int64_t cf_q16 = (peak_q16 << 16) / (int64_t)rms;
+    int64_t peak_q16 = (int64_t)peak * 65536LL;
+    int64_t cf_q16 = (peak_q16 * 65536LL) / (int64_t)rms;
 
     if (cf_q16 > INT32_MAX)
         return INT32_MAX;

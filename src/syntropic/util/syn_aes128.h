@@ -67,8 +67,8 @@ void syn_aes128_decrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16
  * @return SYN_OK on success.
  */
 SYN_Status syn_aes128_cbc_encrypt(const SYN_AES128_Context *ctx, const uint8_t iv[16],
-                                   const uint8_t *in, size_t in_len, uint8_t *out,
-                                   size_t out_capacity, size_t *out_len);
+                                  const uint8_t *in, size_t in_len, uint8_t *out,
+                                  size_t out_capacity, size_t *out_len);
 
 /**
  * @brief Decrypt data using AES-128-CBC with PKCS#7 padding removal.
@@ -82,8 +82,8 @@ SYN_Status syn_aes128_cbc_encrypt(const SYN_AES128_Context *ctx, const uint8_t i
  * @return SYN_OK on success, or SYN_INVALID_PARAM on invalid padding.
  */
 SYN_Status syn_aes128_cbc_decrypt(const SYN_AES128_Context *ctx, const uint8_t iv[16],
-                                   const uint8_t *in, size_t in_len, uint8_t *out,
-                                   size_t out_capacity, size_t *out_len);
+                                  const uint8_t *in, size_t in_len, uint8_t *out,
+                                  size_t out_capacity, size_t *out_len);
 
 #ifdef __cplusplus
 }

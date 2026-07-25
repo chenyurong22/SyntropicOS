@@ -138,8 +138,8 @@ typedef struct {
  * @param j_max    Vector max jerk.
  */
 void syn_scurve3d_plan(SYN_SCurve3D *sc3d, int32_t start_x, int32_t start_y, int32_t start_z,
-                       int32_t target_x, int32_t target_y, int32_t target_z,
-                       int32_t v_max, int32_t a_max, int32_t j_max);
+                       int32_t target_x, int32_t target_y, int32_t target_z, int32_t v_max,
+                       int32_t a_max, int32_t j_max);
 
 /**
  * @brief Step 3D synchronized S-Curve profile by one tick.

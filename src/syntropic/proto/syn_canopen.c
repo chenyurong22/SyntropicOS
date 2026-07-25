@@ -10,7 +10,6 @@
  */
 
 #include "syntropic/proto/syn_canopen.h"
-
 #include "syntropic/util/syn_pack.h"
 
 #include <string.h>
@@ -224,7 +223,8 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
                 uint8_t n = (cmd >> 2) & 0x03U;
                 size_t write_len = (size_t)(4 - n);
                 if (write_len != entry->size) {
-                    canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
+                    canopen_send_sdo_abort(node, index, subindex,
+                                           SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
                 } else {
                     (void)syn_canopen_od_write(node, index, subindex, &data[4], write_len);
                     uint8_t resp[8] = {0x60U, data[1], data[2], data[3], 0, 0, 0, 0};
@@ -236,7 +236,8 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
                 node->sdo_session.subindex = subindex;
                 node->sdo_session.toggle = 0;
                 node->sdo_session.transferred_bytes = 0;
-                node->sdo_session.total_bytes = (size_t)(data[4] | (data[5] << 8) | (data[6] << 16) | (data[7] << 24));
+                node->sdo_session.total_bytes =
+                    (size_t)(data[4] | (data[5] << 8) | (data[6] << 16) | (data[7] << 24));
                 uint8_t resp[8] = {0x60U, data[1], data[2], data[3], 0, 0, 0, 0};
                 canopen_queue_tx(node, 0x580U + node->node_id, resp, 8);
             }
@@ -247,17 +248,20 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
         if ((cmd & 0xE0U) == 0x00U && node->sdo_session.state == SYN_CANOPEN_SDO_SEG_DOWNLOAD) {
             uint8_t t = (cmd >> 4) & 0x01U;
             if (t != node->sdo_session.toggle) {
-                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex, SYN_CANOPEN_SDO_ABORT_TOGGLE_BIT);
+                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex,
+                                       SYN_CANOPEN_SDO_ABORT_TOGGLE_BIT);
                 node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
                 return SYN_OK;
             }
 
-            const SYN_CANOpenODEntry *entry = canopen_find_od(node, node->sdo_session.index, node->sdo_session.subindex);
+            const SYN_CANOpenODEntry *entry =
+                canopen_find_od(node, node->sdo_session.index, node->sdo_session.subindex);
             uint8_t n = (cmd >> 1) & 0x07U;
             size_t seg_len = 7U - n;
 
             if (entry != NULL && (node->sdo_session.transferred_bytes + seg_len) <= entry->size) {
-                (void)memcpy((uint8_t *)entry->data_ptr + node->sdo_session.transferred_bytes, &data[1], seg_len);
+                (void)memcpy((uint8_t *)entry->data_ptr + node->sdo_session.transferred_bytes,
+                             &data[1], seg_len);
                 node->sdo_session.transferred_bytes += seg_len;
 
                 uint8_t resp[8] = {(uint8_t)((t << 4) | 0x20U), 0, 0, 0, 0, 0, 0, 0};
@@ -268,7 +272,8 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
                     node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
                 }
             } else {
-                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex, SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
+                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex,
+                                       SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
                 node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
             }
             return SYN_OK;
@@ -322,7 +327,10 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
                 node->sdo_session.total_bytes = entry->size;
                 node->sdo_session.transferred_bytes = 0;
 
-                uint8_t resp[8] = {0x41U, data[1], data[2], data[3],
+                uint8_t resp[8] = {0x41U,
+                                   data[1],
+                                   data[2],
+                                   data[3],
                                    (uint8_t)(entry->size & 0xFFU),
                                    (uint8_t)((entry->size >> 8) & 0xFFU),
                                    (uint8_t)((entry->size >> 16) & 0xFFU),
@@ -336,12 +344,14 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
         if ((cmd & 0xE0U) == 0x60U && node->sdo_session.state == SYN_CANOPEN_SDO_SEG_UPLOAD) {
             uint8_t t = (cmd >> 4) & 0x01U;
             if (t != node->sdo_session.toggle) {
-                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex, SYN_CANOPEN_SDO_ABORT_TOGGLE_BIT);
+                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex,
+                                       SYN_CANOPEN_SDO_ABORT_TOGGLE_BIT);
                 node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
                 return SYN_OK;
             }
 
-            const SYN_CANOpenODEntry *entry = canopen_find_od(node, node->sdo_session.index, node->sdo_session.subindex);
+            const SYN_CANOpenODEntry *entry =
+                canopen_find_od(node, node->sdo_session.index, node->sdo_session.subindex);
             if (entry != NULL) {
                 size_t rem = entry->size - node->sdo_session.transferred_bytes;
                 size_t seg_len = (rem > 7U) ? 7U : rem;
@@ -350,7 +360,9 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
 
                 uint8_t resp[8] = {0};
                 resp[0] = (uint8_t)((t << 4) | (n << 1) | c);
-                (void)memcpy(&resp[1], (const uint8_t *)entry->data_ptr + node->sdo_session.transferred_bytes, seg_len);
+                (void)memcpy(&resp[1],
+                             (const uint8_t *)entry->data_ptr + node->sdo_session.transferred_bytes,
+                             seg_len);
 
                 canopen_queue_tx(node, 0x580U + node->node_id, resp, 8);
                 node->sdo_session.transferred_bytes += seg_len;
@@ -360,7 +372,8 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
                     node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
                 }
             } else {
-                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex, SYN_CANOPEN_SDO_ABORT_NOT_EXIST);
+                canopen_send_sdo_abort(node, node->sdo_session.index, node->sdo_session.subindex,
+                                       SYN_CANOPEN_SDO_ABORT_NOT_EXIST);
                 node->sdo_session.state = SYN_CANOPEN_SDO_IDLE;
             }
             return SYN_OK;
@@ -472,7 +485,8 @@ SYN_Status syn_canopen_tpdo_trigger(SYN_CANOpenNode *node, uint8_t pdo_num)
 
     uint8_t payload[8];
     size_t len = 0;
-    SYN_Status st = syn_canopen_od_read(node, map->od_index, map->od_subindex, payload, sizeof(payload), &len);
+    SYN_Status st =
+        syn_canopen_od_read(node, map->od_index, map->od_subindex, payload, sizeof(payload), &len);
     if (st == SYN_OK && len > 0) {
         canopen_queue_tx(node, map->cob_id, payload, (uint8_t)len);
         return SYN_OK;

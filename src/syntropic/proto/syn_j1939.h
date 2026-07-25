@@ -43,8 +43,8 @@ extern "C" {
 #define SYN_J1939_PGN_PROPRIETARY_A 61184U /**< Destination-Specific Proprietary A (0x00EF00) */
 #define SYN_J1939_PGN_EEC1 61444U          /**< Electronic Engine Controller 1 (0x00F004) */
 #define SYN_J1939_PGN_DM1 65226U           /**< Active Diagnostic Trouble Codes (0x00FECA) */
-#define SYN_J1939_PGN_DM2 65227U           /**< Previously Active Diagnostic Trouble Codes (0x00FECB) */
-#define SYN_J1939_PGN_DM3 65228U           /**< Clear Previously Active Diagnostic Trouble Codes (0x00FECC) */
+#define SYN_J1939_PGN_DM2 65227U           /**< Prev Active DTCs (0x00FECB) */
+#define SYN_J1939_PGN_DM3 65228U           /**< Clear Prev Active DTCs (0x00FECC) */
 #define SYN_J1939_PGN_DM11 65235U          /**< Clear Active Diagnostic Trouble Codes (0x00FED3) */
 #define SYN_J1939_PGN_BMS 65251U           /**< High Voltage Battery Pack Status (0x00FEE3) */
 #define SYN_J1939_PGN_ET1 65262U           /**< Engine Temperature 1 (0x00FEEE) */

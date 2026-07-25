@@ -9,9 +9,8 @@
  * @brief NMEA 2000 Marine CAN Protocol Stack implementation.
  */
 
-#include "syn_n2k.h"
-
 #include "../util/syn_pack.h"
+#include "syn_n2k.h"
 
 #include <string.h>
 

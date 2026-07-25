@@ -4,6 +4,7 @@
  */
 
 #include "syn_quaternion.h"
+
 #include "syn_assert.h"
 
 void syn_quat_identity(SYN_Quaternion *q)
@@ -45,8 +46,8 @@ void syn_quat_mul(const SYN_Quaternion *q1, const SYN_Quaternion *q2, SYN_Quater
 q16_t syn_quat_norm(const SYN_Quaternion *q)
 {
     SYN_ASSERT(q != NULL);
-    int64_t sum = (int64_t)q->w * q->w + (int64_t)q->x * q->x +
-                  (int64_t)q->y * q->y + (int64_t)q->z * q->z;
+    int64_t sum =
+        (int64_t)q->w * q->w + (int64_t)q->x * q->x + (int64_t)q->y * q->y + (int64_t)q->z * q->z;
     q16_t sum_q16 = (q16_t)(sum >> Q16_SHIFT);
     return q16_sqrt(sum_q16);
 }
@@ -54,10 +55,11 @@ q16_t syn_quat_norm(const SYN_Quaternion *q)
 SYN_Status syn_quat_normalize(SYN_Quaternion *q)
 {
     SYN_ASSERT(q != NULL);
-    int64_t sum = (int64_t)q->w * q->w + (int64_t)q->x * q->x +
-                  (int64_t)q->y * q->y + (int64_t)q->z * q->z;
+    int64_t sum =
+        (int64_t)q->w * q->w + (int64_t)q->x * q->x + (int64_t)q->y * q->y + (int64_t)q->z * q->z;
     q16_t norm_sq = (q16_t)(sum >> Q16_SHIFT);
-    if (norm_sq == 0) return SYN_ERROR;
+    if (norm_sq == 0)
+        return SYN_ERROR;
 
     q16_t inv_norm = q16_rsqrt(norm_sq);
     q->w = q16_mul(q->w, inv_norm);
@@ -79,10 +81,11 @@ void syn_quat_conjugate(const SYN_Quaternion *q, SYN_Quaternion *out)
 SYN_Status syn_quat_inverse(const SYN_Quaternion *q, SYN_Quaternion *out)
 {
     SYN_ASSERT(q != NULL && out != NULL);
-    int64_t norm_sq = (int64_t)q->w * q->w + (int64_t)q->x * q->x +
-                      (int64_t)q->y * q->y + (int64_t)q->z * q->z;
+    int64_t norm_sq =
+        (int64_t)q->w * q->w + (int64_t)q->x * q->x + (int64_t)q->y * q->y + (int64_t)q->z * q->z;
     q16_t n2 = (q16_t)(norm_sq >> Q16_SHIFT);
-    if (n2 == 0) return SYN_ERROR;
+    if (n2 == 0)
+        return SYN_ERROR;
 
     out->w = q16_div(q->w, n2);
     out->x = q16_div(-q->x, n2);
@@ -192,12 +195,14 @@ void syn_quat_to_euler(const SYN_Quaternion *q, q16_t *roll, q16_t *pitch, q16_t
     *yaw = q16_atan2((q16_t)siny_cosp, (q16_t)cosy_cosp);
 }
 
-void syn_quat_slerp(const SYN_Quaternion *q1, const SYN_Quaternion *q2, q16_t t, SYN_Quaternion *out)
+void syn_quat_slerp(const SYN_Quaternion *q1, const SYN_Quaternion *q2, q16_t t,
+                    SYN_Quaternion *out)
 {
     SYN_ASSERT(q1 != NULL && q2 != NULL && out != NULL);
 
-    int64_t dot = ((int64_t)q1->w * q2->w + (int64_t)q1->x * q2->x +
-                   (int64_t)q1->y * q2->y + (int64_t)q1->z * q2->z) >> Q16_SHIFT;
+    int64_t dot = ((int64_t)q1->w * q2->w + (int64_t)q1->x * q2->x + (int64_t)q1->y * q2->y +
+                   (int64_t)q1->z * q2->z) >>
+                  Q16_SHIFT;
 
     SYN_Quaternion q2_norm = *q2;
     if (dot < 0) {

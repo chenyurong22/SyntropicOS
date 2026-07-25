@@ -195,8 +195,8 @@ SYN_ModbusMaster_State syn_modbus_master_process(SYN_ModbusMaster *m, uint32_t c
 /* ── Modbus Master Polling & Transaction Queue ──────────────────────────── */
 
 typedef void (*SYN_ModbusMasterCallback)(uint8_t slave_addr, uint8_t func_code,
-                                          const uint16_t *data, uint16_t count,
-                                          SYN_Status status, void *user_ctx);
+                                         const uint16_t *data, uint16_t count, SYN_Status status,
+                                         void *user_ctx);
 
 typedef struct {
     uint8_t slave_addr;
@@ -234,7 +234,8 @@ void syn_modbus_master_queue_init(SYN_ModbusMasterQueue *q, uint8_t max_retries)
  * @param query Pointer to query parameters.
  * @return SYN_OK on success, SYN_ERROR if queue is full.
  */
-SYN_Status syn_modbus_master_queue_push(SYN_ModbusMasterQueue *q, const SYN_ModbusMasterQuery *query);
+SYN_Status syn_modbus_master_queue_push(SYN_ModbusMasterQueue *q,
+                                        const SYN_ModbusMasterQuery *query);
 
 /**
  * @brief Process queue advancement and dispatch active queries to Master.
@@ -243,7 +244,8 @@ SYN_Status syn_modbus_master_queue_push(SYN_ModbusMasterQueue *q, const SYN_Modb
  * @param now_ms Current system tick in milliseconds.
  * @return SYN_OK on normal operation.
  */
-SYN_Status syn_modbus_master_queue_step(SYN_ModbusMaster *m, SYN_ModbusMasterQueue *q, uint32_t now_ms);
+SYN_Status syn_modbus_master_queue_step(SYN_ModbusMaster *m, SYN_ModbusMasterQueue *q,
+                                        uint32_t now_ms);
 
 #ifdef __cplusplus
 }

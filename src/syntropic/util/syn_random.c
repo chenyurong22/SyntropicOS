@@ -13,6 +13,7 @@ SYN_Status syn_random_fill(void *buf, size_t len)
 {
     if (!buf || len == 0)
         return SYN_OK;
+    (void)memset(buf, 0, len);
     return syn_port_random_fill(buf, len);
 }
 

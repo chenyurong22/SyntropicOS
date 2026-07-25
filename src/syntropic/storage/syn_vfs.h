@@ -67,12 +67,13 @@ typedef struct SYN_VfsDir SYN_VfsDir;   /**< Forward declaration of directory de
  */
 typedef struct {
     int (*open)(SYN_VfsFile *file, const char *path, int flags, void *fs_data); /**< Open a file */
-    int (*close)(SYN_VfsFile *file);                                  /**< Close a file         */
-    int (*read)(SYN_VfsFile *file, void *buf, size_t len);            /**< Read from a file     */
-    int (*write)(SYN_VfsFile *file, const void *buf, size_t len);     /**< Write to a file      */
-    int32_t (*seek)(SYN_VfsFile *file, int32_t offset, int whence);   /**< Seek in a file       */
-    int32_t (*tell)(SYN_VfsFile *file);                               /**< Get file position    */
-    int (*stat)(const char *path, SYN_VfsDirEnt *ent, void *fs_data); /**< Stat a file or directory */
+    int (*close)(SYN_VfsFile *file);                                /**< Close a file         */
+    int (*read)(SYN_VfsFile *file, void *buf, size_t len);          /**< Read from a file     */
+    int (*write)(SYN_VfsFile *file, const void *buf, size_t len);   /**< Write to a file      */
+    int32_t (*seek)(SYN_VfsFile *file, int32_t offset, int whence); /**< Seek in a file       */
+    int32_t (*tell)(SYN_VfsFile *file);                             /**< Get file position    */
+    int (*stat)(const char *path, SYN_VfsDirEnt *ent,
+                void *fs_data); /**< Stat a file or directory */
     int (*rename)(const char *old_path, const char *new_path, void *fs_data); /**< Rename a file */
     int (*unlink)(const char *path, void *fs_data);                   /**< Delete a file        */
     int (*mkdir)(const char *path, void *fs_data);                    /**< Create a directory   */

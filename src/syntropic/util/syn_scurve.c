@@ -169,8 +169,8 @@ int32_t syn_scurve_update(SYN_SCurve *sc)
 }
 
 void syn_scurve3d_plan(SYN_SCurve3D *sc3d, int32_t start_x, int32_t start_y, int32_t start_z,
-                       int32_t target_x, int32_t target_y, int32_t target_z,
-                       int32_t v_max, int32_t a_max, int32_t j_max)
+                       int32_t target_x, int32_t target_y, int32_t target_z, int32_t v_max,
+                       int32_t a_max, int32_t j_max)
 {
     SYN_ASSERT(sc3d != NULL);
     sc3d->start_x = start_x;

@@ -177,8 +177,8 @@ SYN_Status syn_settings_import_vfs(SYN_Settings *s, const char *filepath, bool s
 /* ── Dual-Bank Transactional Settings Implementation ─────────────────────── */
 
 SYN_Status syn_settings_dual_bank_init(SYN_DualBankSettings *db, uint32_t flash_base_a,
-                                       uint32_t flash_base_b, uint8_t sector_count,
-                                       void *data, uint16_t data_size, const void *defaults)
+                                       uint32_t flash_base_b, uint8_t sector_count, void *data,
+                                       uint16_t data_size, const void *defaults)
 {
     SYN_ASSERT(db != NULL);
     SYN_ASSERT(data != NULL);
@@ -187,8 +187,10 @@ SYN_Status syn_settings_dual_bank_init(SYN_DualBankSettings *db, uint32_t flash_
 
     memset(db, 0, sizeof(*db));
 
-    SYN_Status st_a = syn_settings_init(&db->bank_a, flash_base_a, sector_count, data, data_size, defaults);
-    SYN_Status st_b = syn_settings_init(&db->bank_b, flash_base_b, sector_count, data, data_size, defaults);
+    SYN_Status st_a =
+        syn_settings_init(&db->bank_a, flash_base_a, sector_count, data, data_size, defaults);
+    SYN_Status st_b =
+        syn_settings_init(&db->bank_b, flash_base_b, sector_count, data, data_size, defaults);
 
     if (st_a == SYN_OK) {
         db->active_bank = 0;

@@ -224,8 +224,8 @@ typedef struct {
  * @return SYN_OK on success.
  */
 SYN_Status syn_settings_dual_bank_init(SYN_DualBankSettings *db, uint32_t flash_base_a,
-                                       uint32_t flash_base_b, uint8_t sector_count,
-                                       void *data, uint16_t data_size, const void *defaults);
+                                       uint32_t flash_base_b, uint8_t sector_count, void *data,
+                                       uint16_t data_size, const void *defaults);
 
 /**
  * @brief Atomically save settings to inactive bank and switch active bank upon CRC32 verification.

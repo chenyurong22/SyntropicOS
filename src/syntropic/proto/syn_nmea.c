@@ -195,24 +195,22 @@ static void parse_time(const char *field, uint8_t *h, uint8_t *m, uint8_t *s, ui
     *m = 0;
     *s = 0;
     *ms = 0;
-    if (field == NULL || strlen(field) < 6)
+    if (field == NULL || field[0] == '\0' || field[1] == '\0' || field[2] == '\0' ||
+        field[3] == '\0' || field[4] == '\0' || field[5] == '\0') {
         return;
+    }
 
-    char tmp[3];
-    (void)memset(tmp, 0, sizeof(tmp));
+    char tmp[3] = {0};
     tmp[0] = field[0];
     tmp[1] = field[1];
-    tmp[2] = '\0';
     *h = (uint8_t)atoi(tmp);
 
     tmp[0] = field[2];
     tmp[1] = field[3];
-    tmp[2] = '\0';
     *m = (uint8_t)atoi(tmp);
 
     tmp[0] = field[4];
     tmp[1] = field[5];
-    tmp[2] = '\0';
     *s = (uint8_t)atoi(tmp);
 
     const char *dot = strchr(field, '.');

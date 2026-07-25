@@ -9,10 +9,9 @@
  * @brief SAE J1939 Heavy-Duty Vehicle CAN Protocol Stack implementation.
  */
 
-#include "syn_j1939.h"
-
 #include "../util/syn_assert.h"
 #include "../util/syn_pack.h"
+#include "syn_j1939.h"
 
 #include <string.h>
 

@@ -19,25 +19,31 @@ static void test_fmt(void)
     TEST_ASSERT_EQUAL_INT(0, strcmp(buf, "12345"));
 
     n = syn_fmt_int(buf, sizeof(buf), -42);
+    (void)n;
     TEST_ASSERT_EQUAL_INT(0, strcmp(buf, "-42"));
 
     n = syn_fmt_int(buf, sizeof(buf), 0);
+    (void)n;
     TEST_ASSERT_EQUAL_INT(0, strcmp(buf, "0"));
 
     /* Unsigned */
     n = syn_fmt_uint(buf, sizeof(buf), 4294967295u);
+    (void)n;
     TEST_ASSERT_EQUAL_INT(0, strcmp(buf, "4294967295"));
 
     /* Hex */
     n = syn_fmt_hex(buf, sizeof(buf), 0xDEAD, 4);
+    (void)n;
     TEST_ASSERT_EQUAL_INT(0, strcmp(buf, "DEAD"));
 
     n = syn_fmt_hex(buf, sizeof(buf), 0x0A, 4);
+    (void)n;
     TEST_ASSERT_EQUAL_INT(0, strcmp(buf, "000A"));
 
     /* Q16.16 */
     int32_t q = Q16_FROM_FRAC(355, 113); /* ≈ π ≈ 3.141 */
     n = syn_fmt_q16(buf, sizeof(buf), q, 3);
+    (void)n;
     TEST_ASSERT_EQUAL('3', buf[0]);
     TEST_ASSERT_EQUAL('.', buf[1]);
     /* 355/113 ≈ 3.14159 → should be "3.141" */
@@ -45,16 +51,19 @@ static void test_fmt(void)
 
     /* Negative Q16 */
     n = syn_fmt_q16(buf, sizeof(buf), Q16_FROM_INT(-7), 2);
+    (void)n;
     TEST_ASSERT_EQUAL('-', buf[0]);
     TEST_ASSERT_EQUAL('7', buf[1]);
 
     /* Fixed decimal */
     n = syn_fmt_fixed(buf, sizeof(buf), 12345, 3);
+    (void)n;
     TEST_ASSERT_EQUAL_INT(0, strcmp(buf, "12.345"));
 
     /* Hex dump */
     uint8_t data[] = {0xDE, 0xAD, 0xBE, 0xEF};
     n = syn_fmt_hexdump(buf, sizeof(buf), data, 4);
+    (void)n;
     TEST_ASSERT_EQUAL_INT(0, strcmp(buf, "DE AD BE EF"));
 
     /* Concat */

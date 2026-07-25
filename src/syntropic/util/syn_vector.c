@@ -4,6 +4,7 @@
  */
 
 #include "syn_vector.h"
+
 #include "syn_assert.h"
 
 void syn_vec_add(const q16_t *a, const q16_t *b, q16_t *out, uint16_t n)
@@ -35,8 +36,10 @@ void syn_vec_clamp(const q16_t *v, q16_t min_val, q16_t max_val, q16_t *out, uin
     SYN_ASSERT(v != NULL && out != NULL);
     for (uint16_t i = 0; i < n; i++) {
         q16_t val = v[i];
-        if (val < min_val) val = min_val;
-        if (val > max_val) val = max_val;
+        if (val < min_val)
+            val = min_val;
+        if (val > max_val)
+            val = max_val;
         out[i] = val;
     }
 }
@@ -46,7 +49,8 @@ q16_t syn_vec_min(const q16_t *v, uint16_t n)
     SYN_ASSERT(v != NULL && n > 0);
     q16_t min_v = v[0];
     for (uint16_t i = 1; i < n; i++) {
-        if (v[i] < min_v) min_v = v[i];
+        if (v[i] < min_v)
+            min_v = v[i];
     }
     return min_v;
 }
@@ -56,7 +60,8 @@ q16_t syn_vec_max(const q16_t *v, uint16_t n)
     SYN_ASSERT(v != NULL && n > 0);
     q16_t max_v = v[0];
     for (uint16_t i = 1; i < n; i++) {
-        if (v[i] > max_v) max_v = v[i];
+        if (v[i] > max_v)
+            max_v = v[i];
     }
     return max_v;
 }

@@ -701,6 +701,7 @@ SYN_PT_Status syn_wg_task(SYN_PT *pt, SYN_Task *task)
 
     for (;;) {
         uint32_t now = syn_port_get_tick_ms();
+        (void)now;
 
         /* ── State: DISCONNECTED — initiate handshake ───────────── */
         if (wg->state == SYN_WG_DISCONNECTED) {
@@ -796,8 +797,10 @@ SYN_Status syn_wg_get_stats(const SYN_WG *wg, SYN_WgStats *stats)
     if (stats->is_established) {
         uint32_t now = syn_port_get_tick_ms();
         stats->handshake_age_sec = (now - wg->session.established_ms) / 1000;
-        stats->tx_bytes = (uint64_t)wg->session.send_counter * (SYN_WG_MTU + SYN_WG_TRANSPORT_OVERHEAD);
-        stats->rx_bytes = (uint64_t)wg->session.recv_counter * (SYN_WG_MTU + SYN_WG_TRANSPORT_OVERHEAD);
+        stats->tx_bytes =
+            (uint64_t)wg->session.send_counter * (SYN_WG_MTU + SYN_WG_TRANSPORT_OVERHEAD);
+        stats->rx_bytes =
+            (uint64_t)wg->session.recv_counter * (SYN_WG_MTU + SYN_WG_TRANSPORT_OVERHEAD);
     }
 
     return SYN_OK;

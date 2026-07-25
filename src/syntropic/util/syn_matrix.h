@@ -215,8 +215,8 @@ SYN_Status syn_matrix_inv_3x3(const SYN_Matrix *src, SYN_Matrix *dst);
  * @param col_work Caller-supplied N vector buffer (N elements).
  * @return SYN_OK on success, SYN_ERROR if src is singular or dimensions invalid.
  */
-SYN_Status syn_matrix_inv_lu_work(const SYN_Matrix *src, SYN_Matrix *dst,
-                                  q16_t *lu_work, uint8_t *p_work, q16_t *col_work);
+SYN_Status syn_matrix_inv_lu_work(const SYN_Matrix *src, SYN_Matrix *dst, q16_t *lu_work,
+                                  uint8_t *p_work, q16_t *col_work);
 
 /**
  * @brief Invert an arbitrary N×N matrix via LU decomposition (convenience wrapper).
@@ -357,7 +357,7 @@ SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Mat
  * @return SYN_OK on success, SYN_ERROR if A is not positive-definite.
  */
 SYN_Status syn_matrix_solve_cholesky_work(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x,
-                                           q16_t *L_work, q16_t *y_work);
+                                          q16_t *L_work, q16_t *y_work);
 
 /**
  * @brief Solve symmetric positive-definite system A · x = b via Cholesky (convenience wrapper).
@@ -382,8 +382,8 @@ SYN_Status syn_matrix_solve_cholesky(const SYN_Matrix *A, const SYN_Matrix *b, S
  * @return SYN_OK on success, SYN_ERROR if AᵀA is singular.
  */
 SYN_Status syn_matrix_least_squares_work(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x,
-                                          q16_t *ata_work, q16_t *atb_work, q16_t *at_work,
-                                          q16_t *solver_lu, q16_t *solver_y);
+                                         q16_t *ata_work, q16_t *atb_work, q16_t *at_work,
+                                         q16_t *solver_lu, q16_t *solver_y);
 
 /**
  * @brief Solve overdetermined system A · x ≈ b via Normal Equations (Least Squares).

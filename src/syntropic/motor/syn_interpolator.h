@@ -139,10 +139,9 @@ bool syn_interpolator_eval_at_time(SYN_Interpolator *interp, float t_sec, SYN_Ve
  * @param step_res  Spatial resolution per step.
  * @return SYN_OK on success.
  */
-SYN_Status syn_interpolator_plan_bezier(SYN_Interpolator *interp, SYN_Vector3F p0,
-                                        SYN_Vector3F p1, SYN_Vector3F p2, SYN_Vector3F p3,
-                                        float feedrate, float max_accel, float max_jerk,
-                                        float step_res);
+SYN_Status syn_interpolator_plan_bezier(SYN_Interpolator *interp, SYN_Vector3F p0, SYN_Vector3F p1,
+                                        SYN_Vector3F p2, SYN_Vector3F p3, float feedrate,
+                                        float max_accel, float max_jerk, float step_res);
 
 #ifdef __cplusplus
 }

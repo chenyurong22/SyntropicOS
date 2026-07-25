@@ -152,7 +152,8 @@ void syn_canvas_line(SYN_Canvas *c, int16_t x0, int16_t y0, int16_t x1, int16_t 
  * @param y1     End Y.
  * @param color  Line color.
  */
-void syn_canvas_line_aa(SYN_Canvas *c, int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
+void syn_canvas_line_aa(SYN_Canvas *c, int16_t x0, int16_t y0, int16_t x1, int16_t y1,
+                        uint16_t color);
 
 /**
  * @brief Draw a rectangle (outline only).
@@ -219,8 +220,8 @@ void syn_canvas_arc(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t r, int16_t st
  * @param length Needle length in pixels.
  * @param color Line color.
  */
-void syn_canvas_line_polar(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t angle_deg,
-                           int16_t length, uint16_t color);
+void syn_canvas_line_polar(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t angle_deg, int16_t length,
+                           uint16_t color);
 
 /**
  * @brief Draw a rounded rectangle (outline only).

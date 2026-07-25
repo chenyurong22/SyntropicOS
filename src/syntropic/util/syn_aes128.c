@@ -31,8 +31,7 @@ static const uint8_t sbox[256] = {
     0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, 0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a,
     0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e,
     0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
-    0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
-};
+    0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16};
 
 /* Inverse S-Box */
 static const uint8_t rsbox[256] = {
@@ -51,32 +50,34 @@ static const uint8_t rsbox[256] = {
     0x1f, 0xdd, 0xa8, 0x33, 0x88, 0x07, 0xc7, 0x31, 0xb1, 0x12, 0x10, 0x59, 0x27, 0x80, 0xec, 0x5f,
     0x60, 0x51, 0x7f, 0xa9, 0x19, 0xb5, 0x4a, 0x0d, 0x2d, 0xe5, 0x7a, 0x9f, 0x93, 0xc9, 0x9c, 0xef,
     0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61,
-    0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
-};
+    0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d};
 
 /* Round constants */
-static const uint8_t rcon[11] = {
-    0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36
-};
+static const uint8_t rcon[11] = {0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36};
 
 /* Galois field multiplication by 2 */
-static inline uint8_t gmult2(uint8_t a) {
+static inline uint8_t gmult2(uint8_t a)
+{
     return (uint8_t)((a << 1) ^ (((a >> 7) & 1) * 0x1b));
 }
 
-static inline uint8_t gmult(uint8_t a, uint8_t b) {
+static inline uint8_t gmult(uint8_t a, uint8_t b)
+{
     uint8_t p = 0;
     for (int i = 0; i < 8; i++) {
-        if (b & 1) p ^= a;
+        if (b & 1)
+            p ^= a;
         uint8_t hi_bit_set = a & 0x80;
         a <<= 1;
-        if (hi_bit_set) a ^= 0x1b;
+        if (hi_bit_set)
+            a ^= 0x1b;
         b >>= 1;
     }
     return p;
 }
 
-SYN_Status syn_aes128_init(SYN_AES128_Context *ctx, const uint8_t key[SYN_AES128_KEY_SIZE]) {
+SYN_Status syn_aes128_init(SYN_AES128_Context *ctx, const uint8_t key[SYN_AES128_KEY_SIZE])
+{
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(key != NULL);
 
@@ -109,7 +110,7 @@ SYN_Status syn_aes128_init(SYN_AES128_Context *ctx, const uint8_t key[SYN_AES128
             temp[0] ^= rcon[i];
         }
 
-        ctx->round_keys[k]     = ctx->round_keys[k - 16] ^ temp[0];
+        ctx->round_keys[k] = ctx->round_keys[k - 16] ^ temp[0];
         ctx->round_keys[k + 1] = ctx->round_keys[k - 15] ^ temp[1];
         ctx->round_keys[k + 2] = ctx->round_keys[k - 14] ^ temp[2];
         ctx->round_keys[k + 3] = ctx->round_keys[k - 13] ^ temp[3];
@@ -119,7 +120,8 @@ SYN_Status syn_aes128_init(SYN_AES128_Context *ctx, const uint8_t key[SYN_AES128
     return SYN_OK;
 }
 
-void syn_aes128_encrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16], uint8_t out[16]) {
+void syn_aes128_encrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16], uint8_t out[16])
+{
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(in != NULL);
     SYN_ASSERT(out != NULL);
@@ -139,9 +141,22 @@ void syn_aes128_encrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16
 
         /* ShiftRows */
         uint8_t t;
-        t = state[1][0]; state[1][0] = state[1][1]; state[1][1] = state[1][2]; state[1][2] = state[1][3]; state[1][3] = t;
-        t = state[2][0]; state[2][0] = state[2][2]; state[2][2] = t; t = state[2][1]; state[2][1] = state[2][3]; state[2][3] = t;
-        t = state[3][3]; state[3][3] = state[3][2]; state[3][2] = state[3][1]; state[3][1] = state[3][0]; state[3][0] = t;
+        t = state[1][0];
+        state[1][0] = state[1][1];
+        state[1][1] = state[1][2];
+        state[1][2] = state[1][3];
+        state[1][3] = t;
+        t = state[2][0];
+        state[2][0] = state[2][2];
+        state[2][2] = t;
+        t = state[2][1];
+        state[2][1] = state[2][3];
+        state[2][3] = t;
+        t = state[3][3];
+        state[3][3] = state[3][2];
+        state[3][2] = state[3][1];
+        state[3][1] = state[3][0];
+        state[3][0] = t;
 
         /* MixColumns (except last round) */
         if (round < 10) {
@@ -170,7 +185,8 @@ void syn_aes128_encrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16
     }
 }
 
-void syn_aes128_decrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16], uint8_t out[16]) {
+void syn_aes128_decrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16], uint8_t out[16])
+{
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(in != NULL);
     SYN_ASSERT(out != NULL);
@@ -185,9 +201,22 @@ void syn_aes128_decrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16
     for (int round = 9; round >= 0; round--) {
         /* InvShiftRows */
         uint8_t t;
-        t = state[1][3]; state[1][3] = state[1][2]; state[1][2] = state[1][1]; state[1][1] = state[1][0]; state[1][0] = t;
-        t = state[2][0]; state[2][0] = state[2][2]; state[2][2] = t; t = state[2][1]; state[2][1] = state[2][3]; state[2][3] = t;
-        t = state[3][0]; state[3][0] = state[3][1]; state[3][1] = state[3][2]; state[3][2] = state[3][3]; state[3][3] = t;
+        t = state[1][3];
+        state[1][3] = state[1][2];
+        state[1][2] = state[1][1];
+        state[1][1] = state[1][0];
+        state[1][0] = t;
+        t = state[2][0];
+        state[2][0] = state[2][2];
+        state[2][2] = t;
+        t = state[2][1];
+        state[2][1] = state[2][3];
+        state[2][3] = t;
+        t = state[3][0];
+        state[3][0] = state[3][1];
+        state[3][1] = state[3][2];
+        state[3][2] = state[3][3];
+        state[3][3] = t;
 
         /* InvSubBytes */
         for (int r = 0; r < 4; r++)
@@ -222,8 +251,9 @@ void syn_aes128_decrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16
 }
 
 SYN_Status syn_aes128_cbc_encrypt(const SYN_AES128_Context *ctx, const uint8_t iv[16],
-                                   const uint8_t *in, size_t in_len, uint8_t *out,
-                                   size_t out_capacity, size_t *out_len) {
+                                  const uint8_t *in, size_t in_len, uint8_t *out,
+                                  size_t out_capacity, size_t *out_len)
+{
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(iv != NULL);
     SYN_ASSERT(in != NULL || in_len == 0);
@@ -233,7 +263,8 @@ SYN_Status syn_aes128_cbc_encrypt(const SYN_AES128_Context *ctx, const uint8_t i
     size_t pad_len = 16 - (in_len % 16);
     size_t total_len = in_len + pad_len;
 
-    if (out_capacity < total_len) return SYN_INVALID_PARAM;
+    if (out_capacity < total_len)
+        return SYN_INVALID_PARAM;
 
     uint8_t current_iv[16];
     memcpy(current_iv, iv, 16);
@@ -266,8 +297,9 @@ SYN_Status syn_aes128_cbc_encrypt(const SYN_AES128_Context *ctx, const uint8_t i
 }
 
 SYN_Status syn_aes128_cbc_decrypt(const SYN_AES128_Context *ctx, const uint8_t iv[16],
-                                   const uint8_t *in, size_t in_len, uint8_t *out,
-                                   size_t out_capacity, size_t *out_len) {
+                                  const uint8_t *in, size_t in_len, uint8_t *out,
+                                  size_t out_capacity, size_t *out_len)
+{
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(iv != NULL);
     SYN_ASSERT(in != NULL);

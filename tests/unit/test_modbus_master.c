@@ -307,7 +307,8 @@ static void test_modbus_master_new_queries(void)
 static bool s_cb_called = false;
 static uint16_t s_cb_val = 0;
 
-static void test_cb(uint8_t slave_addr, uint8_t func_code, const uint16_t *data, uint16_t count, SYN_Status status, void *user_ctx)
+static void test_cb(uint8_t slave_addr, uint8_t func_code, const uint16_t *data, uint16_t count,
+                    SYN_Status status, void *user_ctx)
 {
     (void)slave_addr;
     (void)func_code;

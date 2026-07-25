@@ -214,6 +214,7 @@ void test_json_read_token_overflow_skip_string(void)
     }
     /* 33rd key has a string value — exercises skip_value string path */
     pos += snprintf(json + pos, sizeof(json) - pos, "\"extra\":\"overflowed\"}");
+    (void)pos;
 
     SYN_JsonReader r;
     /* Token array overflows — parse may succeed partially or fail */
@@ -235,6 +236,7 @@ void test_json_read_token_overflow_skip_object(void)
     }
     /* 33rd key has nested object — exercises skip_value obj path */
     pos += snprintf(json + pos, sizeof(json) - pos, "\"nested\":{\"a\":1,\"b\":2}}");
+    (void)pos;
 
     SYN_JsonReader r;
     bool ok = syn_json_parse(&r, json, strlen(json));

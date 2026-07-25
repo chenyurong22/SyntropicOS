@@ -621,22 +621,22 @@ void syn_autotune_calc_relay_gains(int32_t Ku, uint32_t Tu_ms, SYN_AutoTune_Meth
     int32_t tu = (int32_t)Tu_ms;
 
     switch (method) {
-        case SYN_ATUNE_ZN_CLASSIC:
-            p = (Ku * 60) / 100;
-            i = (p * 2000) / tu;
-            d = (p * tu) / 8000;
-            break;
-        case SYN_ATUNE_TYREUS_LUYBEN:
-            p = (Ku * 45) / 100;
-            i = (p * 1000) / ((tu * 22) / 10);
-            d = (p * tu) / 6300;
-            break;
-        case SYN_ATUNE_ZN_NO_OVERSHOOT:
-        default:
-            p = (Ku * 20) / 100;
-            i = (p * 2000) / tu;
-            d = (p * tu) / 3000;
-            break;
+    case SYN_ATUNE_ZN_CLASSIC:
+        p = (Ku * 60) / 100;
+        i = (p * 2000) / tu;
+        d = (p * tu) / 8000;
+        break;
+    case SYN_ATUNE_TYREUS_LUYBEN:
+        p = (Ku * 45) / 100;
+        i = (p * 1000) / ((tu * 22) / 10);
+        d = (p * tu) / 6300;
+        break;
+    case SYN_ATUNE_ZN_NO_OVERSHOOT:
+    default:
+        p = (Ku * 20) / 100;
+        i = (p * 2000) / tu;
+        d = (p * tu) / 3000;
+        break;
     }
 
     if (multiplier_pct != 100 && multiplier_pct > 0) {

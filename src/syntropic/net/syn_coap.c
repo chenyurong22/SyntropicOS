@@ -243,6 +243,7 @@ SYN_PT_Status syn_coap_request_task(SYN_PT *pt, SYN_Task *task)
 {
     SYN_CoapRequest *r = (SYN_CoapRequest *)task->user_data;
     SYN_ASSERT(r != NULL);
+    uint32_t attempt_delay = 0;
 
     PT_BEGIN(pt);
 
@@ -275,11 +276,11 @@ SYN_PT_Status syn_coap_request_task(SYN_PT *pt, SYN_Task *task)
         }
 
         /* Calculate delay for THIS attempt (including jitter) */
-        uint32_t delay = syn_backoff_next_ms(&r->backoff);
+        attempt_delay = syn_backoff_next_ms(&r->backoff);
         r->start_ms = syn_port_get_tick_ms();
 
         /* Wait for response */
-        while ((syn_port_get_tick_ms() - r->start_ms) < delay) {
+        while ((syn_port_get_tick_ms() - r->start_ms) < attempt_delay) {
             SYN_SockAddr from;
             int n = syn_port_udp_recvfrom(r->sock, r->resp_buf, sizeof(r->resp_buf), &from, 0);
             if (n > 0) {

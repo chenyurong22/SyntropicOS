@@ -4,6 +4,7 @@
  */
 
 #include "syn_transform.h"
+
 #include "syn_assert.h"
 
 void syn_cart2pol(q16_t x, q16_t y, q16_t *r, q16_t *theta)

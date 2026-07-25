@@ -593,9 +593,11 @@ SYN_Status syn_vec_normalize(const q16_t *v, q16_t *out, uint8_t n)
 
 /* ── Linear Solvers ─────────────────────────────────────────────────────── */
 
-SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x)
+SYN_Status syn_matrix_solve_lu_work(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x,
+                                    q16_t *lu, uint8_t *P, q16_t *y)
 {
     SYN_ASSERT(A != NULL && b != NULL && x != NULL);
+    SYN_ASSERT(lu != NULL && P != NULL && y != NULL);
 
     uint8_t n = A->rows;
     if (A->cols != n || b->rows != n || b->cols != 1 || x->rows != n || x->cols != 1) {
@@ -604,9 +606,6 @@ SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Mat
     if (n > SYN_SOLVER_MAX_N)
         return SYN_INVALID_PARAM;
 
-    /* Local copy of A for LU decomposition */
-    q16_t lu[SYN_SOLVER_MAX_N * SYN_SOLVER_MAX_N];
-    uint8_t P[SYN_SOLVER_MAX_N];
     uint8_t i, j, k;
 
     for (i = 0; i < n; i++) {
@@ -655,7 +654,6 @@ SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Mat
     }
 
     /* Forward substitution L · y = P · b */
-    q16_t y[SYN_SOLVER_MAX_N];
     for (i = 0; i < n; i++) {
         int64_t sum = (int64_t)b->data[P[i]];
         for (j = 0; j < i; j++) {
@@ -677,9 +675,22 @@ SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Mat
     return SYN_OK;
 }
 
-SYN_Status syn_matrix_solve_cholesky(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x)
+SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x)
 {
     SYN_ASSERT(A != NULL && b != NULL && x != NULL);
+    uint8_t n = A->rows;
+    if (n > SYN_SOLVER_MAX_N) return SYN_INVALID_PARAM;
+    q16_t lu[n * n];
+    uint8_t P[n];
+    q16_t y[n];
+    return syn_matrix_solve_lu_work(A, b, x, lu, P, y);
+}
+
+SYN_Status syn_matrix_solve_cholesky_work(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x,
+                                           q16_t *L, q16_t *y)
+{
+    SYN_ASSERT(A != NULL && b != NULL && x != NULL);
+    SYN_ASSERT(L != NULL && y != NULL);
 
     uint8_t n = A->rows;
     if (A->cols != n || b->rows != n || b->cols != 1 || x->rows != n || x->cols != 1) {
@@ -688,8 +699,7 @@ SYN_Status syn_matrix_solve_cholesky(const SYN_Matrix *A, const SYN_Matrix *b, S
     if (n > SYN_SOLVER_MAX_N)
         return SYN_INVALID_PARAM;
 
-    q16_t L[SYN_SOLVER_MAX_N * SYN_SOLVER_MAX_N];
-    memset(L, 0, sizeof(L));
+    memset(L, 0, (size_t)n * n * sizeof(q16_t));
 
     uint8_t i, j, k;
     for (i = 0; i < n; i++) {
@@ -710,7 +720,6 @@ SYN_Status syn_matrix_solve_cholesky(const SYN_Matrix *A, const SYN_Matrix *b, S
     }
 
     /* Forward substitution L · y = b */
-    q16_t y[SYN_SOLVER_MAX_N];
     for (i = 0; i < n; i++) {
         int64_t sum = (int64_t)b->data[i];
         for (j = 0; j < i; j++) {
@@ -732,7 +741,19 @@ SYN_Status syn_matrix_solve_cholesky(const SYN_Matrix *A, const SYN_Matrix *b, S
     return SYN_OK;
 }
 
-SYN_Status syn_matrix_least_squares(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x)
+SYN_Status syn_matrix_solve_cholesky(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x)
+{
+    SYN_ASSERT(A != NULL && b != NULL && x != NULL);
+    uint8_t n = A->rows;
+    if (n > SYN_SOLVER_MAX_N) return SYN_INVALID_PARAM;
+    q16_t L[n * n];
+    q16_t y[n];
+    return syn_matrix_solve_cholesky_work(A, b, x, L, y);
+}
+
+SYN_Status syn_matrix_least_squares_work(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x,
+                                          q16_t *ata_data, q16_t *atb_data, q16_t *at_data,
+                                          q16_t *solver_lu, q16_t *solver_y)
 {
     SYN_ASSERT(A != NULL && b != NULL && x != NULL);
 
@@ -742,28 +763,37 @@ SYN_Status syn_matrix_least_squares(const SYN_Matrix *A, const SYN_Matrix *b, SY
         return SYN_INVALID_PARAM;
     }
 
-    /* Normal Equations: (Aᵀ · A) · x = Aᵀ · b */
-    q16_t ata_data[SYN_SOLVER_MAX_N * SYN_SOLVER_MAX_N];
-    q16_t atb_data[SYN_SOLVER_MAX_N];
-
     SYN_Matrix AtA = {ata_data, n, n};
     SYN_Matrix Atb = {atb_data, n, 1};
+    SYN_Matrix AT = {at_data, n, m};
 
-    /* AtA = Aᵀ · A */
-    SYN_MAT_DECL(AT, n, m);
     syn_matrix_transpose(A, &AT);
     syn_matrix_mul(&AT, A, &AtA);
-
-    /* Atb = Aᵀ · b */
     syn_matrix_mul(&AT, b, &Atb);
 
-    /* Try Cholesky first (fastest for AᵀA), fall back to LU */
-    SYN_Status status = syn_matrix_solve_cholesky(&AtA, &Atb, x);
+    SYN_Status status = syn_matrix_solve_cholesky_work(&AtA, &Atb, x, solver_lu, solver_y);
     if (status != SYN_OK) {
-        status = syn_matrix_solve_lu(&AtA, &Atb, x);
+        uint8_t P_temp[SYN_SOLVER_MAX_N];
+        status = syn_matrix_solve_lu_work(&AtA, &Atb, x, solver_lu, P_temp, solver_y);
     }
 
     return status;
+}
+
+SYN_Status syn_matrix_least_squares(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x)
+{
+    SYN_ASSERT(A != NULL && b != NULL && x != NULL);
+    uint8_t m = A->rows;
+    uint8_t n = A->cols;
+    if (m < n) return SYN_INVALID_PARAM;
+
+    q16_t ata_data[n * n];
+    q16_t atb_data[n];
+    q16_t at_data[n * m];
+    q16_t solver_lu[n * n];
+    q16_t solver_y[n];
+
+    return syn_matrix_least_squares_work(A, b, x, ata_data, atb_data, at_data, solver_lu, solver_y);
 }
 
 SYN_Status syn_matrix_get_block(const SYN_Matrix *src, uint8_t r0, uint8_t c0, SYN_Matrix *dst)

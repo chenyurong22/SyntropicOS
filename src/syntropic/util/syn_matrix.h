@@ -294,11 +294,23 @@ SYN_Status syn_vec_normalize(const q16_t *v, q16_t *out, uint8_t n);
 /* ── Linear Solvers ─────────────────────────────────────────────────────── */
 
 /**
- * @brief Solve general linear system A · x = b via LU decomposition.
+ * @brief Solve system A · x = b via LU decomposition using caller-supplied workspace buffer.
  *
- * Uses Doolittle LU decomposition with partial pivoting (PA = LU).
- * A must be a square N×N non-singular matrix. b and x must be N×1 vectors.
+ * Zero stack allocation inside solver.
  *
+ * @param A        Square system matrix (N×N).
+ * @param b        Right-hand side vector (N×1).
+ * @param x        Output solution vector (N×1).
+ * @param lu_work  Caller-supplied N×N buffer (N*N elements).
+ * @param p_work   Caller-supplied N pivot buffer (N elements).
+ * @param y_work   Caller-supplied N vector buffer (N elements).
+ * @return SYN_OK on success, SYN_ERROR if A is singular or dimensions invalid.
+ */
+SYN_Status syn_matrix_solve_lu_work(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x,
+                                    q16_t *lu_work, uint8_t *p_work, q16_t *y_work);
+
+/**
+ * @brief Solve system A · x = b via LU decomposition (convenience wrapper).
  * @param A  Square system matrix (N×N).
  * @param b  Right-hand side vector (N×1).
  * @param x  Output solution vector (N×1). May alias b.
@@ -307,12 +319,20 @@ SYN_Status syn_vec_normalize(const q16_t *v, q16_t *out, uint8_t n);
 SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x);
 
 /**
- * @brief Solve symmetric positive-definite system A · x = b via Cholesky.
+ * @brief Solve system A · x = b via Cholesky decomposition using caller-supplied workspace buffer.
  *
- * Decomposes A into L · Lᵀ where L is lower-triangular, then solves
- * L · y = b and Lᵀ · x = y. Faster and more numerically stable than LU
- * for symmetric positive-definite matrices (e.g. covariance or normal eqns).
- *
+ * @param A       Symmetric positive-definite system matrix (N×N).
+ * @param b       Right-hand side vector (N×1).
+ * @param x       Output solution vector (N×1).
+ * @param L_work  Caller-supplied N×N lower triangular buffer (N*N elements).
+ * @param y_work  Caller-supplied N vector buffer (N elements).
+ * @return SYN_OK on success, SYN_ERROR if A is not positive-definite.
+ */
+SYN_Status syn_matrix_solve_cholesky_work(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x,
+                                           q16_t *L_work, q16_t *y_work);
+
+/**
+ * @brief Solve symmetric positive-definite system A · x = b via Cholesky (convenience wrapper).
  * @param A  Symmetric positive-definite system matrix (N×N).
  * @param b  Right-hand side vector (N×1).
  * @param x  Output solution vector (N×1). May alias b.
@@ -321,11 +341,24 @@ SYN_Status syn_matrix_solve_lu(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Mat
 SYN_Status syn_matrix_solve_cholesky(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x);
 
 /**
+ * @brief Solve overdetermined system A · x ≈ b via Least Squares using caller-supplied workspace.
+ *
+ * @param A          Overdetermined system matrix (M×N, M ≥ N).
+ * @param b          Right-hand side measurement vector (M×1).
+ * @param x          Output solution parameter vector (N×1).
+ * @param ata_work   Caller-supplied N×N matrix buffer (N*N elements).
+ * @param atb_work   Caller-supplied N vector buffer (N elements).
+ * @param at_work    Caller-supplied N×M transpose matrix buffer (N*M elements).
+ * @param solver_lu  Caller-supplied N×N solver matrix buffer (N*N elements).
+ * @param solver_y   Caller-supplied N solver vector buffer (N elements).
+ * @return SYN_OK on success, SYN_ERROR if AᵀA is singular.
+ */
+SYN_Status syn_matrix_least_squares_work(const SYN_Matrix *A, const SYN_Matrix *b, SYN_Matrix *x,
+                                          q16_t *ata_work, q16_t *atb_work, q16_t *at_work,
+                                          q16_t *solver_lu, q16_t *solver_y);
+
+/**
  * @brief Solve overdetermined system A · x ≈ b via Normal Equations (Least Squares).
- *
- * Minimizes ||A·x − b||₂ for an M×N system (M ≥ N).
- * Solves (Aᵀ · A) · x = Aᵀ · b using Cholesky or LU decomposition.
- *
  * @param A  Overdetermined system matrix (M×N, M ≥ N).
  * @param b  Right-hand side measurement vector (M×1).
  * @param x  Output solution parameter vector (N×1).

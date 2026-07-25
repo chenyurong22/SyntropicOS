@@ -550,6 +550,13 @@ static void test_mat_solve_lu(void)
     /* 5. Dimension mismatch validation */
     SYN_MAT_DECL(b_bad, 3, 1);
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_matrix_solve_lu(&A2, &b_bad, &x2));
+
+    /* 6. Test caller-supplied workspace API directly */
+    q16_t lu_w[4];
+    uint8_t p_w[2];
+    q16_t y_w[2];
+    TEST_ASSERT_EQUAL(SYN_OK, syn_matrix_solve_lu_work(&A2, &b2, &x2, lu_w, p_w, y_w));
+    ASSERT_Q16_NEAR(b2.data[0], b2_check.data[0], Q16_MAT_TOL);
 }
 
 static void test_mat_solve_cholesky(void)

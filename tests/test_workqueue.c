@@ -13,7 +13,6 @@ static void wq_handler(void *ctx) { wq_sum += *(int *)ctx; }
 
 static void test_workqueue(void)
 {
-
     wq_sum = 0;
 
     SYN_WorkItem items[4];
@@ -46,7 +45,23 @@ static void test_workqueue(void)
     TEST_ASSERT_EQUAL_INT(0, processed);
 }
 
+static void test_workqueue_null_params(void)
+{
+    SYN_WorkItem items[4];
+    SYN_WorkQueue wq;
+    syn_workqueue_init(&wq, items, 4);
+
+    /* Post with NULL wq or NULL func */
+    static int val = 5;
+    TEST_ASSERT_FALSE(syn_workqueue_post(NULL, wq_handler, &val));
+    TEST_ASSERT_FALSE(syn_workqueue_post(&wq, NULL, &val));
+
+    /* Process with NULL wq */
+    TEST_ASSERT_EQUAL_size_t(0, syn_workqueue_process(NULL));
+}
+
 void run_workqueue_tests(void)
 {
     RUN_TEST(test_workqueue);
+    RUN_TEST(test_workqueue_null_params);
 }

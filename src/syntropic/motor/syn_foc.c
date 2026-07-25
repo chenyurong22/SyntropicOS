@@ -93,6 +93,39 @@ void syn_foc_inv_park(const SYN_FOC_DQ *dq, q16_t theta, SYN_FOC_AB *ab)
     ab->beta = q16_mul(dq->d, sin_t) + q16_mul(dq->q, cos_t);
 }
 
+void syn_foc_park_fast(const SYN_FOC_AB *ab, q16_t theta, SYN_FOC_DQ *dq)
+{
+    SYN_ASSERT(ab != NULL && dq != NULL);
+    q16_t sin_t, cos_t;
+    q16_sincos_fast(theta, &sin_t, &cos_t);
+
+    dq->d = q16_mul(ab->alpha, cos_t) + q16_mul(ab->beta, sin_t);
+    dq->q = -q16_mul(ab->alpha, sin_t) + q16_mul(ab->beta, cos_t);
+}
+
+void syn_foc_inv_park_fast(const SYN_FOC_DQ *dq, q16_t theta, SYN_FOC_AB *ab)
+{
+    SYN_ASSERT(dq != NULL && ab != NULL);
+    q16_t sin_t, cos_t;
+    q16_sincos_fast(theta, &sin_t, &cos_t);
+
+    ab->alpha = q16_mul(dq->d, cos_t) - q16_mul(dq->q, sin_t);
+    ab->beta = q16_mul(dq->d, sin_t) + q16_mul(dq->q, cos_t);
+}
+
+bool syn_foc_field_weakening(q16_t v_d, q16_t v_q, q16_t v_max, q16_t *id_cmd)
+{
+    SYN_ASSERT(id_cmd != NULL && v_max > 0);
+    q16_t v_mag = q16_hypot(v_d, v_q);
+    if (v_mag > v_max) {
+        q16_t v_err = v_mag - v_max;
+        /* Ingest negative d-axis current proportional to voltage excess */
+        *id_cmd -= q16_mul(v_err, Q16_FROM_FRAC(1, 2));
+        return true;
+    }
+    return false;
+}
+
 /* ── SVPWM ──────────────────────────────────────────────────────────────── */
 
 void syn_foc_svpwm(const SYN_FOC_AB *ab, q16_t v_bus, q16_t *duty_a, q16_t *duty_b, q16_t *duty_c)
@@ -102,34 +135,22 @@ void syn_foc_svpwm(const SYN_FOC_AB *ab, q16_t v_bus, q16_t *duty_a, q16_t *duty
     if (v_bus <= 0)
         return;
 
-    /*
-     * Standard 7-segment SVPWM via inverse Clarke with center-aligned PWM.
-     *
-     * Step 1: Compute 3-phase reference voltages from (α, β).
-     */
     SYN_FOC_ABC v_ref;
     syn_foc_inv_clarke(ab, &v_ref);
     q16_t va = v_ref.a;
     q16_t vb = v_ref.b;
     q16_t vc = v_ref.c;
 
-    /*
-     * Step 2: Find min and max for center-clamping.
-     * The center offset shifts all three voltages so the midpoint
-     * aligns with v_bus/2, maximizing linear modulation range.
-     */
     q16_t v_min = SYN_MIN(va, SYN_MIN(vb, vc));
     q16_t v_max = SYN_MAX(va, SYN_MAX(vb, vc));
 
     q16_t v_offset = -(v_max + v_min) / 2;
 
-    /*
-     * Step 3: Normalize to [0, 1] duty cycle.
-     *   duty = (v + offset) / v_bus + 0.5
-     */
-    *duty_a = q16_clamp(q16_div(va + v_offset, v_bus) + Q16_HALF, 0, Q16_ONE);
-    *duty_b = q16_clamp(q16_div(vb + v_offset, v_bus) + Q16_HALF, 0, Q16_ONE);
-    *duty_c = q16_clamp(q16_div(vc + v_offset, v_bus) + Q16_HALF, 0, Q16_ONE);
+    /* Use single reciprocal division for 3-phase PWM normalization */
+    q16_t inv_v_bus = q16_inv(v_bus);
+    *duty_a = q16_clamp(q16_mul(va + v_offset, inv_v_bus) + Q16_HALF, 0, Q16_ONE);
+    *duty_b = q16_clamp(q16_mul(vb + v_offset, inv_v_bus) + Q16_HALF, 0, Q16_ONE);
+    *duty_c = q16_clamp(q16_mul(vc + v_offset, inv_v_bus) + Q16_HALF, 0, Q16_ONE);
 }
 
 #endif /* SYN_USE_FOC */

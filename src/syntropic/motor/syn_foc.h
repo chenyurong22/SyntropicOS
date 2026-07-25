@@ -114,6 +114,31 @@ void syn_foc_inv_park(const SYN_FOC_DQ *dq, q16_t theta, SYN_FOC_AB *ab);
 /* ── Utility ────────────────────────────────────────────────────────────── */
 
 /**
+ * @brief Park transform: stationary (α,β) → rotating (d,q) using ultra-fast sincos.
+ */
+void syn_foc_park_fast(const SYN_FOC_AB *ab, q16_t theta, SYN_FOC_DQ *dq);
+
+/**
+ * @brief Inverse Park: rotating (d,q) → stationary (α,β) using ultra-fast sincos.
+ */
+void syn_foc_inv_park_fast(const SYN_FOC_DQ *dq, q16_t theta, SYN_FOC_AB *ab);
+
+/**
+ * @brief Automatic Field-Weakening Controller.
+ *
+ * Injects negative d-axis current (Id < 0) when commanded voltage magnitude
+ * exceeds maximum available bus voltage limit (V_max = V_bus / sqrt(3)),
+ * allowing high-speed motor operation above rated base speed.
+ *
+ * @param v_d      Current D-axis voltage command (Q16).
+ * @param v_q      Current Q-axis voltage command (Q16).
+ * @param v_max    Maximum available phase voltage magnitude (Q16).
+ * @param id_cmd   [in/out] Current D-axis command (Q16). Adjusted if over-voltage occurs.
+ * @return true if field weakening active, false if operating normally.
+ */
+bool syn_foc_field_weakening(q16_t v_d, q16_t v_q, q16_t v_max, q16_t *id_cmd);
+
+/**
  * @brief Compute Space Vector PWM duty cycles from (α, β).
  *
  * Maps (α, β) voltages to three-phase PWM duty cycles in the range

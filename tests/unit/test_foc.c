@@ -109,6 +109,27 @@ static void test_svpwm_duty_range(void)
 
 /* ── Runner ─────────────────────────────────────────────────────────────── */
 
+static void test_foc_fast_and_field_weakening(void)
+{
+    SYN_FOC_AB ab_in = {Q16_FROM_INT(3), Q16_FROM_INT(4)};
+    SYN_FOC_DQ dq;
+    SYN_FOC_AB ab_out;
+    q16_t theta = Q16_PI / 3;
+
+    syn_foc_park_fast(&ab_in, theta, &dq);
+    syn_foc_inv_park_fast(&dq, theta, &ab_out);
+
+    ASSERT_Q16_NEAR(ab_in.alpha, ab_out.alpha, Q16_TOL * 2);
+    ASSERT_Q16_NEAR(ab_in.beta, ab_out.beta, Q16_TOL * 2);
+
+    /* Field weakening test */
+    q16_t id_cmd = 0;
+    q16_t v_max = Q16_FROM_INT(10);
+    bool active = syn_foc_field_weakening(Q16_FROM_INT(8), Q16_FROM_INT(8), v_max, &id_cmd);
+    TEST_ASSERT_TRUE(active);
+    TEST_ASSERT_TRUE(id_cmd < 0);
+}
+
 void run_foc_tests(void)
 {
     RUN_TEST(test_clarke_balanced);
@@ -116,4 +137,5 @@ void run_foc_tests(void)
     RUN_TEST(test_park_inv_roundtrip);
     RUN_TEST(test_clarke_inv_roundtrip);
     RUN_TEST(test_svpwm_duty_range);
+    RUN_TEST(test_foc_fast_and_field_weakening);
 }

@@ -187,6 +187,31 @@ void syn_canvas_circle(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t r, uint16_
 void syn_canvas_circle_fill(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t r, uint16_t color);
 
 /**
+ * @brief Draw a circular arc.
+ * @param c Canvas.
+ * @param cx Center X.
+ * @param cy Center Y.
+ * @param r Radius.
+ * @param start_angle_deg Start angle in degrees (0 = 3 o'clock, 90 = 6 o'clock).
+ * @param end_angle_deg End angle in degrees.
+ * @param color Line color.
+ */
+void syn_canvas_arc(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t r, int16_t start_angle_deg,
+                    int16_t end_angle_deg, uint16_t color);
+
+/**
+ * @brief Draw a line segment defined by origin, angle, and length (gauge needle helper).
+ * @param c Canvas.
+ * @param cx Origin X.
+ * @param cy Origin Y.
+ * @param angle_deg Angle in degrees (0 = 3 o'clock, 90 = 6 o'clock).
+ * @param length Needle length in pixels.
+ * @param color Line color.
+ */
+void syn_canvas_line_polar(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t angle_deg,
+                           int16_t length, uint16_t color);
+
+/**
  * @brief Draw a rounded rectangle (outline only).
  * @param c      Canvas.
  * @param x      Left edge.

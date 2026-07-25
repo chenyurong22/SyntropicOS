@@ -298,6 +298,22 @@ static void test_canvas_16bit_clear(void)
     TEST_ASSERT_EQUAL_HEX8(0x00u, fb16[1]);
 }
 
+static void test_canvas_polar_and_arc(void)
+{
+    uint8_t fb[64 * 64 / 8] = {0};
+    SYN_Canvas c;
+    syn_canvas_init(&c, fb, 64, 64, 1, NULL, NULL);
+
+    /* Draw polar needle line at 0 degrees (3 o'clock, length 20) */
+    syn_canvas_line_polar(&c, 32, 32, 0, 20, 1);
+    TEST_ASSERT_TRUE(c.buf_size > 0);
+
+    /* Draw circular arc from 0 to 90 degrees (radius 15) */
+    syn_canvas_clear(&c);
+    syn_canvas_arc(&c, 32, 32, 15, 0, 90, 1);
+    TEST_ASSERT_TRUE(c.buf_size > 0);
+}
+
 void run_canvas_tests(void)
 {
     RUN_TEST(test_canvas);
@@ -309,4 +325,5 @@ void run_canvas_tests(void)
     RUN_TEST(test_canvas_clip_rect_reset);
     RUN_TEST(test_canvas_set_font);
     RUN_TEST(test_canvas_16bit_clear);
+    RUN_TEST(test_canvas_polar_and_arc);
 }

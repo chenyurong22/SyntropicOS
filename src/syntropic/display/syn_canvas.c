@@ -10,6 +10,7 @@
  */
 
 #include "../util/syn_assert.h"
+#include "../util/syn_qmath.h"
 #include "syn_canvas.h"
 
 #include <string.h>
@@ -582,6 +583,63 @@ void syn_canvas_flush_partial(SYN_Canvas *c, size_t offset, size_t len)
         len = c->buf_size - offset;
     }
     c->flush_fn(c->framebuf + offset, len, c->flush_ctx);
+}
+
+void syn_canvas_line_polar(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t angle_deg,
+                           int16_t length, uint16_t color)
+{
+    SYN_ASSERT(c != NULL);
+    if (length <= 0)
+        return;
+
+    int32_t a = angle_deg % 360;
+    if (a < 0)
+        a += 360;
+
+    q16_t rad = q16_mul((q16_t)(a << 16), Q16_PI) / 180;
+    q16_t cos_val = q16_cos(rad);
+    q16_t sin_val = q16_sin(rad);
+
+    int16_t x2 = (int16_t)(cx + (q16_mul((q16_t)length << 16, cos_val) >> 16));
+    int16_t y2 = (int16_t)(cy + (q16_mul((q16_t)length << 16, sin_val) >> 16));
+
+    syn_canvas_line(c, cx, cy, x2, y2, color);
+}
+
+void syn_canvas_arc(SYN_Canvas *c, int16_t cx, int16_t cy, int16_t r, int16_t start_angle_deg,
+                    int16_t end_angle_deg, uint16_t color)
+{
+    SYN_ASSERT(c != NULL);
+    if (r <= 0)
+        return;
+
+    int16_t s = start_angle_deg;
+    int16_t e = end_angle_deg;
+    if (s > e) {
+        int16_t tmp = s;
+        s = e;
+        e = tmp;
+    }
+
+    for (int16_t a = s; a < e; a += 2) {
+        int16_t next_a = (a + 2 > e) ? e : (int16_t)(a + 2);
+        int32_t norm_a1 = a % 360;
+        if (norm_a1 < 0)
+            norm_a1 += 360;
+        int32_t norm_a2 = next_a % 360;
+        if (norm_a2 < 0)
+            norm_a2 += 360;
+
+        q16_t rad1 = q16_mul((q16_t)(norm_a1 << 16), Q16_PI) / 180;
+        q16_t rad2 = q16_mul((q16_t)(norm_a2 << 16), Q16_PI) / 180;
+
+        int16_t x1 = (int16_t)(cx + (q16_mul((q16_t)r << 16, q16_cos(rad1)) >> 16));
+        int16_t y1 = (int16_t)(cy + (q16_mul((q16_t)r << 16, q16_sin(rad1)) >> 16));
+        int16_t x2 = (int16_t)(cx + (q16_mul((q16_t)r << 16, q16_cos(rad2)) >> 16));
+        int16_t y2 = (int16_t)(cy + (q16_mul((q16_t)r << 16, q16_sin(rad2)) >> 16));
+
+        syn_canvas_line(c, x1, y1, x2, y2, color);
+    }
 }
 
 #endif /* SYN_USE_CANVAS */

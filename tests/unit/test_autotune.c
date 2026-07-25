@@ -622,10 +622,30 @@ void test_autotune_relay_zero_crossings(void)
 static void test_autotune_calc_relay_gains(void)
 {
     int32_t kp = 0, ki = 0, kd = 0;
+
+    /* Ziegler-Nichols Classic: Ku=1000, Tu=500ms */
     syn_autotune_calc_relay_gains(1000, 500, SYN_ATUNE_ZN_CLASSIC, 100, &kp, &ki, &kd);
-    TEST_ASSERT_TRUE(kp > 0);
-    TEST_ASSERT_TRUE(ki > 0);
-    TEST_ASSERT_TRUE(kd > 0);
+    TEST_ASSERT_EQUAL_INT32(600, kp);
+    TEST_ASSERT_EQUAL_INT32(2400, ki);
+    TEST_ASSERT_EQUAL_INT32(37, kd);
+
+    /* Tyreus-Luyben Conservative */
+    syn_autotune_calc_relay_gains(1000, 500, SYN_ATUNE_TYREUS_LUYBEN, 100, &kp, &ki, &kd);
+    TEST_ASSERT_EQUAL_INT32(450, kp);
+    TEST_ASSERT_EQUAL_INT32(409, ki);
+    TEST_ASSERT_EQUAL_INT32(35, kd);
+
+    /* No-Overshoot Mode */
+    syn_autotune_calc_relay_gains(1000, 500, SYN_ATUNE_ZN_NO_OVERSHOOT, 100, &kp, &ki, &kd);
+    TEST_ASSERT_EQUAL_INT32(200, kp);
+    TEST_ASSERT_EQUAL_INT32(800, ki);
+    TEST_ASSERT_EQUAL_INT32(33, kd);
+
+    /* With 80% Safety Multiplier */
+    syn_autotune_calc_relay_gains(1000, 500, SYN_ATUNE_ZN_CLASSIC, 80, &kp, &ki, &kd);
+    TEST_ASSERT_EQUAL_INT32(480, kp);
+    TEST_ASSERT_EQUAL_INT32(1920, ki);
+    TEST_ASSERT_EQUAL_INT32(29, kd);
 }
 
 void run_autotune_tests(void)

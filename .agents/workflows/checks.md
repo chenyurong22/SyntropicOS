@@ -28,13 +28,9 @@ Verify microcontroller execution across virtual hardware targets:
 Execute end-to-end integration tests against 8 production container daemons (Mosquitto MQTT, Chrony SNTP, Nginx HTTP, Node.js WS, CoreDNS, SocketCAN, WireGuard, Modbus TCP):
 - **Integration Test Battery**: `make integration` (or `make container-integration`)
 
-## Step 4: Code Coverage Analysis
-Measure line and branch coverage (wipes and recompiles binaries with `-fprofile-arcs` instrumentation):
-- **LCOV HTML Report**: `make cov` (or `make container-cov`)
-
-## Step 5: Doxygen API Documentation Coverage
+## Step 4: Doxygen API Documentation Coverage
 Verify API documentation completeness:
 - **Doxygen Check**: `make dox` (or `make container-dox`)
 
-## Step 6: Markdown Documentation
+## Step 5: Markdown Documentation
 Inspect project documentation (`README.md`, `docs/`, `mkdocs.yml`) for structural consistency.

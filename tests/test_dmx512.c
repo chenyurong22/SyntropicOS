@@ -142,10 +142,45 @@ static void test_dmx512_slave_init_bounds(void)
     TEST_ASSERT_EQUAL(3, slave.footprint);
 }
 
+static void test_dmx512_full_universe_loopback(void)
+{
+    SYN_DMX512_Master master;
+    syn_dmx512_master_init(&master, 512);
+
+    /* Fill all 512 master channels with distinct test pattern */
+    for (uint16_t ch = 1; ch <= 512; ch++) {
+        syn_dmx512_master_set_channel(&master, ch, (uint8_t)(ch & 0xFF));
+    }
+
+    uint8_t frame_buf[513];
+    size_t frame_len = syn_dmx512_master_build_frame(&master, frame_buf, sizeof(frame_buf));
+    TEST_ASSERT_EQUAL(513, frame_len);
+
+    /* Initialize slave at address 100 with 16 channels footprint */
+    SYN_DMX512_Slave slave;
+    syn_dmx512_slave_init(&slave, 100, 16);
+
+    /* Feed generated master frame into slave RX pipeline */
+    syn_dmx512_slave_rx_break(&slave);
+    for (size_t i = 0; i < frame_len; i++) {
+        syn_dmx512_slave_rx_byte(&slave, frame_buf[i]);
+    }
+
+    TEST_ASSERT_TRUE(syn_dmx512_slave_is_updated(&slave));
+
+    /* Verify all 16 extracted channels match the master's channel pattern */
+    for (uint16_t offset = 0; offset < 16; offset++) {
+        uint16_t master_ch = 100 + offset;
+        uint8_t expected_val = (uint8_t)(master_ch & 0xFF);
+        TEST_ASSERT_EQUAL(expected_val, syn_dmx512_slave_get_channel(&slave, offset));
+    }
+}
+
 void run_dmx512_tests(void)
 {
     RUN_TEST(test_dmx512_master_init_and_channels);
     RUN_TEST(test_dmx512_master_build_frame);
     RUN_TEST(test_dmx512_slave_rx_flow);
     RUN_TEST(test_dmx512_slave_init_bounds);
+    RUN_TEST(test_dmx512_full_universe_loopback);
 }

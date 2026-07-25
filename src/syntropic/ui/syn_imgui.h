@@ -9,6 +9,12 @@
 #ifndef SYN_IMGUI_H
 #define SYN_IMGUI_H
 
+#if __has_include("syn_config.h")
+#include "syn_config.h"
+#endif
+
+#if !defined(SYN_USE_IMGUI) || SYN_USE_IMGUI
+
 #include "../common/syn_defs.h"
 #include "../display/syn_gfx.h"
 
@@ -747,5 +753,7 @@ void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text, int16_t *o
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* SYN_USE_IMGUI */
 
 #endif /* SYN_IMGUI_H */

@@ -15,12 +15,6 @@
 
 /* ── Protocol Descriptors ────────────────────────────────────────────────── */
 
-typedef enum {
-    SYN_IR_ENC_PDM = 0,        /**< Pulse Distance Modulation (e.g. NEC, Samsung) */
-    SYN_IR_ENC_PWM = 1,        /**< Pulse Width Modulation (e.g. Sony SIRCS) */
-    SYN_IR_ENC_MANCHESTER = 2  /**< Manchester Bi-Phase (e.g. RC5, RC6) */
-} SYN_IR_EncodingType;
-
 typedef struct {
     SYN_IR_Protocol     proto;
     const char         *name;
@@ -490,7 +484,7 @@ bool syn_ir_decode_pulse(SYN_IR_Decoder *decoder,
         SYN_IR_Protocol proto = decoder->active_proto;
         const SYN_IR_ProtoDesc *desc = &proto_table[proto];
 
-        if (desc->encoding == SYN_IR_ENC_PDM) {
+        if (desc->encoding == SYN_IR_ENC_PDM || desc->encoding == SYN_IR_ENC_PPM) {
             if (!timing_match(mark_us, desc->bit_mark_us, desc->tolerance_us)) {
                 syn_ir_decoder_init(decoder);
                 return false;
@@ -707,7 +701,7 @@ SYN_Status syn_ir_encode_frame(const SYN_IR_Frame *frame,
         for (uint8_t b = 0; b < desc->total_bits; b++) {
             uint8_t bit_val = (uint8_t)((raw_bits >> b) & 0x01U);
 
-            if (desc->encoding == SYN_IR_ENC_PDM) {
+            if (desc->encoding == SYN_IR_ENC_PDM || desc->encoding == SYN_IR_ENC_PPM) {
                 uint16_t space = (bit_val == 1) ? desc->one_space_us : desc->zero_space_us;
                 pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = desc->bit_mark_us, .is_mark = true };
                 pulse_buf[idx++] = (SYN_IR_Pulse){ .duration_us = space, .is_mark = false };

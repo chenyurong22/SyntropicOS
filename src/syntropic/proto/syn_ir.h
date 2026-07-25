@@ -43,6 +43,18 @@
 extern "C" {
 #endif
 
+/* ── Encoding Types ────────────────────────────────────────────────────── */
+
+/**
+ * @brief IR signal encoding types.
+ */
+typedef enum {
+    SYN_IR_ENC_PDM = 0,        /**< Pulse Distance Modulation (e.g. NEC, Samsung) */
+    SYN_IR_ENC_PWM = 1,        /**< Pulse Width Modulation (e.g. Sony SIRCS) */
+    SYN_IR_ENC_MANCHESTER = 2, /**< Manchester Bi-Phase (e.g. RC5, RC6) */
+    SYN_IR_ENC_PPM = 3         /**< Pulse Position Modulation (e.g. RECS80, RCMM) */
+} SYN_IR_EncodingType;
+
 /* ── Protocol Identifiers ───────────────────────────────────────────────── */
 
 /**

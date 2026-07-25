@@ -119,7 +119,22 @@ static bool send_mqtt_ping(const SYN_MqttClient *c)
     return syn_port_sock_send_all(c->sock, ping, 2) == 2;
 }
 
-/* ── Handlers ───────────────────────────────────────────────────────────── */
+SYN_Status syn_mqtt_ping(SYN_MqttClient *client)
+{
+    if (client == NULL) {
+        return SYN_INVALID_PARAM;
+    }
+    if (client->state != SYN_MQTT_CONNECTED) {
+        return SYN_ERROR;
+    }
+    if (send_mqtt_ping(client)) {
+        client->last_activity_ms = syn_port_get_tick_ms();
+        return SYN_OK;
+    }
+    return SYN_ERROR;
+}
+
+/* ── Main Task ──────────────────────────────────────────────────────────── */
 
 /**
  * @brief Handle an incoming PUBLISH packet.

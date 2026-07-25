@@ -654,6 +654,22 @@ static void test_mqtt_pt_end(void)
     TEST_ASSERT_EQUAL(PT_EXITED, status);
 }
 
+static void test_mqtt_explicit_ping(void)
+{
+    mock_port_reset();
+    SYN_MqttClient c;
+    uint8_t rx[32], tx[32];
+    syn_mqtt_init(&c, "broker", 1883, "client", NULL, NULL, 60, rx, sizeof(rx), tx, sizeof(tx));
+
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_mqtt_ping(&c));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_mqtt_ping(NULL));
+
+    c.state = SYN_MQTT_CONNECTED;
+    c.sock = 1;
+    mock_sock_connected = true;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_mqtt_ping(&c));
+}
+
 void run_mqtt_tests(void)
 {
     RUN_TEST(test_mqtt_connect);
@@ -668,4 +684,5 @@ void run_mqtt_tests(void)
     RUN_TEST(test_mqtt_payload_skip_logic);
     RUN_TEST(test_mqtt_ping_and_mismatch);
     RUN_TEST(test_mqtt_pt_end);
+    RUN_TEST(test_mqtt_explicit_ping);
 }

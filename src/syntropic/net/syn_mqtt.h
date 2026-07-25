@@ -134,6 +134,17 @@ SYN_Status syn_mqtt_publish(SYN_MqttClient *client, const char *topic, const voi
 SYN_Status syn_mqtt_subscribe(SYN_MqttClient *client, const char *topic, uint8_t qos);
 
 /**
+ * @brief Transmit an explicit MQTT PINGREQ packet.
+ *
+ * Note: PINGREQ packets are sent automatically by syn_mqtt_task based on
+ * the configured keep_alive_s interval. This function allows manual pinging on demand.
+ *
+ * @param client       Pointer to client context.
+ * @return SYN_OK on success, SYN_ERROR if not connected or transmit failed.
+ */
+SYN_Status syn_mqtt_ping(SYN_MqttClient *client);
+
+/**
  * @brief Cooperative task for driving the MQTT client.
  *
  * Yields during connection, socket polling, keep-alive pinging, and packet

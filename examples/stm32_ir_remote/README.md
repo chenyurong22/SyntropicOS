@@ -1,12 +1,13 @@
-# STM32 Infrared (IR) Remote Receiver Example (`syn_ir`)
+# STM32 Infrared (IR) Transceiver Example (`syn_ir`)
 
-This example demonstrates how to capture and decode signals from standard **Consumer IR Remote Controls** (NEC, Sony SIRCS, Samsung, Philips RC5, RC6, Panasonic, Denon) using an **STM32 microcontroller** and SyntropicOS **`syn_ir`**.
+This example demonstrates how to **receive (decode)** and **transmit (encode)** signals from standard **Consumer IR Remote Controls** (NEC, Sony SIRCS, Samsung, Philips RC5, RC6, Panasonic, Denon) using an **STM32 microcontroller** and SyntropicOS **`syn_ir`**.
 
 ---
 
 ## Hardware Configuration & Wiring
 
-Connect a standard 38kHz IR receiver module (**TSOP38238**, **VS1838B**, or **ARM338**) to the STM32:
+### 1. IR Receiver Wiring (TSOP38238 / VS1838B)
+Connect a 38kHz IR receiver module to the STM32:
 
 | IR Receiver Module Pin | STM32 Pin | Description |
 |---|---|---|
@@ -14,53 +15,86 @@ Connect a standard 38kHz IR receiver module (**TSOP38238**, **VS1838B**, or **AR
 | **VCC** | **3.3V / 5V** | Power supply (3.3V for TSOP38238) |
 | **GND** | **GND** | Ground reference |
 
-> **Note on Active-Low Output**: Standard IR receivers output **`0V` (LOW)** when a 38kHz infrared burst (MARK) is detected, and **`3.3V` (HIGH)** when idle (SPACE).
+### 2. IR Transmitter Wiring (940nm IR LED)
+Connect a 940nm IR Transmitting LED via an NPN Transistor (2N2222 / BC547) driver:
+
+| STM32 Pin | Transistor Base | Description |
+|---|---|---|
+| **PB8** | **Base (via 1kΩ resistor)** | PWM Output / GPIO Bit-Bang Transmit Pin |
+| **GND** | **Emitter** | Ground |
+| **5V / 3.3V** | **Anode (+) of IR LED** | Cathode (-) to Collector via 33Ω resistor |
 
 ---
 
-## Signal Capture Approaches
+## IR Transmit Modulation Methods
 
-Microcontroller hardware IR capture can be implemented using two standard approaches:
+When transmitting IR signals, the microcontroller must modulate the signal with a **carrier frequency** (36kHz, 38kHz, 40kHz, or 56kHz).
 
-### Method 1: GPIO EXTI Dual-Edge Interrupt + Microsecond Counter (Recommended)
-Attach an EXTI interrupt configured for **Rising & Falling Edges** to PA0, and measure pulse durations in microseconds using the Cortex-M **DWT Cycle Counter (`DWT->CYCCNT`)**:
+### Method 1: Software Bit-Banging (Universal & Transceiver-Agnostic)
+Generates the 38kHz carrier (13µs HIGH, 13µs LOW) using DWT microsecond delays:
 
 ```c
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    if (GPIO_Pin == IR_RX_PIN) {
-        uint32_t now_us = dwt_get_us();
-        uint32_t duration_us = now_us - last_edge_us;
-        last_edge_us = now_us;
+void send_ir_bitbang(SYN_IR_Protocol proto, uint32_t addr, uint32_t cmd) {
+    SYN_IR_Frame tx_frame = { .protocol = proto, .address = addr, .command = cmd };
+    SYN_IR_Pulse pulses[128];
+    size_t pulse_count = 0;
 
-        // Active-low: 0V = Mark (Carrier ON), 3.3V = Space (Carrier OFF)
-        bool is_mark = (HAL_GPIO_ReadPin(IR_RX_PORT, IR_RX_PIN) == GPIO_PIN_RESET);
+    uint8_t high_us, low_us;
+    uint8_t carrier_khz = syn_ir_protocol_carrier_khz(proto);
+    get_carrier_delays(carrier_khz, &high_us, &low_us);
 
-        SYN_IR_Frame frame;
-        if (syn_ir_decode_pulse(&ir_decoder, (uint16_t)duration_us, is_mark, &frame)) {
-            // Decoded frame! (frame.protocol, frame.address, frame.command)
+    if (syn_ir_encode_frame(&tx_frame, pulses, 128, &pulse_count) == SYN_OK) {
+        for (size_t i = 0; i < pulse_count; i++) {
+            if (pulses[i].is_mark) {
+                // Generate carrier frequency (e.g. 13us HIGH, 13us LOW for 38kHz)
+                for (uint32_t elapsed = 0; elapsed < pulses[i].duration_us; elapsed += (high_us + low_us)) {
+                    HAL_GPIO_WritePin(IR_TX_PORT, IR_TX_PIN, GPIO_PIN_SET);
+                    delay_us(high_us);
+                    HAL_GPIO_WritePin(IR_TX_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+                    delay_us(low_us);
+                }
+            } else {
+                HAL_GPIO_WritePin(IR_TX_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+                delay_us(pulses[i].duration_us);
+            }
         }
     }
 }
 ```
 
-### Method 2: Periodic 50µs Software Timer Interrupt
-Sample the GPIO pin state in a 50 microsecond timer ISR:
+### Method 2: Hardware PWM Timer Carrier (Recommended for Low CPU Load)
+Controls an STM32 Timer PWM output (e.g., TIM3 Channel 3 running at 38kHz, 50% duty cycle):
 
 ```c
-static bool last_pin_state = true;
-static uint16_t state_duration_us = 0;
+void send_ir_pwm(SYN_IR_Protocol proto, uint32_t addr, uint32_t cmd) {
+    SYN_IR_Frame tx_frame = { .protocol = proto, .address = addr, .command = cmd };
+    SYN_IR_Pulse pulses[128];
+    size_t pulse_count = 0;
 
-void on_50us_timer_interrupt(void) {
-    bool current_pin_state = (HAL_GPIO_ReadPin(IR_RX_PORT, IR_RX_PIN) == GPIO_PIN_RESET); // true = Mark
+    if (syn_ir_encode_frame(&tx_frame, pulses, 128, &pulse_count) == SYN_OK) {
+        for (size_t i = 0; i < pulse_count; i++) {
+            if (pulses[i].is_mark) {
+                HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3); // Enable 38kHz carrier
+                delay_us(pulses[i].duration_us);
+            } else {
+                HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);  // Disable carrier
+                delay_us(pulses[i].duration_us);
+            }
+        }
+    }
+}
+```
 
-    if (current_pin_state == last_pin_state) {
-        state_duration_us += 50;
-    } else {
-        SYN_IR_Frame rx_frame;
-        syn_ir_decode_pulse(&ir_decoder, state_duration_us, last_pin_state, &rx_frame);
-
-        last_pin_state = current_pin_state;
-        state_duration_us = 50;
+### Carrier Frequency Lookup Table
+```c
+void get_carrier_delays(uint8_t carrier_khz, uint8_t *high_us, uint8_t *low_us) {
+    switch (carrier_khz) {
+        case 36: *high_us = 14; *low_us = 14; break; // 35.7 kHz
+        case 37: *high_us = 13; *low_us = 14; break; // 37.0 kHz
+        case 38: *high_us = 13; *low_us = 13; break; // 38.4 kHz (NEC / Sony / Samsung)
+        case 40: *high_us = 12; *low_us = 13; break; // 40.0 kHz
+        case 56: *high_us = 9;  *low_us = 9;  break; // 55.5 kHz (Panasonic / Denon)
+        default: *high_us = 13; *low_us = 13; break;
     }
 }
 ```
@@ -70,9 +104,7 @@ void on_50us_timer_interrupt(void) {
 ## Output Preview
 
 ```text
-[IR RX] STM32 IR Receiver ready. Point an NEC/Sony/Samsung remote at PA0.
+[IR Transceiver] Ready. Receiving on PA0, Transmitting on PB8.
+[IR TX] Transmitting NEC (Addr=0x00FF, Cmd=0x0045, Carrier=38 kHz)...
 [IR RX] Decoded Frame: Protocol=0 (NEC), Addr=0x00FF, Cmd=0x0045, Repeat=NO
-[IR RX] Decoded Frame: Protocol=0 (NEC), Addr=0x00FF, Cmd=0x0045, Repeat=YES
-[IR RX] Decoded Frame: Protocol=1 (Sony SIRCS), Addr=0x0001, Cmd=0x0012, Repeat=NO
-[IR RX] Decoded Frame: Protocol=4 (Samsung), Addr=0x0707, Cmd=0x0002, Repeat=NO
 ```

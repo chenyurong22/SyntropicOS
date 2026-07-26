@@ -264,6 +264,11 @@ void syn_button_combo_update(SYN_ButtonCombo *combo)
 
     if (all_pressed && !combo->active) {
         combo->active = true;
+        for (size_t i = 0; i < combo->count; i++) {
+            if (combo->buttons[i] != NULL) {
+                ((SYN_Button *)combo->buttons[i])->click_count = 0;
+            }
+        }
         if (combo->on_combo != NULL) {
             combo->on_combo(NULL, combo->on_combo_ctx);
         }

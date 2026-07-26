@@ -387,6 +387,10 @@ static void test_button_combo(void)
     SYN_Button btn1, btn2;
     syn_button_init(&btn1, 7, SYN_BUTTON_ACTIVE_HIGH, 20);
     syn_button_init(&btn2, 8, SYN_BUTTON_ACTIVE_HIGH, 20);
+    syn_button_set_click_window(&btn1, 200);
+    syn_button_set_click_window(&btn2, 200);
+    syn_button_on_single_click(&btn1, btn_on_single_click, NULL);
+    syn_button_on_single_click(&btn2, btn_on_single_click, NULL);
 
     const SYN_Button *combo_btns[2] = {&btn1, &btn2};
     SYN_ButtonCombo combo;
@@ -417,11 +421,19 @@ static void test_button_combo(void)
     TEST_ASSERT_EQUAL_INT(1, combo_fired_count);
     TEST_ASSERT_TRUE(syn_button_combo_is_active(&combo));
 
-    /* Release btn1 */
+    /* Release btn1 and btn2 */
     mock_gpio_states[7] = 0;
+    mock_gpio_states[8] = 0;
     syn_button_update(&btn1);
+    syn_button_update(&btn2);
     syn_button_combo_update(&combo);
     TEST_ASSERT_FALSE(syn_button_combo_is_active(&combo));
+
+    /* Advance past click window (200ms) to ensure single clicks do NOT trigger */
+    mock_tick_advance(210);
+    syn_button_update(&btn1);
+    syn_button_update(&btn2);
+    TEST_ASSERT_EQUAL_INT(0, btn_single_click_count);
 }
 
 void run_button_tests(void)

@@ -19,7 +19,6 @@
  */
 
 #include <SyntropicOS.h>
-#include <syntropic/sched/syn_sched.h>
 #include <syntropic/port/syn_port_serial.h>
 #include <syntropic/drivers/syn_adc.h>
 #include <syntropic/dsp/syn_filter.h>
@@ -30,18 +29,18 @@
 
 #define TAG "datalogger"
 
-static SYN_CLI       cli;
-static SYN_Sched     sched;
-static SYN_Task      tasks[3];
-static SYN_LED       led;
+SYN_CLI       cli;
+SYN_LED       led;
 
 /* ADC Objects — 2 Channels */
-static SYN_ADC       adc[2];
+SYN_ADC       adc[2];
 static SYN_FilterEMA ema[2];
 static int32_t       stats_buf[2][8];
-static SYN_Signal    signal_stats[2];
-static int16_t       raw_val[2];
-static int16_t       filt_val[2];
+SYN_Signal    signal_stats[2];
+int16_t       raw_val[2];
+int16_t       filt_val[2];
+
+#include "tasks.h" /* Opens as second tab in Arduino IDE */
 
 /* ── CLI Commands ─────────────────────────────────────────────────────── */
 
@@ -97,66 +96,6 @@ static const SYN_CLI_Command commands[] = {
 
 extern "C" void syn_assert_failed(const char *f, int l) { (void)f; (void)l; for(;;); }
 
-/* ── Tasks ────────────────────────────────────────────────────────────── */
-
-static SYN_PT_Status blink_task(SYN_PT *pt, SYN_Task *task)
-{
-    PT_BEGIN(pt);
-    for (;;) {
-        syn_led_update(&led);
-        PT_TASK_DELAY_MS(pt, task, 50);
-    }
-    PT_END(pt);
-}
-
-static SYN_PT_Status cli_task(SYN_PT *pt, SYN_Task *task)
-{
-    uint8_t ch;
-    PT_BEGIN(pt);
-    for (;;) {
-        int r = syn_port_serial_read(&ch, 1);
-        if (r > 0) {
-            syn_cli_process_char(&cli, (char)ch);
-            PT_YIELD(pt);
-        } else {
-            PT_TASK_DELAY_MS(pt, task, 20);
-        }
-    }
-    PT_END(pt);
-}
-
-/* Data Acquisition Task — samples A0 and A1 every 200ms */
-static SYN_PT_Status adc_task(SYN_PT *pt, SYN_Task *task)
-{
-    static uint32_t log_timer = 0;
-    PT_BEGIN(pt);
-    for (;;) {
-        /* Sample Channel 0 */
-        syn_adc_read(&adc[0]);
-        raw_val[0]  = (int16_t)syn_adc_raw(&adc[0]);
-        filt_val[0] = (int16_t)syn_adc_filtered(&adc[0]);
-
-        PT_YIELD(pt); /* Yield to give other tasks CPU time between channels */
-
-        /* Sample Channel 1 */
-        syn_adc_read(&adc[1]);
-        raw_val[1]  = (int16_t)syn_adc_raw(&adc[1]);
-        filt_val[1] = (int16_t)syn_adc_filtered(&adc[1]);
-
-        log_timer += 200;
-        if (log_timer >= 1000) {
-            log_timer = 0;
-            syn_cli_printf(&cli, "[DATA] A0_filt=%d A1_filt=%d (A0_mean=%ld A1_mean=%ld)\r\n",
-                           filt_val[0], filt_val[1],
-                           (long)syn_signal_mean(&signal_stats[0]),
-                           (long)syn_signal_mean(&signal_stats[1]));
-        }
-
-        PT_TASK_DELAY_MS(pt, task, 200);
-    }
-    PT_END(pt);
-}
-
 /* ── Entry Point ──────────────────────────────────────────────────────── */
 
 void setup()
@@ -190,15 +129,11 @@ void setup()
     syn_cli_printf(&cli, "\r\n--- SyntropicOS Data Logger Demo ---\r\n");
     syn_cli_print_prompt(&cli);
 
-    syn_task_create(&tasks[0], "blink", blink_task, 2, NULL);
-    syn_task_create(&tasks[1], "cli",   cli_task,   1, NULL);
-    syn_task_create(&tasks[2], "adc",   adc_task,   0, NULL);
-    syn_sched_init(&sched, tasks, 3);
+    /* Start background tasks (Tab 2) */
+    sys_start_tasks();
 }
 
 void loop()
 {
-    if (!syn_sched_run(&sched)) {
-        syn_port_delay_ms(1);
-    }
+    sys_run_scheduler();
 }

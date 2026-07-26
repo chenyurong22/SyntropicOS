@@ -377,10 +377,12 @@ int main(void)
     /* NMEA 2000 Marine CAN Protocol */
     run_n2k_tests();
 
-    /* SMBus, PMBus & M-Bus Protocols */
+    /* SMBus, PMBus, M-Bus & DL/T 645 Protocols */
+    void run_dlt645_tests(void);
     run_smbus_tests();
     run_pmbus_tests();
     run_mbus_tests();
+    run_dlt645_tests();
 
     /* Task Profiler & DDS Synthesizer */
     run_task_profile_tests();

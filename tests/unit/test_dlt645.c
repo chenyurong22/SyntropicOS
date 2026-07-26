@@ -1,0 +1,180 @@
+/**
+ * @file test_dlt645.c
+ * @brief Unity unit tests for DL/T 645 protocol engine.
+ */
+
+#include "syntropic/proto/syn_dlt645.h"
+#include "unity/unity.h"
+
+#include <string.h>
+
+static SYN_DLT645_Frame last_decoded_frame;
+static int callback_count = 0;
+
+static void on_frame_decoded(const SYN_DLT645_Frame *frame, void *ctx)
+{
+    (void)ctx;
+    last_decoded_frame = *frame;
+    callback_count++;
+}
+
+/* ── Test: Checksum Calculation ─────────────────────────────────────────── */
+
+static void test_dlt645_checksum(void)
+{
+    uint8_t buf[] = {0x68, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x68, 0x11, 0x04, 0x33, 0x33, 0x33, 0x33};
+    uint8_t cs = syn_dlt645_calc_checksum(buf, sizeof(buf));
+    TEST_ASSERT_TRUE(cs != 0);
+
+    /* NULL check */
+    TEST_ASSERT_EQUAL_UINT8(0, syn_dlt645_calc_checksum(NULL, 10));
+}
+
+/* ── Test: 2007 Encoding & Decoding Roundtrip ───────────────────────────── */
+
+static void test_dlt645_2007_roundtrip(void)
+{
+    SYN_DLT645_Frame tx_frame;
+    memset(&tx_frame, 0, sizeof(tx_frame));
+
+    tx_frame.version = SYN_DLT645_VER_2007;
+    tx_frame.control = SYN_DLT645_CMD_READ_DATA_RESP;
+    tx_frame.data_id = 0x00010000; /* Active Energy DI */
+    tx_frame.address[0] = 0x12;
+    tx_frame.address[1] = 0x34;
+    tx_frame.address[2] = 0x56;
+    tx_frame.address[3] = 0x78;
+    tx_frame.address[4] = 0x90;
+    tx_frame.address[5] = 0x12;
+
+    uint8_t payload[] = {0x12, 0x34, 0x56, 0x78};
+    memcpy(tx_frame.payload, payload, sizeof(payload));
+    tx_frame.payload_len = sizeof(payload);
+
+    uint8_t encoded[64];
+    size_t enc_len = syn_dlt645_encode(&tx_frame, encoded, sizeof(encoded));
+    TEST_ASSERT_TRUE(enc_len > 0);
+    TEST_ASSERT_EQUAL_UINT8(SYN_DLT645_SOF, encoded[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_DLT645_EOF, encoded[enc_len - 1]);
+
+    /* Parse encoded frame */
+    SYN_DLT645_Frame rx_frame;
+    SYN_Status status = syn_dlt645_parse(encoded, enc_len, SYN_DLT645_VER_2007, &rx_frame);
+    TEST_ASSERT_EQUAL_INT(SYN_OK, status);
+    TEST_ASSERT_EQUAL_UINT8(SYN_DLT645_CMD_READ_DATA_RESP, rx_frame.control);
+    TEST_ASSERT_EQUAL_UINT32(0x00010000, rx_frame.data_id);
+    TEST_ASSERT_EQUAL_UINT8(4, rx_frame.payload_len);
+    TEST_ASSERT_EQUAL_MEMORY(payload, rx_frame.payload, 4);
+    TEST_ASSERT_EQUAL_MEMORY(tx_frame.address, rx_frame.address, 6);
+}
+
+/* ── Test: 1997 Encoding & Decoding Roundtrip ───────────────────────────── */
+
+static void test_dlt645_1997_roundtrip(void)
+{
+    SYN_DLT645_Frame tx_frame;
+    memset(&tx_frame, 0, sizeof(tx_frame));
+
+    tx_frame.version = SYN_DLT645_VER_1997;
+    tx_frame.control = SYN_DLT645_CMD_READ_DATA;
+    tx_frame.data_id = 0x9010; /* 1997 2-byte DI */
+    memset(tx_frame.address, 0x99, 6); /* Broadcast address */
+    tx_frame.payload_len = 0;
+
+    uint8_t encoded[64];
+    size_t enc_len = syn_dlt645_encode(&tx_frame, encoded, sizeof(encoded));
+    TEST_ASSERT_TRUE(enc_len > 0);
+
+    SYN_DLT645_Frame rx_frame;
+    SYN_Status status = syn_dlt645_parse(encoded, enc_len, SYN_DLT645_VER_1997, &rx_frame);
+    TEST_ASSERT_EQUAL_INT(SYN_OK, status);
+    TEST_ASSERT_EQUAL_UINT8(SYN_DLT645_CMD_READ_DATA, rx_frame.control);
+    TEST_ASSERT_EQUAL_UINT32(0x9010, rx_frame.data_id);
+}
+
+/* ── Test: Preamble Stripping & Streaming Decoder ───────────────────────── */
+
+static void test_dlt645_streaming_decoder(void)
+{
+    SYN_DLT645_Frame tx_frame;
+    memset(&tx_frame, 0, sizeof(tx_frame));
+
+    tx_frame.version = SYN_DLT645_VER_2007;
+    tx_frame.control = SYN_DLT645_CMD_READ_DATA;
+    tx_frame.data_id = 0x00010000;
+    memset(tx_frame.address, 0x11, 6);
+
+    uint8_t raw[64];
+    size_t enc_len = syn_dlt645_encode(&tx_frame, raw, sizeof(raw));
+
+    /* Prepend 4 preamble 0xFE bytes */
+    uint8_t stream[80];
+    stream[0] = 0xFE; stream[1] = 0xFE; stream[2] = 0xFE; stream[3] = 0xFE;
+    memcpy(&stream[4], raw, enc_len);
+
+    callback_count = 0;
+    SYN_DLT645_Decoder dec;
+    syn_dlt645_decoder_init(&dec, SYN_DLT645_VER_2007, on_frame_decoded, NULL);
+
+    for (size_t i = 0; i < enc_len + 4; i++) {
+        syn_dlt645_decoder_feed(&dec, stream[i]);
+    }
+
+    TEST_ASSERT_EQUAL_INT(1, callback_count);
+    TEST_ASSERT_EQUAL_UINT8(SYN_DLT645_CMD_READ_DATA, last_decoded_frame.control);
+}
+
+/* ── Test: Corrupted & Short Frame Rejection ────────────────────────────── */
+
+static void test_dlt645_error_handling(void)
+{
+    SYN_DLT645_Frame frame;
+    uint8_t short_buf[] = {0x68, 0x11, 0x22};
+
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_dlt645_parse(short_buf, sizeof(short_buf), SYN_DLT645_VER_2007, &frame));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_dlt645_parse(NULL, 20, SYN_DLT645_VER_2007, &frame));
+
+    /* Corrupted checksum */
+    uint8_t bad_cs[] = {0x68, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x68, 0x11, 0x04, 0x33, 0x33, 0x33, 0x33, 0xFF, 0x16};
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR,
+                          syn_dlt645_parse(bad_cs, sizeof(bad_cs), SYN_DLT645_VER_2007, &frame));
+
+    /* Encode NULL & capacity errors */
+    SYN_DLT645_Frame tx_frame;
+    memset(&tx_frame, 0, sizeof(tx_frame));
+    tx_frame.version = SYN_DLT645_VER_2007;
+
+    TEST_ASSERT_EQUAL_INT(0, syn_dlt645_encode(NULL, bad_cs, sizeof(bad_cs)));
+    TEST_ASSERT_EQUAL_INT(0, syn_dlt645_encode(&tx_frame, NULL, sizeof(bad_cs)));
+    TEST_ASSERT_EQUAL_INT(0, syn_dlt645_encode(&tx_frame, bad_cs, 5));
+
+    /* Parse with preambles in buffer directly */
+    uint8_t preamble_buf[] = {0xFE, 0xFE, 0x68, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x68, 0x11, 0x04, 0x33, 0x33, 0x33, 0x33, 0x17, 0x16};
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dlt645_parse(preamble_buf, sizeof(preamble_buf), SYN_DLT645_VER_2007, &frame));
+
+    /* Decoder NULL and invalid feeds */
+    syn_dlt645_decoder_feed(NULL, 0x68);
+
+    SYN_DLT645_Decoder dec;
+    syn_dlt645_decoder_init(&dec, SYN_DLT645_VER_2007, NULL, NULL);
+    syn_dlt645_decoder_feed(&dec, 0xAA); /* invalid start byte */
+    TEST_ASSERT_EQUAL_INT(0, dec.rx_len);
+
+    /* Fill decoder buffer to overflow */
+    for (int i = 0; i < 128; i++) {
+        syn_dlt645_decoder_feed(&dec, 0x68);
+    }
+    syn_dlt645_decoder_feed(&dec, 0xAA);
+    TEST_ASSERT_EQUAL_INT(0, dec.rx_len);
+}
+
+void run_dlt645_tests(void)
+{
+    RUN_TEST(test_dlt645_checksum);
+    RUN_TEST(test_dlt645_2007_roundtrip);
+    RUN_TEST(test_dlt645_1997_roundtrip);
+    RUN_TEST(test_dlt645_streaming_decoder);
+    RUN_TEST(test_dlt645_error_handling);
+}

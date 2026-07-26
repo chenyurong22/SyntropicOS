@@ -452,6 +452,112 @@ static void test_button_combo(void)
     TEST_ASSERT_EQUAL_INT(0, btn_single_click_count);
 }
 
+/* ── Test: 3-Button Combo & Staggered Release ───────────────────────────── */
+
+static void test_button_combo_3_buttons(void)
+{
+    mock_tick_ms = 0;
+    reset_counts();
+
+    mock_gpio_states[10] = 0;
+    mock_gpio_states[11] = 0;
+    mock_gpio_states[12] = 0;
+
+    SYN_Button b1, b2, b3;
+    syn_button_init(&b1, 10, SYN_BUTTON_ACTIVE_HIGH, 20);
+    syn_button_init(&b2, 11, SYN_BUTTON_ACTIVE_HIGH, 20);
+    syn_button_init(&b3, 12, SYN_BUTTON_ACTIVE_HIGH, 20);
+
+    syn_button_on_single_click(&b1, btn_on_single_click, NULL);
+    syn_button_on_single_click(&b2, btn_on_single_click, NULL);
+    syn_button_on_single_click(&b3, btn_on_single_click, NULL);
+    syn_button_on_long_press(&b1, btn_on_long, 200, NULL);
+    syn_button_on_long_press(&b2, btn_on_long, 200, NULL);
+    syn_button_on_long_press(&b3, btn_on_long, 200, NULL);
+
+    const SYN_Button *trio[3] = {&b1, &b2, &b3};
+    SYN_ButtonCombo combo3;
+    syn_button_combo_init(&combo3, trio, 3, combo_on_fire, NULL);
+
+    /* Press only b1 and b2 */
+    mock_gpio_states[10] = 1;
+    mock_gpio_states[11] = 1;
+    syn_button_update(&b1);
+    syn_button_update(&b2);
+    syn_button_update(&b3);
+    mock_tick_advance(25);
+    syn_button_update(&b1);
+    syn_button_update(&b2);
+    syn_button_update(&b3);
+    syn_button_combo_update(&combo3);
+    TEST_ASSERT_FALSE(syn_button_combo_is_active(&combo3));
+    TEST_ASSERT_EQUAL_INT(0, combo_fired_count);
+
+    /* Press b3 to complete trio */
+    mock_gpio_states[12] = 1;
+    syn_button_update(&b3);
+    mock_tick_advance(25);
+    syn_button_update(&b3);
+    syn_button_combo_update(&combo3);
+    TEST_ASSERT_TRUE(syn_button_combo_is_active(&combo3));
+    TEST_ASSERT_EQUAL_INT(1, combo_fired_count);
+
+    /* Hold trio for 500ms */
+    mock_tick_advance(500);
+    syn_button_update(&b1);
+    syn_button_update(&b2);
+    syn_button_update(&b3);
+    syn_button_combo_update(&combo3);
+    TEST_ASSERT_EQUAL_INT(0, btn_long_count);
+
+    /* Release b1 first while b2 and b3 remain held */
+    mock_gpio_states[10] = 0;
+    syn_button_update(&b1);
+    syn_button_update(&b2);
+    syn_button_update(&b3);
+    syn_button_combo_update(&combo3);
+    TEST_ASSERT_FALSE(syn_button_combo_is_active(&combo3));
+
+    /* Release b2 and b3 */
+    mock_gpio_states[11] = 0;
+    mock_gpio_states[12] = 0;
+    syn_button_update(&b1);
+    syn_button_update(&b2);
+    syn_button_update(&b3);
+    syn_button_combo_update(&combo3);
+
+    mock_tick_advance(250);
+    syn_button_update(&b1);
+    syn_button_update(&b2);
+    syn_button_update(&b3);
+    TEST_ASSERT_EQUAL_INT(0, btn_single_click_count);
+}
+
+/* ── Test: Helper Queries & NULL Parameters ─────────────────────────────── */
+
+static void test_button_queries_and_null_checks(void)
+{
+    mock_tick_ms = 100;
+    SYN_Button btn;
+    syn_button_init(&btn, 13, SYN_BUTTON_ACTIVE_HIGH, 20);
+
+    TEST_ASSERT_EQUAL_UINT32(0, syn_button_held_ms(&btn));
+    TEST_ASSERT_EQUAL_UINT8(0, syn_button_clicks(&btn));
+    TEST_ASSERT_FALSE(syn_button_combo_is_active(NULL));
+
+    /* Combo update with NULL / empty list */
+    SYN_ButtonCombo empty_combo;
+    syn_button_combo_init(&empty_combo, NULL, 0, NULL, NULL);
+    syn_button_combo_update(&empty_combo);
+    TEST_ASSERT_FALSE(syn_button_combo_is_active(&empty_combo));
+
+    const SYN_Button *null_btn_list[2] = {NULL, NULL};
+    SYN_ButtonCombo null_combo;
+    syn_button_combo_init(&null_combo, null_btn_list, 2, NULL, NULL);
+    syn_button_combo_update(&null_combo);
+    TEST_ASSERT_FALSE(syn_button_combo_is_active(&null_combo));
+}
+
 void run_button_tests(void)
 {
     RUN_TEST(test_button);
@@ -461,4 +567,6 @@ void run_button_tests(void)
     RUN_TEST(test_button_service);
     RUN_TEST(test_button_multi_clicks);
     RUN_TEST(test_button_combo);
+    RUN_TEST(test_button_combo_3_buttons);
+    RUN_TEST(test_button_queries_and_null_checks);
 }

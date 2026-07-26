@@ -33,12 +33,11 @@ enum {
 
 uint8_t syn_mbus_calc_checksum(const uint8_t *data, size_t len)
 {
-    SYN_ASSERT(data != NULL || len == 0);
-
-    uint8_t sum = 0;
-    if (data == NULL) {
+    if (data == NULL || len == 0) {
         return 0;
     }
+
+    uint8_t sum = 0;
     for (size_t i = 0; i < len; i++) {
         sum = (uint8_t)(sum + data[i]);
     }
@@ -225,7 +224,9 @@ SYN_Status syn_mbus_decode_frame(const uint8_t *buf, size_t len, SYN_MBUS_Frame 
 
 void syn_mbus_decoder_init(SYN_MBUS_Decoder *dec, SYN_MBUS_FrameCallback callback, void *ctx)
 {
-    SYN_ASSERT(dec != NULL);
+    if (dec == NULL) {
+        return;
+    }
 
     memset(dec, 0, sizeof(*dec));
     dec->callback = callback;

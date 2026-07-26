@@ -143,6 +143,13 @@ container-pio: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
 	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers pio
 
+valgrind:
+	@bash $(ROOT_DIR)/tools/valgrind/run_valgrind.sh
+
+container-valgrind: container-build
+	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
+	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers valgrind
+
 container-integration: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
 	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers integration

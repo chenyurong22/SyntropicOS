@@ -52,6 +52,12 @@ static:
 dox:
 	@make -C tools/containers dox
 
+valgrind:
+	@make -C tools/containers valgrind
+
+container-valgrind:
+	@make -C tools/containers container-valgrind
+
 integration:
 	@make -C tools/containers integration
 

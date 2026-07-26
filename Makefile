@@ -64,6 +64,12 @@ analyzer:
 container-analyzer:
 	@make -C tools/containers container-analyzer
 
+flawfinder:
+	@make -C tools/containers flawfinder
+
+container-flawfinder:
+	@make -C tools/containers container-flawfinder
+
 integration:
 	@make -C tools/containers integration
 

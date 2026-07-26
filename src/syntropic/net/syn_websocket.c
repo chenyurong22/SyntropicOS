@@ -224,8 +224,7 @@ SYN_Status syn_websocket_upgrade(
 
     /* Compute Sec-WebSocket-Accept = Base64(SHA-1(key + UUID)) */
     char accept_buf[128];
-    strcpy(accept_buf, key);
-    strcat(accept_buf, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+    snprintf(accept_buf, sizeof(accept_buf), "%s258EAFA5-E914-47DA-95CA-C5AB0DC85B11", key);
 
     SYN_SHA1_Ctx sha;
     uint8_t digest[20];

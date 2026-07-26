@@ -177,7 +177,7 @@ static void parse_redirect_url(const char *url, const char *orig_host, uint16_t 
         if (slash) {
             strncpy(path_out, slash, path_sz - 1);
         } else {
-            strcpy(path_out, "/");
+            strncpy(path_out, "/", path_sz - 1);
         }
         path_out[path_sz - 1] = '\0';
     } else if (url[0] == '/') {
@@ -391,8 +391,10 @@ SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
             uint16_t next_port;
             parse_redirect_url(c->resp.location, c->cur_host, c->cur_port, next_host,
                                sizeof(next_host), next_path, sizeof(next_path), &next_port);
-            strcpy(c->cur_host, next_host);
-            strcpy(c->cur_path, next_path);
+            strncpy(c->cur_host, next_host, sizeof(c->cur_host) - 1);
+            c->cur_host[sizeof(c->cur_host) - 1] = '\0';
+            strncpy(c->cur_path, next_path, sizeof(c->cur_path) - 1);
+            c->cur_path[sizeof(c->cur_path) - 1] = '\0';
             c->cur_port = next_port;
             continue;
         }

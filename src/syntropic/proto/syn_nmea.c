@@ -91,7 +91,8 @@ bool syn_nmea_parser_feed(SYN_NMEA_Parser *parser, char byte, char *out_sentence
             parser->buf[parser->pos] = '\0';
             if (syn_nmea_validate(parser->buf)) {
                 if (out_sentence != NULL) {
-                    strcpy(out_sentence, parser->buf);
+                    size_t len = strlen(parser->buf);
+                    memcpy(out_sentence, parser->buf, len + 1);
                 }
                 parser->in_sentence = false;
                 parser->pos = 0;

@@ -212,7 +212,7 @@ static void test_modbus_exceptions(void)
     };
     syn_modbus_init(&mb, &cfg, mb_buf, sizeof(mb_buf));
 
-    uint8_t req[30];
+    uint8_t req[30] = {0};
     uint16_t crc;
 
     /* A. Illegal Function (FC 0x20) */

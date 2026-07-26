@@ -24,7 +24,7 @@ extern "C" {
  */
 typedef enum {
     SYN_OLED_SSD1306 = 0, /**< Standard SSD1306 controller (128x64, 128x32) */
-    SYN_OLED_SH1106  = 1, /**< SH1106 controller with 2-pixel column shift */
+    SYN_OLED_SH1106 = 1,  /**< SH1106 controller with 2-pixel column shift */
     SYN_OLED_SSD1309 = 2  /**< SSD1309 controller */
 } SYN_OLEDType;
 
@@ -37,10 +37,10 @@ typedef struct {
     uint8_t i2c_addr;
     uint16_t width;
     uint16_t height;
-    uint8_t col_offset;   /**< Column start offset (0 for SSD1306, 2 for SH1106) */
-    bool inverted;        /**< True if display colors inverted */
-    bool display_on;      /**< True if display powered on */
-    uint8_t contrast;     /**< Contrast setting (0 to 255) */
+    uint8_t col_offset; /**< Column start offset (0 for SSD1306, 2 for SH1106) */
+    bool inverted;      /**< True if display colors inverted */
+    bool display_on;    /**< True if display powered on */
+    uint8_t contrast;   /**< Contrast setting (0 to 255) */
 } SYN_OLED;
 
 /**
@@ -55,8 +55,8 @@ typedef struct {
  * @param type     OLED IC Controller type (SSD1306, SH1106, SSD1309).
  * @return SYN_OK on success.
  */
-SYN_Status syn_oled_init(SYN_OLED *oled, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
-                         uint8_t i2c_addr, uint16_t w, uint16_t h, SYN_OLEDType type);
+SYN_Status syn_oled_init(SYN_OLED *oled, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uint8_t i2c_addr,
+                         uint16_t w, uint16_t h, SYN_OLEDType type);
 
 /**
  * @brief Set display contrast level.

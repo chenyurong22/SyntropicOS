@@ -58,14 +58,14 @@ typedef enum {
 /** @name Button event flags (bitmask)
  * @{
  */
-#define SYN_BUTTON_EVT_PRESS        ((uint8_t)(1u << 0)) /**< Button pressed     */
-#define SYN_BUTTON_EVT_RELEASE      ((uint8_t)(1u << 1)) /**< Button released    */
-#define SYN_BUTTON_EVT_LONG_PRESS   ((uint8_t)(1u << 2)) /**< Long press detected */
-#define SYN_BUTTON_EVT_REPEAT       ((uint8_t)(1u << 3)) /**< Auto-repeat fire   */
+#define SYN_BUTTON_EVT_PRESS ((uint8_t)(1u << 0))        /**< Button pressed     */
+#define SYN_BUTTON_EVT_RELEASE ((uint8_t)(1u << 1))      /**< Button released    */
+#define SYN_BUTTON_EVT_LONG_PRESS ((uint8_t)(1u << 2))   /**< Long press detected */
+#define SYN_BUTTON_EVT_REPEAT ((uint8_t)(1u << 3))       /**< Auto-repeat fire   */
 #define SYN_BUTTON_EVT_SINGLE_CLICK ((uint8_t)(1u << 4)) /**< Confirmed single click */
 #define SYN_BUTTON_EVT_DOUBLE_CLICK ((uint8_t)(1u << 5)) /**< Double click detected */
 #define SYN_BUTTON_EVT_TRIPLE_CLICK ((uint8_t)(1u << 6)) /**< Triple click detected */
-#define SYN_BUTTON_EVT_MULTI_CLICK  ((uint8_t)(1u << 7)) /**< Multi click (4+ taps) */
+#define SYN_BUTTON_EVT_MULTI_CLICK ((uint8_t)(1u << 7))  /**< Multi click (4+ taps) */
 /** @} */
 
 /* ── Callback type ──────────────────────────────────────────────────────── */
@@ -85,12 +85,12 @@ typedef void (*SYN_ButtonCallback)(struct SYN_Button *btn, void *user_data);
 /** @brief Button descriptor — owns the FSM, debounce, multi-click, and callback state. */
 typedef struct SYN_Button {
     /* Configuration */
-    SYN_GPIO_Pin pin;        /**< GPIO pin number               */
-    uint8_t polarity;        /**< SYN_ButtonPolarity            */
-    uint16_t debounce_ms;    /**< Debounce window (ms)          */
-    uint16_t long_press_ms;  /**< Long-press threshold (ms)     */
-    uint16_t repeat_ms;      /**< Auto-repeat interval (ms)     */
-    uint16_t double_click_ms;/**< Max gap between clicks (ms, default 250) */
+    SYN_GPIO_Pin pin;         /**< GPIO pin number               */
+    uint8_t polarity;         /**< SYN_ButtonPolarity            */
+    uint16_t debounce_ms;     /**< Debounce window (ms)          */
+    uint16_t long_press_ms;   /**< Long-press threshold (ms)     */
+    uint16_t repeat_ms;       /**< Auto-repeat interval (ms)     */
+    uint16_t double_click_ms; /**< Max gap between clicks (ms, default 250) */
 
     /* State */
     SYN_FSM fsm;          /**< Button FSM (uses syn_fsm)     */
@@ -126,12 +126,12 @@ typedef struct SYN_Button {
 
 /** @brief Combination button descriptor for simultaneous multi-button presses. */
 typedef struct SYN_ButtonCombo {
-    const SYN_Button **buttons; /**< Array of pointers to monitored buttons */
-    size_t count;               /**< Number of buttons in combination      */
-    SYN_ButtonCallback on_combo;/**< Callback when all buttons are held   */
-    void *on_combo_ctx;         /**< Callback context                      */
-    bool active;                /**< True while combination is active     */
-    uint8_t events;             /**< Pending events                        */
+    const SYN_Button **buttons;  /**< Array of pointers to monitored buttons */
+    size_t count;                /**< Number of buttons in combination      */
+    SYN_ButtonCallback on_combo; /**< Callback when all buttons are held   */
+    void *on_combo_ctx;          /**< Callback context                      */
+    bool active;                 /**< True while combination is active     */
+    uint8_t events;              /**< Pending events                        */
 } SYN_ButtonCombo;
 
 /* ── Initialization ─────────────────────────────────────────────────────── */
@@ -152,7 +152,8 @@ void syn_button_init(SYN_Button *btn, SYN_GPIO_Pin pin, SYN_ButtonPolarity polar
 /**
  * @brief Set the multi-click evaluation window in milliseconds.
  * @param btn        Button.
- * @param window_ms  Max gap between taps to group into multi-clicks (default: 250ms, 0 = disable multi-click).
+ * @param window_ms  Max gap between taps to group into multi-clicks (default: 250ms, 0 = disable
+ * multi-click).
  */
 void syn_button_set_click_window(SYN_Button *btn, uint16_t window_ms);
 

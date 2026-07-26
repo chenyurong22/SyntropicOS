@@ -122,6 +122,8 @@ static int16_t apply_filter(SYN_Sensor *sensor, int16_t raw)
  */
 static void do_read(SYN_Sensor *sensor)
 {
+    if (sensor == NULL || sensor->read_func == NULL)
+        return;
     sensor->raw = sensor->read_func(sensor->read_ctx);
 
     /* Filter */

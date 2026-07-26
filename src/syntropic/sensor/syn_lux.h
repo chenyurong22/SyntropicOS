@@ -22,9 +22,9 @@ extern "C" {
  * @brief Light & Color Sensor Type.
  */
 typedef enum {
-    SYN_LUX_BH1750   = 0, /**< BH1750 Ambient Light Sensor (Lux) */
-    SYN_LUX_TSL2561  = 1, /**< TSL2561 Dual-channel IR/Vis Light Sensor */
-    SYN_LUX_TCS34725 = 2  /**< TCS34725 RGB Color + Clear Light Sensor */
+    SYN_LUX_BH1750 = 0,  /**< BH1750 Ambient Light Sensor (Lux) */
+    SYN_LUX_TSL2561 = 1, /**< TSL2561 Dual-channel IR/Vis Light Sensor */
+    SYN_LUX_TCS34725 = 2 /**< TCS34725 RGB Color + Clear Light Sensor */
 } SYN_LuxType;
 
 /**
@@ -34,12 +34,12 @@ typedef struct {
     SYN_LuxType type;
     SYN_SoftI2C i2c;
     uint8_t i2c_addr;
-    float illuminance_lux;      /**< Ambient Light in Lux */
-    uint16_t color_r;           /**< Raw Red channel (TCS34725) */
-    uint16_t color_g;           /**< Raw Green channel (TCS34725) */
-    uint16_t color_b;           /**< Raw Blue channel (TCS34725) */
-    uint16_t color_c;           /**< Raw Clear channel (TCS34725) */
-    uint16_t color_temp_k;      /**< Calculated Correlated Color Temp in Kelvin */
+    float illuminance_lux; /**< Ambient Light in Lux */
+    uint16_t color_r;      /**< Raw Red channel (TCS34725) */
+    uint16_t color_g;      /**< Raw Green channel (TCS34725) */
+    uint16_t color_b;      /**< Raw Blue channel (TCS34725) */
+    uint16_t color_c;      /**< Raw Clear channel (TCS34725) */
+    uint16_t color_temp_k; /**< Calculated Correlated Color Temp in Kelvin */
 } SYN_Lux;
 
 /**
@@ -52,8 +52,8 @@ typedef struct {
  * @param type     Sensor type (BH1750, TSL2561, TCS34725).
  * @return SYN_OK on success.
  */
-SYN_Status syn_lux_init(SYN_Lux *sensor, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
-                        uint8_t i2c_addr, SYN_LuxType type);
+SYN_Status syn_lux_init(SYN_Lux *sensor, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uint8_t i2c_addr,
+                        SYN_LuxType type);
 
 /**
  * @brief Feed raw illuminance reading in Lux (for BH1750/TSL2561).

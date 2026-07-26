@@ -43,7 +43,8 @@ typedef struct {
  * @param active_low True if switch ON connects pin to GND (uses Pull-UP).
  * @return SYN_OK on success.
  */
-SYN_Status syn_dipswitch_init(SYN_DipSwitch *ds, const SYN_GPIO_Pin *pins, uint8_t count, bool active_low);
+SYN_Status syn_dipswitch_init(SYN_DipSwitch *ds, const SYN_GPIO_Pin *pins, uint8_t count,
+                              bool active_low);
 
 /**
  * @brief Read all DIP switch pins and update binary value.

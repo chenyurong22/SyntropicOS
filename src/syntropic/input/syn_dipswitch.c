@@ -4,11 +4,13 @@
  */
 
 #include "syn_dipswitch.h"
+
 #include "../util/syn_assert.h"
 
 #include <string.h>
 
-SYN_Status syn_dipswitch_init(SYN_DipSwitch *ds, const SYN_GPIO_Pin *pins, uint8_t count, bool active_low)
+SYN_Status syn_dipswitch_init(SYN_DipSwitch *ds, const SYN_GPIO_Pin *pins, uint8_t count,
+                              bool active_low)
 {
     SYN_ASSERT(ds != NULL);
     SYN_ASSERT(pins != NULL);
@@ -33,7 +35,8 @@ SYN_Status syn_dipswitch_init(SYN_DipSwitch *ds, const SYN_GPIO_Pin *pins, uint8
 
 void syn_dipswitch_read(SYN_DipSwitch *ds)
 {
-    if (ds == NULL) return;
+    if (ds == NULL)
+        return;
 
     uint32_t val = 0;
 

@@ -160,14 +160,44 @@ static void test_dma_ringbuf(void)
     uint8_t dummy_periph = 0xAA;
 
     SYN_DMA_RingBuf rbuf;
+    /* NULL guards */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_dma_ringbuf_init(NULL, &dma, rx_buf, 64));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_dma_ringbuf_start(NULL, &dummy_periph));
+    TEST_ASSERT_EQUAL(0, syn_dma_ringbuf_bytes_available(NULL));
+    TEST_ASSERT_EQUAL(0, syn_dma_ringbuf_read(NULL, rx_buf, 10));
+    TEST_ASSERT_EQUAL(0, syn_dma_ringbuf_read(&rbuf, NULL, 10));
+    TEST_ASSERT_EQUAL(0, syn_dma_ringbuf_read(&rbuf, rx_buf, 0));
+
     TEST_ASSERT_EQUAL(SYN_OK, syn_dma_ringbuf_init(&rbuf, &dma, rx_buf, sizeof(rx_buf)));
     TEST_ASSERT_EQUAL(SYN_OK, syn_dma_ringbuf_start(&rbuf, &dummy_periph));
 
-    /* Mock bytes received into rx_buf */
+    /* Mock 10 bytes written into rx_buf */
     memcpy(rx_buf, "1234567890", 10);
+    mock_dma[1].remaining = 54; /* 64 - 54 = 10 bytes written */
+    TEST_ASSERT_EQUAL(10, syn_dma_ringbuf_bytes_available(&rbuf));
+
     uint8_t out[16] = {0};
     size_t read_cnt = syn_dma_ringbuf_read(&rbuf, out, 5);
-    TEST_ASSERT_TRUE(read_cnt <= 10);
+    TEST_ASSERT_EQUAL(5, read_cnt);
+    TEST_ASSERT_EQUAL(5, rbuf.tail);
+    TEST_ASSERT_EQUAL(5, syn_dma_ringbuf_bytes_available(&rbuf));
+
+    /* Test wraparound case where head < tail */
+    rbuf.tail = 60;
+    mock_dma[1].remaining = 59; /* head = 5, tail = 60 -> avail = 64 - 55 = 9 */
+    TEST_ASSERT_EQUAL(9, syn_dma_ringbuf_bytes_available(&rbuf));
+
+    /* Read across ring buffer boundary split */
+    memcpy(&rx_buf[60], "ABCD", 4);
+    memcpy(&rx_buf[0], "EFGH", 4);
+    uint8_t wrap_out[16] = {0};
+    size_t wrap_read = syn_dma_ringbuf_read(&rbuf, wrap_out, 8);
+    TEST_ASSERT_EQUAL(8, wrap_read);
+    TEST_ASSERT_EQUAL_MEMORY("ABCDEFGH", wrap_out, 8);
+
+    /* Empty buffer read (head == tail) */
+    mock_dma[1].remaining = 60; /* head = 64 - 60 = 4 == tail */
+    TEST_ASSERT_EQUAL(0, syn_dma_ringbuf_read(&rbuf, out, 5));
 }
 
 void run_dma_tests(void)

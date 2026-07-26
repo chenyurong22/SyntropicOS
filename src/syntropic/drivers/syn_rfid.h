@@ -23,7 +23,7 @@ extern "C" {
  */
 typedef enum {
     SYN_RFID_MFRC522 = 0, /**< MFRC522 13.56MHz SPI/I2C Reader */
-    SYN_RFID_PN532   = 1, /**< PN532 NFC/RFID Reader */
+    SYN_RFID_PN532 = 1,   /**< PN532 NFC/RFID Reader */
     SYN_RFID_RDM6300 = 2  /**< RDM6300 125kHz UART Reader */
 } SYN_RFIDType;
 
@@ -34,9 +34,9 @@ typedef struct {
     SYN_RFIDType type;
     SYN_GPIO_Pin ss_pin;
     SYN_GPIO_Pin rst_pin;
-    uint8_t uid[10];            /**< Extracted card UID byte array */
-    uint8_t uid_len;            /**< UID length (4, 7, or 10 bytes) */
-    bool card_present;          /**< True if card detected near antenna */
+    uint8_t uid[10];   /**< Extracted card UID byte array */
+    uint8_t uid_len;   /**< UID length (4, 7, or 10 bytes) */
+    bool card_present; /**< True if card detected near antenna */
 } SYN_RFID;
 
 /**
@@ -48,7 +48,8 @@ typedef struct {
  * @param type    RFID IC type (MFRC522, PN532, RDM6300).
  * @return SYN_OK on success.
  */
-SYN_Status syn_rfid_init(SYN_RFID *rfid, SYN_GPIO_Pin ss_pin, SYN_GPIO_Pin rst_pin, SYN_RFIDType type);
+SYN_Status syn_rfid_init(SYN_RFID *rfid, SYN_GPIO_Pin ss_pin, SYN_GPIO_Pin rst_pin,
+                         SYN_RFIDType type);
 
 /**
  * @brief Feed raw UID scan bytes.

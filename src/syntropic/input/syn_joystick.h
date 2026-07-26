@@ -21,29 +21,29 @@ extern "C" {
  * @brief 8-Way D-Pad Directional State.
  */
 typedef enum {
-    SYN_JOYSTICK_DIR_CENTER    = 0,
-    SYN_JOYSTICK_DIR_UP        = 1,
-    SYN_JOYSTICK_DIR_UP_RIGHT  = 2,
-    SYN_JOYSTICK_DIR_RIGHT     = 3,
-    SYN_JOYSTICK_DIR_DOWN_RIGHT= 4,
-    SYN_JOYSTICK_DIR_DOWN      = 5,
+    SYN_JOYSTICK_DIR_CENTER = 0,
+    SYN_JOYSTICK_DIR_UP = 1,
+    SYN_JOYSTICK_DIR_UP_RIGHT = 2,
+    SYN_JOYSTICK_DIR_RIGHT = 3,
+    SYN_JOYSTICK_DIR_DOWN_RIGHT = 4,
+    SYN_JOYSTICK_DIR_DOWN = 5,
     SYN_JOYSTICK_DIR_DOWN_LEFT = 6,
-    SYN_JOYSTICK_DIR_LEFT      = 7,
-    SYN_JOYSTICK_DIR_UP_LEFT    = 8
+    SYN_JOYSTICK_DIR_LEFT = 7,
+    SYN_JOYSTICK_DIR_UP_LEFT = 8
 } SYN_JoystickDir;
 
 /**
  * @brief Generic Analog Joystick Context.
  */
 typedef struct {
-    uint16_t center_x;         /**< ADC zero-point center X */
-    uint16_t center_y;         /**< ADC zero-point center Y */
-    uint16_t adc_max;          /**< ADC resolution max (e.g. 4095) */
-    uint16_t deadband;         /**< Noise deadband radius */
-    int16_t current_x_pct;     /**< Calculated X percentage (-100 to +100%) */
-    int16_t current_y_pct;     /**< Calculated Y percentage (-100 to +100%) */
-    SYN_JoystickDir dir;       /**< 8-way directional state */
-    bool button_pressed;       /**< Digital push button state */
+    uint16_t center_x;     /**< ADC zero-point center X */
+    uint16_t center_y;     /**< ADC zero-point center Y */
+    uint16_t adc_max;      /**< ADC resolution max (e.g. 4095) */
+    uint16_t deadband;     /**< Noise deadband radius */
+    int16_t current_x_pct; /**< Calculated X percentage (-100 to +100%) */
+    int16_t current_y_pct; /**< Calculated Y percentage (-100 to +100%) */
+    SYN_JoystickDir dir;   /**< 8-way directional state */
+    bool button_pressed;   /**< Digital push button state */
 } SYN_Joystick;
 
 /**
@@ -57,7 +57,7 @@ typedef struct {
  * @return SYN_OK on success.
  */
 SYN_Status syn_joystick_init(SYN_Joystick *joy, uint16_t center_x, uint16_t center_y,
-                            uint16_t adc_max, uint16_t deadband);
+                             uint16_t adc_max, uint16_t deadband);
 
 /**
  * @brief Feed raw ADC readings for X and Y axes.

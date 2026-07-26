@@ -29,6 +29,7 @@ else
         echo "${UNFORMATTED}"
         echo ""
         echo "Notice: Formatting issues found. Run 'make format FIX=1' to auto-fix."
+        exit 1
     else
         echo "=== Code Formatting PASS ==="
     fi

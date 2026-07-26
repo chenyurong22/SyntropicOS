@@ -22,7 +22,7 @@ extern "C" {
  * @brief Climate Sensor Type.
  */
 typedef enum {
-    SYN_CLIMATE_SHT3X  = 0, /**< Sensirion SHT30 / SHT31 / SHT35 */
+    SYN_CLIMATE_SHT3X = 0,  /**< Sensirion SHT30 / SHT31 / SHT35 */
     SYN_CLIMATE_BME280 = 1, /**< Bosch BME280 (Temp + Humidity + Pressure) */
     SYN_CLIMATE_HTU21D = 2  /**< HTU21D / Si7021 */
 } SYN_ClimateType;
@@ -34,10 +34,10 @@ typedef struct {
     SYN_ClimateType type;
     SYN_SoftI2C i2c;
     uint8_t i2c_addr;
-    float temperature_c;    /**< Temperature in Degrees Celsius */
-    float humidity_rh;      /**< Relative Humidity % */
-    float pressure_hpa;     /**< Barometric Pressure in hPa / mbar */
-    float dew_point_c;      /**< Calculated Dew Point in Degrees Celsius */
+    float temperature_c; /**< Temperature in Degrees Celsius */
+    float humidity_rh;   /**< Relative Humidity % */
+    float pressure_hpa;  /**< Barometric Pressure in hPa / mbar */
+    float dew_point_c;   /**< Calculated Dew Point in Degrees Celsius */
 } SYN_Climate;
 
 /**
@@ -51,7 +51,7 @@ typedef struct {
  * @return SYN_OK on success.
  */
 SYN_Status syn_climate_init(SYN_Climate *sensor, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
-                           uint8_t i2c_addr, SYN_ClimateType type);
+                            uint8_t i2c_addr, SYN_ClimateType type);
 
 /**
  * @brief Feed raw sensor readings (temperature, humidity, pressure).

@@ -25,9 +25,11 @@ volatile uint32_t *syn_port_hpclock_lsb_ptr(void)
     return &mock_hpclock_lsb;
 }
 
+uint32_t mock_hpclock_freq_hz = 16000000UL;
+
 uint32_t syn_port_hpclock_freq_hz(void)
 {
-    return 16000000UL;
+    return mock_hpclock_freq_hz;
 }
 
 void mock_tick_advance(uint32_t ms)
@@ -356,6 +358,7 @@ SYN_Status syn_port_i2c_write_read(uint8_t b, uint8_t a, const uint8_t *t, size_
 
 #include "syntropic/port/syn_port_adc.h"
 uint16_t mock_adc_value = 2048;
+uint8_t mock_adc_resolution = 12;
 SYN_Status syn_port_adc_init(uint8_t ch)
 {
     (void)ch;
@@ -368,7 +371,7 @@ uint16_t syn_port_adc_read(uint8_t ch)
 }
 uint8_t syn_port_adc_resolution(void)
 {
-    return 12;
+    return mock_adc_resolution;
 }
 uint16_t syn_port_adc_reference_mv(void)
 {
@@ -489,6 +492,8 @@ SYN_Status syn_port_rtc_init(void)
 
 SYN_Status syn_port_rtc_get(SYN_RTC_DateTime *dt)
 {
+    if (!mock_rtc_init_ok)
+        return SYN_ERROR;
     if (dt == NULL)
         return SYN_INVALID_PARAM;
     *dt = mock_rtc_time;

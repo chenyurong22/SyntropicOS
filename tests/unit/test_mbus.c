@@ -129,9 +129,10 @@ static void test_mbus_control_and_long_frame(void)
 
     /* 2. Long frame (with payload) */
     uint8_t payload[] = {0x04, 0x13, 0x78, 0x56, 0x34, 0x12}; /* 6 bytes payload */
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mbus_encode_long(SYN_MBUS_C_RSP_UD, 0x05, SYN_MBUS_CI_RSP_DATA_LSB,
-                                                        payload, sizeof(payload), buf, sizeof(buf), &out_len));
-    TEST_ASSERT_EQUAL_UINT(15, out_len); /* 9 + 6 = 15 */
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_mbus_encode_long(SYN_MBUS_C_RSP_UD, 0x05, SYN_MBUS_CI_RSP_DATA_LSB, payload,
+                                     sizeof(payload), buf, sizeof(buf), &out_len));
+    TEST_ASSERT_EQUAL_UINT(15, out_len);  /* 9 + 6 = 15 */
     TEST_ASSERT_EQUAL_HEX8(0x09, buf[1]); /* L field = 3 + 6 = 9 */
 
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mbus_decode_frame(buf, out_len, &frame));
@@ -177,7 +178,8 @@ static void test_mbus_streaming_decoder(void)
     uint8_t long_buf[64];
     size_t long_len = 0;
     uint8_t payload[] = {0xAA, 0xBB, 0xCC};
-    syn_mbus_encode_long(SYN_MBUS_C_RSP_UD, 0x1F, 0x72, payload, sizeof(payload), long_buf, sizeof(long_buf), &long_len);
+    syn_mbus_encode_long(SYN_MBUS_C_RSP_UD, 0x1F, 0x72, payload, sizeof(payload), long_buf,
+                         sizeof(long_buf), &long_len);
 
     for (size_t i = 0; i < long_len; i++) {
         syn_mbus_decoder_feed(&dec, long_buf[i]);
@@ -216,11 +218,17 @@ static void test_mbus_null_and_invalid_params(void)
 
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_mbus_encode_short(0x40, 0x01, NULL, 10, &out_len));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_mbus_encode_short(0x40, 0x01, buf, 10, NULL));
-    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_mbus_encode_short(0x40, 0x01, buf, 4, &out_len)); /* cap < 5 */
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR,
+                          syn_mbus_encode_short(0x40, 0x01, buf, 4, &out_len)); /* cap < 5 */
 
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_mbus_encode_long(0x40, 0x01, 0x51, NULL, 5, buf, 10, &out_len)); /* payload NULL, len > 0 */
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_mbus_encode_long(0x40, 0x01, 0x51, buf, 255, buf, 10, &out_len)); /* payload > 252 */
-    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_mbus_encode_long(0x40, 0x01, 0x51, NULL, 0, buf, 8, &out_len)); /* cap < 9 */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_mbus_encode_long(0x40, 0x01, 0x51, NULL, 5, buf, 10,
+                                               &out_len)); /* payload NULL, len > 0 */
+    TEST_ASSERT_EQUAL_INT(
+        SYN_INVALID_PARAM,
+        syn_mbus_encode_long(0x40, 0x01, 0x51, buf, 255, buf, 10, &out_len)); /* payload > 252 */
+    TEST_ASSERT_EQUAL_INT(
+        SYN_ERROR, syn_mbus_encode_long(0x40, 0x01, 0x51, NULL, 0, buf, 8, &out_len)); /* cap < 9 */
 
     /* One-shot decoder NULL checks */
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_mbus_decode_frame(NULL, 5, &frame));
@@ -240,11 +248,13 @@ static void test_mbus_corrupted_frames(void)
 
     /* Short frame len < 5 */
     uint8_t short_short[] = {0x10, 0x40, 0x01, 0x41};
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_mbus_decode_frame(short_short, sizeof(short_short), &frame));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_mbus_decode_frame(short_short, sizeof(short_short), &frame));
 
     /* Long frame len < 9 */
     uint8_t long_short[] = {0x68, 0x03, 0x03, 0x68, 0x40, 0x01, 0x51, 0x92};
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_mbus_decode_frame(long_short, sizeof(long_short), &frame));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_mbus_decode_frame(long_short, sizeof(long_short), &frame));
 
     /* Long frame l1 != l2 */
     uint8_t bad_l1_l2[] = {0x68, 0x03, 0x04, 0x68, 0x40, 0x01, 0x51, 0x92, 0x16};
@@ -256,7 +266,8 @@ static void test_mbus_corrupted_frames(void)
 
     /* Long frame len < expected_total */
     uint8_t bad_total_len[] = {0x68, 0x05, 0x05, 0x68, 0x40, 0x01, 0x51, 0x92, 0x16};
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_mbus_decode_frame(bad_total_len, sizeof(bad_total_len), &frame));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_mbus_decode_frame(bad_total_len, sizeof(bad_total_len), &frame));
 
     /* Long frame bad stop byte */
     uint8_t bad_stop[] = {0x68, 0x03, 0x03, 0x68, 0x40, 0x01, 0x51, 0x92, 0xFF};
@@ -264,7 +275,8 @@ static void test_mbus_corrupted_frames(void)
 
     /* Long frame l1 < 3 */
     uint8_t bad_l1_small[] = {0x68, 0x02, 0x02, 0x68, 0x40, 0x01, 0x51, 0x92, 0x16};
-    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_mbus_decode_frame(bad_l1_small, sizeof(bad_l1_small), &frame));
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR,
+                          syn_mbus_decode_frame(bad_l1_small, sizeof(bad_l1_small), &frame));
 
     /* Long frame corrupted checksum */
     uint8_t bad_chk[] = {0x68, 0x03, 0x03, 0x68, 0x40, 0x01, 0x51, 0x00, 0x16};
@@ -272,7 +284,8 @@ static void test_mbus_corrupted_frames(void)
 
     /* Unknown SOF byte */
     uint8_t unknown_sof[] = {0xFF, 0x00, 0x00, 0x00, 0x00};
-    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_mbus_decode_frame(unknown_sof, sizeof(unknown_sof), &frame));
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR,
+                          syn_mbus_decode_frame(unknown_sof, sizeof(unknown_sof), &frame));
 }
 
 /* ── Test: Streaming Decoder Edge Cases ─────────────────────────────────── */

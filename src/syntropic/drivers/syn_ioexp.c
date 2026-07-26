@@ -4,6 +4,7 @@
  */
 
 #include "syn_ioexp.h"
+
 #include "../util/syn_assert.h"
 
 #include <string.h>
@@ -18,8 +19,8 @@ static void write_i2c_bytes(SYN_SoftI2C *i2c, uint8_t dev_addr, const uint8_t *b
     syn_soft_i2c_stop(i2c);
 }
 
-SYN_Status syn_ioexp_init(SYN_IOExp *ioexp, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
-                          uint8_t i2c_addr, SYN_IOExpType type)
+SYN_Status syn_ioexp_init(SYN_IOExp *ioexp, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uint8_t i2c_addr,
+                          SYN_IOExpType type)
 {
     SYN_ASSERT(ioexp != NULL);
 
@@ -51,10 +52,11 @@ SYN_Status syn_ioexp_init(SYN_IOExp *ioexp, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
 
 void syn_ioexp_set_pin_mode(SYN_IOExp *ioexp, uint8_t pin, SYN_GPIO_Mode mode)
 {
-    if (ioexp == NULL || pin >= ioexp->num_pins) return;
+    if (ioexp == NULL || pin >= ioexp->num_pins)
+        return;
 
     if (mode == SYN_GPIO_OUTPUT) {
-        ioexp->dir_mask &= (uint16_t)~(1u << pin);
+        ioexp->dir_mask &= (uint16_t) ~(1u << pin);
     } else {
         ioexp->dir_mask |= (uint16_t)(1u << pin);
         if (mode == SYN_GPIO_INPUT_PULLUP) {
@@ -65,19 +67,21 @@ void syn_ioexp_set_pin_mode(SYN_IOExp *ioexp, uint8_t pin, SYN_GPIO_Mode mode)
     if (ioexp->type == SYN_IOEXP_MCP23017) {
         uint8_t buf[3] = {0x00, (uint8_t)(ioexp->dir_mask & 0xFF), (uint8_t)(ioexp->dir_mask >> 8)};
         write_i2c_bytes(&ioexp->i2c, ioexp->i2c_addr, buf, 3);
-        uint8_t gppu[3] = {0x0C, (uint8_t)(ioexp->pullup_mask & 0xFF), (uint8_t)(ioexp->pullup_mask >> 8)};
+        uint8_t gppu[3] = {0x0C, (uint8_t)(ioexp->pullup_mask & 0xFF),
+                           (uint8_t)(ioexp->pullup_mask >> 8)};
         write_i2c_bytes(&ioexp->i2c, ioexp->i2c_addr, gppu, 3);
     }
 }
 
 void syn_ioexp_write_pin(SYN_IOExp *ioexp, uint8_t pin, SYN_GPIO_State state)
 {
-    if (ioexp == NULL || pin >= ioexp->num_pins) return;
+    if (ioexp == NULL || pin >= ioexp->num_pins)
+        return;
 
     if (state == SYN_GPIO_HIGH) {
         ioexp->out_mask |= (uint16_t)(1u << pin);
     } else {
-        ioexp->out_mask &= (uint16_t)~(1u << pin);
+        ioexp->out_mask &= (uint16_t) ~(1u << pin);
     }
 
     syn_ioexp_write_port(ioexp, ioexp->out_mask);
@@ -85,7 +89,8 @@ void syn_ioexp_write_pin(SYN_IOExp *ioexp, uint8_t pin, SYN_GPIO_State state)
 
 SYN_GPIO_State syn_ioexp_read_pin(SYN_IOExp *ioexp, uint8_t pin)
 {
-    if (ioexp == NULL || pin >= ioexp->num_pins) return SYN_GPIO_LOW;
+    if (ioexp == NULL || pin >= ioexp->num_pins)
+        return SYN_GPIO_LOW;
 
     uint16_t port = syn_ioexp_read_port(ioexp);
     return (port & (1u << pin)) ? SYN_GPIO_HIGH : SYN_GPIO_LOW;
@@ -93,7 +98,8 @@ SYN_GPIO_State syn_ioexp_read_pin(SYN_IOExp *ioexp, uint8_t pin)
 
 void syn_ioexp_write_port(SYN_IOExp *ioexp, uint16_t mask)
 {
-    if (ioexp == NULL) return;
+    if (ioexp == NULL)
+        return;
 
     ioexp->out_mask = mask;
 
@@ -114,6 +120,7 @@ void syn_ioexp_write_port(SYN_IOExp *ioexp, uint16_t mask)
 
 uint16_t syn_ioexp_read_port(SYN_IOExp *ioexp)
 {
-    if (ioexp == NULL) return 0;
+    if (ioexp == NULL)
+        return 0;
     return ioexp->out_mask;
 }

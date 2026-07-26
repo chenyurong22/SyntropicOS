@@ -34,6 +34,11 @@ static void test_adc(void)
     int32_t mv = syn_adc_read_mv(&adc);
     TEST_ASSERT_TRUE(mv >= 1640 && mv <= 1660);
 
+    /* Zero max_raw fallback test */
+    mock_adc_resolution = 0;
+    TEST_ASSERT_EQUAL_INT(0, syn_adc_read_mv(&adc));
+    mock_adc_resolution = 12;
+
     /* With calibration offset */
     syn_adc_set_calibration(&adc, 100, 1, 0);
     val = syn_adc_read(&adc);

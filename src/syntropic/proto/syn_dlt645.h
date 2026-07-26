@@ -22,9 +22,9 @@ extern "C" {
 
 /* ── Protocol Constants ─────────────────────────────────────────────────── */
 
-#define SYN_DLT645_SOF      0x68
-#define SYN_DLT645_EOF      0x16
-#define SYN_DLT645_OFFSET   0x33
+#define SYN_DLT645_SOF 0x68
+#define SYN_DLT645_EOF 0x16
+#define SYN_DLT645_OFFSET 0x33
 #define SYN_DLT645_PREAMBLE 0xFE
 
 #define SYN_DLT645_ADDR_LEN 6
@@ -39,17 +39,17 @@ typedef enum {
 /* ── Control Codes ──────────────────────────────────────────────────────── */
 
 typedef enum {
-    SYN_DLT645_CMD_READ_DATA        = 0x11, /**< Master read data request            */
-    SYN_DLT645_CMD_READ_DATA_RESP   = 0x91, /**< Slave read data response            */
-    SYN_DLT645_CMD_WRITE_DATA       = 0x14, /**< Master write data request           */
-    SYN_DLT645_CMD_WRITE_DATA_RESP  = 0x94, /**< Slave write data response           */
-    SYN_DLT645_CMD_READ_ADDR        = 0x13, /**< Read meter address request          */
-    SYN_DLT645_CMD_READ_ADDR_RESP   = 0x93, /**< Read meter address response         */
-    SYN_DLT645_CMD_WRITE_ADDR       = 0x15, /**< Write meter address request         */
-    SYN_DLT645_CMD_WRITE_ADDR_RESP  = 0x95, /**< Write meter address response        */
-    SYN_DLT645_CMD_CHANGE_BAUD      = 0x17, /**< Change baud rate request            */
+    SYN_DLT645_CMD_READ_DATA = 0x11,        /**< Master read data request            */
+    SYN_DLT645_CMD_READ_DATA_RESP = 0x91,   /**< Slave read data response            */
+    SYN_DLT645_CMD_WRITE_DATA = 0x14,       /**< Master write data request           */
+    SYN_DLT645_CMD_WRITE_DATA_RESP = 0x94,  /**< Slave write data response           */
+    SYN_DLT645_CMD_READ_ADDR = 0x13,        /**< Read meter address request          */
+    SYN_DLT645_CMD_READ_ADDR_RESP = 0x93,   /**< Read meter address response         */
+    SYN_DLT645_CMD_WRITE_ADDR = 0x15,       /**< Write meter address request         */
+    SYN_DLT645_CMD_WRITE_ADDR_RESP = 0x95,  /**< Write meter address response        */
+    SYN_DLT645_CMD_CHANGE_BAUD = 0x17,      /**< Change baud rate request            */
     SYN_DLT645_CMD_CHANGE_BAUD_RESP = 0x97, /**< Change baud rate response           */
-    SYN_DLT645_CMD_ERROR_RESP       = 0xD1  /**< Slave error response                */
+    SYN_DLT645_CMD_ERROR_RESP = 0xD1        /**< Slave error response                */
 } SYN_DLT645_Cmd;
 
 /* ── Frame Structure ────────────────────────────────────────────────────── */
@@ -57,11 +57,11 @@ typedef enum {
 /** @brief Decoded DL/T 645 frame representation. */
 typedef struct {
     uint8_t address[SYN_DLT645_ADDR_LEN]; /**< 6-byte BCD meter address              */
-    uint8_t control;                       /**< Control code byte                     */
-    uint32_t data_id;                      /**< Data Identifier (DI)                  */
-    uint8_t payload[64];                   /**< Raw un-offset data payload bytes      */
-    uint8_t payload_len;                   /**< Payload length (excluding DI)         */
-    SYN_DLT645_Ver version;                /**< Protocol version (1997 or 2007)       */
+    uint8_t control;                      /**< Control code byte                     */
+    uint32_t data_id;                     /**< Data Identifier (DI)                  */
+    uint8_t payload[64];                  /**< Raw un-offset data payload bytes      */
+    uint8_t payload_len;                  /**< Payload length (excluding DI)         */
+    SYN_DLT645_Ver version;               /**< Protocol version (1997 or 2007)       */
 } SYN_DLT645_Frame;
 
 /* ── Streaming Decoder ──────────────────────────────────────────────────── */
@@ -71,11 +71,11 @@ typedef void (*SYN_DLT645_FrameCallback)(const SYN_DLT645_Frame *frame, void *ct
 
 /** @brief Streaming byte-at-a-time decoder state. */
 typedef struct {
-    uint8_t rx_buf[128];             /**< Internal reception buffer             */
-    size_t rx_len;                   /**< Received byte count                   */
-    SYN_DLT645_FrameCallback cb;     /**< Completion callback                   */
-    void *cb_ctx;                    /**< Callback context                      */
-    SYN_DLT645_Ver version;          /**< Expected version                      */
+    uint8_t rx_buf[128];         /**< Internal reception buffer             */
+    size_t rx_len;               /**< Received byte count                   */
+    SYN_DLT645_FrameCallback cb; /**< Completion callback                   */
+    void *cb_ctx;                /**< Callback context                      */
+    SYN_DLT645_Ver version;      /**< Expected version                      */
 } SYN_DLT645_Decoder;
 
 /* ── API ────────────────────────────────────────────────────────────────── */

@@ -8,16 +8,17 @@ cd "${ROOT_DIR}"
 
 echo "=== Running Doxygen Documentation Coverage Analysis ==="
 if command -v doxygen >/dev/null 2>&1; then
-    rm -f doxygen_warnings.txt
+    mkdir -p build/doxygen
+    rm -f build/doxygen/doxygen_warnings.txt doxygen_warnings.txt
     doxygen Doxyfile
-    
-    if [ -f doxygen_warnings.txt ]; then
-        WARN_COUNT=$(wc -l < doxygen_warnings.txt || echo 0)
+
+    if [ -f build/doxygen/doxygen_warnings.txt ]; then
+        WARN_COUNT=$(wc -l < build/doxygen/doxygen_warnings.txt || echo 0)
         echo "=== Doxygen Analysis Finished ==="
         echo "Documentation Warning Count: ${WARN_COUNT}"
         if [ "${WARN_COUNT}" -gt 0 ]; then
             echo "--- Sample Doxygen Warnings (first 10) ---"
-            head -n 10 doxygen_warnings.txt
+            head -n 10 build/doxygen/doxygen_warnings.txt
             echo "------------------------------------------"
         else
             echo "=== 100% Doxygen Documentation Coverage Clean ==="

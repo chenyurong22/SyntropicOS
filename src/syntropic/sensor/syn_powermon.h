@@ -33,11 +33,11 @@ typedef struct {
     SYN_PowerMonType type;
     SYN_SoftI2C i2c;
     uint8_t i2c_addr;
-    float shunt_resistor_ohms;  /**< Shunt resistor value (e.g. 0.1 ohms) */
-    float bus_voltage_v;        /**< Measured Bus Voltage in Volts */
-    float shunt_current_ma;     /**< Measured Shunt Current in Milliamps */
-    float power_mw;             /**< Measured Active Power in Milliwatts */
-    float energy_mwh;           /**< Accumulated Energy in Milliwatt-hours */
+    float shunt_resistor_ohms; /**< Shunt resistor value (e.g. 0.1 ohms) */
+    float bus_voltage_v;       /**< Measured Bus Voltage in Volts */
+    float shunt_current_ma;    /**< Measured Shunt Current in Milliamps */
+    float power_mw;            /**< Measured Active Power in Milliwatts */
+    float energy_mwh;          /**< Accumulated Energy in Milliwatt-hours */
 } SYN_PowerMon;
 
 /**
@@ -51,8 +51,8 @@ typedef struct {
  * @param type                IC type (INA219 or INA226).
  * @return SYN_OK on success.
  */
-SYN_Status syn_powermon_init(SYN_PowerMon *pm, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
-                             uint8_t i2c_addr, float shunt_resistor_ohms, SYN_PowerMonType type);
+SYN_Status syn_powermon_init(SYN_PowerMon *pm, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uint8_t i2c_addr,
+                             float shunt_resistor_ohms, SYN_PowerMonType type);
 
 /**
  * @brief Feed raw I2C register samples (bus voltage & shunt voltage).

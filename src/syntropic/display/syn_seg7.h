@@ -25,7 +25,7 @@ extern "C" {
  */
 typedef enum {
     SYN_SEG7_COMMON_CATHODE = 0, /**< Active HIGH segments, active LOW digit selects */
-    SYN_SEG7_COMMON_ANODE   = 1  /**< Active LOW segments, active HIGH digit selects */
+    SYN_SEG7_COMMON_ANODE = 1    /**< Active LOW segments, active HIGH digit selects */
 } SYN_Seg7Type;
 
 /**
@@ -51,8 +51,8 @@ typedef struct {
  * @param type       Wiring type (Common Cathode / Common Anode).
  * @return SYN_OK on success.
  */
-SYN_Status syn_seg7_init(SYN_Seg7 *seg, const SYN_GPIO_Pin segments[8],
-                         const SYN_GPIO_Pin *digits, uint8_t num_digits, SYN_Seg7Type type);
+SYN_Status syn_seg7_init(SYN_Seg7 *seg, const SYN_GPIO_Pin segments[8], const SYN_GPIO_Pin *digits,
+                         uint8_t num_digits, SYN_Seg7Type type);
 
 /**
  * @brief Non-blocking multiplex scan tick. Call periodically in main/scheduler loop.

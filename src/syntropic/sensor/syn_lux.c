@@ -4,13 +4,14 @@
  */
 
 #include "syn_lux.h"
+
 #include "../util/syn_assert.h"
 
 #include <math.h>
 #include <string.h>
 
-SYN_Status syn_lux_init(SYN_Lux *sensor, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
-                        uint8_t i2c_addr, SYN_LuxType type)
+SYN_Status syn_lux_init(SYN_Lux *sensor, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uint8_t i2c_addr,
+                        SYN_LuxType type)
 {
     SYN_ASSERT(sensor != NULL);
 
@@ -25,13 +26,15 @@ SYN_Status syn_lux_init(SYN_Lux *sensor, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
 
 void syn_lux_feed_lux(SYN_Lux *sensor, float lux)
 {
-    if (sensor == NULL) return;
+    if (sensor == NULL)
+        return;
     sensor->illuminance_lux = lux;
 }
 
 void syn_lux_feed_rgbc(SYN_Lux *sensor, uint16_t r, uint16_t g, uint16_t b, uint16_t c)
 {
-    if (sensor == NULL) return;
+    if (sensor == NULL)
+        return;
 
     sensor->color_r = r;
     sensor->color_g = g;
@@ -50,11 +53,13 @@ void syn_lux_feed_rgbc(SYN_Lux *sensor, uint16_t r, uint16_t g, uint16_t b, uint
         float x = (-0.14282f * rf) + (0.15492f * gf) + (-0.00000f * bf);
         float y = (-0.32466f * rf) + (1.57837f * gf) + (-0.73191f * bf);
 
-        if (y != 0.1858f) {
+        if (fabsf(0.1858f - y) > 0.0001f) {
             float n = (x - 0.3320f) / (0.1858f - y);
             float cct = (449.0f * n * n * n) + (3525.0f * n * n) + (6823.3f * n) + 5520.33f;
-            if (cct < 1000.0f) cct = 1000.0f;
-            if (cct > 20000.0f) cct = 20000.0f;
+            if (cct < 1000.0f)
+                cct = 1000.0f;
+            if (cct > 20000.0f)
+                cct = 20000.0f;
             sensor->color_temp_k = (uint16_t)cct;
         }
     }
@@ -62,12 +67,14 @@ void syn_lux_feed_rgbc(SYN_Lux *sensor, uint16_t r, uint16_t g, uint16_t b, uint
 
 float syn_lux_get_lux(const SYN_Lux *sensor)
 {
-    if (sensor == NULL) return 0.0f;
+    if (sensor == NULL)
+        return 0.0f;
     return sensor->illuminance_lux;
 }
 
 uint16_t syn_lux_get_color_temp_k(const SYN_Lux *sensor)
 {
-    if (sensor == NULL) return 0;
+    if (sensor == NULL)
+        return 0;
     return sensor->color_temp_k;
 }

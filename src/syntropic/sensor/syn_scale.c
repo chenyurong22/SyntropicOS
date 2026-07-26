@@ -4,12 +4,14 @@
  */
 
 #include "syn_scale.h"
+
 #include "../util/syn_assert.h"
 
 #include <math.h>
 #include <string.h>
 
-SYN_Status syn_scale_init(SYN_Scale *scale, SYN_GPIO_Pin dout_pin, SYN_GPIO_Pin sck_pin, SYN_ScaleType type)
+SYN_Status syn_scale_init(SYN_Scale *scale, SYN_GPIO_Pin dout_pin, SYN_GPIO_Pin sck_pin,
+                          SYN_ScaleType type)
 {
     SYN_ASSERT(scale != NULL);
 
@@ -25,7 +27,8 @@ SYN_Status syn_scale_init(SYN_Scale *scale, SYN_GPIO_Pin dout_pin, SYN_GPIO_Pin 
 
 void syn_scale_feed_adc(SYN_Scale *scale, int32_t raw_adc24)
 {
-    if (scale == NULL) return;
+    if (scale == NULL)
+        return;
 
     int32_t delta = raw_adc24 - scale->tare_offset;
     if (scale->scale_factor != 0.0f) {
@@ -37,24 +40,28 @@ void syn_scale_feed_adc(SYN_Scale *scale, int32_t raw_adc24)
 
 void syn_scale_tare(SYN_Scale *scale, int32_t tare_offset)
 {
-    if (scale == NULL) return;
+    if (scale == NULL)
+        return;
     scale->tare_offset = tare_offset;
 }
 
 void syn_scale_set_calibration_factor(SYN_Scale *scale, float factor)
 {
-    if (scale == NULL || factor == 0.0f) return;
+    if (scale == NULL || factor == 0.0f)
+        return;
     scale->scale_factor = factor;
 }
 
 float syn_scale_get_grams(const SYN_Scale *scale)
 {
-    if (scale == NULL) return 0.0f;
+    if (scale == NULL)
+        return 0.0f;
     return scale->last_weight_grams;
 }
 
 float syn_scale_get_kg(const SYN_Scale *scale)
 {
-    if (scale == NULL) return 0.0f;
+    if (scale == NULL)
+        return 0.0f;
     return scale->last_weight_grams / 1000.0f;
 }

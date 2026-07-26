@@ -1,7 +1,11 @@
 # SyntropicOS Top-Level Convenience Makefile
 # Forwards targets to tools/containers/Makefile
 
-.PHONY: help test format lint misra stack size complexity san qemu renode fuzz cov static dox integration container-build container-test container-format container-lint container-misra container-stack container-size container-complexity container-san container-qemu container-renode container-fuzz container-cov container-static container-dox container-integration
+.PHONY: help clean test format lint misra stack size complexity san qemu renode fuzz cov static dox integration container-build container-test container-format container-lint container-misra container-stack container-size container-complexity container-san container-qemu container-renode container-fuzz container-cov container-static container-dox container-integration
+
+clean:
+	@rm -rf build/ doxygen_output/ coverage_html/ coverage.info coverage_src.info doxygen_warnings.txt
+	@find . \( -name "*.gcda" -o -name "*.gcno" -o -name "*.o" -o -name "*.su" \) -delete
 
 help:
 	@make -C tools/containers help

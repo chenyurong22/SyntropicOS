@@ -105,17 +105,19 @@ static void test_resolve_overflow_lsb_just_below_half(void)
 
 static void test_ticks_to_ns(void)
 {
-    /* 16 MHz → 16 ticks = 1000 ns = 1 µs */
-    uint64_t ns = syn_hpclock_ticks_to_ns(16);
-    TEST_ASSERT_EQUAL_UINT64(1000, ns);
+    /* Zero freq_hz guard test */
+    mock_hpclock_freq_hz = 0;
+    TEST_ASSERT_EQUAL_UINT64(0, syn_hpclock_ticks_to_ns(100));
 
-    /* 16,000,000 ticks = 1 second */
-    ns = syn_hpclock_ticks_to_ns(16000000);
-    TEST_ASSERT_EQUAL_UINT64(1000000000ULL, ns);
+    /* Reset to 1 MHz (1 tick = 1,000 ns = 1 µs) */
+    mock_hpclock_freq_hz = 1000000;
 
-    /* 0 ticks = 0 ns */
-    ns = syn_hpclock_ticks_to_ns(0);
-    TEST_ASSERT_EQUAL_UINT64(0, ns);
+    TEST_ASSERT_EQUAL_UINT64(0ULL, syn_hpclock_ticks_to_ns(0));
+    TEST_ASSERT_EQUAL_UINT64(1000ULL, syn_hpclock_ticks_to_ns(1));
+    TEST_ASSERT_EQUAL_UINT64(1000000ULL, syn_hpclock_ticks_to_ns(1000));
+    TEST_ASSERT_EQUAL_UINT64(1000000000ULL, syn_hpclock_ticks_to_ns(1000000));
+    /* Reset to 16 MHz default for other tests */
+    mock_hpclock_freq_hz = 16000000UL;
 }
 
 static void test_ticks_to_ns_large(void)

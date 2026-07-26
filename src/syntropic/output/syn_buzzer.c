@@ -4,12 +4,15 @@
  */
 
 #include "syn_buzzer.h"
+
 #include "../util/syn_assert.h"
 
 #include <string.h>
 
 static void set_buzzer_state(SYN_Buzzer *buz, bool state)
 {
+    if (buz == NULL)
+        return;
     bool pin_val = buz->active_high ? state : !state;
     syn_port_gpio_write(buz->pin, pin_val ? SYN_GPIO_HIGH : SYN_GPIO_LOW);
 }
@@ -51,7 +54,8 @@ SYN_Status syn_buzzer_beep(SYN_Buzzer *buz, uint32_t freq_hz, uint32_t duration_
     return SYN_OK;
 }
 
-SYN_Status syn_buzzer_play_pattern(SYN_Buzzer *buz, const uint16_t *freqs, const uint16_t *durs, size_t count)
+SYN_Status syn_buzzer_play_pattern(SYN_Buzzer *buz, const uint16_t *freqs, const uint16_t *durs,
+                                   size_t count)
 {
     SYN_ASSERT(buz != NULL);
     SYN_ASSERT(freqs != NULL);
@@ -79,7 +83,8 @@ SYN_Status syn_buzzer_play_pattern(SYN_Buzzer *buz, const uint16_t *freqs, const
 
 void syn_buzzer_stop(SYN_Buzzer *buz)
 {
-    if (buz == NULL) return;
+    if (buz == NULL)
+        return;
 
     buz->is_playing = false;
     buz->pattern_count = 0;
@@ -89,7 +94,8 @@ void syn_buzzer_stop(SYN_Buzzer *buz)
 
 void syn_buzzer_step(SYN_Buzzer *buz, uint32_t dt_ms)
 {
-    if (buz == NULL || !buz->is_playing) return;
+    if (buz == NULL || !buz->is_playing)
+        return;
 
     buz->elapsed_ms += dt_ms;
 

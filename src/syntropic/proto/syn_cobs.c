@@ -18,11 +18,11 @@
 
 size_t syn_cobs_encode(const void *src, size_t src_len, void *dst)
 {
+    if (src == NULL || dst == NULL || src_len == 0)
+        return 0;
+
     const uint8_t *s = (const uint8_t *)src;
     uint8_t *d = (uint8_t *)dst;
-
-    if (src_len == 0)
-        return 0;
 
     uint8_t *code_ptr = d++; /* pointer to the code byte */
     uint8_t code = 1;
@@ -53,12 +53,12 @@ size_t syn_cobs_encode(const void *src, size_t src_len, void *dst)
 
 size_t syn_cobs_decode(const void *src, size_t src_len, void *dst)
 {
+    if (src == NULL || dst == NULL || src_len == 0)
+        return 0;
+
     const uint8_t *s = (const uint8_t *)src;
     uint8_t *d = (uint8_t *)dst;
     size_t remaining = src_len;
-
-    if (src_len == 0)
-        return 0;
 
     while (remaining > 0) {
         uint8_t code = *s++;

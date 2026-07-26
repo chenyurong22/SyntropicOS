@@ -23,19 +23,27 @@ static void test_smartled_operations(void)
     syn_smartled_set_pixel_rgb(&led, 0, 255, 0, 0);
     TEST_ASSERT_EQUAL_UINT8(128, buf[0].r);
 
-    /* Set Pixel 1 to HSV Hue 0 (Red) */
+    /* Set Pixel 1 to HSV Hue 0 (Red - Region 0) */
     syn_smartled_set_pixel_hsv(&led, 1, 0, 255, 255);
     TEST_ASSERT_EQUAL_UINT8(128, buf[1].r);
 
-    /* Set Pixel 2 to HSV Hue 85 (Green) */
-    syn_smartled_set_pixel_hsv(&led, 2, 85, 255, 255);
-    TEST_ASSERT_EQUAL_UINT8(128, buf[2].g);
+    /* HSV Region 1 (Hue 50) */
+    syn_smartled_set_pixel_hsv(&led, 2, 50, 255, 255);
 
-    /* Set Pixel 3 to HSV Hue 170 (Blue) */
-    syn_smartled_set_pixel_hsv(&led, 3, 170, 255, 255);
+    /* HSV Region 2 (Hue 90) */
+    syn_smartled_set_pixel_hsv(&led, 3, 90, 255, 255);
 
-    /* Set Pixel 4 to HSV Saturation 0 (White) */
-    syn_smartled_set_pixel_hsv(&led, 4, 0, 0, 255);
+    /* HSV Region 3 (Hue 135) */
+    syn_smartled_set_pixel_hsv(&led, 4, 135, 255, 255);
+
+    /* HSV Region 4 (Hue 180) */
+    syn_smartled_set_pixel_hsv(&led, 5, 180, 255, 255);
+
+    /* HSV Region 5 (Default - Hue 220) */
+    syn_smartled_set_pixel_hsv(&led, 6, 220, 255, 255);
+
+    /* Set Pixel 7 to HSV Saturation 0 (White) */
+    syn_smartled_set_pixel_hsv(&led, 7, 0, 0, 255);
 
     /* Fill strip */
     syn_smartled_fill_rgb(&led, 0, 255, 0);

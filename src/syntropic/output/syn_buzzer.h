@@ -22,13 +22,13 @@ extern "C" {
  * @brief Non-blocking piezo buzzer context.
  */
 typedef struct {
-    SYN_GPIO_Pin pin;          /**< GPIO Pin identifier */
-    bool active_high;          /**< True if logic HIGH activates buzzer */
-    bool is_playing;           /**< True if currently outputting tone */
+    SYN_GPIO_Pin pin; /**< GPIO Pin identifier */
+    bool active_high; /**< True if logic HIGH activates buzzer */
+    bool is_playing;  /**< True if currently outputting tone */
 
-    uint32_t freq_hz;          /**< Current tone frequency in Hz */
-    uint32_t duration_ms;      /**< Current tone duration in milliseconds */
-    uint32_t elapsed_ms;       /**< Time elapsed for current tone */
+    uint32_t freq_hz;     /**< Current tone frequency in Hz */
+    uint32_t duration_ms; /**< Current tone duration in milliseconds */
+    uint32_t elapsed_ms;  /**< Time elapsed for current tone */
 
     const uint16_t *pattern_freqs; /**< Sequence of frequencies for melody/pattern */
     const uint16_t *pattern_durs;  /**< Sequence of durations for melody/pattern */
@@ -65,7 +65,8 @@ SYN_Status syn_buzzer_beep(SYN_Buzzer *buz, uint32_t freq_hz, uint32_t duration_
  * @param count Number of notes in the pattern.
  * @return SYN_OK on success.
  */
-SYN_Status syn_buzzer_play_pattern(SYN_Buzzer *buz, const uint16_t *freqs, const uint16_t *durs, size_t count);
+SYN_Status syn_buzzer_play_pattern(SYN_Buzzer *buz, const uint16_t *freqs, const uint16_t *durs,
+                                   size_t count);
 
 /**
  * @brief Stop audio output immediately.

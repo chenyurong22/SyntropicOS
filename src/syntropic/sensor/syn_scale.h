@@ -22,8 +22,8 @@ extern "C" {
  * @brief Load Cell ADC IC Type.
  */
 typedef enum {
-    SYN_SCALE_HX711   = 0, /**< HX711 24-bit 2-wire serial ADC */
-    SYN_SCALE_NAU7802 = 1  /**< NAU7802 24-bit I2C Scale ADC */
+    SYN_SCALE_HX711 = 0,  /**< HX711 24-bit 2-wire serial ADC */
+    SYN_SCALE_NAU7802 = 1 /**< NAU7802 24-bit I2C Scale ADC */
 } SYN_ScaleType;
 
 /**
@@ -33,10 +33,10 @@ typedef struct {
     SYN_ScaleType type;
     SYN_GPIO_Pin dout_pin;
     SYN_GPIO_Pin sck_pin;
-    int32_t tare_offset;       /**< Zero-point tare offset raw reading */
-    float scale_factor;        /**< Counts per gram scale factor */
-    float last_weight_grams;   /**< Calculated weight in grams */
-    bool is_stable;            /**< True if scale reading has settled */
+    int32_t tare_offset;     /**< Zero-point tare offset raw reading */
+    float scale_factor;      /**< Counts per gram scale factor */
+    float last_weight_grams; /**< Calculated weight in grams */
+    bool is_stable;          /**< True if scale reading has settled */
 } SYN_Scale;
 
 /**
@@ -48,7 +48,8 @@ typedef struct {
  * @param type     Scale ADC type (HX711 or NAU7802).
  * @return SYN_OK on success.
  */
-SYN_Status syn_scale_init(SYN_Scale *scale, SYN_GPIO_Pin dout_pin, SYN_GPIO_Pin sck_pin, SYN_ScaleType type);
+SYN_Status syn_scale_init(SYN_Scale *scale, SYN_GPIO_Pin dout_pin, SYN_GPIO_Pin sck_pin,
+                          SYN_ScaleType type);
 
 /**
  * @brief Feed raw 24-bit ADC reading from load cell chip.

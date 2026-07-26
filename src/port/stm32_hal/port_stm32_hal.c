@@ -9,7 +9,7 @@
 #if !defined(ARDUINO) &&                                                                     \
     (defined(STM32F0xx) || defined(STM32F1xx) || defined(STM32F4xx) || defined(STM32F7xx) || \
      defined(STM32L4xx) || defined(STM32G0xx) || defined(STM32H7xx) || defined(STM32C0xx) || \
-     defined(STM32U0xx) || defined(STM32F0) || defined(STM32F1) || defined(STM32F4) ||        \
+     defined(STM32U0xx) || defined(STM32F0) || defined(STM32F1) || defined(STM32F4) ||       \
      defined(STM32F7) || defined(STM32L4) || defined(STM32G0) || defined(STM32H7) ||         \
      defined(STM32C0) || defined(STM32U0))
 

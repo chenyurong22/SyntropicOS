@@ -137,6 +137,14 @@ static void test_encoder_stats(void)
     TEST_ASSERT_EQUAL_INT(1, delta);
     /* Stats should have one sample pushed */
     TEST_ASSERT_TRUE(syn_signal_count(&sig) >= 1);
+
+    /* Test no-change update (new_state == last_state) */
+    syn_encoder_update(&enc);
+
+    /* Test invalid noise transition (10 -> 01 directly) */
+    mock_gpio_states[10] = 0;
+    mock_gpio_states[11] = 1;
+    syn_encoder_update(&enc);
 }
 
 void run_encoder_tests(void)

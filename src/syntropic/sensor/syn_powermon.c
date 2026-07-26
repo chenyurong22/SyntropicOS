@@ -4,12 +4,13 @@
  */
 
 #include "syn_powermon.h"
+
 #include "../util/syn_assert.h"
 
 #include <string.h>
 
-SYN_Status syn_powermon_init(SYN_PowerMon *pm, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
-                             uint8_t i2c_addr, float shunt_resistor_ohms, SYN_PowerMonType type)
+SYN_Status syn_powermon_init(SYN_PowerMon *pm, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uint8_t i2c_addr,
+                             float shunt_resistor_ohms, SYN_PowerMonType type)
 {
     SYN_ASSERT(pm != NULL);
     SYN_ASSERT(shunt_resistor_ohms > 0.0001f);
@@ -26,7 +27,8 @@ SYN_Status syn_powermon_init(SYN_PowerMon *pm, SYN_GPIO_Pin scl, SYN_GPIO_Pin sd
 
 void syn_powermon_feed_raw(SYN_PowerMon *pm, uint16_t raw_bus_v, float raw_shunt_mv)
 {
-    if (pm == NULL) return;
+    if (pm == NULL)
+        return;
 
     if (pm->type == SYN_POWERMON_INA219) {
         /* INA219 Bus Voltage LSB = 4mV (Shifted right by 3 bits) */
@@ -37,7 +39,11 @@ void syn_powermon_feed_raw(SYN_PowerMon *pm, uint16_t raw_bus_v, float raw_shunt
     }
 
     /* Current I = V_shunt / R_shunt */
-    pm->shunt_current_ma = (raw_shunt_mv / pm->shunt_resistor_ohms);
+    if (pm->shunt_resistor_ohms > 0.0f) {
+        pm->shunt_current_ma = (raw_shunt_mv / pm->shunt_resistor_ohms);
+    } else {
+        pm->shunt_current_ma = 0.0f;
+    }
 
     /* Power P = V * I */
     pm->power_mw = pm->bus_voltage_v * pm->shunt_current_ma;
@@ -45,18 +51,21 @@ void syn_powermon_feed_raw(SYN_PowerMon *pm, uint16_t raw_bus_v, float raw_shunt
 
 float syn_powermon_get_bus_voltage(const SYN_PowerMon *pm)
 {
-    if (pm == NULL) return 0.0f;
+    if (pm == NULL)
+        return 0.0f;
     return pm->bus_voltage_v;
 }
 
 float syn_powermon_get_current_ma(const SYN_PowerMon *pm)
 {
-    if (pm == NULL) return 0.0f;
+    if (pm == NULL)
+        return 0.0f;
     return pm->shunt_current_ma;
 }
 
 float syn_powermon_get_power_mw(const SYN_PowerMon *pm)
 {
-    if (pm == NULL) return 0.0f;
+    if (pm == NULL)
+        return 0.0f;
     return pm->power_mw;
 }

@@ -60,7 +60,7 @@ struct SYN_Keypad {
  * @return SYN_OK on success.
  */
 SYN_Status syn_keypad_init(SYN_Keypad *kp, const SYN_GPIO_Pin *rows, uint8_t num_rows,
-                          const SYN_GPIO_Pin *cols, uint8_t num_cols, const char *keymap);
+                           const SYN_GPIO_Pin *cols, uint8_t num_cols, const char *keymap);
 
 /**
  * @brief Perform a non-blocking matrix scan.

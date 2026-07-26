@@ -34,38 +34,39 @@ extern "C" {
 
 /* ── M-Bus Delimiters & Constants ────────────────────────────────────────── */
 
-#define SYN_MBUS_START_SHORT   0x10u /**< Start delimiter for Short frame */
+#define SYN_MBUS_START_SHORT 0x10u   /**< Start delimiter for Short frame */
 #define SYN_MBUS_START_CONTROL 0x68u /**< Start delimiter for Control frame */
-#define SYN_MBUS_START_LONG    0x68u /**< Start delimiter for Long frame */
-#define SYN_MBUS_STOP          0x16u /**< Stop delimiter for frames */
-#define SYN_MBUS_ACK_BYTE      0xE5u /**< Single character ACK byte */
+#define SYN_MBUS_START_LONG 0x68u    /**< Start delimiter for Long frame */
+#define SYN_MBUS_STOP 0x16u          /**< Stop delimiter for frames */
+#define SYN_MBUS_ACK_BYTE 0xE5u      /**< Single character ACK byte */
 
 /* ── Standard M-Bus Control (C) Field Codes ─────────────────────────────── */
 
-#define SYN_MBUS_C_SND_NKE 0x40u /**< Master -> Slave: Link reset (SND_NKE) */
-#define SYN_MBUS_C_SND_UD  0x53u /**< Master -> Slave: Send user data (FCB=0) */
-#define SYN_MBUS_C_SND_UD_FCB 0x73u /**< Master -> Slave: Send user data (FCB=1) */
-#define SYN_MBUS_C_REQ_UD2 0x5Bu /**< Master -> Slave: Request data class 2 (FCB=0) */
+#define SYN_MBUS_C_SND_NKE 0x40u     /**< Master -> Slave: Link reset (SND_NKE) */
+#define SYN_MBUS_C_SND_UD 0x53u      /**< Master -> Slave: Send user data (FCB=0) */
+#define SYN_MBUS_C_SND_UD_FCB 0x73u  /**< Master -> Slave: Send user data (FCB=1) */
+#define SYN_MBUS_C_REQ_UD2 0x5Bu     /**< Master -> Slave: Request data class 2 (FCB=0) */
 #define SYN_MBUS_C_REQ_UD2_FCB 0x7Bu /**< Master -> Slave: Request data class 2 (FCB=1) */
-#define SYN_MBUS_C_REQ_UD1 0x5Au /**< Master -> Slave: Request data class 1 (FCB=0) */
-#define SYN_MBUS_C_RSP_UD  0x08u /**< Slave -> Master: Response user data */
+#define SYN_MBUS_C_REQ_UD1 0x5Au     /**< Master -> Slave: Request data class 1 (FCB=0) */
+#define SYN_MBUS_C_RSP_UD 0x08u      /**< Slave -> Master: Response user data */
 
 /* ── Standard M-Bus Control Information (CI) Field Codes ───────────────── */
 
 #define SYN_MBUS_CI_RSP_DATA_LSB 0x72u /**< Response data, 12-byte header (LSB first) */
 #define SYN_MBUS_CI_RSP_DATA_MSB 0x73u /**< Response data, 12-byte header (MSB first) */
-#define SYN_MBUS_CI_SND_UD_LSB  0x51u /**< Send data, 12-byte header */
+#define SYN_MBUS_CI_SND_UD_LSB 0x51u   /**< Send data, 12-byte header */
 #define SYN_MBUS_CI_SELECT_SLAVE 0x52u /**< Select slave (secondary address) */
 
 /* ── M-Bus Special Addresses ────────────────────────────────────────────── */
 
 #define SYN_MBUS_ADDR_BROADCAST_REPLY 0xFEu /**< Broadcast with reply */
-#define SYN_MBUS_ADDR_BROADCAST_NONE  0xFFu /**< Broadcast without reply */
+#define SYN_MBUS_ADDR_BROADCAST_NONE 0xFFu  /**< Broadcast without reply */
 
 /* ── Limits ─────────────────────────────────────────────────────────────── */
 
 #define SYN_MBUS_MAX_PAYLOAD 252u /**< Max user payload size in bytes */
-#define SYN_MBUS_MAX_FRAME_LEN 261u /**< Max total raw frame size (SOF+L+L+SOF+C+A+CI+Data+CHK+EOF) */
+#define SYN_MBUS_MAX_FRAME_LEN \
+    261u /**< Max total raw frame size (SOF+L+L+SOF+C+A+CI+Data+CHK+EOF) */
 
 /* ── M-Bus Frame Types ─────────────────────────────────────────────────── */
 
@@ -145,7 +146,8 @@ SYN_Status syn_mbus_encode_short(uint8_t c_field, uint8_t a_field, uint8_t *buf,
                                  size_t *out_len);
 
 /**
- * @brief Encode a Control Frame (9 bytes: 0x68 | 0x03 | 0x03 | 0x68 | C | A | CI | Checksum | 0x16).
+ * @brief Encode a Control Frame (9 bytes: 0x68 | 0x03 | 0x03 | 0x68 | C | A | CI | Checksum |
+ * 0x16).
  *
  * @param c_field  Control field byte.
  * @param a_field  Address field byte.

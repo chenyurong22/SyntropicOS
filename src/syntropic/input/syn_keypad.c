@@ -4,12 +4,13 @@
  */
 
 #include "syn_keypad.h"
+
 #include "../util/syn_assert.h"
 
 #include <string.h>
 
 SYN_Status syn_keypad_init(SYN_Keypad *kp, const SYN_GPIO_Pin *rows, uint8_t num_rows,
-                          const SYN_GPIO_Pin *cols, uint8_t num_cols, const char *keymap)
+                           const SYN_GPIO_Pin *cols, uint8_t num_cols, const char *keymap)
 {
     SYN_ASSERT(kp != NULL);
     SYN_ASSERT(rows != NULL);
@@ -42,7 +43,8 @@ SYN_Status syn_keypad_init(SYN_Keypad *kp, const SYN_GPIO_Pin *rows, uint8_t num
 
 void syn_keypad_scan(SYN_Keypad *kp)
 {
-    if (kp == NULL) return;
+    if (kp == NULL)
+        return;
 
     char found_key = 0;
 
@@ -60,7 +62,8 @@ void syn_keypad_scan(SYN_Keypad *kp)
         /* Set row back to LOW */
         syn_port_gpio_write(kp->rows[r], SYN_GPIO_LOW);
 
-        if (found_key != 0) break;
+        if (found_key != 0)
+            break;
     }
 
     /* Process state changes */
@@ -89,7 +92,8 @@ void syn_keypad_scan(SYN_Keypad *kp)
 
 bool syn_keypad_get_key(const SYN_Keypad *kp, char *out_key)
 {
-    if (kp == NULL || !kp->is_pressed) return false;
+    if (kp == NULL || !kp->is_pressed)
+        return false;
     if (out_key != NULL) {
         *out_key = kp->active_key;
     }
@@ -98,7 +102,8 @@ bool syn_keypad_get_key(const SYN_Keypad *kp, char *out_key)
 
 void syn_keypad_set_callback(SYN_Keypad *kp, SYN_KeypadCallback callback, void *user_ctx)
 {
-    if (kp == NULL) return;
+    if (kp == NULL)
+        return;
     kp->on_event = callback;
     kp->user_ctx = user_ctx;
 }

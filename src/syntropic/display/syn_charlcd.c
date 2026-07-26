@@ -1,9 +1,11 @@
 /**
  * @file syn_charlcd.c
- * @brief Generic Character LCD Driver (HD44780, ST7066, KS0066 over I2C PCF8574 or 4-Bit Parallel GPIO).
+ * @brief Generic Character LCD Driver (HD44780, ST7066, KS0066 over I2C PCF8574 or 4-Bit Parallel
+ * GPIO).
  */
 
 #include "syn_charlcd.h"
+
 #include "../util/syn_assert.h"
 
 #include <string.h>
@@ -147,24 +149,29 @@ SYN_Status syn_charlcd_init_gpio(SYN_CharLCD *lcd, SYN_GPIO_Pin rs, SYN_GPIO_Pin
 
 void syn_charlcd_clear(SYN_CharLCD *lcd)
 {
-    if (lcd == NULL) return;
+    if (lcd == NULL)
+        return;
     write_command(lcd, 0x01); /* Clear display */
 }
 
 void syn_charlcd_set_cursor(SYN_CharLCD *lcd, uint8_t col, uint8_t row)
 {
-    if (lcd == NULL) return;
+    if (lcd == NULL || lcd->cols == 0)
+        return;
 
     static const uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54};
-    if (row >= 4) row = 3;
-    if (col >= lcd->cols) col = (uint8_t)(lcd->cols - 1);
+    if (row >= 4)
+        row = 3;
+    if (col >= lcd->cols)
+        col = (uint8_t)(lcd->cols - 1);
 
     write_command(lcd, (uint8_t)(0x80 | (col + row_offsets[row])));
 }
 
 void syn_charlcd_print(SYN_CharLCD *lcd, const char *str)
 {
-    if (lcd == NULL || str == NULL) return;
+    if (lcd == NULL || str == NULL)
+        return;
 
     while (*str) {
         write_data(lcd, (uint8_t)*str++);
@@ -173,7 +180,8 @@ void syn_charlcd_print(SYN_CharLCD *lcd, const char *str)
 
 void syn_charlcd_set_backlight(SYN_CharLCD *lcd, bool enable)
 {
-    if (lcd == NULL || lcd->mode != SYN_CHARLCD_MODE_I2C) return;
+    if (lcd == NULL || lcd->mode != SYN_CHARLCD_MODE_I2C)
+        return;
     lcd->backlight = enable;
     lcd->backlight_mask = enable ? PCF8574_BL : 0x00;
     write_i2c_byte(&lcd->i2c, lcd->i2c_addr, lcd->backlight_mask);
@@ -181,7 +189,8 @@ void syn_charlcd_set_backlight(SYN_CharLCD *lcd, bool enable)
 
 void syn_charlcd_create_char(SYN_CharLCD *lcd, uint8_t slot, const uint8_t charmap[8])
 {
-    if (lcd == NULL || charmap == NULL) return;
+    if (lcd == NULL || charmap == NULL)
+        return;
     slot &= 0x07;
     write_command(lcd, (uint8_t)(0x40 | (slot << 3)));
     for (int i = 0; i < 8; i++) {

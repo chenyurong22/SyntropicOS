@@ -51,6 +51,15 @@ static void test_joystick_operations(void)
     syn_joystick_feed_adc(&joy, 200, 2048, false);
     TEST_ASSERT_EQUAL(SYN_JOYSTICK_DIR_LEFT, syn_joystick_get_dir(&joy));
 
+    /* Test range_x / range_y <= 0 edge cases (e.g. center_x = 0 or center_x = adc_max) */
+    SYN_Joystick j2;
+    syn_joystick_init(&j2, 0, 4095, 4095, 10);
+    syn_joystick_feed_adc(&j2, 0, 4095, false);
+    TEST_ASSERT_EQUAL_INT16(0, syn_joystick_get_x_pct(&j2));
+    TEST_ASSERT_EQUAL_INT16(0, syn_joystick_get_y_pct(&j2));
+
+    syn_joystick_feed_adc(&j2, 100, 100, false);
+
     /* NULL guards */
     syn_joystick_feed_adc(NULL, 0, 0, false);
     TEST_ASSERT_EQUAL_INT16(0, syn_joystick_get_x_pct(NULL));

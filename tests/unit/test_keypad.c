@@ -13,7 +13,8 @@ static void dummy_keypad_cb(SYN_Keypad *kp, char key, bool pressed, void *ctx)
     (void)key;
     (void)pressed;
     uint32_t *count = (uint32_t *)ctx;
-    if (count) (*count)++;
+    if (count)
+        (*count)++;
 }
 
 static void test_keypad_scan(void)

@@ -58,6 +58,12 @@ static void test_led_basic(void)
     mock_tick_advance(50);
     syn_led_update(&led); /* on->off, remain=0, mode=OFF */
     TEST_ASSERT_FALSE(syn_led_is_on(&led));
+
+    /* Test next_ms with unknown pattern char and invalid mode */
+    syn_led_pattern(&led, "X", 100);
+    TEST_ASSERT_EQUAL_UINT32(0, syn_led_next_ms(&led));
+    led.mode = 255;
+    TEST_ASSERT_EQUAL_UINT32(0, syn_led_next_ms(&led));
 }
 
 static void test_led_active_low(void)

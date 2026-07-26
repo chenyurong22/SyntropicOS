@@ -315,6 +315,18 @@ static void test_canvas_polar_and_arc(void)
 
     /* Draw anti-aliased line */
     syn_canvas_line_aa(&c, 0, 0, 31, 31, 1);
+
+    /* Rounded rectangles (outline & filled, plus r bounds clamping) */
+    syn_canvas_clear(&c);
+    syn_canvas_rect_round(&c, 5, 5, 20, 20, 4, 1);
+    syn_canvas_rect_round(&c, 5, 5, 20, 20, 0, 1);  /* r <= 0 */
+    syn_canvas_rect_round(&c, 5, 5, 20, 20, 50, 1); /* r > w/2 */
+    syn_canvas_rect_round_fill(&c, 5, 5, 20, 20, 4, 1);
+    syn_canvas_rect_round_fill(&c, 5, 5, 20, 20, 0, 1);  /* r <= 0 */
+    syn_canvas_rect_round_fill(&c, 5, 5, 20, 20, 50, 1); /* r > w/2 */
+
+    /* Filled circle */
+    syn_canvas_circle_fill(&c, 32, 32, 10, 1);
 }
 
 void run_canvas_tests(void)

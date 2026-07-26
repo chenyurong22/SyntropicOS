@@ -4,6 +4,7 @@
  */
 
 #include "syn_touch.h"
+
 #include "../util/syn_assert.h"
 
 #include <string.h>
@@ -24,13 +25,15 @@ SYN_Status syn_touch_init(SYN_Touch *touch, SYN_GPIO_Pin pin, uint16_t threshold
 
 void syn_touch_calibrate(SYN_Touch *touch, uint16_t baseline)
 {
-    if (touch == NULL) return;
+    if (touch == NULL)
+        return;
     touch->baseline = baseline;
 }
 
 void syn_touch_feed_sample(SYN_Touch *touch, uint16_t raw_sample)
 {
-    if (touch == NULL) return;
+    if (touch == NULL)
+        return;
 
     touch->current_val = raw_sample;
 
@@ -41,7 +44,8 @@ void syn_touch_feed_sample(SYN_Touch *touch, uint16_t raw_sample)
 
     /* Compute capacitance delta relative to baseline */
     int32_t delta = (int32_t)raw_sample - (int32_t)touch->baseline;
-    if (delta < 0) delta = -delta;
+    if (delta < 0)
+        delta = -delta;
 
     if (!touch->is_pressed) {
         if (delta >= (int32_t)touch->threshold) {
@@ -52,7 +56,10 @@ void syn_touch_feed_sample(SYN_Touch *touch, uint16_t raw_sample)
             touch->baseline = (uint16_t)(((uint32_t)touch->baseline * 15 + raw_sample) / 16);
         }
     } else {
-        if (delta < (int32_t)(touch->threshold - touch->hysteresis)) {
+        int32_t release_thresh = (int32_t)touch->threshold - (int32_t)touch->hysteresis;
+        if (release_thresh < 0)
+            release_thresh = 0;
+        if (delta < release_thresh) {
             touch->is_pressed = false;
         }
     }

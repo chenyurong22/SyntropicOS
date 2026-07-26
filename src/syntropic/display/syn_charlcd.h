@@ -1,6 +1,7 @@
 /**
  * @file syn_charlcd.h
- * @brief Generic Character LCD Driver (HD44780, ST7066, KS0066 over I2C PCF8574 or 4-Bit Parallel GPIO).
+ * @brief Generic Character LCD Driver (HD44780, ST7066, KS0066 over I2C PCF8574 or 4-Bit Parallel
+ * GPIO).
  * @ingroup syn_display
  */
 
@@ -23,8 +24,8 @@ extern "C" {
  * @brief Character LCD Interface Mode.
  */
 typedef enum {
-    SYN_CHARLCD_MODE_I2C = 0,   /**< I2C PCF8574 backpack adapter */
-    SYN_CHARLCD_MODE_GPIO_4BIT  /**< Direct 4-bit parallel GPIO bus (RS, EN, D4-D7) */
+    SYN_CHARLCD_MODE_I2C = 0,  /**< I2C PCF8574 backpack adapter */
+    SYN_CHARLCD_MODE_GPIO_4BIT /**< Direct 4-bit parallel GPIO bus (RS, EN, D4-D7) */
 } SYN_CharLCDMode;
 
 /**
@@ -32,11 +33,11 @@ typedef enum {
  */
 typedef struct {
     SYN_CharLCDMode mode;
-    uint8_t cols;           /**< Display columns (e.g. 16, 20) */
-    uint8_t rows;           /**< Display rows (e.g. 2, 4) */
-    uint8_t display_control;/**< Display ON/OFF control state */
-    uint8_t display_mode;   /**< Entry mode state */
-    bool backlight;         /**< True if backlight enabled */
+    uint8_t cols;            /**< Display columns (e.g. 16, 20) */
+    uint8_t rows;            /**< Display rows (e.g. 2, 4) */
+    uint8_t display_control; /**< Display ON/OFF control state */
+    uint8_t display_mode;    /**< Entry mode state */
+    bool backlight;          /**< True if backlight enabled */
 
     /* I2C Mode Context */
     SYN_SoftI2C i2c;

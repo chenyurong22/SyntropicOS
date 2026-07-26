@@ -23,8 +23,8 @@ extern "C" {
  */
 typedef enum {
     SYN_DISTANCE_ULTRASONIC = 0, /**< Pulse trigger/echo (HC-SR04, JSN-SR04T) */
-    SYN_DISTANCE_TOF_LASER  = 1, /**< Time-of-Flight Laser (VL53L0X, VL53L1X) */
-    SYN_DISTANCE_INFRARED   = 2  /**< Optical Analog IR (Sharp GP2Y0A21) */
+    SYN_DISTANCE_TOF_LASER = 1,  /**< Time-of-Flight Laser (VL53L0X, VL53L1X) */
+    SYN_DISTANCE_INFRARED = 2    /**< Optical Analog IR (Sharp GP2Y0A21) */
 } SYN_DistanceType;
 
 /**
@@ -34,11 +34,11 @@ typedef struct {
     SYN_DistanceType type;
     SYN_GPIO_Pin trig_pin;
     SYN_GPIO_Pin echo_pin;
-    uint32_t last_distance_mm;  /**< Calculated distance in millimeters */
-    uint32_t min_range_mm;       /**< Min sensor range in mm */
-    uint32_t max_range_mm;       /**< Max sensor range in mm */
-    bool obstacle_detected;      /**< True if object within proximity threshold */
-    uint32_t proximity_thresh_mm;/**< Proximity alarm threshold in mm */
+    uint32_t last_distance_mm;    /**< Calculated distance in millimeters */
+    uint32_t min_range_mm;        /**< Min sensor range in mm */
+    uint32_t max_range_mm;        /**< Max sensor range in mm */
+    bool obstacle_detected;       /**< True if object within proximity threshold */
+    uint32_t proximity_thresh_mm; /**< Proximity alarm threshold in mm */
 } SYN_Distance;
 
 /**
@@ -53,7 +53,7 @@ typedef struct {
  * @return SYN_OK on success.
  */
 SYN_Status syn_distance_init(SYN_Distance *sensor, SYN_GPIO_Pin trig_pin, SYN_GPIO_Pin echo_pin,
-                            uint32_t min_mm, uint32_t max_mm, SYN_DistanceType type);
+                             uint32_t min_mm, uint32_t max_mm, SYN_DistanceType type);
 
 /**
  * @brief Feed measured pulse duration in microseconds (for Ultrasonic) or raw mm (for TOF).

@@ -4,6 +4,7 @@
  */
 
 #include "syn_dlt645.h"
+
 #include "../util/syn_assert.h"
 
 #include <string.h>
@@ -142,8 +143,8 @@ SYN_Status syn_dlt645_parse(const uint8_t *in_buf, size_t len, SYN_DLT645_Ver ve
         uint8_t di1 = (uint8_t)(buf[11] - SYN_DLT645_OFFSET);
         uint8_t di2 = (uint8_t)(buf[12] - SYN_DLT645_OFFSET);
         uint8_t di3 = (uint8_t)(buf[13] - SYN_DLT645_OFFSET);
-        out_frame->data_id = (uint32_t)di0 | ((uint32_t)di1 << 8) | ((uint32_t)di2 << 16) |
-                             ((uint32_t)di3 << 24);
+        out_frame->data_id =
+            (uint32_t)di0 | ((uint32_t)di1 << 8) | ((uint32_t)di2 << 16) | ((uint32_t)di3 << 24);
     }
 
     /* Decode Payload (subtract 0x33) */

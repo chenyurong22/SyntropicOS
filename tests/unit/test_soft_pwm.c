@@ -48,6 +48,8 @@ static void test_soft_pwm(void)
     /* Percent API */
     syn_soft_pwm_set_percent(&pwm, 50);
     TEST_ASSERT_EQUAL_INT(5, syn_soft_pwm_get_duty(&pwm));
+    syn_soft_pwm_set_percent(&pwm, 200);
+    TEST_ASSERT_EQUAL_INT(10, syn_soft_pwm_get_duty(&pwm));
 }
 
 /** duty > resolution clamps — exercises line 38 */

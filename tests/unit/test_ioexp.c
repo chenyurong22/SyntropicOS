@@ -25,19 +25,25 @@ static void test_ioexp_mcp23017_and_pcf8574(void)
     /* MCP23008 Test */
     st = syn_ioexp_init(&io, 0, 1, 0x20, SYN_IOEXP_MCP23008);
     TEST_ASSERT_EQUAL(SYN_OK, st);
+    syn_ioexp_set_pin_mode(&io, 2, SYN_GPIO_INPUT_PULLUP);
     syn_ioexp_write_port(&io, 0x55);
 
     /* PCF8574 Test */
     st = syn_ioexp_init(&io, 0, 1, 0x27, SYN_IOEXP_PCF8574);
     TEST_ASSERT_EQUAL(SYN_OK, st);
+    syn_ioexp_set_pin_mode(&io, 3, SYN_GPIO_INPUT_PULLDOWN);
     syn_ioexp_write_port(&io, 0xAA);
 
     /* TCA9555 Test */
     st = syn_ioexp_init(&io, 0, 1, 0x20, SYN_IOEXP_TCA9555);
     TEST_ASSERT_EQUAL(SYN_OK, st);
+    syn_ioexp_set_pin_mode(&io, 4, SYN_GPIO_INPUT_PULLUP);
     syn_ioexp_write_port(&io, 0x1234);
 
-    /* NULL guards */
+    /* NULL and out-of-bounds guards */
+    syn_ioexp_set_pin_mode(&io, 99, SYN_GPIO_OUTPUT);
+    syn_ioexp_write_pin(&io, 99, SYN_GPIO_HIGH);
+    TEST_ASSERT_EQUAL(SYN_GPIO_LOW, syn_ioexp_read_pin(&io, 99));
     syn_ioexp_set_pin_mode(NULL, 0, SYN_GPIO_INPUT);
     syn_ioexp_write_pin(NULL, 0, SYN_GPIO_HIGH);
     TEST_ASSERT_EQUAL(SYN_GPIO_LOW, syn_ioexp_read_pin(NULL, 0));

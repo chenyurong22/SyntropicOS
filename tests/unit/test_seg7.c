@@ -13,7 +13,7 @@ static void test_seg7_int_and_scan(void)
     SYN_Seg7 seg;
 
     SYN_GPIO_Pin segment_pins[] = {0, 1, 2, 3, 4, 5, 6, 7};
-    SYN_GPIO_Pin digit_pins[]   = {8, 9, 10, 11};
+    SYN_GPIO_Pin digit_pins[] = {8, 9, 10, 11};
 
     SYN_Status st = syn_seg7_init(&seg, segment_pins, digit_pins, 4, SYN_SEG7_COMMON_CATHODE);
     TEST_ASSERT_EQUAL(SYN_OK, st);
@@ -41,15 +41,18 @@ static void test_seg7_float(void)
     SYN_Seg7 seg;
 
     SYN_GPIO_Pin segment_pins[] = {0, 1, 2, 3, 4, 5, 6, 7};
-    SYN_GPIO_Pin digit_pins[]   = {8, 9, 10, 11};
+    SYN_GPIO_Pin digit_pins[] = {8, 9, 10, 11};
 
     syn_seg7_init(&seg, segment_pins, digit_pins, 4, SYN_SEG7_COMMON_CATHODE);
 
     /* Print float 12.3 */
     syn_seg7_print_float(&seg, 12.3f, 1);
-    TEST_ASSERT_EQUAL_HEX8(0x06, seg.digit_buffers[0]); /* '1' */
+    TEST_ASSERT_EQUAL_HEX8(0x06, seg.digit_buffers[0]);        /* '1' */
     TEST_ASSERT_EQUAL_HEX8(0x5B | 0x80, seg.digit_buffers[1]); /* '2.' */
-    TEST_ASSERT_EQUAL_HEX8(0x4F, seg.digit_buffers[2]); /* '3' */
+    TEST_ASSERT_EQUAL_HEX8(0x4F, seg.digit_buffers[2]);        /* '3' */
+
+    /* Decimals >= num_digits clamping test */
+    syn_seg7_print_float(&seg, 1.23f, 10);
 }
 
 static void test_seg7_hex_string_and_anode(void)
@@ -58,7 +61,7 @@ static void test_seg7_hex_string_and_anode(void)
     SYN_Seg7 seg;
 
     SYN_GPIO_Pin segment_pins[] = {0, 1, 2, 3, 4, 5, 6, 7};
-    SYN_GPIO_Pin digit_pins[]   = {8, 9, 10, 11};
+    SYN_GPIO_Pin digit_pins[] = {8, 9, 10, 11};
 
     /* Common Anode wiring test */
     syn_seg7_init(&seg, segment_pins, digit_pins, 4, SYN_SEG7_COMMON_ANODE);
@@ -95,8 +98,8 @@ static void test_seg7_hex_string_and_anode(void)
 
     syn_seg7_print_str(&seg, "A.B?");
     TEST_ASSERT_EQUAL_HEX8(0x77 | 0x80, seg.digit_buffers[0]); /* 'A.' */
-    TEST_ASSERT_EQUAL_HEX8(0x7C, seg.digit_buffers[1]); /* 'B' */
-    TEST_ASSERT_EQUAL_HEX8(0x00, seg.digit_buffers[2]); /* '?' */
+    TEST_ASSERT_EQUAL_HEX8(0x7C, seg.digit_buffers[1]);        /* 'B' */
+    TEST_ASSERT_EQUAL_HEX8(0x00, seg.digit_buffers[2]);        /* '?' */
 
     syn_seg7_print_str(&seg, ".-_ ");
     TEST_ASSERT_EQUAL_HEX8(0x40, seg.digit_buffers[0]); /* '-' */

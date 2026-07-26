@@ -22,7 +22,8 @@ static void on_frame_decoded(const SYN_DLT645_Frame *frame, void *ctx)
 
 static void test_dlt645_checksum(void)
 {
-    uint8_t buf[] = {0x68, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x68, 0x11, 0x04, 0x33, 0x33, 0x33, 0x33};
+    uint8_t buf[] = {0x68, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
+                     0x68, 0x11, 0x04, 0x33, 0x33, 0x33, 0x33};
     uint8_t cs = syn_dlt645_calc_checksum(buf, sizeof(buf));
     TEST_ASSERT_TRUE(cs != 0);
 
@@ -77,7 +78,7 @@ static void test_dlt645_1997_roundtrip(void)
 
     tx_frame.version = SYN_DLT645_VER_1997;
     tx_frame.control = SYN_DLT645_CMD_READ_DATA;
-    tx_frame.data_id = 0x9010; /* 1997 2-byte DI */
+    tx_frame.data_id = 0x9010;         /* 1997 2-byte DI */
     memset(tx_frame.address, 0x99, 6); /* Broadcast address */
     tx_frame.payload_len = 0;
 
@@ -109,7 +110,10 @@ static void test_dlt645_streaming_decoder(void)
 
     /* Prepend 4 preamble 0xFE bytes */
     uint8_t stream[80];
-    stream[0] = 0xFE; stream[1] = 0xFE; stream[2] = 0xFE; stream[3] = 0xFE;
+    stream[0] = 0xFE;
+    stream[1] = 0xFE;
+    stream[2] = 0xFE;
+    stream[3] = 0xFE;
     memcpy(&stream[4], raw, enc_len);
 
     callback_count = 0;
@@ -131,13 +135,14 @@ static void test_dlt645_error_handling(void)
     SYN_DLT645_Frame frame;
     uint8_t short_buf[] = {0x68, 0x11, 0x22};
 
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
-                          syn_dlt645_parse(short_buf, sizeof(short_buf), SYN_DLT645_VER_2007, &frame));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dlt645_parse(short_buf, sizeof(short_buf),
+                                                              SYN_DLT645_VER_2007, &frame));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
                           syn_dlt645_parse(NULL, 20, SYN_DLT645_VER_2007, &frame));
 
     /* Corrupted checksum */
-    uint8_t bad_cs[] = {0x68, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x68, 0x11, 0x04, 0x33, 0x33, 0x33, 0x33, 0xFF, 0x16};
+    uint8_t bad_cs[] = {0x68, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x68,
+                        0x11, 0x04, 0x33, 0x33, 0x33, 0x33, 0xFF, 0x16};
     TEST_ASSERT_EQUAL_INT(SYN_ERROR,
                           syn_dlt645_parse(bad_cs, sizeof(bad_cs), SYN_DLT645_VER_2007, &frame));
 
@@ -151,8 +156,10 @@ static void test_dlt645_error_handling(void)
     TEST_ASSERT_EQUAL_INT(0, syn_dlt645_encode(&tx_frame, bad_cs, 5));
 
     /* Parse with preambles in buffer directly */
-    uint8_t preamble_buf[] = {0xFE, 0xFE, 0x68, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x68, 0x11, 0x04, 0x33, 0x33, 0x33, 0x33, 0x17, 0x16};
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dlt645_parse(preamble_buf, sizeof(preamble_buf), SYN_DLT645_VER_2007, &frame));
+    uint8_t preamble_buf[] = {0xFE, 0xFE, 0x68, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+                              0x68, 0x11, 0x04, 0x33, 0x33, 0x33, 0x33, 0x17, 0x16};
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_dlt645_parse(preamble_buf, sizeof(preamble_buf), SYN_DLT645_VER_2007, &frame));
 
     /* Decoder NULL and invalid feeds */
     syn_dlt645_decoder_feed(NULL, 0x68);

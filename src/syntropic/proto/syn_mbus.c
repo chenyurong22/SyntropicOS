@@ -9,8 +9,8 @@
  * @brief M-Bus (Meter-Bus) master/slave protocol framing implementation.
  */
 
-#include "syn_mbus.h"
 #include "../util/syn_assert.h"
+#include "syn_mbus.h"
 
 #include <string.h>
 
@@ -168,7 +168,8 @@ SYN_Status syn_mbus_decode_frame(const uint8_t *buf, size_t len, SYN_MBUS_Frame 
         return SYN_OK;
     }
 
-    /* Case 3: Control / Long frame (0x68 | L | L | 0x68 | C | A | CI | Payload... | Checksum | 0x16) */
+    /* Case 3: Control / Long frame (0x68 | L | L | 0x68 | C | A | CI | Payload... | Checksum |
+     * 0x16) */
     if (buf[0] == SYN_MBUS_START_LONG) {
         if (len < 9) {
             return SYN_INVALID_PARAM;

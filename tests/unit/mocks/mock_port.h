@@ -22,6 +22,7 @@ extern "C" {
 
 extern uint32_t mock_tick_ms;
 extern volatile uint32_t mock_hpclock_lsb;
+extern uint32_t mock_hpclock_freq_hz;
 
 /** Advance the mock system tick by @p ms milliseconds. */
 void mock_tick_advance(uint32_t ms);
@@ -40,6 +41,7 @@ void mock_gpio_set_write_callback(MockGpioWriteCallback cb, void *ctx);
 
 /** Set the raw ADC value returned by syn_port_adc_read(). */
 extern uint16_t mock_adc_value;
+extern uint8_t mock_adc_resolution;
 
 /* ── Flash ──────────────────────────────────────────────────────────────── */
 

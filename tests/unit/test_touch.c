@@ -20,7 +20,8 @@ static void test_touch_sensing(void)
     syn_touch_calibrate(&t, 500);
     TEST_ASSERT_EQUAL_UINT16(500, t.baseline);
 
-    /* Test negative delta (raw sample < baseline: 300 < 500 -> delta = -(-200) = 200 >= threshold 100) */
+    /* Test negative delta (raw sample < baseline: 300 < 500 -> delta = -(-200) = 200 >= threshold
+     * 100) */
     syn_touch_feed_sample(&t, 300);
     TEST_ASSERT_TRUE(syn_touch_is_pressed(&t));
 
@@ -34,6 +35,21 @@ static void test_touch_sensing(void)
     /* Sample drops back to baseline */
     syn_touch_feed_sample(&t, 500);
     TEST_ASSERT_FALSE(syn_touch_is_pressed(&t));
+
+    /* Test baseline auto-initialization when baseline is 0 */
+    SYN_Touch t2;
+    syn_touch_init(&t2, 1, 50);
+    t2.baseline = 0;
+    syn_touch_feed_sample(&t2, 200);
+    TEST_ASSERT_EQUAL_UINT16(200, t2.baseline);
+
+    /* Test idle baseline drift tracking (delta < threshold) */
+    t2.is_pressed = false;
+    syn_touch_feed_sample(&t2, 210); /* delta = 10 < 50 */
+    TEST_ASSERT_FALSE(syn_touch_is_pressed(&t2));
+
+    /* Test getters */
+    TEST_ASSERT_EQUAL_UINT32(2, t.press_count);
 
     /* NULL guards */
     syn_touch_calibrate(NULL, 100);

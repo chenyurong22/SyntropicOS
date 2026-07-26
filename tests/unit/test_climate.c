@@ -26,6 +26,10 @@ static void test_climate_operations(void)
     syn_climate_feed_sample(&climate, 20.0f, 0.0f, 1013.25f);
     TEST_ASSERT_FLOAT_WITHIN(0.1f, 20.0f, syn_climate_get_dew_point(&climate));
 
+    /* b + temp_c == 0 edge case (-237.7 C) */
+    syn_climate_feed_sample(&climate, -237.7f, 50.0f, 1000.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, -237.7f, syn_climate_get_dew_point(&climate));
+
     /* NULL guards */
     syn_climate_feed_sample(NULL, 0.0f, 0.0f, 0.0f);
     TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, syn_climate_get_temp_c(NULL));

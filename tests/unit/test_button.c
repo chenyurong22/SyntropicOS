@@ -78,7 +78,8 @@ static void combo_on_fire(SYN_Button *b, void *ctx)
 static void reset_counts(void)
 {
     btn_press_count = btn_release_count = btn_long_count = btn_repeat_count = 0;
-    btn_single_click_count = btn_double_click_count = btn_triple_click_count = btn_multi_click_count = 0;
+    btn_single_click_count = btn_double_click_count = btn_triple_click_count =
+        btn_multi_click_count = 0;
     combo_fired_count = 0;
 }
 

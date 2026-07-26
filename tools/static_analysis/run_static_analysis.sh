@@ -26,7 +26,8 @@ fi
 
 echo "=== Running Clang Static Analyzer (scan-build) ==="
 if command -v scan-build >/dev/null 2>&1; then
-    scan-build --status-bugs make -j "${JOBS}" -f tests/Makefile.unity clean test_unity
+    make -f tests/Makefile.unity clean
+    scan-build --status-bugs make -j "${JOBS}" -f tests/Makefile.unity test_unity
     echo "=== Clang Static Analyzer Complete ==="
 else
     echo "Notice: scan-build not found on host. Run via container: make -C tools/containers container-static"

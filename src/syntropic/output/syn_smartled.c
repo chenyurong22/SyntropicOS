@@ -4,6 +4,7 @@
  */
 
 #include "syn_smartled.h"
+
 #include "../util/syn_assert.h"
 
 #include <string.h>
@@ -30,13 +31,15 @@ SYN_Status syn_smartled_init(SYN_SmartLED *led, SYN_GPIO_Pin data_pin, uint16_t 
 
 void syn_smartled_set_brightness(SYN_SmartLED *led, uint8_t brightness)
 {
-    if (led == NULL) return;
+    if (led == NULL)
+        return;
     led->brightness = brightness;
 }
 
 void syn_smartled_set_pixel_rgb(SYN_SmartLED *led, uint16_t index, uint8_t r, uint8_t g, uint8_t b)
 {
-    if (led == NULL || led->pixel_buf == NULL || index >= led->num_leds) return;
+    if (led == NULL || led->pixel_buf == NULL || index >= led->num_leds)
+        return;
 
     /* Scale by global brightness */
     uint16_t br = (uint16_t)led->brightness + 1;
@@ -48,7 +51,8 @@ void syn_smartled_set_pixel_rgb(SYN_SmartLED *led, uint16_t index, uint8_t r, ui
 
 void syn_smartled_set_pixel_hsv(SYN_SmartLED *led, uint16_t index, uint8_t h, uint8_t s, uint8_t v)
 {
-    if (led == NULL || led->pixel_buf == NULL || index >= led->num_leds) return;
+    if (led == NULL || led->pixel_buf == NULL || index >= led->num_leds)
+        return;
 
     uint8_t r, g, b;
     if (s == 0) {
@@ -62,12 +66,36 @@ void syn_smartled_set_pixel_hsv(SYN_SmartLED *led, uint16_t index, uint8_t h, ui
         uint8_t t = (uint8_t)((v * (255 - ((s * (255 - remainder)) >> 8))) >> 8);
 
         switch (region) {
-            case 0:  r = v; g = t; b = p; break;
-            case 1:  r = q; g = v; b = p; break;
-            case 2:  r = p; g = v; b = t; break;
-            case 3:  r = p; g = q; b = v; break;
-            case 4:  r = t; g = p; b = v; break;
-            default: r = v; g = p; b = q; break;
+        case 0:
+            r = v;
+            g = t;
+            b = p;
+            break;
+        case 1:
+            r = q;
+            g = v;
+            b = p;
+            break;
+        case 2:
+            r = p;
+            g = v;
+            b = t;
+            break;
+        case 3:
+            r = p;
+            g = q;
+            b = v;
+            break;
+        case 4:
+            r = t;
+            g = p;
+            b = v;
+            break;
+        default:
+            r = v;
+            g = p;
+            b = q;
+            break;
         }
     }
 
@@ -76,7 +104,8 @@ void syn_smartled_set_pixel_hsv(SYN_SmartLED *led, uint16_t index, uint8_t h, ui
 
 void syn_smartled_fill_rgb(SYN_SmartLED *led, uint8_t r, uint8_t g, uint8_t b)
 {
-    if (led == NULL || led->pixel_buf == NULL) return;
+    if (led == NULL || led->pixel_buf == NULL)
+        return;
 
     for (uint16_t i = 0; i < led->num_leds; i++) {
         syn_smartled_set_pixel_rgb(led, i, r, g, b);
@@ -85,6 +114,7 @@ void syn_smartled_fill_rgb(SYN_SmartLED *led, uint8_t r, uint8_t g, uint8_t b)
 
 void syn_smartled_clear(SYN_SmartLED *led)
 {
-    if (led == NULL || led->pixel_buf == NULL) return;
+    if (led == NULL || led->pixel_buf == NULL)
+        return;
     syn_smartled_fill_rgb(led, 0, 0, 0);
 }

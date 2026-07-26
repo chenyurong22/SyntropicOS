@@ -225,6 +225,14 @@ void test_soft_i2c_write_read_data_nack(void)
     mock_gpio_read_overrides[PIN_SDA] = -1;
 }
 
+static void test_soft_i2c_null_guards(void)
+{
+    syn_soft_i2c_start(NULL);
+    syn_soft_i2c_stop(NULL);
+    TEST_ASSERT_FALSE(syn_soft_i2c_write(NULL, 0xFF));
+    TEST_ASSERT_EQUAL_UINT8(0, syn_soft_i2c_read(NULL, false));
+}
+
 void run_soft_i2c_tests(void)
 {
     RUN_TEST(test_soft_i2c_init);
@@ -239,4 +247,5 @@ void run_soft_i2c_tests(void)
     RUN_TEST(test_soft_i2c_clock_stretch);
     RUN_TEST(test_soft_i2c_write_read_rx_nack);
     RUN_TEST(test_soft_i2c_write_read_data_nack);
+    RUN_TEST(test_soft_i2c_null_guards);
 }

@@ -147,6 +147,11 @@ static void test_rtc_drift_ppm(void)
     SYN_RTC_DateTime got_dt;
     TEST_ASSERT_EQUAL(SYN_OK, syn_rtc_get(&got_dt));
 
+    /* Test get failure when port rtc fails */
+    mock_rtc_init_ok = false;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_rtc_get(&got_dt));
+    mock_rtc_init_ok = true;
+
     SYN_RTC_DateTime bad_year = {1969u, 1u, 1u, 0u, 0u, 0u};
     TEST_ASSERT_FALSE(syn_rtc_is_valid(&bad_year));
 }

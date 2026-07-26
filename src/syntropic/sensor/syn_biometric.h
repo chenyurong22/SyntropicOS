@@ -33,9 +33,9 @@ typedef struct {
     SYN_BiometricType type;
     SYN_SoftI2C i2c;
     uint8_t i2c_addr;
-    uint16_t heart_rate_bpm;    /**< Measured Heart Rate in BPM (e.g. 72) */
-    float spo2_pct;             /**< Measured Blood Oxygen Saturation % (e.g. 98.5%) */
-    bool finger_detected;       /**< True if finger placed on sensor glass */
+    uint16_t heart_rate_bpm; /**< Measured Heart Rate in BPM (e.g. 72) */
+    float spo2_pct;          /**< Measured Blood Oxygen Saturation % (e.g. 98.5%) */
+    bool finger_detected;    /**< True if finger placed on sensor glass */
 } SYN_Biometric;
 
 /**
@@ -49,7 +49,7 @@ typedef struct {
  * @return SYN_OK on success.
  */
 SYN_Status syn_biometric_init(SYN_Biometric *bio, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
-                             uint8_t i2c_addr, SYN_BiometricType type);
+                              uint8_t i2c_addr, SYN_BiometricType type);
 
 /**
  * @brief Feed raw Red & IR photodiode samples.

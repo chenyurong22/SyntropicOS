@@ -4,13 +4,14 @@
  */
 
 #include "syn_biometric.h"
+
 #include "../util/syn_assert.h"
 
 #include <math.h>
 #include <string.h>
 
 SYN_Status syn_biometric_init(SYN_Biometric *bio, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
-                             uint8_t i2c_addr, SYN_BiometricType type)
+                              uint8_t i2c_addr, SYN_BiometricType type)
 {
     SYN_ASSERT(bio != NULL);
 
@@ -25,7 +26,8 @@ SYN_Status syn_biometric_init(SYN_Biometric *bio, SYN_GPIO_Pin scl, SYN_GPIO_Pin
 
 void syn_biometric_feed_samples(SYN_Biometric *bio, uint32_t red_raw, uint32_t ir_raw)
 {
-    if (bio == NULL) return;
+    if (bio == NULL)
+        return;
 
     /* Finger detection threshold */
     if (ir_raw < 50000) {
@@ -40,8 +42,10 @@ void syn_biometric_feed_samples(SYN_Biometric *bio, uint32_t red_raw, uint32_t i
     /* Estimate SpO2 ratio R = (AC_red/DC_red) / (AC_ir/DC_ir) */
     float r_ratio = ((float)red_raw / (float)ir_raw);
     float spo2 = 104.0f - (17.0f * r_ratio);
-    if (spo2 > 100.0f) spo2 = 100.0f;
-    if (spo2 < 70.0f) spo2 = 70.0f;
+    if (spo2 > 100.0f)
+        spo2 = 100.0f;
+    if (spo2 < 70.0f)
+        spo2 = 70.0f;
 
     bio->spo2_pct = spo2;
     bio->heart_rate_bpm = 72; /* Nominal default pulse */
@@ -49,18 +53,21 @@ void syn_biometric_feed_samples(SYN_Biometric *bio, uint32_t red_raw, uint32_t i
 
 uint16_t syn_biometric_get_bpm(const SYN_Biometric *bio)
 {
-    if (bio == NULL || !bio->finger_detected) return 0;
+    if (bio == NULL || !bio->finger_detected)
+        return 0;
     return bio->heart_rate_bpm;
 }
 
 float syn_biometric_get_spo2(const SYN_Biometric *bio)
 {
-    if (bio == NULL || !bio->finger_detected) return 0.0f;
+    if (bio == NULL || !bio->finger_detected)
+        return 0.0f;
     return bio->spo2_pct;
 }
 
 bool syn_biometric_is_finger_detected(const SYN_Biometric *bio)
 {
-    if (bio == NULL) return false;
+    if (bio == NULL)
+        return false;
     return bio->finger_detected;
 }

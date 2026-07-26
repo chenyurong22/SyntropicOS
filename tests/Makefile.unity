@@ -121,27 +121,37 @@ UNITY_SRCS := tests/unit/unity/unity.c
 # Mock port layer
 MOCK_SRCS := tests/unit/mocks/mock_port.c
 
+# Build output directory
+BUILD_DIR := build/tests
+
 # All per-module test files
 TEST_SRCS := $(wildcard tests/unit/test_*.c)
 
 ALL_SRCS := $(SYN_SRCS) $(UNITY_SRCS) $(MOCK_SRCS) $(TEST_SRCS)
+OBJS     := $(patsubst %.c,$(BUILD_DIR)/%.o,$(ALL_SRCS))
 
 .PHONY: all test test-cov clean
 
 all: test
 
-test_unity: $(ALL_SRCS)
-	$(CC) $(CFLAGS) $(ALL_SRCS) -o $@ -lm
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/test_unity: $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o $@ -lm
+
+test_unity: $(BUILD_DIR)/test_unity
 
 test: test_unity
-	./test_unity
+	./$(BUILD_DIR)/test_unity
 
 test-cov: CFLAGS += --coverage
-test-cov: clean test_unity
-	./test_unity
-	@echo "Coverage data generated (.gcda files)."
+test-cov: test_unity
+	./$(BUILD_DIR)/test_unity
+	@echo "Coverage data generated."
 
 clean:
 	rm -f test_unity test_unity_cov coverage.info coverage_src.info
-	rm -rf coverage_html
+	rm -rf coverage_html $(BUILD_DIR)
 	find . \( -name "*.gcda" -o -name "*.gcno" -o -name "*.su" \) -delete

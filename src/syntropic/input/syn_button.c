@@ -337,13 +337,17 @@ void syn_button_update(SYN_Button *btn)
             btn->click_count = 0;
 
             if (count == 1) {
-                button_fire_event(btn, SYN_BUTTON_EVT_SINGLE_CLICK, btn->on_single_click, btn->on_single_click_ctx);
+                button_fire_event(btn, SYN_BUTTON_EVT_SINGLE_CLICK, btn->on_single_click,
+                                  btn->on_single_click_ctx);
             } else if (count == 2) {
-                button_fire_event(btn, SYN_BUTTON_EVT_DOUBLE_CLICK, btn->on_double_click, btn->on_double_click_ctx);
+                button_fire_event(btn, SYN_BUTTON_EVT_DOUBLE_CLICK, btn->on_double_click,
+                                  btn->on_double_click_ctx);
             } else if (count == 3) {
-                button_fire_event(btn, SYN_BUTTON_EVT_TRIPLE_CLICK, btn->on_triple_click, btn->on_triple_click_ctx);
+                button_fire_event(btn, SYN_BUTTON_EVT_TRIPLE_CLICK, btn->on_triple_click,
+                                  btn->on_triple_click_ctx);
             } else if (count >= 4) {
-                button_fire_event(btn, SYN_BUTTON_EVT_MULTI_CLICK, btn->on_multi_click, btn->on_multi_click_ctx);
+                button_fire_event(btn, SYN_BUTTON_EVT_MULTI_CLICK, btn->on_multi_click,
+                                  btn->on_multi_click_ctx);
             }
         }
     }

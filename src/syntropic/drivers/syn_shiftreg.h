@@ -45,9 +45,8 @@ typedef struct {
  * @param num_chips Number of cascaded 8-bit chips (1 to 8).
  * @return SYN_OK on success.
  */
-SYN_Status syn_shiftreg_out_init(SYN_ShiftRegOut *sr, SYN_GPIO_Pin data_pin,
-                                 SYN_GPIO_Pin clock_pin, SYN_GPIO_Pin latch_pin,
-                                 uint8_t num_chips);
+SYN_Status syn_shiftreg_out_init(SYN_ShiftRegOut *sr, SYN_GPIO_Pin data_pin, SYN_GPIO_Pin clock_pin,
+                                 SYN_GPIO_Pin latch_pin, uint8_t num_chips);
 
 /**
  * @brief Configure optional Output Enable (OE) pin.
@@ -122,9 +121,8 @@ typedef struct {
  * @param num_chips Number of cascaded 8-bit chips (1 to 8).
  * @return SYN_OK on success.
  */
-SYN_Status syn_shiftreg_in_init(SYN_ShiftRegIn *sr, SYN_GPIO_Pin data_pin,
-                                SYN_GPIO_Pin clock_pin, SYN_GPIO_Pin load_pin,
-                                uint8_t num_chips);
+SYN_Status syn_shiftreg_in_init(SYN_ShiftRegIn *sr, SYN_GPIO_Pin data_pin, SYN_GPIO_Pin clock_pin,
+                                SYN_GPIO_Pin load_pin, uint8_t num_chips);
 
 /**
  * @brief Set bit order mode for input sampling.

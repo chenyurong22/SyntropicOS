@@ -4,6 +4,7 @@
  */
 
 #include "syn_oled.h"
+
 #include "../util/syn_assert.h"
 
 #include <string.h>
@@ -22,8 +23,8 @@ static void send_command(SYN_OLED *oled, uint8_t cmd)
     write_i2c_reg(&oled->i2c, oled->i2c_addr, 0x00, cmd);
 }
 
-SYN_Status syn_oled_init(SYN_OLED *oled, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
-                         uint8_t i2c_addr, uint16_t w, uint16_t h, SYN_OLEDType type)
+SYN_Status syn_oled_init(SYN_OLED *oled, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uint8_t i2c_addr,
+                         uint16_t w, uint16_t h, SYN_OLEDType type)
 {
     SYN_ASSERT(oled != NULL);
     SYN_ASSERT(w > 0 && h > 0);
@@ -79,7 +80,8 @@ SYN_Status syn_oled_init(SYN_OLED *oled, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
 
 void syn_oled_set_contrast(SYN_OLED *oled, uint8_t contrast)
 {
-    if (oled == NULL) return;
+    if (oled == NULL)
+        return;
     oled->contrast = contrast;
     send_command(oled, 0x81);
     send_command(oled, contrast);
@@ -87,29 +89,34 @@ void syn_oled_set_contrast(SYN_OLED *oled, uint8_t contrast)
 
 void syn_oled_set_invert(SYN_OLED *oled, bool invert)
 {
-    if (oled == NULL) return;
+    if (oled == NULL)
+        return;
     oled->inverted = invert;
     send_command(oled, invert ? 0xA7 : 0xA6);
 }
 
 void syn_oled_set_display_on(SYN_OLED *oled, bool on)
 {
-    if (oled == NULL) return;
+    if (oled == NULL)
+        return;
     oled->display_on = on;
     send_command(oled, on ? 0xAF : 0xAE);
 }
 
 static bool get_canvas_pixel(const SYN_Canvas *c, uint16_t x, uint16_t y)
 {
-    if (c == NULL || c->framebuf == NULL || x >= c->width || y >= c->height) return false;
-    size_t idx = (size_t)(y * c->width + x) / 8;
-    uint8_t bit = (uint8_t)(x % 8);
-    return (c->framebuf[idx] & (0x80 >> bit)) != 0;
+    if (c == NULL || c->framebuf == NULL || x >= c->width || y >= c->height)
+        return false;
+    size_t pixel_idx = (size_t)y * c->width + x;
+    size_t byte_idx = pixel_idx / 8;
+    uint8_t bit_idx = (uint8_t)(7 - (pixel_idx % 8));
+    return (c->framebuf[byte_idx] & (1u << bit_idx)) != 0;
 }
 
 void syn_oled_flush_canvas(SYN_OLED *oled, const SYN_Canvas *c)
 {
-    if (oled == NULL || c == NULL || c->framebuf == NULL) return;
+    if (oled == NULL || c == NULL || c->framebuf == NULL)
+        return;
 
     uint8_t pages = (uint8_t)(oled->height / 8);
 
@@ -117,7 +124,7 @@ void syn_oled_flush_canvas(SYN_OLED *oled, const SYN_Canvas *c)
         send_command(oled, (uint8_t)(0xB0 + p)); /* Page address */
 
         uint8_t col = (uint8_t)(0x00 + oled->col_offset);
-        send_command(oled, (uint8_t)(col & 0x0F)); /* Column Low Nibble */
+        send_command(oled, (uint8_t)(col & 0x0F));        /* Column Low Nibble */
         send_command(oled, (uint8_t)(0x10 | (col >> 4))); /* Column High Nibble */
 
         for (uint16_t x = 0; x < oled->width; x++) {

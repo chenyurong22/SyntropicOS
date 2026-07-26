@@ -482,7 +482,9 @@ bool syn_ir_decode_pulse(SYN_IR_Decoder *decoder, uint16_t duration_us, bool is_
                 return false;
             }
 
-            decoder->bits |= (((uint64_t)bit_val) << decoder->bit_idx);
+            if (decoder->bit_idx < 64) {
+                decoder->bits |= (((uint64_t)bit_val) << decoder->bit_idx);
+            }
             decoder->bit_idx++;
 
             if (decoder->bit_idx >= decoder->expected_bits) {
@@ -507,7 +509,9 @@ bool syn_ir_decode_pulse(SYN_IR_Decoder *decoder, uint16_t duration_us, bool is_
                 return false;
             }
 
-            decoder->bits |= (((uint64_t)bit_val) << decoder->bit_idx);
+            if (decoder->bit_idx < 64) {
+                decoder->bits |= (((uint64_t)bit_val) << decoder->bit_idx);
+            }
             decoder->bit_idx++;
 
             if (decoder->bit_idx >= decoder->expected_bits || decoder->bit_idx == 12 ||

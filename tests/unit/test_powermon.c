@@ -27,6 +27,11 @@ static void test_powermon_operations(void)
     syn_powermon_feed_raw(&pm, 9600, 10.0f); /* 12V bus (9600 * 1.25mV) */
     TEST_ASSERT_FLOAT_WITHIN(0.1f, 12.0f, syn_powermon_get_bus_voltage(&pm));
 
+    /* Zero shunt resistor edge case */
+    pm.shunt_resistor_ohms = 0.0f;
+    syn_powermon_feed_raw(&pm, 1000, 5.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, syn_powermon_get_current_ma(&pm));
+
     /* NULL guards */
     syn_powermon_feed_raw(NULL, 0, 0.0f);
     TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, syn_powermon_get_bus_voltage(NULL));

@@ -38,6 +38,12 @@ static void test_buzzer_beep(void)
     st = syn_buzzer_beep(&buz, 440, 0);
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_FALSE(syn_buzzer_is_playing(&buz));
+
+    /* Zero duration pattern test */
+    static const uint16_t freqs[] = {440};
+    static const uint16_t zero_durs[] = {0};
+    syn_buzzer_play_pattern(&buz, freqs, zero_durs, 1);
+    TEST_ASSERT_FALSE(syn_buzzer_is_playing(&buz));
 }
 
 static void test_buzzer_pattern(void)
@@ -48,7 +54,7 @@ static void test_buzzer_pattern(void)
     syn_buzzer_init(&buz, 2, false);
 
     static const uint16_t freqs[] = {440, 0, 880};
-    static const uint16_t durs[]  = {50, 20, 50};
+    static const uint16_t durs[] = {50, 20, 50};
 
     SYN_Status st = syn_buzzer_play_pattern(&buz, freqs, durs, 3);
     TEST_ASSERT_EQUAL(SYN_OK, st);

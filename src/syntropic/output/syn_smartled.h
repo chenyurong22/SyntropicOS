@@ -22,9 +22,9 @@ extern "C" {
  * @brief Smart LED Color Channel Order.
  */
 typedef enum {
-    SYN_SMARTLED_ORDER_GRB  = 0, /**< Standard WS2812B (Green, Red, Blue) */
-    SYN_SMARTLED_ORDER_RGB  = 1, /**< Standard RGB */
-    SYN_SMARTLED_ORDER_RGBW = 2  /**< SK6812 RGBW (4 channels) */
+    SYN_SMARTLED_ORDER_GRB = 0, /**< Standard WS2812B (Green, Red, Blue) */
+    SYN_SMARTLED_ORDER_RGB = 1, /**< Standard RGB */
+    SYN_SMARTLED_ORDER_RGBW = 2 /**< SK6812 RGBW (4 channels) */
 } SYN_SmartLEDOrder;
 
 /**
@@ -44,7 +44,7 @@ typedef struct {
     SYN_GPIO_Pin data_pin;
     SYN_SmartLEDOrder order;
     uint16_t num_leds;
-    uint8_t brightness;       /**< Global brightness scale (0 to 255) */
+    uint8_t brightness;           /**< Global brightness scale (0 to 255) */
     SYN_SmartLEDColor *pixel_buf; /**< Caller-allocated pixel buffer */
 } SYN_SmartLED;
 

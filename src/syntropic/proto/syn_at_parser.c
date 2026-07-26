@@ -40,6 +40,8 @@ void syn_at_parser_reset(SYN_AtParser *parser)
 
 static bool starts_with(const char *str, const char *prefix)
 {
+    if (str == NULL || prefix == NULL)
+        return false;
     return strncmp(str, prefix, strlen(prefix)) == 0;
 }
 

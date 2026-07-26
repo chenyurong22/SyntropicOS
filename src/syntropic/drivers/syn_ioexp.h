@@ -24,8 +24,8 @@ extern "C" {
 typedef enum {
     SYN_IOEXP_MCP23017 = 0, /**< 16-bit I2C GPIO Expander (Port A & B) */
     SYN_IOEXP_MCP23008 = 1, /**< 8-bit I2C GPIO Expander */
-    SYN_IOEXP_PCF8574  = 2, /**< 8-bit Pseudo-bidirectional I2C Expander */
-    SYN_IOEXP_TCA9555  = 3  /**< 16-bit I2C GPIO Expander */
+    SYN_IOEXP_PCF8574 = 2,  /**< 8-bit Pseudo-bidirectional I2C Expander */
+    SYN_IOEXP_TCA9555 = 3   /**< 16-bit I2C GPIO Expander */
 } SYN_IOExpType;
 
 /**
@@ -35,10 +35,10 @@ typedef struct {
     SYN_IOExpType type;
     SYN_SoftI2C i2c;
     uint8_t i2c_addr;
-    uint8_t num_pins;      /**< Total pins (8 or 16) */
-    uint16_t out_mask;     /**< Output state cache */
-    uint16_t dir_mask;     /**< Direction mask (1 = input, 0 = output) */
-    uint16_t pullup_mask;  /**< Pull-up resistor mask */
+    uint8_t num_pins;     /**< Total pins (8 or 16) */
+    uint16_t out_mask;    /**< Output state cache */
+    uint16_t dir_mask;    /**< Direction mask (1 = input, 0 = output) */
+    uint16_t pullup_mask; /**< Pull-up resistor mask */
 } SYN_IOExp;
 
 /**
@@ -51,8 +51,8 @@ typedef struct {
  * @param type     Expander IC type (MCP23017, MCP23008, PCF8574, TCA9555).
  * @return SYN_OK on success.
  */
-SYN_Status syn_ioexp_init(SYN_IOExp *ioexp, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda,
-                          uint8_t i2c_addr, SYN_IOExpType type);
+SYN_Status syn_ioexp_init(SYN_IOExp *ioexp, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uint8_t i2c_addr,
+                          SYN_IOExpType type);
 
 /**
  * @brief Set pin mode (input vs output).

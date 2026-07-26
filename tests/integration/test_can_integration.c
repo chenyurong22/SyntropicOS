@@ -19,7 +19,8 @@ void test_canopen_cia402_integration(void)
     printf("[Integration Test] Testing CANopen CiA 402 Drive Profile State Machine...\n");
 
     static uint32_t dev_type = 0x00020192;
-    SYN_CANOpenODEntry od_table[] = {{0x1000, 0x00, SYN_CANOPEN_ACCESS_RO, 4, &dev_type}};
+    SYN_CANOpenODEntry od_table[] = {
+        {0x1000, 0x00, 0x07, SYN_CANOPEN_ACCESS_RO, &dev_type, sizeof(dev_type)}};
 
     SYN_CANOpenNode node;
     SYN_CANOpenNodeConfig cfg;

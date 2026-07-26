@@ -1,89 +1,64 @@
-# SyntropicOS
+# SyntropicOS Documentation
 
 **High-Performance Bare-Metal Application Framework & Cooperative OS**
 
-SyntropicOS is a zero-overhead, production-grade C99 framework designed for deeply embedded systems. Built for professional toolchains (GCC, Clang, IAR, Keil), it provides a modular ecosystem for building structured bare-metal software on high-performance targets like STM32 and RP2040.
+SyntropicOS is a zero-overhead, production-grade C99 framework designed for deeply embedded systems. It provides stackless multitasking, non-blocking drivers, industrial fieldbuses, and display graphics for targets ranging from 8-bit microcontrollers to 32-bit Cortex-M and RISC-V targets.
 
-## Why SyntropicOS?
+---
 
-### The Cooperative-by-Design Architecture
+## Technical Specifications At-a-Glance
 
-Most embedded frameworks pair a lightweight coroutine scheduler with third-party libraries (for networking, DSP, GUI, or protocols). However, standard third-party libraries rely on **blocking synchronous loops** (`while (!ready) delay();`) or require **heavy preemptive threads with multi-kilobyte stacks** (e.g. FreeRTOS/Zephyr). Wrapping external libraries in a cooperative scheduler creates a severe mismatch: opaque internal blocking calls starve other tasks and break non-preemptive concurrency.
+| Feature | Design Specification |
+|---|---|
+| **Concurrency** | Cooperative protothreads (`syn_pt`). Continuation state costs **2 bytes RAM** per thread. |
+| **Task Scheduler** | Cooperative task runner (`syn_sched`). Task descriptors cost **~16–28 bytes RAM** per task. |
+| **Memory Allocation** | **100% Zero-Heap / Static Allocation**. No `malloc()` or dynamic pool fragmentation over long runtimes. |
+| **Execution Model** | All 70+ drivers & protocol stacks are written as **non-blocking state machines**. |
+| **Compatibility** | Standard **C99**. Compiles with GCC, Clang, IAR, Keil, STM32CubeIDE, and Arduino IDE. |
 
-SyntropicOS takes a **batteries-included, cooperative-by-design** approach — building and reimplementing all functionality natively from the ground up:
+---
 
-- **Native Non-Blocking State Machines** — All 70+ modules (MQTT, HTTP, WebSocket, DNS, SNTP, Modbus, FFT, Kalman filter, FOC motor control, Biquad IIR, PID, GUI engine) are written as explicit state machines. During wait states (network handshakes, hardware I/O, sensor conversion), modules cooperatively defer control back to the scheduler (`PT_DEFER` / `PT_WAIT_UNTIL`) instead of blocking CPU execution.
-- **Stackless Lightweight Threads** — Protothreads (`syn_pt`) cost just **2 bytes of RAM** for continuation state; full scheduled task descriptors (`syn_task`) with priority, timer delay, and event blocking cost only **~16–28 bytes per task** (versus 512B–4KB per-thread stack in traditional RTOSs).
-- **Zero Heap Allocation** — 100% of state is caller-owned or statically allocated (`SYN_MAILBOX_DEFINE`, fixed Q16.16 math). No dynamic allocation (`malloc`/`free`), avoiding heap fragmentation and memory leaks over indefinite runtimes.
-- **Embedded Graphics Engine** — Hardware-independent pixel canvas (`syn_canvas`) and a zero-allocation immediate-mode GUI (`syn_imgui`) supporting button, encoder, and touchscreen inputs.
-- **Rich System Services** — Interactive CLI shell, severity-filtered logger, persistent wear-leveled parameter store, error log registry, and crash-loop recovery boot manager.
-- **Pure C99 & Low Overhead** — Compiles with any C99 compiler (GCC, Clang, Keil, IAR). Every module is individually toggleable via compile switches — only compile and link what you use.
-- **Integer-only Math** — Full Q16.16 fixed-point library with trigonometry, sqrt, exp/log, matrix algebra, Kalman filter, and string I/O. No floating-point overhead, no `libm.a` dependencies.
+## Module Documentation Index
 
-## Quick Start
+Quick-jump to specific feature guides and API references:
 
-```bash
-cd your_project
-git submodule add https://github.com/outlookhazy/SyntropicOS lib/SyntropicOS
-git submodule update --init
-```
+### ⚡ Core & Multitasking ([Read Core Docs →](modules/multitasking.md))
+- **[Protothreads (`syn_pt`)](modules/multitasking.md#1-protothreads)**: Stackless coroutines for non-blocking task execution.
+- **[Task Scheduler (`syn_sched`)](modules/multitasking.md#2-cooperative-scheduler)**: Cooperative task runner with priority & delay timers.
+- **[Active Objects (`syn_ao`)](modules/integration.md#2-active-object-pattern)**: FSM state machine + SPSC queue + task runner actor model.
+- **[Event Flags & Mailboxes](modules/core.md)**: Thread-safe inter-task messaging and synchronization.
 
-Copy the configuration template and enable the modules you need:
+### 🎛️ Input / Output Drivers ([Read I/O Docs →](modules/io.md))
+- **[Buttons (`syn_button`)](modules/io.md#1-button-driver)**: Debounced buttons, multi-click tap gestures, long-press, auto-repeat, and combos.
+- **[Rotary Encoder (`syn_encoder`)](modules/io.md#2-rotary-encoder-driver)**: Quadrature rotary decoding and velocity tracking.
+- **[LED Controller (`syn_led`)](modules/io.md#3-non-blocking-led-driver)**: Pattern blinking, flash sequences, and Morse sequences.
+- **[Software PWM (`syn_soft_pwm`)](modules/io.md#4-software-pwm-driver)**: Timerless PWM generation on arbitrary GPIO pins.
 
-```bash
-cp lib/SyntropicOS/src/syntropic/syn_config_template.h include/syn_config.h
-```
+### 📡 Communications & Protocol Stacks ([Read Comm Docs →](modules/communication.md))
+- **[COBS Framing (`syn_cobs`)](modules/communication.md#1-cobs--packet-router-pipeline)**: Zero-overhead `0x00`-delimited packet framing.
+- **[Packet Router (`syn_router`)](modules/communication.md#1-cobs--packet-router-pipeline)**: Addressed packet dispatch (Master/Slave Node IDs) with ACKs.
+- **[Industrial Modbus (`syn_modbus`)](modules/communication.md)**: Modbus RTU & Modbus TCP Master/Slave stacks.
+- **[M-Bus Metering (`syn_mbus`)](modules/communication.md#2-m-bus-protocol)**: EN 13757 European utility meter bus decoder.
+- **[Automotive ISO-TP & J1939](modules/communication.md)**: CAN bus multi-frame transport and heavy vehicle PGN/SPN decoder.
 
-Include in your build system:
+### 💾 Storage & Filesystems ([Read Storage Docs →](modules/storage.md))
+- **[Persistent Settings (`syn_settings`)](modules/storage.md#1-persistent-settings-manager)**: Wear-leveled flash configuration with load-or-default & CRC-16.
+- **[Virtual File System (`syn_vfs`)](modules/storage.md#2-virtual-file-system)**: POSIX-like VFS abstraction for LittleFS and FAT.
 
-=== "CMake"
+### 🖥️ Display & Embedded UI ([Read Display Docs →](modules/display.md))
+- **[Display Canvas (`syn_canvas`)](modules/display.md#1-framebuffer-display-canvas)**: Hardware-independent 1bpp/16bpp framebuffer & 2D graphics.
+- **[Immediate-Mode GUI (`syn_imgui`)](modules/display.md#2-immediate-mode-gui)**: Zero-heap UI widgets (buttons, sliders, gauges, graphs).
 
-    ```cmake
-    add_subdirectory(lib/SyntropicOS)
-    target_link_libraries(your_target PRIVATE syntropic)
-    ```
+### 🔬 Diagnostics & System Services ([Read Debug Docs →](modules/debug.md))
+- **[Lightweight Event Tracer (`syn_trace`)](modules/debug.md#1-lightweight-event-tracer)**: Timestamped circular event recorder for ISRs & tasks.
+- **[Task CPU Profiler (`syn_profiler`)](modules/debug.md#2-task-cpu-profiler)**: Task CPU percentage, peak execution time, and run metrics.
+- **[Serial CLI (`syn_cli`)](modules/services.md#1-interactive-serial-cli)**: Zero-allocation interactive shell with command auto-help.
+- **[Software Watchdog (`syn_watchdog`)](modules/services.md#2-multi-task-software-watchdog)**: Multi-task heartbeat monitor and deadlock prevention.
 
-=== "Makefile"
+---
 
-    ```makefile
-    SYN_DIR := lib/SyntropicOS
-    include $(SYN_DIR)/sources.mk
-    CFLAGS += -I$(SYN_INC)
-    SRCS   += $(SYN_SRCS)
-    ```
+## Getting Started & Platform Guides
 
-Write your first task:
-
-```c
-#include "syntropic/syntropic.h"
-
-#define TAG "main"
-
-static SYN_PT_Status blink_task(SYN_PT *pt, SYN_Task *task)
-{
-    PT_BEGIN(pt);
-    for (;;) {
-        syn_gpio_toggle(LED_PIN);
-        SYN_LOG_D(TAG, "blink");
-        PT_TASK_DELAY_MS(pt, task, 500);
-    }
-    PT_END(pt);
-}
-
-int main(void)
-{
-    syn_gpio_init(LED_PIN, SYN_GPIO_OUTPUT);
-    syn_log_init(my_uart_output, SYN_LOG_DEBUG);
-
-    static SYN_Task tasks[1];
-    static SYN_Sched sched;
-
-    syn_task_create(&tasks[0], "blink", blink_task, 0, NULL);
-    syn_sched_init(&sched, tasks, 1);
-    syn_sched_run_forever(&sched);
-}
-```
-
-[Getting Started →](getting-started.md){ .md-button .md-button--primary }
-[Arduino Guide →](arduino.md){ .md-button }
-[Browse Modules →](modules/core.md){ .md-button }
+- **[Getting Started Guide](getting-started.md)** — Step-by-step setup for C99 CMake & Makefile projects.
+- **[Arduino Compatibility Guide](arduino.md)** — Installing via Library Manager and working with Multi-Tab sketch examples.
+- **[Porting & System Integration](porting-guide.md)** — Implementing custom GPIO, UART, and timer tick ports.

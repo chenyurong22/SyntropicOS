@@ -11,31 +11,35 @@ if ! command -v clang >/dev/null 2>&1; then
     exit 0
 fi
 
-echo "=== Compiling & Fuzzing CBOR Decoder (30s smoke test) ==="
-clang -std=c99 -I. -Isrc -Itests/unit/mocks -DSYN_USE_MULTICORE=1 -fsanitize=fuzzer,address,undefined \
-    src/syntropic/util/syn_cbor_read.c \
-    tests/unit/mocks/mock_port.c \
-    tests/fuzz/fuzz_cbor.c \
+BUILD_DIR="build/fuzz"
+mkdir -p "${BUILD_DIR}"
+cd "${BUILD_DIR}"
+
+echo "=== Compiling & Fuzzing CBOR Decoder (10s smoke test) ==="
+clang -std=c99 -I"${ROOT_DIR}" -I"${ROOT_DIR}/src" -I"${ROOT_DIR}/tests/unit/mocks" -DSYN_USE_MULTICORE=1 -fsanitize=fuzzer,address,undefined \
+    "${ROOT_DIR}/src/syntropic/util/syn_cbor_read.c" \
+    "${ROOT_DIR}/tests/unit/mocks/mock_port.c" \
+    "${ROOT_DIR}/tests/fuzz/fuzz_cbor.c" \
     -o fuzzer_cbor
 ./fuzzer_cbor -max_total_time=10 || true
 rm -f fuzzer_cbor
 
-echo "=== Compiling & Fuzzing NMEA Decoder (30s smoke test) ==="
-clang -std=c99 -I. -Isrc -Itests/unit/mocks -DSYN_USE_MULTICORE=1 -fsanitize=fuzzer,address,undefined \
-    src/syntropic/proto/syn_nmea.c \
-    tests/unit/mocks/mock_port.c \
-    tests/fuzz/fuzz_nmea.c \
+echo "=== Compiling & Fuzzing NMEA Decoder (10s smoke test) ==="
+clang -std=c99 -I"${ROOT_DIR}" -I"${ROOT_DIR}/src" -I"${ROOT_DIR}/tests/unit/mocks" -DSYN_USE_MULTICORE=1 -fsanitize=fuzzer,address,undefined \
+    "${ROOT_DIR}/src/syntropic/proto/syn_nmea.c" \
+    "${ROOT_DIR}/tests/unit/mocks/mock_port.c" \
+    "${ROOT_DIR}/tests/fuzz/fuzz_nmea.c" \
     -o fuzzer_nmea
 ./fuzzer_nmea -max_total_time=10 || true
 rm -f fuzzer_nmea
 
-echo "=== Compiling & Fuzzing CoAP Decoder (30s smoke test) ==="
-clang -std=c99 -I. -Isrc -Itests/unit/mocks -DSYN_USE_MULTICORE=1 -fsanitize=fuzzer,address,undefined \
-    src/syntropic/net/syn_coap.c \
-    src/syntropic/util/syn_backoff.c \
-    src/syntropic/util/syn_random.c \
-    tests/unit/mocks/mock_port.c \
-    tests/fuzz/fuzz_coap.c \
+echo "=== Compiling & Fuzzing CoAP Decoder (10s smoke test) ==="
+clang -std=c99 -I"${ROOT_DIR}" -I"${ROOT_DIR}/src" -I"${ROOT_DIR}/tests/unit/mocks" -DSYN_USE_MULTICORE=1 -fsanitize=fuzzer,address,undefined \
+    "${ROOT_DIR}/src/syntropic/net/syn_coap.c" \
+    "${ROOT_DIR}/src/syntropic/util/syn_backoff.c" \
+    "${ROOT_DIR}/src/syntropic/util/syn_random.c" \
+    "${ROOT_DIR}/tests/unit/mocks/mock_port.c" \
+    "${ROOT_DIR}/tests/fuzz/fuzz_coap.c" \
     -o fuzzer_coap
 ./fuzzer_coap -max_total_time=10 || true
 rm -f fuzzer_coap

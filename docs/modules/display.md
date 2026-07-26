@@ -1,40 +1,104 @@
-# Display & UI
+# Display & UI Modules
 
-## Display Canvas
+SyntropicOS provides hardware-independent framebuffer drawing (`syn_canvas`), 2D graphics primitives (`syn_gfx`), and a zero-allocation immediate-mode GUI engine (`syn_imgui`).
 
-| Module | Header | Config |
-|---|---|---|
-| Canvas | `display/syn_canvas.h` | `SYN_USE_CANVAS` |
-| Graphics | `display/syn_gfx.h` | `SYN_USE_CANVAS` |
+---
 
-Hardware-independent framebuffer canvas supporting 1bpp (monochrome) and 16bpp (RGB565) pixel formats. Drawing primitives include:
+## 1. Framebuffer Display Canvas (`display/syn_canvas.h`)
 
-- Lines, rectangles, rounded rectangles
-- Circles and filled circles
-- Bitmap blitting
-- Text rendering (built-in font)
+The `syn_canvas` driver provides a hardware-agnostic framebuffer supporting both **1bpp (Monochrome OLED)** and **16bpp (RGB565 TFT)** displays.
 
-The graphics backend is configurable:
+### Architecture Data Flow
 
-- `SYN_GFX_BACKEND_CANVAS` (default) — renders to a framebuffer that you flush to your display
-- `SYN_GFX_BACKEND_DIRECT` — direct-draw mode with no framebuffer (lower RAM, higher bus traffic)
+```mermaid
+flowchart LR
+    Drawing["Drawing Primitives (line, text, rect)"] --> Canvas["SYN_Canvas Framebuffer"]
+    Canvas -- syn_canvas_flush() --> HardwareFn["Flush Function (SPI/I2C DMA)"]
+    HardwareFn --> OLED["Physical OLED / TFT Display"]
+```
 
-## Immediate-Mode GUI
+### Complete Code Example (SSD1306 Mono OLED)
 
-| Module | Header | Config |
-|---|---|---|
-| IMGUI | `ui/syn_imgui.h` | `SYN_USE_IMGUI` |
+```c
+#include <syntropic/display/syn_canvas.h>
 
-A zero-allocation immediate-mode GUI framework. Widgets are drawn and input-tested in a single pass each frame — no widget tree, no heap.
+// Monochrome OLED (128×64 pixels, 1bpp = 1024 bytes)
+static uint8_t framebuf[128 * 64 / 8];
+static SYN_Canvas canvas;
 
-**Widget types:** buttons, sliders, checkboxes, progress bars, gauges, real-time graphs, text labels, scrolling marquee text, and modal dialog overlays.
+// Flush callback: sends raw framebuffer bytes to display driver over I2C/SPI
+static void oled_flush_callback(const uint8_t *buf, size_t len, void *ctx) {
+    // Send 1024-byte framebuffer via I2C/SPI DMA
+    SSD1306_Transmit_Buffer(buf, len);
+}
 
-**Input sources:** button/encoder navigation, touchscreen coordinates.
+void display_setup(void) {
+    // Initialize canvas: 128px width, 64px height, 1bpp monochrome format
+    syn_canvas_init(&canvas, framebuf, 128, 64, 1, oled_flush_callback, NULL);
+}
 
-## Menu
+void render_dashboard(int temperature, int battery_pct) {
+    char str[32];
+    
+    // Clear previous frame
+    syn_canvas_clear(&canvas);
 
-| Module | Header | Config |
-|---|---|---|
-| Menu | `ui/syn_menu.h` | `SYN_USE_MENU` |
+    // Draw header text using built-in 5x7 font
+    syn_canvas_text(&canvas, 0, 0, "SyntropicOS Dashboard");
+    
+    // Draw horizontal dividing line
+    syn_canvas_line(&canvas, 0, 10, 127, 10);
 
-Hierarchical static list menu layout for encoder/button-driven interfaces.
+    // Draw metric labels
+    snprintf(str, sizeof(str), "Temp: %d C", temperature);
+    syn_canvas_text(&canvas, 0, 20, str);
+
+    snprintf(str, sizeof(str), "Batt: %d%%", battery_pct);
+    syn_canvas_text(&canvas, 0, 32, str);
+
+    // Draw battery level progress bar outline & fill
+    syn_canvas_rect(&canvas, 70, 32, 50, 8); // Outline
+    syn_canvas_fill_rect(&canvas, 71, 33, (battery_pct * 48) / 100, 6); // Fill
+
+    // Push framebuffer to hardware
+    syn_canvas_flush(&canvas);
+}
+```
+
+---
+
+## 2. Immediate-Mode GUI (`ui/syn_imgui.h`)
+
+The `syn_imgui` module provides a zero-allocation Immediate-Mode GUI framework. Widgets are drawn and input-tested in a single pass each frame without maintaining complex DOM trees or allocating dynamic heap memory.
+
+### Features
+- Widgets: Buttons, Sliders, Checkboxes, Progress Bars, Gauges, Real-time Graphs.
+- Navigation: Rotary Encoder step navigation, Button clicks, or Touchscreen X/Y coordinates.
+
+### Complete IMGUI Menu Example
+
+```c
+#include <syntropic/ui/syn_imgui.h>
+
+static SYN_IMGUI ui;
+static bool heater_enabled = false;
+static int target_temp = 25;
+
+void render_gui(void) {
+    syn_imgui_begin_frame(&ui);
+
+    syn_imgui_label(&ui, 10, 5, "Temperature Control");
+
+    // Interactive Checkbox widget
+    if (syn_imgui_checkbox(&ui, 10, 20, "Enable Heater", &heater_enabled)) {
+        // Toggle callback logic
+    }
+
+    // Interactive Slider widget
+    if (heater_enabled) {
+        syn_imgui_slider(&ui, 10, 40, 100, 10, "Set Temp", &target_temp, 15, 40);
+    }
+
+    syn_imgui_end_frame(&ui);
+}
+```

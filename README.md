@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/banner.png" alt="SyntropicOS Banner" width="700"/>
+</p>
+
 # SyntropicOS
 
 **High-Performance Bare-Metal Application Framework & Cooperative OS**

@@ -1,103 +1,118 @@
-# Drivers
+# Hardware Peripheral Drivers
 
-Hardware abstraction drivers. Each is guarded by a `SYN_USE_*` config switch.
+SyntropicOS provides portable hardware abstraction drivers for GPIO, UART, ADC, DAC, CAN, SPI, I2C, RTC, and DMA. Every driver is guarded by compile-time configuration switches (`SYN_USE_*`).
 
-## GPIO & Digital I/O
+---
 
-| Module | Header | Config | Description |
-|---|---|---|---|
-| GPIO | `drivers/syn_gpio.h` | `SYN_USE_GPIO` | Pin control: init, read, write, toggle, bulk operations. `SYN_GPIO_Pin` is a `uint16_t` whose meaning is platform-specific (port+pin pair, flat number, etc.). Modes: input, output, input with pull-up/down, open-drain. |
-| EXTI | `drivers/syn_exti.h` | `SYN_USE_EXTI` | GPIO interrupt dispatcher with per-pin callback registration |
+## Technical Specifications
 
-## Serial
+| Feature | Specification |
+|---|---|
+| **Port Interface** | Hardware-independent wrapper calling `syn_port_*` interfaces. |
+| **ISR Safety** | UART and DMA drivers use lock-free SPSC ring buffers for safe ISR-to-task transfers. |
+| **Memory Allocation** | **100% Static / Zero Heap**. All driver instances are caller-owned structures. |
 
-| Module | Header | Config | Description |
-|---|---|---|---|
-| UART | `drivers/syn_uart.h` | `SYN_USE_UART` | Buffered UART with ISR feed. Uses `syn_ringbuf` for TX/RX buffers. Configurable buffer sizes (`SYN_UART_TX_BUF_SIZE`, `SYN_UART_RX_BUF_SIZE`) and max instances (`SYN_UART_MAX_INSTANCES`). |
-| CAN | `drivers/syn_can.h` | `SYN_USE_CAN` | CAN bus driver interface: init, transmit, receive, hardware filtering |
+---
 
-## Analog
+## Driver Dataflow Pipeline (UART + DMA Example)
 
-| Module | Header | Config | Description |
-|---|---|---|---|
-| ADC | `drivers/syn_adc.h` | `SYN_USE_ADC` | ADC abstraction with raw, millivolt, and percent read helpers |
-| DAC | `drivers/syn_dac.h` | `SYN_USE_DAC` | DAC driver with raw, millivolt, and percent write helpers |
-
-## Bus Interfaces
-
-| Module | Header | Config | Description |
-|---|---|---|---|
-| Software I2C | `drivers/syn_soft_i2c.h` | Always available | Software bit-banged I2C master driver |
-| Software SPI | `drivers/syn_soft_spi.h` | Always available | Software bit-banged SPI master driver |
-| I2C Device | `drivers/syn_i2c_dev.h` | Always available | Register-level I2C helper (header-only) — read/write register sequences |
-| SPI Device | `drivers/syn_spi_dev.h` | Always available | Register-level SPI helper (header-only) — read/write register sequences |
-
-## Storage & Timing
-
-| Module | Header | Config | Description |
-|---|---|---|---|
-| SD Card | `drivers/syn_sd.h` | `SYN_USE_SD` | SPI-mode SD card block driver: init, sector read/write/sync. Supports SDSC, SDHC, and SDXC. |
-| RTC | `drivers/syn_rtc.h` | `SYN_USE_RTC` | Real-time clock driver: get/set datetime, Unix epoch conversion |
-| High-Precision Clock | `drivers/syn_hpclock.h` | `SYN_USE_HPCLOCK` | 64-bit system-clock-precision timestamp capture with deferred 3-read overflow resolution |
-| Time Sync | `drivers/syn_timesync.h` | `SYN_USE_TIMESYNC` | GPS PPS + UTC date/time discipline service with 4-tier quality tracking and quantified error bounds |
-
-## Other
-
-| Module | Header | Config | Description |
-|---|---|---|---|
-| 1-Wire | `drivers/syn_soft_onewire.h` | `SYN_USE_ONEWIRE` | Bit-bang 1-Wire master: reset, byte read/write, ROM search. Suitable for DS18B20 temperature sensors. |
-| Hardware WDT | `system/syn_hwwdt.h` | `SYN_USE_HWWDT` | Hardware watchdog timer: init and feed. Complements the software task-level watchdog in `syn_watchdog`. |
-
-## DMA & Acceleration
-
-| Module | Header | Config | Description |
-|---|---|---|---|
-| DMA Engine | `drivers/syn_dma.h` | `SYN_USE_DMA` | Bare-metal safe DMA transaction engine with address alignment verification, D-cache coherency invalidation, and atomic busy protection |
-| DMA Port | `port/syn_port_dma.h` | `SYN_USE_DMA` | Portable hardware DMA channel abstraction with completion callbacks |
-
-Provides `init`, `start`, `stop`, `busy`, and `remaining` operations. The completion callback fires from ISR context — use `syn_workqueue_post()` to defer heavy processing to the main context.
-
-```c
-static void on_dma_done(uint8_t ch, SYN_Status result, void *ctx) {
-    syn_workqueue_post(&wq, process_adc_data, ctx);
-}
-
-SYN_DMA_Config cfg = {
-    .channel   = 0,
-    .direction = SYN_DMA_PERIPH_TO_MEM,
-    .width     = SYN_DMA_WIDTH_16,
-    .src_incr  = false,   // Peripheral register (fixed)
-    .dst_incr  = true,    // Memory buffer (incrementing)
-    .callback  = on_dma_done,
-    .user_data = &adc_buf,
-};
-syn_port_dma_init(&cfg);
-syn_port_dma_start(0, &ADC_DR, adc_buf, 256);
+```mermaid
+flowchart LR
+    HW["Hardware Peripheral (UART / ADC)"] -- ISR / DMA Interrupt --> RingBuf["SPSC Ring Buffer (syn_ringbuf)"]
+    RingBuf -- syn_uart_read() --> Task["Cooperative Protothread Task"]
+    Task --> Processing["Process Byte Stream"]
 ```
 
-## Async I2C / SPI
+---
 
-| Module | Header | Config | Description |
-|---|---|---|---|
-| Async I2C | `port/syn_port_i2c_async.h` | `SYN_USE_I2C_ASYNC` | Non-blocking I2C transactions with completion callback |
-| Async SPI | `port/syn_port_spi_async.h` | `SYN_USE_SPI_ASYNC` | Non-blocking SPI transfers with completion callback |
+## 1. GPIO & Digital I/O (`drivers/syn_gpio.h`)
 
-Callback-based async alternatives to the existing blocking port APIs. The blocking `syn_port_i2c_*` and `syn_port_spi_*` functions remain unchanged — async is a separate opt-in.
+Provides pin initialization, reading, writing, toggling, and mode configuration (Input, Output, Pull-Up, Pull-Down, Open-Drain).
 
 ```c
-static void on_i2c_done(uint8_t bus, SYN_Status result, void *ctx) {
-    // Data is ready in rx_data
-}
+#include <syntropic/drivers/syn_gpio.h>
 
-uint8_t reg = 0xD0;
-uint8_t chip_id;
-SYN_I2C_Xfer xfer = {
-    .bus = 0, .addr = 0x76,
-    .tx_data = &reg, .tx_len = 1,
-    .rx_data = &chip_id, .rx_len = 1,
-    .callback = on_i2c_done,
-};
-syn_port_i2c_xfer_async(&xfer);
+void gpio_demo(void) {
+    // Initialize pin 13 as Output
+    syn_gpio_init(13, SYN_GPIO_OUTPUT);
+    
+    // Toggle pin state
+    syn_gpio_toggle(13);
+    
+    // Read input level
+    SYN_GPIO_State state = syn_gpio_read(12);
+}
 ```
 
-The transfer descriptor must remain valid until the callback fires. Callbacks fire from ISR context — use the workqueue for non-trivial processing.
+---
+
+## 2. Buffered Serial UART (`drivers/syn_uart.h`)
+
+Buffered UART driver using lock-free SPSC ring buffers for high-speed RX/TX without data loss.
+
+```c
+#include <syntropic/drivers/syn_uart.h>
+
+static uint8_t rx_buf[128];
+static uint8_t tx_buf[128];
+static SYN_UART uart;
+
+void uart_setup(void) {
+    // Initialize UART 1 at 115200 8N1
+    syn_uart_init(&uart, 1, 115200, rx_buf, sizeof(rx_buf), tx_buf, sizeof(tx_buf));
+}
+
+void USART1_IRQHandler(void) {
+    // ISR feed: safe to call from interrupt context
+    uint8_t rx_byte = (uint8_t)USART1->DR;
+    syn_uart_isr_rx_byte(&uart, rx_byte);
+}
+```
+
+---
+
+## 3. Analog-to-Digital Converter (`drivers/syn_adc.h`)
+
+Provides ADC sampling with oversampling, EMA filtering, voltage conversion (`mV`), and signal statistics integration.
+
+```c
+#include <syntropic/drivers/syn_adc.h>
+
+static SYN_ADC adc_ch0;
+
+void adc_setup(void) {
+    SYN_ADC_Config cfg = {
+        .channel = 0,
+        .oversample = 4, // 4x oversampling for noise reduction
+        .filter = NULL
+    };
+    syn_adc_init(&adc_ch0, &cfg);
+}
+
+void read_voltage(void) {
+    syn_adc_read(&adc_ch0);
+    uint32_t millivolts = syn_adc_millivolts(&adc_ch0);
+    printf("Channel 0: %lu mV\n", (unsigned long)millivolts);
+}
+```
+
+---
+
+## 4. DMA Transaction Engine (`drivers/syn_dma.h`)
+
+Bare-metal safe DMA transaction engine featuring address alignment verification, D-cache invalidation, and atomic busy protection.
+
+```c
+#include <syntropic/drivers/syn_dma.h>
+
+static SYN_DMA dma;
+
+void on_dma_complete(SYN_DMA *dma_inst, void *ctx) {
+    printf("DMA Transfer Complete!\n");
+}
+
+void start_dma_transfer(const uint32_t *src, uint32_t *dst, size_t count) {
+    syn_dma_init(&dma, 0, on_dma_complete, NULL);
+    syn_dma_start(&dma, (const void*)src, (void*)dst, count * sizeof(uint32_t));
+}
+```

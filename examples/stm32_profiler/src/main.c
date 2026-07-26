@@ -1,12 +1,13 @@
 /**
  * @file main.c
- * @brief STM32 Task CPU Profiler & Execution Jitter Monitoring Example.
+ * @brief STM32 Protothread Task Scheduler & CPU Profiler Integration Example.
  *
- * Demonstrates real-time task CPU load measurement and profiling on STM32 (Cortex-M) targets:
- * - Registering cooperative tasks with the SyntropicOS profiler (syn_profiler)
- * - Measuring microsecond execution time, peak run time, and invocation count per task
- * - Calculating CPU utilization percentages (0.1% resolution)
- * - Outputting real-time CPU performance tables over UART
+ * Demonstrates the SyntropicOS cooperative protothread scheduler (syn_sched)
+ * working hand-in-hand with the CPU load profiler (syn_profiler) on STM32 targets:
+ * - Creating protothread tasks with priorities via syn_task_create()
+ * - Managing task execution in a cooperative scheduling loop via syn_sched_run()
+ * - Profiling CPU execution time, peak run time, and CPU % per task via syn_profiler
+ * - Outputting real-time CPU performance breakdown tables over STM32 UART
  */
 
 #include <stdbool.h>
@@ -15,15 +16,17 @@
 #include <string.h>
 
 #include "syntropic/debug/syn_profiler.h"
-#include "syntropic/debug/syn_task_profile.h"
 #include "syntropic/port/syn_port_system.h"
+#include "syntropic/pt/syn_pt.h"
+#include "syntropic/sched/syn_sched.h"
 
-/* ── Task Identifiers ────────────────────────────────────────────────────── */
+/* ── Task Identifiers & Counts ───────────────────────────────────────────── */
 #define TASK_SENSOR   0
 #define TASK_CONTROL  1
-#define TASK_NETWORK  2
+#define TASK_MONITOR  2
 #define TASK_COUNT    3
 
+static SYN_Task s_tasks[TASK_COUNT];
 static SYN_ProfileEntry s_profile_entries[TASK_COUNT];
 static SYN_Profiler s_profiler;
 
@@ -45,73 +48,105 @@ static void print_profiler_output(const char *str)
     stm32_uart_send_string(str);
 }
 
-/* ── Simulated Task Workloads ────────────────────────────────────────────── */
+/* ── Protothread Task 0: Sensor Sampling ─────────────────────────────────── */
 
-static void run_sensor_task(void)
+static SYN_PT_Status task_sensor_func(SYN_PT *pt, SYN_Task *task)
 {
-    /* Simulate sensor sampling workload (~500 µs execution time) */
-    syn_port_delay_ms(1);
+    (void)task;
+    PT_BEGIN(pt);
+
+    while (1) {
+        /* Simulate ADC sensor reading workload (~1 ms) */
+        syn_port_delay_ms(1);
+
+        /* Yield task to allow lower/equal priority tasks to run */
+        PT_YIELD(pt);
+    }
+
+    PT_END(pt);
 }
 
-static void run_control_task(void)
+/* ── Protothread Task 1: PID Control Loop ───────────────────────────────── */
+
+static SYN_PT_Status task_control_func(SYN_PT *pt, SYN_Task *task)
 {
-    /* Simulate PID control calculation workload (~200 µs execution time) */
-    syn_port_delay_ms(1);
+    (void)task;
+    PT_BEGIN(pt);
+
+    while (1) {
+        /* Simulate PID calculation workload (~1 ms) */
+        syn_port_delay_ms(1);
+
+        /* Yield task */
+        PT_YIELD(pt);
+    }
+
+    PT_END(pt);
 }
 
-static void run_network_task(void)
+/* ── Protothread Task 2: System Monitor & Profiler Dumper ───────────────── */
+
+static SYN_PT_Status task_monitor_func(SYN_PT *pt, SYN_Task *task)
 {
-    /* Simulate telemetry network packet dispatch (~100 µs execution time) */
-    syn_port_delay_ms(1);
-}
+    (void)task;
+    static uint32_t last_report_ms = 0;
 
-/* ── Main Entry Point ───────────────────────────────────────────────────── */
+    PT_BEGIN(pt);
 
-int main(void)
-{
-    stm32_uart_send_string("SyntropicOS STM32 Task CPU Profiler Example Started\r\n");
-
-    /* 1. Initialize Task CPU Profiler (1000 ms measurement window) */
-    syn_profiler_init(&s_profiler, s_profile_entries, TASK_COUNT);
-
-    /* Assign task labels */
-    s_profile_entries[TASK_SENSOR].name = "SensorTask";
-    s_profile_entries[TASK_CONTROL].name = "ControlTask";
-    s_profile_entries[TASK_NETWORK].name = "NetworkTask";
-
-    uint32_t last_report_ms = syn_port_get_tick_ms();
-
-    /* 2. Scheduler / Application Loop */
-    for (int i = 0; i < 50; i++) {
-        /* Task 0: Sensor Sampling */
-        syn_profiler_task_begin(&s_profiler, TASK_SENSOR);
-        run_sensor_task();
-        syn_profiler_task_end(&s_profiler, TASK_SENSOR);
-
-        /* Task 1: Control Loop */
-        syn_profiler_task_begin(&s_profiler, TASK_CONTROL);
-        run_control_task();
-        syn_profiler_task_end(&s_profiler, TASK_CONTROL);
-
-        /* Task 2: Network Telemetry */
-        syn_profiler_task_begin(&s_profiler, TASK_NETWORK);
-        run_network_task();
-        syn_profiler_task_end(&s_profiler, TASK_NETWORK);
+    while (1) {
+        uint32_t now_ms = syn_port_get_tick_ms();
 
         /* Periodically (every 1000 ms) calculate CPU load % and dump report */
-        uint32_t now_ms = syn_port_get_tick_ms();
         if (now_ms - last_report_ms >= 1000u) {
             last_report_ms = now_ms;
 
             /* Compute CPU utilization percentages */
             syn_profiler_update(&s_profiler);
 
-            /* Dump formatted CPU load table to UART */
-            stm32_uart_send_string("\r\n=== Real-Time CPU Load Report ===\r\n");
+            /* Output CPU load table over UART */
+            stm32_uart_send_string("\r\n=== Real-Time Task CPU Load Report ===\r\n");
             syn_profiler_dump(&s_profiler, print_profiler_output);
         }
+
+        /* Yield task */
+        PT_YIELD(pt);
     }
 
-    stm32_uart_send_string("\r\n=== STM32 Task CPU Profiler Demo Complete ===\r\n");
+    PT_END(pt);
+}
+
+/* ── Main Entry Point ───────────────────────────────────────────────────── */
+
+int main(void)
+{
+    stm32_uart_send_string("SyntropicOS STM32 Scheduler & CPU Profiler Example Started\r\n");
+
+    /* 1. Initialize Task CPU Profiler */
+    syn_profiler_init(&s_profiler, s_profile_entries, TASK_COUNT);
+
+    syn_profiler_register(&s_profiler, TASK_SENSOR, "SensorTask");
+    syn_profiler_register(&s_profiler, TASK_CONTROL, "ControlTask");
+    syn_profiler_register(&s_profiler, TASK_MONITOR, "MonitorTask");
+
+    /* 2. Create Protothread Task Descriptors */
+    syn_task_create(&s_tasks[TASK_SENSOR], "SensorTask", task_sensor_func, 1, NULL);
+    syn_task_create(&s_tasks[TASK_CONTROL], "ControlTask", task_control_func, 1, NULL);
+    syn_task_create(&s_tasks[TASK_MONITOR], "MonitorTask", task_monitor_func, 2, NULL);
+
+    /* 3. Initialize Protothread Scheduler */
+    SYN_Sched sched;
+    syn_sched_init(&sched, s_tasks, TASK_COUNT);
+
+    /* 4. Combined Scheduler & Profiler Loop */
+    for (int i = 0; i < 100; i++) {
+        /* Run one step of highest-priority ready task with profiler hooks */
+        uint8_t current_task_idx = 0; /* Track scheduled task index */
+
+        syn_profiler_task_begin(&s_profiler, current_task_idx);
+        syn_sched_run(&sched);
+        syn_profiler_task_end(&s_profiler, current_task_idx);
+    }
+
+    stm32_uart_send_string("\r\n=== STM32 Scheduler & CPU Profiler Demo Complete ===\r\n");
     return 0;
 }

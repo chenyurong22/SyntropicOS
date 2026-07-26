@@ -109,6 +109,7 @@ static void action_release(void *ctx)
     btn->click_tick = syn_port_get_tick_ms();
     btn->pressed = false;
     btn->raw_pressed = false;
+    btn->in_combo = false;
 
     button_fire_event(btn, SYN_BUTTON_EVT_RELEASE, btn->on_release, btn->on_release_ctx);
 }
@@ -267,6 +268,7 @@ void syn_button_combo_update(SYN_ButtonCombo *combo)
         for (size_t i = 0; i < combo->count; i++) {
             if (combo->buttons[i] != NULL) {
                 ((SYN_Button *)combo->buttons[i])->click_count = 0;
+                ((SYN_Button *)combo->buttons[i])->in_combo = true;
             }
         }
         if (combo->on_combo != NULL) {
@@ -300,7 +302,7 @@ void syn_button_update(SYN_Button *btn)
     } else if (current == SYN_BUTTON_STATE_PRESSED) {
         if (!raw) {
             syn_fsm_dispatch(&btn->fsm, BTN_EV_RAW_RELEASE);
-        } else {
+        } else if (!btn->in_combo) {
             /* Check long press threshold */
             if (btn->long_press_ms > 0 && elapsed >= btn->long_press_ms) {
                 syn_fsm_dispatch(&btn->fsm, BTN_EV_LONG_PRESS);
@@ -314,7 +316,7 @@ void syn_button_update(SYN_Button *btn)
     } else if (current == SYN_BUTTON_STATE_HELD) {
         if (!raw) {
             syn_fsm_dispatch(&btn->fsm, BTN_EV_RAW_RELEASE);
-        } else {
+        } else if (!btn->in_combo) {
             /* Check repeat in held state */
             if (btn->repeat_ms > 0 && (now - btn->repeat_tick) >= btn->repeat_ms) {
                 btn->repeat_tick = now;

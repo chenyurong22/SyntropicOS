@@ -391,6 +391,10 @@ static void test_button_combo(void)
     syn_button_set_click_window(&btn2, 200);
     syn_button_on_single_click(&btn1, btn_on_single_click, NULL);
     syn_button_on_single_click(&btn2, btn_on_single_click, NULL);
+    syn_button_on_long_press(&btn1, btn_on_long, 300, NULL);
+    syn_button_on_long_press(&btn2, btn_on_long, 300, NULL);
+    syn_button_on_repeat(&btn1, btn_on_repeat, 100, NULL);
+    syn_button_on_repeat(&btn2, btn_on_repeat, 100, NULL);
 
     const SYN_Button *combo_btns[2] = {&btn1, &btn2};
     SYN_ButtonCombo combo;
@@ -420,6 +424,18 @@ static void test_button_combo(void)
 
     TEST_ASSERT_EQUAL_INT(1, combo_fired_count);
     TEST_ASSERT_TRUE(syn_button_combo_is_active(&combo));
+
+    /* Advance time by 1000ms while holding both buttons in combo state */
+    for (int i = 0; i < 100; i++) {
+        mock_tick_advance(10);
+        syn_button_update(&btn1);
+        syn_button_update(&btn2);
+        syn_button_combo_update(&combo);
+    }
+
+    /* Long press and repeat should BE SUPPRESSED for member buttons during combo */
+    TEST_ASSERT_EQUAL_INT(0, btn_long_count);
+    TEST_ASSERT_EQUAL_INT(0, btn_repeat_count);
 
     /* Release btn1 and btn2 */
     mock_gpio_states[7] = 0;

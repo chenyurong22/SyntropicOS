@@ -97,6 +97,7 @@ typedef struct SYN_Button {
     uint8_t events;       /**< Pending events bitmask        */
     bool raw_pressed;     /**< Last raw GPIO reading         */
     bool pressed;         /**< Debounced pressed state       */
+    bool in_combo;        /**< True while button is part of active combo */
     uint8_t click_count;  /**< Consecutive click counter     */
     uint32_t state_tick;  /**< Tick when state was entered    */
     uint32_t repeat_tick; /**< Tick of last repeat event      */

@@ -1,99 +1,134 @@
-# System
+# System Architecture & Recovery Modules
 
-| Module | Header | Config | Description |
-|---|---|---|---|
-| Boot Manager | `system/syn_boot.h` | `SYN_USE_BOOT` | Crash-loop detection, safe mode, and boot counter. Events auto-record to errlog via `syn_boot_log_events()`. |
-| Error Log | `system/syn_errlog.h` | `SYN_USE_ERRLOG` | Persistent error registry storing severity, error code, context, and timestamp for each entry |
-| Version | `system/syn_version.h` | Always available | Compile-time build info: semantic version (`SYN_VERSION_MAJOR/MINOR/PATCH`), build date/time, git hash, app name. Access via `syn_version()` struct or individual defines. |
-| Sleep | `system/syn_sleep.h` | Always available | Sleep coordinator with wakelock reference counting |
-| Power | `system/syn_power.h` | `SYN_USE_POWER` | Power management: sleep and wake with reference counting |
-| Firmware Boot | `system/syn_fwboot.h` | Always available | Firmware boot slot validation |
-| Firmware Image | `system/syn_fwimage.h` | Always available | Firmware image header definitions |
-| Firmware Update | `system/syn_fwupdate.h` | Always available | Streaming, transport-agnostic firmware updater. Optional HMAC-SHA256 verification via `SYN_FW_USE_HMAC`. |
-| System Faults | `system/syn_fault.h` | `SYN_USE_FAULT` | Exception and hardware fault handler with diagnostic logging (e.g., HardFault on Cortex-M) |
-| Core Dump | `system/syn_coredump.h` | `SYN_USE_COREDUMP` | Persistent fault dump to flash — saves registers + partial stack snapshot on crash, readable at next boot |
+SyntropicOS provides production-grade system resilience services, including crash-loop boot management, fault-recording core dumps, transport-agnostic OTA firmware updates, and persistent error registries.
 
-## Core Dump
+---
 
-The core dump module captures CPU register state and a partial stack snapshot during a hard fault, persisting them to a reserved flash sector. On the next boot, the dump can be read back for post-mortem diagnostics.
+## Architecture Resilience Map
 
-Requires `SYN_USE_FAULT`, CRC, and a flash port. Configure in `syn_config.h`:
-
-```c
-#define SYN_USE_COREDUMP        1
-#define SYN_COREDUMP_FLASH_ADDR 0x0803F800  // Reserved flash sector
-#define SYN_COREDUMP_STACK_SIZE 128         // Bytes of stack to capture
+```mermaid
+flowchart TD
+    PowerOn["System Power On"] --> BootMgr["Boot Manager (syn_boot)"]
+    BootMgr -- Crash Count Exceeded --> SafeMode["Safe Mode Boot / Fallback Slot"]
+    BootMgr -- Normal Boot --> CheckDump{"Previous HardFault Core Dump?"}
+    CheckDump -- Yes --> SaveErrLog["Record Crash Registers to syn_errlog"]
+    CheckDump -- No --> AppInit["Initialize System & Tasks"]
+    SaveErrLog --> AppInit
+    AppInit --> RunLoop["Scheduler Task Loop"]
+    RunLoop -- HardFault / Crash --> CoreDumpSave["syn_coredump_save() -> Flash Sector"]
+    CoreDumpSave --> Reset["System Reset"]
 ```
 
-```c
-// In your HardFault handler:
-syn_coredump_save(&fault_context);
+---
 
-// At boot — check for previous crash:
-SYN_CoreDump dump;
-if (syn_coredump_read(&dump)) {
-    printf("Previous crash at PC=0x%08x, uptime=%lu ms\n",
-           dump.regs.pc, dump.uptime_ms);
-    syn_coredump_clear();
+## 1. Boot Manager & Safe-Mode (`system/syn_boot.h`)
+
+The `syn_boot` module tracks continuous boot cycles and crash loops. If the system crashes repeatedly within a short window after power-on, the boot manager automatically enters **Safe Mode** to allow firmware recovery.
+
+### Features
+- Configurable crash window (`SYN_BOOT_CRASH_WINDOW_MS`) and max retry threshold.
+- Automatic event logging to `syn_errlog`.
+- Safe mode fallback flag query (`syn_boot_is_safe_mode()`).
+
+### Code Example
+
+```c
+#include <syntropic/system/syn_boot.h>
+
+static SYN_Boot boot;
+
+void app_boot_check(void) {
+    // Sector base = 0x08030000, max crash retries = 3, crash window = 5000ms
+    syn_boot_init(&boot, 0x08030000, 3, 5000);
+
+    if (syn_boot_is_safe_mode(&boot)) {
+        printf("WARNING: Crash loop detected! Booting into SAFE MODE...\n");
+        // Start minimal recovery task (e.g., Serial CLI or OTA UART update)
+    } else {
+        printf("Normal boot sequence proceeding.\n");
+    }
+}
+
+void app_main_ready(void) {
+    // Call once system initialization successfully completes
+    syn_boot_confirm_successful(&boot);
 }
 ```
 
-## Version System
+---
 
-The version system provides both compile-time defines and a runtime struct:
+## 2. Core Dump & Hardware Fault Recovery (`system/syn_coredump.h` & `system/syn_fault.h`)
 
-```c
-// Compile-time
-printf("SyntropicOS v%d.%d.%d built %s\n",
-       SYN_VERSION_MAJOR, SYN_VERSION_MINOR, SYN_VERSION_PATCH,
-       SYN_BUILD_DATE);
+When a hardware fault (e.g. ARM Cortex-M HardFault, BusFault, or Memory Management Fault) occurs, `syn_coredump` captures the CPU registers (`PC`, `LR`, `SP`, `PSR`) and a stack snapshot, persisting them to flash before resetting.
 
-// Runtime struct
-const SYN_Version *v = syn_version();
-printf("%s v%d.%d.%d [%s]\n",
-       v->app_name, v->major, v->minor, v->patch, v->git_hash);
-```
+### Features
+- Zero-heap register and stack capture inside fault ISR handler.
+- Reads back register snapshot on next boot for post-mortem diagnostics.
 
-Override in your build system:
-
-```
--DSYN_VERSION_MAJOR=1 -DSYN_VERSION_MINOR=2 -DSYN_VERSION_PATCH=0
--DSYN_GIT_HASH=\"abc1234\"
--DSYN_APP_NAME=\"MyFirmware\"
-```
-
-## HMAC Firmware Verification
-
-Opt-in HMAC-SHA256 image signing, layered on top of the existing CRC-32 integrity check. Gated by `SYN_FW_USE_HMAC` (default **off**) — platforms that don't need cryptographic verification pay nothing.
+### Code Example
 
 ```c
-// syn_config.h
-#define SYN_FW_USE_HMAC 1   // Requires SYN_USE_SHA256 and SYN_USE_BOOT
+#include <syntropic/system/syn_coredump.h>
+#include <syntropic/system/syn_fault.h>
+
+void check_previous_crash(void) {
+    SYN_CoreDump dump;
+    
+    // Read and verify previous crash dump from flash
+    if (syn_coredump_read(&dump)) {
+        printf("CRASH DETECTED on last boot!\n");
+        printf("  Fault PC:  0x%08X\n", (unsigned int)dump.regs.pc);
+        printf("  Fault LR:  0x%08X\n", (unsigned int)dump.regs.lr);
+        printf("  Uptime:    %lu ms\n", (unsigned long)dump.uptime_ms);
+        
+        // Clear core dump after reading
+        syn_coredump_clear();
+    }
+}
+
+// In MCU HardFault Interrupt Handler
+void HardFault_Handler(void) {
+    SYN_FaultContext ctx;
+    syn_fault_capture(&ctx);
+    syn_coredump_save(&ctx);
+    
+    syn_port_system_reset();
+}
 ```
 
-When enabled, the `SYN_FwImageHeader` gains a 32-byte `image_hmac` field (header grows from 24 → 56 bytes). The update flow becomes:
+---
+
+## 3. Persistent Error Log (`system/syn_errlog.h`)
+
+The `syn_errlog` module maintains a wear-leveled, persistent circular error log storing error severity, subsystem ID, timestamp, and context codes.
 
 ```c
-SYN_FwUpdate upd;
-uint8_t page_buf[256];
+#include <syntropic/system/syn_errlog.h>
 
-// 1. Begin the update (zeroes the context)
-syn_fwupdate_begin(&upd, SLOT_ADDR, MAX_SIZE, page_buf, sizeof(page_buf));
+static SYN_ErrLog errlog;
+static SYN_ErrLogEntry log_buffer[16];
 
-// 2. Set the HMAC key (must come after begin, before first write)
-syn_fwupdate_set_key(&upd, hmac_key, 32);
-
-// 3. Stream data chunks (CRC-32 + HMAC-SHA256 computed incrementally)
-syn_fwupdate_write(&upd, chunk, chunk_len);
-
-// 4. Finalize — verify CRC and HMAC, write header
-syn_fwupdate_finish(&upd, expected_crc, expected_hmac, version_code);
+void app_setup_errlog(void) {
+    syn_errlog_init(&errlog, log_buffer, 16);
+    
+    // Log an error event
+    syn_errlog_record(&errlog, SYN_LOG_ERROR, SUB_SYS_COMM, ERR_TIMEOUT, 0x0042);
+}
 ```
 
-### Verification is doubly opt-in
+---
 
-- **Compile-time:** `SYN_FW_USE_HMAC` must be `1`
-- **Runtime:** Pass a non-NULL `expected_hmac` to `finish()`. Passing `NULL` skips HMAC verification and falls back to CRC-only — even when HMAC support is compiled in.
+## 4. Transport-Agnostic Firmware Update (`system/syn_fwupdate.h`)
 
-The HMAC comparison uses constant-time byte comparison to prevent timing side-channel attacks.
+Provides streaming, block-by-block OTA firmware image flashing with optional **HMAC-SHA256 signature verification**.
 
+```c
+#include <syntropic/system/syn_fwupdate.h>
+
+static SYN_FWUpdate fw;
+
+void on_ota_chunk_received(const uint8_t *chunk, size_t len) {
+    // Stream incoming firmware chunks over UART, Wi-Fi, BLE, or CAN
+    syn_fwupdate_write(&fw, chunk, len);
+}
+```

@@ -1,6 +1,6 @@
 /**
  * @file test_button.c
- * @brief Unity tests for syn_button — full coverage.
+ * @brief Unity tests for syn_button — full coverage & user behavior testing.
  */
 
 #include "mocks/mock_port.h"
@@ -643,6 +643,196 @@ static void test_button_polled_events_and_immediate_click_window(void)
     TEST_ASSERT_EQUAL_UINT8(0, syn_button_poll_events(&btn));
 }
 
+/* ── Test: Slow Double Tap Registers Two Single Clicks ──────────────────── */
+
+static void test_button_behavior_slow_double_tap(void)
+{
+    mock_tick_ms = 0;
+    reset_counts();
+
+    mock_gpio_states[16] = 0;
+    SYN_Button btn;
+    syn_button_init(&btn, 16, SYN_BUTTON_ACTIVE_HIGH, 20);
+    syn_button_set_click_window(&btn, 250);
+    syn_button_on_single_click(&btn, btn_on_single_click, NULL);
+    syn_button_on_double_click(&btn, btn_on_double_click, NULL);
+
+    /* Tap 1 */
+    mock_gpio_states[16] = 1;
+    syn_button_update(&btn);
+    mock_tick_advance(25);
+    syn_button_update(&btn);
+    mock_gpio_states[16] = 0;
+    syn_button_update(&btn);
+
+    /* Wait 300ms (gap > double_click_ms 250) */
+    mock_tick_advance(300);
+    syn_button_update(&btn);
+    TEST_ASSERT_EQUAL_INT(1, btn_single_click_count);
+
+    /* Tap 2 */
+    mock_gpio_states[16] = 1;
+    syn_button_update(&btn);
+    mock_tick_advance(25);
+    syn_button_update(&btn);
+    mock_gpio_states[16] = 0;
+    syn_button_update(&btn);
+
+    /* Wait 300ms */
+    mock_tick_advance(300);
+    syn_button_update(&btn);
+    TEST_ASSERT_EQUAL_INT(2, btn_single_click_count);
+    TEST_ASSERT_EQUAL_INT(0, btn_double_click_count);
+}
+
+/* ── Test: Double Tap and Hold Gesture ──────────────────────────────────── */
+
+static void test_button_behavior_double_tap_and_hold(void)
+{
+    mock_tick_ms = 0;
+    reset_counts();
+
+    mock_gpio_states[17] = 0;
+    SYN_Button btn;
+    syn_button_init(&btn, 17, SYN_BUTTON_ACTIVE_HIGH, 20);
+    syn_button_set_click_window(&btn, 250);
+    syn_button_on_single_click(&btn, btn_on_single_click, NULL);
+    syn_button_on_double_click(&btn, btn_on_double_click, NULL);
+    syn_button_on_long_press(&btn, btn_on_long, 300, NULL);
+
+    /* Tap 1 */
+    mock_gpio_states[17] = 1;
+    syn_button_update(&btn);
+    mock_tick_advance(25);
+    syn_button_update(&btn);
+    mock_gpio_states[17] = 0;
+    syn_button_update(&btn);
+
+    /* Tap 2 (pressed down within 100ms, then held past 300ms) */
+    mock_tick_advance(100);
+    mock_gpio_states[17] = 1;
+    syn_button_update(&btn);
+    mock_tick_advance(25);
+    syn_button_update(&btn);
+
+    /* Hold past long press threshold (300ms) */
+    mock_tick_advance(310);
+    syn_button_update(&btn);
+    TEST_ASSERT_EQUAL_INT(1, btn_long_count);
+
+    /* Release */
+    mock_gpio_states[17] = 0;
+    syn_button_update(&btn);
+    mock_tick_advance(300);
+    syn_button_update(&btn);
+
+    /* Double-click and single-click must NOT fire for tap-and-hold */
+    TEST_ASSERT_EQUAL_INT(0, btn_single_click_count);
+    TEST_ASSERT_EQUAL_INT(0, btn_double_click_count);
+}
+
+/* ── Test: Overlapping Independent Buttons ──────────────────────────────── */
+
+static void test_button_behavior_overlapping_independent_buttons(void)
+{
+    mock_tick_ms = 0;
+    reset_counts();
+
+    mock_gpio_states[18] = 0;
+    mock_gpio_states[19] = 0;
+
+    SYN_Button btnA, btnB;
+    syn_button_init(&btnA, 18, SYN_BUTTON_ACTIVE_HIGH, 20);
+    syn_button_init(&btnB, 19, SYN_BUTTON_ACTIVE_HIGH, 20);
+    syn_button_set_click_window(&btnA, 250);
+    syn_button_set_click_window(&btnB, 250);
+    syn_button_on_single_click(&btnA, btn_on_single_click, NULL);
+    syn_button_on_single_click(&btnB, btn_on_single_click, NULL);
+
+    /* Press Btn A */
+    mock_gpio_states[18] = 1;
+    syn_button_update(&btnA);
+    syn_button_update(&btnB);
+
+    /* 10ms later, Press Btn B */
+    mock_tick_advance(10);
+    mock_gpio_states[19] = 1;
+    syn_button_update(&btnA);
+    syn_button_update(&btnB);
+
+    /* Advance 25ms */
+    mock_tick_advance(25);
+    syn_button_update(&btnA);
+    syn_button_update(&btnB);
+
+    /* Release Btn A */
+    mock_gpio_states[18] = 0;
+    syn_button_update(&btnA);
+
+    /* Release Btn B */
+    mock_tick_advance(20);
+    mock_gpio_states[19] = 0;
+    syn_button_update(&btnB);
+
+    /* Wait for click window expiry */
+    mock_tick_advance(300);
+    syn_button_update(&btnA);
+    syn_button_update(&btnB);
+
+    /* Both buttons must register 1 single click each (total 2) */
+    TEST_ASSERT_EQUAL_INT(2, btn_single_click_count);
+}
+
+/* ── Test: Combo Reactivation Cycle ─────────────────────────────────────── */
+
+static void test_button_behavior_combo_reactivation_cycle(void)
+{
+    mock_tick_ms = 0;
+    reset_counts();
+
+    mock_gpio_states[20] = 0;
+    mock_gpio_states[21] = 0;
+
+    SYN_Button b1, b2;
+    syn_button_init(&b1, 20, SYN_BUTTON_ACTIVE_HIGH, 20);
+    syn_button_init(&b2, 21, SYN_BUTTON_ACTIVE_HIGH, 20);
+
+    const SYN_Button *pair[2] = {&b1, &b2};
+    SYN_ButtonCombo combo;
+    syn_button_combo_init(&combo, pair, 2, combo_on_fire, NULL);
+
+    /* 1st Combo press */
+    mock_gpio_states[20] = 1;
+    mock_gpio_states[21] = 1;
+    syn_button_update(&b1);
+    syn_button_update(&b2);
+    mock_tick_advance(25);
+    syn_button_update(&b1);
+    syn_button_update(&b2);
+    syn_button_combo_update(&combo);
+    TEST_ASSERT_EQUAL_INT(1, combo_fired_count);
+
+    /* Release b1 while b2 is held */
+    mock_gpio_states[20] = 0;
+    syn_button_update(&b1);
+    syn_button_update(&b2);
+    syn_button_combo_update(&combo);
+    TEST_ASSERT_FALSE(syn_button_combo_is_active(&combo));
+
+    /* Re-press b1 while b2 is still held */
+    mock_gpio_states[20] = 1;
+    syn_button_update(&b1);
+    syn_button_update(&b2);
+    mock_tick_advance(25);
+    syn_button_update(&b1);
+    syn_button_update(&b2);
+    syn_button_combo_update(&combo);
+
+    /* Combo should reactivate and fire 2nd time! */
+    TEST_ASSERT_EQUAL_INT(2, combo_fired_count);
+    TEST_ASSERT_TRUE(syn_button_combo_is_active(&combo));
+}
+
 void run_button_tests(void)
 {
     RUN_TEST(test_button);
@@ -656,4 +846,8 @@ void run_button_tests(void)
     RUN_TEST(test_button_queries_and_null_checks);
     RUN_TEST(test_button_long_press_release_no_single_click);
     RUN_TEST(test_button_polled_events_and_immediate_click_window);
+    RUN_TEST(test_button_behavior_slow_double_tap);
+    RUN_TEST(test_button_behavior_double_tap_and_hold);
+    RUN_TEST(test_button_behavior_overlapping_independent_buttons);
+    RUN_TEST(test_button_behavior_combo_reactivation_cycle);
 }

@@ -90,7 +90,7 @@ void syn_port_system_reset(void)
  */
 static GPIO_TypeDef *get_gpio_port(SYN_GPIO_Pin pin)
 {
-    uint8_t port_idx = pin >> 4;
+    uint8_t port_idx = SYN_GPIO_PIN_PORT(pin);
     switch (port_idx) {
 #ifdef GPIOA
     case 0:

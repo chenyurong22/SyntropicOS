@@ -1,9 +1,14 @@
 /**
  * @file sys_init.h
- * @brief Background OS Scheduler Initialization for Arduino Examples.
+ * @brief Background OS Scheduler & Infrastructure for Arduino Examples (Tab 2).
  *
- * Hides OS task scheduling and port initialization into a supporting tab
- * so main example sketches (.ino) remain clean and easy to read.
+ * This header encapsulates the SyntropicOS cooperative scheduler (syn_sched),
+ * protothread background tasks (PT_BEGIN / PT_END), serial port setup,
+ * and system logging so that the main sketch (.ino) remains clean and readable.
+ *
+ * Usage in Custom Projects:
+ *   - Call sys_init(update_callback) in setup() to start the background engine.
+ *   - Call sys_run() in loop() to yield CPU to background OS tasks.
  */
 
 #ifndef SYS_INIT_H
@@ -13,13 +18,17 @@
 #include <syntropic/port/syn_port_serial.h>
 #include <syntropic/sched/syn_sched.h>
 
+/* Background Scheduler & Task Descriptor Storage */
 static SYN_Sched sys_sched;
 static SYN_Task sys_tasks[1];
 
-/* Background task function pointer provided by the sketch */
+/* Function pointer to user's background update routine (e.g. updating buttons/sensors) */
 typedef void (*SysBgTaskFn)(void);
 static SysBgTaskFn g_bg_fn = NULL;
 
+/**
+ * @brief Protothread task loop. Runs periodically every 10ms in the background.
+ */
 static SYN_PT_Status sys_bg_pt(SYN_PT *pt, SYN_Task *task)
 {
     PT_BEGIN(pt);
@@ -32,7 +41,10 @@ static SYN_PT_Status sys_bg_pt(SYN_PT *pt, SYN_Task *task)
     PT_END(pt);
 }
 
-/** Initialize Serial Port, Logger, and Background Scheduler. */
+/**
+ * @brief Initialize Serial Port (115200 baud), Logging, and OS Scheduler.
+ * @param bg_fn Optional background update callback (e.g. button state updates).
+ */
 inline void sys_init(SysBgTaskFn bg_fn)
 {
     syn_port_serial_init(115200);
@@ -43,7 +55,9 @@ inline void sys_init(SysBgTaskFn bg_fn)
     syn_sched_init(&sys_sched, sys_tasks, 1);
 }
 
-/** Run the background scheduler loop. */
+/**
+ * @brief Run the cooperative scheduler. Call inside loop().
+ */
 inline void sys_run(void)
 {
     if (!syn_sched_run(&sys_sched)) {

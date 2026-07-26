@@ -123,6 +123,7 @@ static void action_long_press(void *ctx)
     SYN_Button *btn = (SYN_Button *)ctx;
     btn->state_tick = syn_port_get_tick_ms();
     btn->repeat_tick = syn_port_get_tick_ms();
+    btn->click_count = 0;
 
     button_fire_event(btn, SYN_BUTTON_EVT_LONG_PRESS, btn->on_long_press, btn->on_long_press_ctx);
 }
@@ -310,6 +311,7 @@ void syn_button_update(SYN_Button *btn)
             /* Check repeat (stays in same state, no FSM transition) */
             if (btn->repeat_ms > 0 && (now - btn->repeat_tick) >= btn->repeat_ms) {
                 btn->repeat_tick = now;
+                btn->click_count = 0;
                 button_fire_event(btn, SYN_BUTTON_EVT_REPEAT, btn->on_repeat, btn->on_repeat_ctx);
             }
         }
@@ -320,6 +322,7 @@ void syn_button_update(SYN_Button *btn)
             /* Check repeat in held state */
             if (btn->repeat_ms > 0 && (now - btn->repeat_tick) >= btn->repeat_ms) {
                 btn->repeat_tick = now;
+                btn->click_count = 0;
                 button_fire_event(btn, SYN_BUTTON_EVT_REPEAT, btn->on_repeat, btn->on_repeat_ctx);
             }
         }

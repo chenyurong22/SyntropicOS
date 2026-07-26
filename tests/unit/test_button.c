@@ -558,6 +558,49 @@ static void test_button_queries_and_null_checks(void)
     TEST_ASSERT_FALSE(syn_button_combo_is_active(&null_combo));
 }
 
+/* ── Test: Long Press / Repeat Release Prevents Spurious Single Click ───── */
+
+static void test_button_long_press_release_no_single_click(void)
+{
+    mock_tick_ms = 0;
+    reset_counts();
+
+    mock_gpio_states[14] = 0;
+    SYN_Button btn;
+    syn_button_init(&btn, 14, SYN_BUTTON_ACTIVE_HIGH, 20);
+    syn_button_set_click_window(&btn, 250);
+    syn_button_on_single_click(&btn, btn_on_single_click, NULL);
+    syn_button_on_long_press(&btn, btn_on_long, 300, NULL);
+    syn_button_on_repeat(&btn, btn_on_repeat, 100, NULL);
+
+    /* Press button */
+    mock_gpio_states[14] = 1;
+    syn_button_update(&btn);
+    mock_tick_advance(25);
+    syn_button_update(&btn);
+
+    /* Hold button past long press threshold (300ms) */
+    mock_tick_advance(310);
+    syn_button_update(&btn);
+    TEST_ASSERT_EQUAL_INT(1, btn_long_count);
+
+    /* Hold button for 300ms more with repeats */
+    mock_tick_advance(300);
+    syn_button_update(&btn);
+    TEST_ASSERT_TRUE(btn_repeat_count > 0);
+
+    /* Release button */
+    mock_gpio_states[14] = 0;
+    syn_button_update(&btn);
+
+    /* Advance past click window (300ms) */
+    mock_tick_advance(300);
+    syn_button_update(&btn);
+
+    /* SINGLE CLICK MUST NOT FIRE AFTER A LONG PRESS / REPEAT GESTURE */
+    TEST_ASSERT_EQUAL_INT(0, btn_single_click_count);
+}
+
 void run_button_tests(void)
 {
     RUN_TEST(test_button);
@@ -569,4 +612,5 @@ void run_button_tests(void)
     RUN_TEST(test_button_combo);
     RUN_TEST(test_button_combo_3_buttons);
     RUN_TEST(test_button_queries_and_null_checks);
+    RUN_TEST(test_button_long_press_release_no_single_click);
 }

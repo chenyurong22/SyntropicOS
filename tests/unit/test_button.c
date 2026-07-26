@@ -38,9 +38,48 @@ static void btn_on_repeat(SYN_Button *b, void *ctx)
     btn_repeat_count++;
 }
 
+static int btn_single_click_count = 0;
+static int btn_double_click_count = 0;
+static int btn_triple_click_count = 0;
+static int btn_multi_click_count = 0;
+static int combo_fired_count = 0;
+
+static void btn_on_single_click(SYN_Button *b, void *ctx)
+{
+    (void)b;
+    (void)ctx;
+    btn_single_click_count++;
+}
+static void btn_on_double_click(SYN_Button *b, void *ctx)
+{
+    (void)b;
+    (void)ctx;
+    btn_double_click_count++;
+}
+static void btn_on_triple_click(SYN_Button *b, void *ctx)
+{
+    (void)b;
+    (void)ctx;
+    btn_triple_click_count++;
+}
+static void btn_on_multi_click(SYN_Button *b, void *ctx)
+{
+    (void)b;
+    (void)ctx;
+    btn_multi_click_count++;
+}
+static void combo_on_fire(SYN_Button *b, void *ctx)
+{
+    (void)b;
+    (void)ctx;
+    combo_fired_count++;
+}
+
 static void reset_counts(void)
 {
     btn_press_count = btn_release_count = btn_long_count = btn_repeat_count = 0;
+    btn_single_click_count = btn_double_click_count = btn_triple_click_count = btn_multi_click_count = 0;
+    combo_fired_count = 0;
 }
 
 /* ── Original test — ACTIVE_HIGH, preserved ──────────────────────────────── */
@@ -244,6 +283,147 @@ static void test_button_service(void)
     syn_button_service(btns, 0);
 }
 
+/* ── Test: Multi-click detection (single, double, triple, multi) ───────────── */
+
+static void test_button_multi_clicks(void)
+{
+    mock_tick_ms = 0;
+    reset_counts();
+
+    mock_gpio_states[6] = 0;
+    SYN_Button btn;
+    syn_button_init(&btn, 6, SYN_BUTTON_ACTIVE_HIGH, 20);
+    syn_button_set_click_window(&btn, 200);
+
+    syn_button_on_single_click(&btn, btn_on_single_click, NULL);
+    syn_button_on_double_click(&btn, btn_on_double_click, NULL);
+    syn_button_on_triple_click(&btn, btn_on_triple_click, NULL);
+    syn_button_on_multi_click(&btn, btn_on_multi_click, NULL);
+
+    /* 1. Single click test: press, debounce, release, wait window expiry */
+    mock_gpio_states[6] = 1;
+    syn_button_update(&btn);
+    mock_tick_advance(25);
+    syn_button_update(&btn);
+    mock_gpio_states[6] = 0;
+    syn_button_update(&btn);
+
+    /* Before window expiry — no single click yet */
+    mock_tick_advance(100);
+    syn_button_update(&btn);
+    TEST_ASSERT_EQUAL_INT(0, btn_single_click_count);
+
+    /* Advance past 200ms window */
+    mock_tick_advance(150);
+    syn_button_update(&btn);
+    TEST_ASSERT_EQUAL_INT(1, btn_single_click_count);
+
+    /* 2. Double click test */
+    reset_counts();
+    /* Tap 1 */
+    mock_gpio_states[6] = 1;
+    syn_button_update(&btn);
+    mock_tick_advance(25);
+    syn_button_update(&btn);
+    mock_gpio_states[6] = 0;
+    syn_button_update(&btn);
+
+    /* Tap 2 within 200ms */
+    mock_tick_advance(80);
+    mock_gpio_states[6] = 1;
+    syn_button_update(&btn);
+    mock_tick_advance(25);
+    syn_button_update(&btn);
+    mock_gpio_states[6] = 0;
+    syn_button_update(&btn);
+
+    /* Advance past window */
+    mock_tick_advance(210);
+    syn_button_update(&btn);
+    TEST_ASSERT_EQUAL_INT(0, btn_single_click_count);
+    TEST_ASSERT_EQUAL_INT(1, btn_double_click_count);
+
+    /* 3. Triple click test */
+    reset_counts();
+    for (int i = 0; i < 3; i++) {
+        mock_gpio_states[6] = 1;
+        syn_button_update(&btn);
+        mock_tick_advance(25);
+        syn_button_update(&btn);
+        mock_gpio_states[6] = 0;
+        syn_button_update(&btn);
+        mock_tick_advance(50);
+    }
+    mock_tick_advance(210);
+    syn_button_update(&btn);
+    TEST_ASSERT_EQUAL_INT(1, btn_triple_click_count);
+
+    /* 4. Multi-click (4 taps) test */
+    reset_counts();
+    for (int i = 0; i < 4; i++) {
+        mock_gpio_states[6] = 1;
+        syn_button_update(&btn);
+        mock_tick_advance(25);
+        syn_button_update(&btn);
+        mock_gpio_states[6] = 0;
+        syn_button_update(&btn);
+        mock_tick_advance(50);
+    }
+    mock_tick_advance(210);
+    syn_button_update(&btn);
+    TEST_ASSERT_EQUAL_INT(1, btn_multi_click_count);
+}
+
+/* ── Test: Combo button (simultaneous multi-button press) ─────────────── */
+
+static void test_button_combo(void)
+{
+    mock_tick_ms = 0;
+    reset_counts();
+
+    mock_gpio_states[7] = 0;
+    mock_gpio_states[8] = 0;
+
+    SYN_Button btn1, btn2;
+    syn_button_init(&btn1, 7, SYN_BUTTON_ACTIVE_HIGH, 20);
+    syn_button_init(&btn2, 8, SYN_BUTTON_ACTIVE_HIGH, 20);
+
+    const SYN_Button *combo_btns[2] = {&btn1, &btn2};
+    SYN_ButtonCombo combo;
+    syn_button_combo_init(&combo, combo_btns, 2, combo_on_fire, NULL);
+
+    TEST_ASSERT_FALSE(syn_button_combo_is_active(&combo));
+
+    /* Press btn1 only */
+    mock_gpio_states[7] = 1;
+    syn_button_update(&btn1);
+    syn_button_update(&btn2);
+    mock_tick_advance(25);
+    syn_button_update(&btn1);
+    syn_button_update(&btn2);
+    syn_button_combo_update(&combo);
+    TEST_ASSERT_EQUAL_INT(0, combo_fired_count);
+    TEST_ASSERT_FALSE(syn_button_combo_is_active(&combo));
+
+    /* Now press btn2 as well */
+    mock_gpio_states[8] = 1;
+    syn_button_update(&btn1);
+    syn_button_update(&btn2);
+    mock_tick_advance(25);
+    syn_button_update(&btn1);
+    syn_button_update(&btn2);
+    syn_button_combo_update(&combo);
+
+    TEST_ASSERT_EQUAL_INT(1, combo_fired_count);
+    TEST_ASSERT_TRUE(syn_button_combo_is_active(&combo));
+
+    /* Release btn1 */
+    mock_gpio_states[7] = 0;
+    syn_button_update(&btn1);
+    syn_button_combo_update(&combo);
+    TEST_ASSERT_FALSE(syn_button_combo_is_active(&combo));
+}
+
 void run_button_tests(void)
 {
     RUN_TEST(test_button);
@@ -251,4 +431,6 @@ void run_button_tests(void)
     RUN_TEST(test_button_repeat_in_pressed);
     RUN_TEST(test_button_repeat_in_held);
     RUN_TEST(test_button_service);
+    RUN_TEST(test_button_multi_clicks);
+    RUN_TEST(test_button_combo);
 }

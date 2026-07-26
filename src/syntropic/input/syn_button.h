@@ -58,10 +58,14 @@ typedef enum {
 /** @name Button event flags (bitmask)
  * @{
  */
-#define SYN_BUTTON_EVT_PRESS ((uint8_t)(1u << 0))      /**< Button pressed     */
-#define SYN_BUTTON_EVT_RELEASE ((uint8_t)(1u << 1))    /**< Button released    */
-#define SYN_BUTTON_EVT_LONG_PRESS ((uint8_t)(1u << 2)) /**< Long press detected */
-#define SYN_BUTTON_EVT_REPEAT ((uint8_t)(1u << 3))     /**< Auto-repeat fire   */
+#define SYN_BUTTON_EVT_PRESS        ((uint8_t)(1u << 0)) /**< Button pressed     */
+#define SYN_BUTTON_EVT_RELEASE      ((uint8_t)(1u << 1)) /**< Button released    */
+#define SYN_BUTTON_EVT_LONG_PRESS   ((uint8_t)(1u << 2)) /**< Long press detected */
+#define SYN_BUTTON_EVT_REPEAT       ((uint8_t)(1u << 3)) /**< Auto-repeat fire   */
+#define SYN_BUTTON_EVT_SINGLE_CLICK ((uint8_t)(1u << 4)) /**< Confirmed single click */
+#define SYN_BUTTON_EVT_DOUBLE_CLICK ((uint8_t)(1u << 5)) /**< Double click detected */
+#define SYN_BUTTON_EVT_TRIPLE_CLICK ((uint8_t)(1u << 6)) /**< Triple click detected */
+#define SYN_BUTTON_EVT_MULTI_CLICK  ((uint8_t)(1u << 7)) /**< Multi click (4+ taps) */
 /** @} */
 
 /* ── Callback type ──────────────────────────────────────────────────────── */
@@ -78,33 +82,56 @@ typedef void (*SYN_ButtonCallback)(struct SYN_Button *btn, void *user_data);
 
 /* ── Button descriptor ──────────────────────────────────────────────────── */
 
-/** @brief Button descriptor — owns the FSM, debounce, and callback state. */
+/** @brief Button descriptor — owns the FSM, debounce, multi-click, and callback state. */
 typedef struct SYN_Button {
     /* Configuration */
-    SYN_GPIO_Pin pin;       /**< GPIO pin number               */
-    uint8_t polarity;       /**< SYN_ButtonPolarity            */
-    uint16_t debounce_ms;   /**< Debounce window (ms)          */
-    uint16_t long_press_ms; /**< Long-press threshold (ms)     */
-    uint16_t repeat_ms;     /**< Auto-repeat interval (ms)     */
+    SYN_GPIO_Pin pin;        /**< GPIO pin number               */
+    uint8_t polarity;        /**< SYN_ButtonPolarity            */
+    uint16_t debounce_ms;    /**< Debounce window (ms)          */
+    uint16_t long_press_ms;  /**< Long-press threshold (ms)     */
+    uint16_t repeat_ms;      /**< Auto-repeat interval (ms)     */
+    uint16_t double_click_ms;/**< Max gap between clicks (ms, default 250) */
 
     /* State */
     SYN_FSM fsm;          /**< Button FSM (uses syn_fsm)     */
     uint8_t events;       /**< Pending events bitmask        */
     bool raw_pressed;     /**< Last raw GPIO reading         */
     bool pressed;         /**< Debounced pressed state       */
+    uint8_t click_count;  /**< Consecutive click counter     */
     uint32_t state_tick;  /**< Tick when state was entered    */
     uint32_t repeat_tick; /**< Tick of last repeat event      */
+    uint32_t click_tick;  /**< Tick of last release event     */
 
     /* Callbacks */
-    SYN_ButtonCallback on_press;      /**< Press callback                */
-    void *on_press_ctx;               /**< Press callback context        */
-    SYN_ButtonCallback on_release;    /**< Release callback              */
-    void *on_release_ctx;             /**< Release callback context      */
-    SYN_ButtonCallback on_long_press; /**< Long-press callback           */
-    void *on_long_press_ctx;          /**< Long-press context         */
-    SYN_ButtonCallback on_repeat;     /**< Repeat callback               */
-    void *on_repeat_ctx;              /**< Repeat callback context       */
+    SYN_ButtonCallback on_press;        /**< Press callback                */
+    void *on_press_ctx;                 /**< Press callback context        */
+    SYN_ButtonCallback on_release;      /**< Release callback              */
+    void *on_release_ctx;               /**< Release callback context      */
+    SYN_ButtonCallback on_long_press;   /**< Long-press callback           */
+    void *on_long_press_ctx;            /**< Long-press context         */
+    SYN_ButtonCallback on_repeat;       /**< Repeat callback               */
+    void *on_repeat_ctx;                /**< Repeat callback context       */
+    SYN_ButtonCallback on_single_click; /**< Single-click callback         */
+    void *on_single_click_ctx;          /**< Single-click context          */
+    SYN_ButtonCallback on_double_click; /**< Double-click callback         */
+    void *on_double_click_ctx;          /**< Double-click context          */
+    SYN_ButtonCallback on_triple_click; /**< Triple-click callback         */
+    void *on_triple_click_ctx;          /**< Triple-click context          */
+    SYN_ButtonCallback on_multi_click;  /**< Multi-click callback          */
+    void *on_multi_click_ctx;           /**< Multi-click context           */
 } SYN_Button;
+
+/* ── Combo button descriptor ────────────────────────────────────────────── */
+
+/** @brief Combination button descriptor for simultaneous multi-button presses. */
+typedef struct SYN_ButtonCombo {
+    const SYN_Button **buttons; /**< Array of pointers to monitored buttons */
+    size_t count;               /**< Number of buttons in combination      */
+    SYN_ButtonCallback on_combo;/**< Callback when all buttons are held   */
+    void *on_combo_ctx;         /**< Callback context                      */
+    bool active;                /**< True while combination is active     */
+    uint8_t events;             /**< Pending events                        */
+} SYN_ButtonCombo;
 
 /* ── Initialization ─────────────────────────────────────────────────────── */
 
@@ -118,6 +145,15 @@ typedef struct SYN_Button {
  */
 void syn_button_init(SYN_Button *btn, SYN_GPIO_Pin pin, SYN_ButtonPolarity polarity,
                      uint16_t debounce_ms);
+
+/* ── Configuration ──────────────────────────────────────────────────────── */
+
+/**
+ * @brief Set the multi-click evaluation window in milliseconds.
+ * @param btn        Button.
+ * @param window_ms  Max gap between taps to group into multi-clicks (default: 250ms, 0 = disable multi-click).
+ */
+void syn_button_set_click_window(SYN_Button *btn, uint16_t window_ms);
 
 /* ── Callback registration ──────────────────────────────────────────────── */
 
@@ -159,13 +195,67 @@ void syn_button_on_long_press(SYN_Button *btn, SYN_ButtonCallback cb, uint16_t h
  */
 void syn_button_on_repeat(SYN_Button *btn, SYN_ButtonCallback cb, uint16_t interval_ms, void *ctx);
 
+/**
+ * @brief Register a single-click callback.
+ * @param btn  Button.
+ * @param cb   Callback (or NULL to disable).
+ * @param ctx  User context.
+ */
+void syn_button_on_single_click(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx);
+
+/**
+ * @brief Register a double-click callback.
+ * @param btn  Button.
+ * @param cb   Callback (or NULL to disable).
+ * @param ctx  User context.
+ */
+void syn_button_on_double_click(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx);
+
+/**
+ * @brief Register a triple-click callback.
+ * @param btn  Button.
+ * @param cb   Callback (or NULL to disable).
+ * @param ctx  User context.
+ */
+void syn_button_on_triple_click(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx);
+
+/**
+ * @brief Register a multi-click (4+ taps) callback.
+ * @param btn  Button.
+ * @param cb   Callback (or NULL to disable).
+ * @param ctx  User context.
+ */
+void syn_button_on_multi_click(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx);
+
+/* ── Combo button functions ─────────────────────────────────────────────── */
+
+/**
+ * @brief Initialize a combination button descriptor.
+ *
+ * Fires callback when ALL specified buttons are simultaneously in debounced pressed state.
+ *
+ * @param combo    Combo descriptor.
+ * @param buttons  Array of pointers to initialized SYN_Button descriptors.
+ * @param count    Number of buttons in array.
+ * @param cb       Combo callback.
+ * @param ctx      User context.
+ */
+void syn_button_combo_init(SYN_ButtonCombo *combo, const SYN_Button **buttons, size_t count,
+                           SYN_ButtonCallback cb, void *ctx);
+
+/**
+ * @brief Update a combination button descriptor.
+ * @param combo Combo descriptor.
+ */
+void syn_button_combo_update(SYN_ButtonCombo *combo);
+
 /* ── Update / service ───────────────────────────────────────────────────── */
 
 /**
  * @brief Update a single button's state machine.
  *
  * Call this from your main loop, a scheduler task, or a timer callback.
- * Reads the GPIO, runs debouncing, and fires callbacks as needed.
+ * Reads the GPIO, runs debouncing, evaluates multi-clicks, and fires callbacks as needed.
  *
  * @param btn  Button to update.
  */
@@ -198,6 +288,26 @@ static inline bool syn_button_is_pressed(const SYN_Button *btn)
 static inline uint32_t syn_button_held_ms(const SYN_Button *btn)
 {
     return syn_port_get_tick_ms() - btn->state_tick;
+}
+
+/**
+ * @brief Get the consecutive click count.
+ * @param btn  Button.
+ * @return Number of clicks accumulated in current multi-click sequence.
+ */
+static inline uint8_t syn_button_clicks(const SYN_Button *btn)
+{
+    return btn->click_count;
+}
+
+/**
+ * @brief Is the combination button currently active (all buttons held)?
+ * @param combo Combo descriptor.
+ * @return true if active.
+ */
+static inline bool syn_button_combo_is_active(const SYN_ButtonCombo *combo)
+{
+    return combo != NULL && combo->active;
 }
 
 /**

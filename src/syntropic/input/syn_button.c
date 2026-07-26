@@ -93,6 +93,7 @@ static void action_confirm_press(void *ctx)
     btn->state_tick = syn_port_get_tick_ms();
     btn->pressed = true;
     btn->repeat_tick = syn_port_get_tick_ms();
+    btn->click_count++;
 
     button_fire_event(btn, SYN_BUTTON_EVT_PRESS, btn->on_press, btn->on_press_ctx);
 }
@@ -105,6 +106,7 @@ static void action_release(void *ctx)
 {
     SYN_Button *btn = (SYN_Button *)ctx;
     btn->state_tick = syn_port_get_tick_ms();
+    btn->click_tick = syn_port_get_tick_ms();
     btn->pressed = false;
     btn->raw_pressed = false;
 
@@ -158,12 +160,22 @@ void syn_button_init(SYN_Button *btn, SYN_GPIO_Pin pin, SYN_ButtonPolarity polar
     btn->pin = pin;
     btn->polarity = (uint8_t)polarity;
     btn->debounce_ms = debounce_ms;
+    btn->double_click_ms = 250;
     btn->pressed = false;
     btn->raw_pressed = false;
+    btn->click_count = 0;
     btn->state_tick = syn_port_get_tick_ms();
 
     syn_fsm_init(&btn->fsm, g_button_transitions, (SYN_FSM_State)SYN_BUTTON_STATE_IDLE, "btn");
     syn_fsm_set_context(&btn->fsm, btn);
+}
+
+/* ── Configuration ──────────────────────────────────────────────────────── */
+
+void syn_button_set_click_window(SYN_Button *btn, uint16_t window_ms)
+{
+    SYN_ASSERT(btn != NULL);
+    btn->double_click_ms = window_ms;
 }
 
 /* ── Callback registration ──────────────────────────────────────────────── */
@@ -192,6 +204,72 @@ void syn_button_on_repeat(SYN_Button *btn, SYN_ButtonCallback cb, uint16_t inter
     btn->on_repeat = cb;
     btn->on_repeat_ctx = ctx;
     btn->repeat_ms = interval_ms;
+}
+
+void syn_button_on_single_click(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx)
+{
+    btn->on_single_click = cb;
+    btn->on_single_click_ctx = ctx;
+}
+
+void syn_button_on_double_click(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx)
+{
+    btn->on_double_click = cb;
+    btn->on_double_click_ctx = ctx;
+}
+
+void syn_button_on_triple_click(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx)
+{
+    btn->on_triple_click = cb;
+    btn->on_triple_click_ctx = ctx;
+}
+
+void syn_button_on_multi_click(SYN_Button *btn, SYN_ButtonCallback cb, void *ctx)
+{
+    btn->on_multi_click = cb;
+    btn->on_multi_click_ctx = ctx;
+}
+
+/* ── Combo button functions ─────────────────────────────────────────────── */
+
+void syn_button_combo_init(SYN_ButtonCombo *combo, const SYN_Button **buttons, size_t count,
+                           SYN_ButtonCallback cb, void *ctx)
+{
+    SYN_ASSERT(combo != NULL);
+    SYN_ASSERT(buttons != NULL || count == 0);
+
+    memset(combo, 0, sizeof(*combo));
+    combo->buttons = buttons;
+    combo->count = count;
+    combo->on_combo = cb;
+    combo->on_combo_ctx = ctx;
+    combo->active = false;
+}
+
+void syn_button_combo_update(SYN_ButtonCombo *combo)
+{
+    SYN_ASSERT(combo != NULL);
+
+    if (combo->count == 0 || combo->buttons == NULL) {
+        return;
+    }
+
+    bool all_pressed = true;
+    for (size_t i = 0; i < combo->count; i++) {
+        if (combo->buttons[i] == NULL || !combo->buttons[i]->pressed) {
+            all_pressed = false;
+            break;
+        }
+    }
+
+    if (all_pressed && !combo->active) {
+        combo->active = true;
+        if (combo->on_combo != NULL) {
+            combo->on_combo(NULL, combo->on_combo_ctx);
+        }
+    } else if (!all_pressed && combo->active) {
+        combo->active = false;
+    }
 }
 
 /* ── State machine update ───────────────────────────────────────────────── */
@@ -236,6 +314,26 @@ void syn_button_update(SYN_Button *btn)
             if (btn->repeat_ms > 0 && (now - btn->repeat_tick) >= btn->repeat_ms) {
                 btn->repeat_tick = now;
                 button_fire_event(btn, SYN_BUTTON_EVT_REPEAT, btn->on_repeat, btn->on_repeat_ctx);
+            }
+        }
+    }
+
+    /* Evaluate multi-click timeout window when button is back in IDLE */
+    current = (SYN_ButtonState)syn_fsm_state(&btn->fsm);
+    if (current == SYN_BUTTON_STATE_IDLE && btn->click_count > 0) {
+        uint32_t idle_elapsed = now - btn->click_tick;
+        if (btn->double_click_ms == 0 || idle_elapsed >= btn->double_click_ms) {
+            uint8_t count = btn->click_count;
+            btn->click_count = 0;
+
+            if (count == 1) {
+                button_fire_event(btn, SYN_BUTTON_EVT_SINGLE_CLICK, btn->on_single_click, btn->on_single_click_ctx);
+            } else if (count == 2) {
+                button_fire_event(btn, SYN_BUTTON_EVT_DOUBLE_CLICK, btn->on_double_click, btn->on_double_click_ctx);
+            } else if (count == 3) {
+                button_fire_event(btn, SYN_BUTTON_EVT_TRIPLE_CLICK, btn->on_triple_click, btn->on_triple_click_ctx);
+            } else if (count >= 4) {
+                button_fire_event(btn, SYN_BUTTON_EVT_MULTI_CLICK, btn->on_multi_click, btn->on_multi_click_ctx);
             }
         }
     }

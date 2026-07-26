@@ -13,10 +13,9 @@
 #include <stdio.h>
 #include <string.h>
 
-/* ── Hardware Pin Configuration ─────────────────────────────────────────── */
+#include "port/stm32_hal/port_stm32_hal.h"
 
-#define RS485_DE_PORT GPIOB
-#define RS485_DE_PIN  GPIO_PIN_2
+#define RS485_DE_PIN SYN_PORT_STM32_PIN(GPIOB, GPIO_PIN_2) /* PB2 RS-485 DE Pin */
 
 extern UART_HandleTypeDef huart1; /* Configured for 2400 Baud, 8 Data, Even Parity, 1 Stop */
 
@@ -101,13 +100,13 @@ static SYN_PT_Status meter_poll_task(SYN_PT *pt, SYN_Task *task)
         tx_len = syn_dlt645_encode(&req, tx_buf, sizeof(tx_buf));
         if (tx_len > 0) {
             /* Enable RS-485 Driver (TX mode) */
-            HAL_GPIO_WritePin(RS485_DE_PORT, RS485_DE_PIN, GPIO_PIN_SET);
+            syn_gpio_write(RS485_DE_PIN, SYN_GPIO_HIGH);
 
             /* Transmit frame */
             HAL_UART_Transmit(&huart1, tx_buf, (uint16_t)tx_len, 100);
 
             /* Disable RS-485 Driver (RX mode) */
-            HAL_GPIO_WritePin(RS485_DE_PORT, RS485_DE_PIN, GPIO_PIN_RESET);
+            syn_gpio_write(RS485_DE_PIN, SYN_GPIO_LOW);
         }
     }
 

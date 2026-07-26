@@ -138,7 +138,7 @@ static GPIO_TypeDef *get_gpio_port(SYN_GPIO_Pin pin)
  */
 static uint16_t get_gpio_pin_mask(SYN_GPIO_Pin pin)
 {
-    return (uint16_t)(1U << (pin & 0x0F));
+    return (uint16_t)(1U << SYN_GPIO_PIN_NUM(pin));
 }
 
 SYN_Status syn_port_gpio_init(SYN_GPIO_Pin pin, SYN_GPIO_Mode mode)
@@ -148,7 +148,7 @@ SYN_Status syn_port_gpio_init(SYN_GPIO_Pin pin, SYN_GPIO_Mode mode)
         return SYN_INVALID_PARAM;
 
     /* Enable peripheral clock dynamically */
-    uint8_t port_idx = pin >> 4;
+    uint8_t port_idx = SYN_GPIO_PIN_PORT(pin);
     switch (port_idx) {
 #ifdef GPIOA
     case 0:

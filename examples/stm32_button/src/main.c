@@ -17,10 +17,12 @@
 #include "syntropic/input/syn_button.h"
 #include "syntropic/output/syn_led.h"
 
-/* Pin encodings: (port << 4) | pin */
-#define PIN_BTN1 0   /* PA0 */
-#define PIN_BTN2 1   /* PA1 */
-#define PIN_LED  45  /* PC13 */
+#include "port/stm32_hal/port_stm32_hal.h"
+
+/* Pin encodings: SYN_PORT_STM32_PIN(gpio_port, gpio_pin_mask) */
+#define PIN_BTN1 SYN_PORT_STM32_PIN(GPIOA, GPIO_PIN_0)  /* PA0 */
+#define PIN_BTN2 SYN_PORT_STM32_PIN(GPIOA, GPIO_PIN_1)  /* PA1 */
+#define PIN_LED  SYN_PORT_STM32_PIN(GPIOC, GPIO_PIN_13) /* PC13 */
 
 static SYN_Button btn1;
 static SYN_Button btn2;

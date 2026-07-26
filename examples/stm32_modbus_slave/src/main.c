@@ -48,9 +48,13 @@ static uint16_t stm32_read_adc_bus_voltage(void)
     return 2400U;
 }
 
+#include "port/stm32_hal/port_stm32_hal.h"
+
+#define RELAY_PIN SYN_PORT_STM32_PIN(GPIOA, GPIO_PIN_5) /* PA5 Relay Output */
+
 static void stm32_set_relay_state(bool state)
 {
-    /* On real STM32 hardware: HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, state ? GPIO_PIN_SET : GPIO_PIN_RESET); */
+    /* On real STM32 hardware: syn_gpio_write(RELAY_PIN, state ? SYN_GPIO_HIGH : SYN_GPIO_LOW); */
     (void)state;
 }
 

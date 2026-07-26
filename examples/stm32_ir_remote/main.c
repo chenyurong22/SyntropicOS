@@ -15,11 +15,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#define IR_RX_PORT GPIOA
-#define IR_RX_PIN  GPIO_PIN_0
+#include "port/stm32_hal/port_stm32_hal.h"
 
-#define IR_TX_PORT GPIOB
-#define IR_TX_PIN  GPIO_PIN_8
+#define IR_RX_PIN  SYN_PORT_STM32_PIN(GPIOA, GPIO_PIN_0) /* PA0 IR Receiver */
+#define IR_TX_PIN  SYN_PORT_STM32_PIN(GPIOB, GPIO_PIN_8) /* PB8 IR Transmitter */
 
 extern TIM_HandleTypeDef htim3; /* Configured for 38kHz PWM output on PB8 (Channel 3) */
 
@@ -143,7 +142,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         last_edge_us = now_us;
 
         /* Active-Low TSOP Receiver: LOW = Mark (Carrier ON), HIGH = Space (Carrier OFF) */
-        bool is_mark = (HAL_GPIO_ReadPin(IR_RX_PORT, IR_RX_PIN) == GPIO_PIN_RESET);
+        bool is_mark = (syn_gpio_read(IR_RX_PIN) == SYN_GPIO_LOW);
 
         SYN_IR_Frame frame;
         if (syn_ir_decode_pulse(&ir_decoder, (uint16_t)duration_us, is_mark, &frame)) {

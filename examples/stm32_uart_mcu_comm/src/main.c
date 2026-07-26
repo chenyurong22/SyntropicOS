@@ -80,15 +80,19 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 /* ── 4. Application Message Callbacks ────────────────────────────────────── */
 
 #if !IS_MASTER_MCU
+#include "port/stm32_hal/port_stm32_hal.h"
+
+#define LED_PIN SYN_PORT_STM32_PIN(GPIOA, GPIO_PIN_5) /* PA5 Status LED */
+
 /* SLAVE HANDLER: Process LED command from Master */
 static void on_set_led_command(const SYN_Packet *pkt, void *ctx)
 {
     (void)ctx;
 
     if (pkt->len > 0 && pkt->payload[0] == 0x01) {
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET); /* LED ON */
+        syn_gpio_write(LED_PIN, SYN_GPIO_HIGH); /* LED ON */
     } else {
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET); /* LED OFF */
+        syn_gpio_write(LED_PIN, SYN_GPIO_LOW);  /* LED OFF */
     }
 
     /* Reply to Master with Slave status packet */

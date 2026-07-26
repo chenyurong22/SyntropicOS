@@ -25,8 +25,8 @@ void on_single_click(SYN_Button *btn, void *ctx) {
 }
 
 void app_setup(void) {
-    // Pin 2, Active-Low (pull-up), 50ms debounce
-    syn_button_init(&btn1, 2, SYN_BUTTON_ACTIVE_LOW, 50);
+    // Port A Pin 2, Active-Low (pull-up), 50ms debounce
+    syn_button_init(&btn1, SYN_GPIO_PIN(0, 2), SYN_BUTTON_ACTIVE_LOW, 50);
     syn_button_on_single_click(&btn1, on_single_click, NULL);
 }
 
@@ -72,8 +72,8 @@ void on_combo_fired(SYN_Button *btn, void *ctx) {
 }
 
 void app_setup(void) {
-    syn_button_init(&btn1, 2, SYN_BUTTON_ACTIVE_LOW, 50);
-    syn_button_init(&btn2, 3, SYN_BUTTON_ACTIVE_LOW, 50);
+    syn_button_init(&btn1, SYN_GPIO_PIN(0, 2), SYN_BUTTON_ACTIVE_LOW, 50);
+    syn_button_init(&btn2, SYN_GPIO_PIN(0, 3), SYN_BUTTON_ACTIVE_LOW, 50);
 
     combo_list[0] = &btn1;
     combo_list[1] = &btn2;

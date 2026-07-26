@@ -125,6 +125,8 @@ container-fuzz: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
 	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers fuzz
 
+container-test: container-cov
+
 container-cov: container-build
 	@CONTAINER_ENGINE=$$(command -v podman || command -v docker) && \
 	$$CONTAINER_ENGINE run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers cov

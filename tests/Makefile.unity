@@ -95,7 +95,25 @@ SYN_SRCS := \
 	src/syntropic/motor/syn_interpolator.c \
 	src/syntropic/util/syn_geo.c \
 	src/syntropic/drivers/syn_hpclock.c \
-	src/syntropic/drivers/syn_timesync.c
+	src/syntropic/drivers/syn_timesync.c \
+	src/syntropic/output/syn_buzzer.c \
+	src/syntropic/input/syn_keypad.c \
+	src/syntropic/input/syn_touch.c \
+	src/syntropic/input/syn_dipswitch.c \
+	src/syntropic/display/syn_charlcd.c \
+	src/syntropic/display/syn_oled.c \
+	src/syntropic/display/syn_seg7.c \
+	src/syntropic/drivers/syn_shiftreg.c \
+	src/syntropic/drivers/syn_ioexp.c \
+	src/syntropic/input/syn_joystick.c \
+	src/syntropic/sensor/syn_powermon.c \
+	src/syntropic/sensor/syn_climate.c \
+	src/syntropic/output/syn_smartled.c \
+	src/syntropic/sensor/syn_distance.c \
+	src/syntropic/sensor/syn_scale.c \
+	src/syntropic/sensor/syn_lux.c \
+	src/syntropic/drivers/syn_rfid.c \
+	src/syntropic/sensor/syn_biometric.c
 
 # Unity framework
 UNITY_SRCS := tests/unit/unity/unity.c

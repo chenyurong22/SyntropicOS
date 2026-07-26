@@ -74,6 +74,24 @@ set(SYN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/net/syn_wg.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/net/syn_mqtt.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/net/syn_transport_tcp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/output/syn_buzzer.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/input/syn_keypad.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/input/syn_touch.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/input/syn_dipswitch.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/display/syn_charlcd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/display/syn_oled.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/display/syn_seg7.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/drivers/syn_shiftreg.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/drivers/syn_ioexp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/input/syn_joystick.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/sensor/syn_powermon.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/sensor/syn_climate.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/output/syn_smartled.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/sensor/syn_distance.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/sensor/syn_scale.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/sensor/syn_lux.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/drivers/syn_rfid.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/sensor/syn_biometric.c
 )
 
 # Optional: weak stubs (link these so unimplemented port functions assert

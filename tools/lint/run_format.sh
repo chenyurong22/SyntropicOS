@@ -16,7 +16,7 @@ if ! command -v clang-format >/dev/null 2>&1; then
     exit 0
 fi
 
-FILES=$(find src port tests -name "*.c" -o -name "*.h" ! -path "*/unity/*")
+FILES=$(find src tests -name "*.c" -o -name "*.h" ! -path "*/unity/*")
 
 if [[ "${MODE}" == "fix" ]]; then
     echo "Applying formatting fixes..."

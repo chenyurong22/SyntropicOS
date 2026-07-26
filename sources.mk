@@ -75,7 +75,25 @@ SYN_SRCS := \
 	$(SYN_DIR)/src/syntropic/crypto/syn_chacha20poly1305.c \
 	$(SYN_DIR)/src/syntropic/crypto/syn_x25519.c \
 	$(SYN_DIR)/src/syntropic/net/syn_sntp.c \
-	$(SYN_DIR)/src/syntropic/net/syn_wg.c
+	$(SYN_DIR)/src/syntropic/net/syn_wg.c \
+	$(SYN_DIR)/src/syntropic/output/syn_buzzer.c \
+	$(SYN_DIR)/src/syntropic/input/syn_keypad.c \
+	$(SYN_DIR)/src/syntropic/input/syn_touch.c \
+	$(SYN_DIR)/src/syntropic/input/syn_dipswitch.c \
+	$(SYN_DIR)/src/syntropic/display/syn_charlcd.c \
+	$(SYN_DIR)/src/syntropic/display/syn_oled.c \
+	$(SYN_DIR)/src/syntropic/display/syn_seg7.c \
+	$(SYN_DIR)/src/syntropic/drivers/syn_shiftreg.c \
+	$(SYN_DIR)/src/syntropic/drivers/syn_ioexp.c \
+	$(SYN_DIR)/src/syntropic/input/syn_joystick.c \
+	$(SYN_DIR)/src/syntropic/sensor/syn_powermon.c \
+	$(SYN_DIR)/src/syntropic/sensor/syn_climate.c \
+	$(SYN_DIR)/src/syntropic/output/syn_smartled.c \
+	$(SYN_DIR)/src/syntropic/sensor/syn_distance.c \
+	$(SYN_DIR)/src/syntropic/sensor/syn_scale.c \
+	$(SYN_DIR)/src/syntropic/sensor/syn_lux.c \
+	$(SYN_DIR)/src/syntropic/drivers/syn_rfid.c \
+	$(SYN_DIR)/src/syntropic/sensor/syn_biometric.c
 
 SYN_STUB_SRCS := \
 	$(SYN_DIR)/src/syntropic/port_stubs/syn_port_stubs.c

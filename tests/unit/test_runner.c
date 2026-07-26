@@ -58,6 +58,24 @@ void run_sd_tests(void);
 void run_rtc_tests(void);
 void run_hwwdt_tests(void);
 void run_soft_onewire_tests(void);
+void run_buzzer_tests(void);
+void run_keypad_tests(void);
+void run_touch_tests(void);
+void run_dipswitch_tests(void);
+void run_seg7_tests(void);
+void run_shiftreg_tests(void);
+void run_charlcd_tests(void);
+void run_oled_tests(void);
+void run_ioexp_tests(void);
+void run_joystick_tests(void);
+void run_powermon_tests(void);
+void run_climate_tests(void);
+void run_smartled_tests(void);
+void run_distance_tests(void);
+void run_scale_tests(void);
+void run_lux_tests(void);
+void run_rfid_tests(void);
+void run_biometric_tests(void);
 void run_dac_tests(void);
 void run_scurve_tests(void);
 
@@ -402,6 +420,26 @@ int main(void)
     run_geo_tests();
     run_hpclock_tests();
     run_timesync_tests();
+
+    /* New Hardware Peripherals */
+    run_buzzer_tests();
+    run_keypad_tests();
+    run_touch_tests();
+    run_dipswitch_tests();
+    run_seg7_tests();
+    run_shiftreg_tests();
+    run_charlcd_tests();
+    run_oled_tests();
+    run_ioexp_tests();
+    run_joystick_tests();
+    run_powermon_tests();
+    run_climate_tests();
+    run_smartled_tests();
+    run_distance_tests();
+    run_scale_tests();
+    run_lux_tests();
+    run_rfid_tests();
+    run_biometric_tests();
 
     return UNITY_END();
 }

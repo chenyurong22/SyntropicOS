@@ -20,6 +20,15 @@
  * @defgroup syn_io Input / Output
  * @brief LED, button, and encoder interfaces.
  *
+ * @defgroup syn_input Input Devices
+ * @brief Keypads, buttons, joysticks, touch sensors, and switches.
+ *
+ * @defgroup syn_output Output Devices
+ * @brief Buzzers, LEDs, addressable smart LED strips, and actuators.
+ *
+ * @defgroup syn_sensor Sensors
+ * @brief Environmental, power, distance, load cell, biometric, and light sensors.
+ *
  * @defgroup syn_motor Motor & Control
  * @brief DC motor, servo, stepper, actuator, and PID control algorithms.
  *
@@ -159,6 +168,18 @@ extern "C" {
 #include "drivers/syn_soft_onewire.h"
 #endif
 
+#if !defined(SYN_USE_SHIFTREG) || SYN_USE_SHIFTREG
+#include "drivers/syn_shiftreg.h"
+#endif
+
+#if !defined(SYN_USE_IOEXP) || SYN_USE_IOEXP
+#include "drivers/syn_ioexp.h"
+#endif
+
+#if !defined(SYN_USE_RFID) || SYN_USE_RFID
+#include "drivers/syn_rfid.h"
+#endif
+
 #if !defined(SYN_USE_CAN) || SYN_USE_CAN
 #include "drivers/syn_can.h"
 #endif
@@ -234,8 +255,32 @@ extern "C" {
 #include "input/syn_encoder.h"
 #endif
 
+#if !defined(SYN_USE_KEYPAD) || SYN_USE_KEYPAD
+#include "input/syn_keypad.h"
+#endif
+
+#if !defined(SYN_USE_TOUCH) || SYN_USE_TOUCH
+#include "input/syn_touch.h"
+#endif
+
+#if !defined(SYN_USE_DIPSWITCH) || SYN_USE_DIPSWITCH
+#include "input/syn_dipswitch.h"
+#endif
+
+#if !defined(SYN_USE_JOYSTICK) || SYN_USE_JOYSTICK
+#include "input/syn_joystick.h"
+#endif
+
 #if !defined(SYN_USE_LED) || SYN_USE_LED
 #include "output/syn_led.h"
+#endif
+
+#if !defined(SYN_USE_SMARTLED) || SYN_USE_SMARTLED
+#include "output/syn_smartled.h"
+#endif
+
+#if !defined(SYN_USE_BUZZER) || SYN_USE_BUZZER
+#include "output/syn_buzzer.h"
 #endif
 
 #if !defined(SYN_USE_SOFT_PWM) || SYN_USE_SOFT_PWM
@@ -246,6 +291,30 @@ extern "C" {
 
 #if !defined(SYN_USE_SENSOR) || SYN_USE_SENSOR
 #include "sensor/syn_sensor.h"
+#endif
+
+#if !defined(SYN_USE_POWERMON) || SYN_USE_POWERMON
+#include "sensor/syn_powermon.h"
+#endif
+
+#if !defined(SYN_USE_CLIMATE) || SYN_USE_CLIMATE
+#include "sensor/syn_climate.h"
+#endif
+
+#if !defined(SYN_USE_DISTANCE) || SYN_USE_DISTANCE
+#include "sensor/syn_distance.h"
+#endif
+
+#if !defined(SYN_USE_SCALE) || SYN_USE_SCALE
+#include "sensor/syn_scale.h"
+#endif
+
+#if !defined(SYN_USE_LUX) || SYN_USE_LUX
+#include "sensor/syn_lux.h"
+#endif
+
+#if !defined(SYN_USE_BIOMETRIC) || SYN_USE_BIOMETRIC
+#include "sensor/syn_biometric.h"
 #endif
 
 /* ── DSP & Filters ──────────────────────────────────────────────────────── */
@@ -375,6 +444,18 @@ extern "C" {
 #if !defined(SYN_USE_CANVAS) || SYN_USE_CANVAS
 #include "display/syn_canvas.h"
 #include "display/syn_gfx.h"
+#endif
+
+#if !defined(SYN_USE_CHARLCD) || SYN_USE_CHARLCD
+#include "display/syn_charlcd.h"
+#endif
+
+#if !defined(SYN_USE_OLED) || SYN_USE_OLED
+#include "display/syn_oled.h"
+#endif
+
+#if !defined(SYN_USE_SEG7) || SYN_USE_SEG7
+#include "display/syn_seg7.h"
 #endif
 
 #if !defined(SYN_USE_MENU) || SYN_USE_MENU

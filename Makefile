@@ -58,6 +58,12 @@ valgrind:
 container-valgrind:
 	@make -C tools/containers container-valgrind
 
+analyzer:
+	@make -C tools/containers analyzer
+
+container-analyzer:
+	@make -C tools/containers container-analyzer
+
 integration:
 	@make -C tools/containers integration
 

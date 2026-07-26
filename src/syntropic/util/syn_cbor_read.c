@@ -264,6 +264,9 @@ float syn_cbor_read_float(SYN_CborReader *r)
     bits |= (uint32_t)consume_byte(r) << 16u;
     bits |= (uint32_t)consume_byte(r) << 8u;
     bits |= (uint32_t)consume_byte(r);
+    if (!r->ok) {
+        return 0.0f;
+    }
     float v = 0.0f;
     memcpy(&v, &bits, sizeof(v));
     return v;

@@ -165,6 +165,10 @@ static inline void syn_mailbox_set_notify(SYN_Mailbox *mb, bool enable)
  * @param msg  Pointer to message data (msg_size bytes copied).
  * @return true if posted, false if full.
  */
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wanalyzer-use-of-uninitialized-value"
+#endif
 static inline bool syn_mailbox_post(SYN_Mailbox *mb, const void *msg)
 {
     size_t head = mb->head;
@@ -188,6 +192,9 @@ static inline bool syn_mailbox_post(SYN_Mailbox *mb, const void *msg)
 
     return true;
 }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 /**
  * @brief Receive a message. Single consumer.

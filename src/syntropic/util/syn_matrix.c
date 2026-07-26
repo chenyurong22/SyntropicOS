@@ -797,10 +797,11 @@ SYN_Status syn_matrix_solve_cholesky_work(const SYN_Matrix *A, const SYN_Matrix 
     if (A->cols != n || b->rows != n || b->cols != 1 || x->rows != n || x->cols != 1) {
         return SYN_INVALID_PARAM;
     }
-    if (n > SYN_SOLVER_MAX_N)
+    if (n == 0 || n > SYN_SOLVER_MAX_N)
         return SYN_INVALID_PARAM;
 
     memset(L, 0, (size_t)n * n * sizeof(q16_t));
+    memset(y, 0, (size_t)n * sizeof(q16_t));
 
     uint8_t i, j, k;
     for (i = 0; i < n; i++) {
@@ -830,10 +831,9 @@ SYN_Status syn_matrix_solve_cholesky_work(const SYN_Matrix *A, const SYN_Matrix 
     }
 
     /* Back substitution Lᵀ · x = y */
-    for (i = n; i > 0; i--) {
-        uint8_t idx = i - 1;
+    for (int idx = (int)n - 1; idx >= 0; idx--) {
         int64_t sum = (int64_t)y[idx];
-        for (j = idx + 1; j < n; j++) {
+        for (j = (uint8_t)(idx + 1); j < n; j++) {
             sum -= ((int64_t)L[j * n + idx] * x->data[j]) >> Q16_SHIFT;
         }
         x->data[idx] = q16_div((q16_t)sum, L[idx * n + idx]);
@@ -868,6 +868,9 @@ SYN_Status syn_matrix_least_squares_work(const SYN_Matrix *A, const SYN_Matrix *
     SYN_Matrix AtA = {ata_data, n, n};
     SYN_Matrix Atb = {atb_data, n, 1};
     SYN_Matrix AT = {at_data, n, m};
+    memset(at_data, 0, (size_t)n * m * sizeof(q16_t));
+    memset(ata_data, 0, (size_t)n * n * sizeof(q16_t));
+    memset(atb_data, 0, (size_t)n * sizeof(q16_t));
 
     syn_matrix_transpose(A, &AT);
     syn_matrix_mul(&AT, A, &AtA);

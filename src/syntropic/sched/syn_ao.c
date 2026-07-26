@@ -68,7 +68,10 @@ void syn_ao_init(SYN_ActiveObject *ao, const char *name, const SYN_FSM_Transitio
 bool syn_ao_post(SYN_ActiveObject *ao, uint16_t sig, void *data)
 {
     SYN_ASSERT(ao != NULL);
-    SYN_AO_Event ev = {.sig = sig, .data = data};
+    SYN_AO_Event ev;
+    memset(&ev, 0, sizeof(ev));
+    ev.sig = sig;
+    ev.data = data;
 
     syn_port_enter_critical();
     bool success = syn_mailbox_post(&ao->mailbox, &ev);

@@ -1,122 +1,113 @@
-# DSP & Filters
+# DSP & Digital Signal Processing Modules
 
-All DSP modules use integer-only math — no floating point.
+SyntropicOS provides fixed-point (integer-only) Digital Signal Processing (DSP) components designed for microcontrollers without Hardware Floating-Point Units (FPUs).
 
-## Digital Filters
+---
 
-| Module | Header | Config | Description |
-|---|---|---|---|
-| Filters | `dsp/syn_filter.h` | `SYN_USE_FILTER` | Moving average, exponential moving average (EMA), median filters, and direct-form FIR filter (`SYN_FilterFIR`) with 64-bit fixed-point circular buffer accumulation. |
-| Biquad | `dsp/syn_biquad.h` | `SYN_USE_BIQUAD` | Direct Form I biquad filter with built-in Butterworth design functions for lowpass, highpass, bandpass, and notch configurations. Uses Q16.16 coefficients with int64 accumulator. |
-| DDS Synthesizer | `dsp/syn_dds.h` | `SYN_USE_DDS` | Direct Digital Synthesis signal generator in Q16.16 fixed-point math supporting Sine, Triangle, Sawtooth, Square/PWM, and Noise waveforms with direct DAC buffer filling. |
+## Technical Specifications
 
-### Biquad Filter Design
+| Feature | Specification |
+|---|---|
+| **Math Representation** | Q16.16 Fixed-Point (`q16_t`). 16 bits integer, 16 bits fractional. |
+| **Accumulator Resolution** | 64-bit integer (`int64_t`) to prevent overflow during sum/square accumulation. |
+| **Memory Allocation** | **100% Static / Zero Heap**. Buffers are caller-owned. |
 
-Four design functions compute Butterworth coefficients from cutoff frequency and sample rate:
+---
 
-```c
-SYN_FilterBiquad lpf, hpf, bpf, notch;
+## 1. Digital Filters (`dsp/syn_filter.h` & `dsp/syn_biquad.h`)
 
-// Lowpass: passes below fc, attenuates above
-syn_filter_biquad_lowpass(&lpf, Q16_FROM_INT(100), Q16_FROM_INT(1000));
+SyntropicOS includes Moving Average, Exponential Moving Average (EMA), Median spike rejection, Direct-Form FIR, and Butterworth Biquad IIR filters.
 
-// Highpass: passes above fc, attenuates below
-syn_filter_biquad_highpass(&hpf, Q16_FROM_INT(100), Q16_FROM_INT(1000));
+### Signal Processing Flow
 
-// Bandpass: passes band around fc, Q controls bandwidth
-syn_filter_biquad_bandpass(&bpf, Q16_FROM_INT(100), Q16_FROM_INT(1000), Q16_FROM_INT(2));
-
-// Notch: rejects band around fc, passes all else
-syn_filter_biquad_notch(&notch, Q16_FROM_INT(60), Q16_FROM_INT(1000), Q16_FROM_INT(5));
-
-// Process samples:
-q16_t out = syn_filter_biquad_update(&lpf, sample);
+```mermaid
+flowchart LR
+    RawADC["Raw ADC Sample"] --> MedianFilter["Median Filter (Spike Removal)"]
+    MedianFilter --> EMAFilter["EMA / Biquad Filter (Noise Reduction)"]
+    EMAFilter --> SignalStats["Signal Statistics (Min, Max, Mean, RMS)"]
 ```
 
-## Signal Analysis
-
-| Module | Header | Config | Description |
-|---|---|---|---|
-| Signal Stats | `dsp/syn_signal.h` | `SYN_USE_SIGNAL` | Sliding window statistics: min, max, mean, peak-to-peak, variance (Q16), standard deviation (Q16), RMS (Q16), delta, and latest value. |
-| FFT | `dsp/syn_fft.h` | `SYN_USE_FFT` | Radix-2 FFT, Hanning/Hamming/Blackman-Harris spectral windowing, magnitude spectrum (`syn_fft_magnitude_spectrum`), dominant peak detection (`syn_fft_find_peaks`), and Total Harmonic Distortion (`syn_fft_thd`). |
-
-### Signal Statistics
-
-The signal module provides all common statistical functions over a caller-provided circular buffer:
+### Complete Code Example (Biquad Butterworth Lowpass Filter)
 
 ```c
-int32_t samples[64];
-SYN_Signal sig;
-syn_signal_init(&sig, samples, 64);
+#include <syntropic/dsp/syn_biquad.h>
+#include <syntropic/dsp/syn_filter.h>
 
-// Feed samples from sensor/ADC:
-syn_signal_push(&sig, adc_read());
+static SYN_FilterBiquad lpf;
+static SYN_FilterEMA    ema;
 
-// Query:
-int32_t min  = syn_signal_min(&sig);
-int32_t rms  = syn_signal_rms_q16(&sig);       // RMS in Q16.16
-int32_t sdev = syn_signal_std_dev_q16(&sig);    // Std deviation in Q16.16
+void dsp_init(void) {
+    // 1. Initialize EMA Filter (alpha = 64/256 = 0.25)
+    syn_filter_ema_init(&ema, 64);
+
+    // 2. Initialize 2nd-order Butterworth Lowpass Filter: 100 Hz cutoff, 1000 Hz sample rate
+    syn_filter_biquad_lowpass(&lpf, Q16_FROM_INT(100), Q16_FROM_INT(1000));
+}
+
+int16_t process_adc_sample(int16_t raw_sample) {
+    // Convert sample to Q16.16 fixed-point format
+    q16_t in_q16 = Q16_FROM_INT(raw_sample);
+
+    // Filter through lowpass Biquad
+    q16_t filtered_q16 = syn_filter_biquad_update(&lpf, in_q16);
+
+    // Return integer result
+    return (int16_t)Q16_TO_INT(filtered_q16);
+}
 ```
 
-## State Estimation & Sensor Fusion
+---
 
-| Module | Header | Config | Description |
-|---|---|---|---|
-| Kalman Filter | `dsp/syn_kalman.h` | `SYN_USE_KALMAN` | General-purpose discrete-time linear Kalman filter using fixed-point matrix algebra. Supports arbitrary state and measurement dimensions (compile-time). Zero heap allocation. |
-| Sensor Fusion | `sensor/syn_sensor_fusion.h` | `SYN_USE_SENSOR` | 6-DOF IMU Mahony Complementary / AHRS Filter fusing 3-axis accelerometer and 3-axis gyroscope into 3D attitude representations (Quaternions and Roll/Pitch/Yaw angles). |
+## 2. Signal Statistics (`dsp/syn_signal.h`)
 
-### Kalman Filter
-
-Implements the standard predict/update Kalman loop using `syn_matrix` for all linear algebra. Caller allocates all matrices on the stack or statically — no heap.
+Provides real-time sliding window statistics (min, max, mean, variance, standard deviation, RMS) over a caller-owned circular buffer.
 
 ```c
-#define N_STATE 2   // [position, velocity]
-#define N_MEAS  1   // [position only]
+#include <syntropic/dsp/syn_signal.h>
 
-SYN_Kalman kf;
-SYN_Kalman_Config cfg;
+static int32_t stats_buffer[64];
+static SYN_Signal sig;
 
-// All matrices are caller-owned:
-SYN_MAT_DECL(x,  N_STATE, 1);        // State vector
-SYN_MAT_DECL(P,  N_STATE, N_STATE);  // Error covariance
-SYN_MAT_DECL(F,  N_STATE, N_STATE);  // State transition (constant-velocity model)
-SYN_MAT_DECL(Q,  N_STATE, N_STATE);  // Process noise
-SYN_MAT_DECL(H,  N_MEAS,  N_STATE);  // Measurement model
-SYN_MAT_DECL(R,  N_MEAS,  N_MEAS);   // Measurement noise
-SYN_MAT_DECL(z,  N_MEAS,  1);        // Measurement vector
+void stats_init(void) {
+    syn_signal_init(&sig, stats_buffer, 64);
+}
 
-// Scratch buffers (macro allocates all 8 needed):
-SYN_KALMAN_SCRATCH_DECL(scratch, N_STATE, N_MEAS);
+void on_adc_sample(int32_t val) {
+    syn_signal_push(&sig, val);
 
-cfg.x = &x;  cfg.P = &P;  cfg.F = &F;
-cfg.Q = &Q;  cfg.H = &H;  cfg.R = &R;
-cfg.n_state = N_STATE;
-cfg.n_meas  = N_MEAS;
-
-// Set up constant-velocity model: F = [[1, dt], [0, 1]]
-syn_matrix_identity(&F);
-SYN_MAT_AT(&F, 0, 1) = Q16_FROM_FRAC(1, 100);  // dt = 10ms
-
-// We only measure position: H = [[1, 0]]
-syn_matrix_zero(&H);
-SYN_MAT_AT(&H, 0, 0) = Q16_ONE;
-
-syn_kalman_init(&kf, &cfg);
-SYN_KALMAN_SCRATCH_ASSIGN(&kf, scratch);
-
-// In control loop:
-z.data[0] = sensor_position;
-syn_kalman_predict(&kf);
-syn_kalman_update(&kf, &z);
-
-q16_t filtered_position = x.data[0];
-q16_t estimated_velocity = x.data[1];
+    int32_t min_val = syn_signal_min(&sig);
+    int32_t max_val = syn_signal_max(&sig);
+    int32_t mean_val = syn_signal_mean(&sig);
+    int32_t rms_val  = syn_signal_rms_q16(&sig);
+}
 ```
 
-**Configuration limits**: Default maximum dimensions are 6 states × 4 measurements. Override via `SYN_KALMAN_MAX_STATE` and `SYN_KALMAN_MAX_MEAS` in `syn_config.h`.
+---
 
-## State Machines
+## 3. Fast Fourier Transform & Peak Detection (`dsp/syn_fft.h`)
 
-| Module | Header | Config | Description |
-|---|---|---|---|
-| FSM | `util/syn_fsm.h` | `SYN_USE_FSM` | Table-driven finite state machine with entry/exit actions and event-driven transitions |
+Provides fixed-point Radix-2 FFT spectral analysis, Hanning/Hamming windowing, peak frequency identification, and Total Harmonic Distortion (THD) calculation.
+
+```c
+#include <syntropic/dsp/syn_fft.h>
+
+#define FFT_SIZE 64
+
+static q16_t real_buf[FFT_SIZE];
+static q16_t imag_buf[FFT_SIZE];
+static q16_t mag_buf[FFT_SIZE / 2];
+
+void analyze_spectrum(void) {
+    // Apply Hanning window
+    syn_fft_apply_window(real_buf, FFT_SIZE, SYN_FFT_WINDOW_HANNING);
+
+    // Perform Radix-2 FFT
+    syn_fft_perform(real_buf, imag_buf, FFT_SIZE);
+
+    // Compute magnitude spectrum
+    syn_fft_magnitude_spectrum(real_buf, imag_buf, mag_buf, FFT_SIZE / 2);
+
+    // Find dominant frequency peak index
+    uint16_t peak_bin = syn_fft_find_peak(mag_buf, FFT_SIZE / 2);
+}
+```

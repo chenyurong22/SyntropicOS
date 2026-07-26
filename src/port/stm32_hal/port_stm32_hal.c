@@ -7,9 +7,11 @@
  */
 
 #if !defined(ARDUINO) &&                                                                     \
-    (defined(STM32F0xx) || defined(STM32F1xx) || defined(STM32F4xx) || defined(STM32L4xx) || \
-     defined(STM32G0xx) || defined(STM32H7xx) || defined(STM32F0) || defined(STM32F1) ||     \
-     defined(STM32F4) || defined(STM32L4) || defined(STM32G0) || defined(STM32H7))
+    (defined(STM32F0xx) || defined(STM32F1xx) || defined(STM32F4xx) || defined(STM32F7xx) || \
+     defined(STM32L4xx) || defined(STM32G0xx) || defined(STM32H7xx) || defined(STM32C0xx) || \
+     defined(STM32U0xx) || defined(STM32F0) || defined(STM32F1) || defined(STM32F4) ||        \
+     defined(STM32F7) || defined(STM32L4) || defined(STM32G0) || defined(STM32H7) ||         \
+     defined(STM32C0) || defined(STM32U0))
 
 #include "syntropic/common/syn_defs.h"
 #include "syntropic/port/syn_port_gpio.h"
@@ -22,6 +24,8 @@
 #include "stm32f0xx_hal.h"
 #elif defined(STM32F407xx) || defined(STM32F4) || defined(STM32F4xx)
 #include "stm32f4xx_hal.h"
+#elif defined(STM32F746xx) || defined(STM32F767xx) || defined(STM32F7) || defined(STM32F7xx)
+#include "stm32f7xx_hal.h"
 #elif defined(STM32F103xx) || defined(STM32F1) || defined(STM32F1xx)
 #include "stm32f1xx_hal.h"
 #elif defined(STM32L476xx) || defined(STM32L4) || defined(STM32L4xx)
@@ -30,6 +34,10 @@
 #include "stm32g0xx_hal.h"
 #elif defined(STM32H743xx) || defined(STM32H7) || defined(STM32H7xx)
 #include "stm32h7xx_hal.h"
+#elif defined(STM32C092xx) || defined(STM32C0) || defined(STM32C0xx)
+#include "stm32c0xx_hal.h"
+#elif defined(STM32U083xx) || defined(STM32U0) || defined(STM32U0xx)
+#include "stm32u0xx_hal.h"
 #else
 /* Fallback: user can define this header or configure their include path */
 #include "stm32_hal.h"

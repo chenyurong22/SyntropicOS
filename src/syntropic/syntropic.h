@@ -324,6 +324,10 @@ extern "C" {
 #include "proto/syn_pmbus.h"
 #endif
 
+#if !defined(SYN_USE_MBUS) || SYN_USE_MBUS
+#include "proto/syn_mbus.h"
+#endif
+
 #if !defined(SYN_USE_MODBUS) || SYN_USE_MODBUS
 #include "proto/syn_modbus.h"
 #endif

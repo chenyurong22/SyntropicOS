@@ -601,6 +601,48 @@ static void test_button_long_press_release_no_single_click(void)
     TEST_ASSERT_EQUAL_INT(0, btn_single_click_count);
 }
 
+/* ── Test: Polled Events & Immediate Click Window ───────────────────────── */
+
+static void test_button_polled_events_and_immediate_click_window(void)
+{
+    mock_tick_ms = 0;
+    reset_counts();
+
+    mock_gpio_states[15] = 0;
+    SYN_Button btn;
+    syn_button_init(&btn, 15, SYN_BUTTON_ACTIVE_HIGH, 20);
+
+    /* Set click window to 0 -> immediate single click on release */
+    syn_button_set_click_window(&btn, 0);
+    syn_button_on_single_click(&btn, btn_on_single_click, NULL);
+
+    /* Tap button */
+    mock_gpio_states[15] = 1;
+    syn_button_update(&btn);
+    mock_tick_advance(25);
+    syn_button_update(&btn);
+    mock_gpio_states[15] = 0;
+    syn_button_update(&btn);
+
+    /* With window = 0, single click fires immediately on next update in IDLE */
+    syn_button_update(&btn);
+    TEST_ASSERT_EQUAL_INT(1, btn_single_click_count);
+
+    /* Verify polled event bitmask collects multiple events */
+    btn.events = 0;
+    mock_gpio_states[15] = 1;
+    syn_button_update(&btn);
+    mock_tick_advance(25);
+    syn_button_update(&btn);
+    mock_gpio_states[15] = 0;
+    syn_button_update(&btn);
+
+    uint8_t evts = syn_button_poll_events(&btn);
+    TEST_ASSERT_TRUE((evts & SYN_BUTTON_EVT_PRESS) != 0);
+    TEST_ASSERT_TRUE((evts & SYN_BUTTON_EVT_RELEASE) != 0);
+    TEST_ASSERT_EQUAL_UINT8(0, syn_button_poll_events(&btn));
+}
+
 void run_button_tests(void)
 {
     RUN_TEST(test_button);
@@ -613,4 +655,5 @@ void run_button_tests(void)
     RUN_TEST(test_button_combo_3_buttons);
     RUN_TEST(test_button_queries_and_null_checks);
     RUN_TEST(test_button_long_press_release_no_single_click);
+    RUN_TEST(test_button_polled_events_and_immediate_click_window);
 }

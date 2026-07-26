@@ -10,7 +10,7 @@
 [![C99](https://img.shields.io/badge/C-C99-blue.svg)]()
 [![Build & Test](https://github.com/outlookhazy/SyntropicOS/actions/workflows/ci.yml/badge.svg)](https://github.com/outlookhazy/SyntropicOS/actions)
 
-SyntropicOS is a zero-overhead, production-grade C99 application framework designed for deeply embedded microcontrollers (STM32, RP2040, ESP32, AVR, RISC-V). It combines stackless coroutines, non-blocking hardware drivers, industrial fieldbuses, fixed-point DSP, and display graphics into a single cooperative ecosystem.
+SyntropicOS is a zero-overhead, production-grade C99 framework designed for deeply embedded microcontrollers (STM32, RP2040, ESP32, AVR, RISC-V). It combines stackless coroutines, non-blocking hardware drivers, industrial fieldbuses, fixed-point DSP, and display graphics into a single cooperative ecosystem.
 
 ---
 
@@ -51,7 +51,7 @@ flowchart TD
 
 - 📖 **[Documentation Hub](docs/index.md)** — Complete repository documentation index.
 - 🚀 **[Getting Started Guide](docs/getting-started.md)** — CMake, Makefile, and C99 bare-metal setup.
-- 🔌 **[Arduino Compatibility & Multi-Tab Examples](docs/arduino.md)** — Arduino Library Manager installation & multi-tab sketch patterns.
+- 🔌 **[Arduino Compatibility Guide](docs/arduino.md)** — Arduino Library Manager installation & IDE setup.
 - 🔧 **[MCU Porting Guide](docs/porting-guide.md)** — Implementing custom HAL ports (`syn_port_*`).
 - 🧪 **[Testing & Containerization Guide](docs/testing.md)** — Unity unit tests, QEMU emulation, sanitizers, and integration daemons.
 
@@ -95,16 +95,15 @@ int main(void) {
 
 ---
 
-## Multi-Tab Arduino Example Pattern
+## Example Projects Directory ([`examples/`](examples/))
 
-SyntropicOS examples use a clean **Multi-Tab Architecture** to eliminate OS scheduler clutter:
-- **Tab 1 (`.ino` Main Sketch)**: Clean application logic and callbacks.
-- **Tab 2 (`sys_init.h` / `tasks.h`)**: Background OS scheduling infrastructure.
+SyntropicOS ships with 30+ hardware and SDK examples across bare-metal C, STM32 HAL, PlatformIO, and Arduino:
 
-Explore multi-tab examples under **[`examples/`](examples/)**:
+- **[`examples/stm32_uart_mcu_comm`](examples/stm32_uart_mcu_comm)** — STM32 HAL single-byte UART interrupt Master/Slave packet router.
 - **[`examples/ButtonEvents`](examples/ButtonEvents)** — Multi-click tap gestures, long-press, and chorded button combos.
 - **[`examples/SensorLogger`](examples/SensorLogger)** — Dual-channel ADC sampling, EMA filtering, and Serial CLI.
-- **[`examples/stm32_uart_mcu_comm`](examples/stm32_uart_mcu_comm)** — STM32 HAL single-byte UART interrupt MCU-to-MCU routing.
+- **[`examples/MotorFSM`](examples/MotorFSM)** — Finite state machine controlling a DC motor ramp profile.
+- **[`examples/PID_TempControl`](examples/PID_TempControl)** — Closed-loop integer PID temperature controller.
 
 ---
 

@@ -52,6 +52,19 @@ After installing, open **File → Examples → SyntropicOS**. You should see:
 
 If you see these, you're ready to go.
 
+---
+
+## Example Architecture & Multi-Tab Sketches
+
+Complex SyntropicOS examples (such as `ButtonEvents` and `SensorLogger`) use a clean **Multi-Tab Structure**:
+
+- **Tab 1 (`.ino` Main Sketch)**: Focused purely on application logic, event callbacks, and hardware setup. Zero scheduler boilerplate clutter.
+- **Tab 2 (`sys_init.h` / `tasks.h`)**: Encapsulates OS cooperative scheduling (`syn_sched`), background protothread task loops (`PT_BEGIN` / `PT_END`), and serial logger setup.
+
+When you open an example from **File → Examples → SyntropicOS**, the Arduino IDE automatically loads both tabs. You can customize Tab 1 for your own application without needing to modify the underlying OS loop in Tab 2.
+
+---
+
 ## Your First Sketch
 
 Open **File → Examples → SyntropicOS → Blink** and upload it. The on-board

@@ -1,92 +1,93 @@
-# Services
+# System Services & Utility Modules
 
-## Logging
-
-| Module | Header | Config |
-|---|---|---|
-| Logging | `log/syn_log.h` | `SYN_USE_LOG` |
-| Data Logger | `log/syn_datalog.h` | `SYN_USE_DATALOG` |
-
-Severity-filtered logging with per-module tags, optional timestamps, and ANSI color output. Logging calls below the compile-time minimum level (`SYN_LOG_LEVEL`) are stripped entirely — zero overhead.
-
-**Log levels** (0–6):
-
-| Level | Macro | Value |
-|---|---|---|
-| Trace | `SYN_LOG_T(tag, fmt, ...)` | 0 |
-| Debug | `SYN_LOG_D(tag, fmt, ...)` | 1 |
-| Info | `SYN_LOG_I(tag, fmt, ...)` | 2 |
-| Warn | `SYN_LOG_W(tag, fmt, ...)` | 3 |
-| Error | `SYN_LOG_E(tag, fmt, ...)` | 4 |
-| Fatal | `SYN_LOG_F(tag, fmt, ...)` | 5 |
-| None (disable all) | — | 6 |
-
-**Setup:**
-
-```c
-static void my_output(const char *str, size_t len) {
-    syn_port_uart_transmit(0, (const uint8_t *)str, len, 0);
-}
-
-syn_log_init(my_output, SYN_LOG_DEBUG);
-
-#define TAG "main"
-SYN_LOG_I(TAG, "System started, version %d.%d", 1, 0);
-SYN_LOG_E(TAG, "Sensor read failed: %d", status);
-```
-
-**Output:**
-```
-[   1234] I/main: System started, version 1.0
-[   1240] E/main: Sensor read failed: -1
-```
-
-Additional utilities: `syn_log_raw()` for pre-formatted output, `syn_log_hexdump()` for hex + ASCII buffer dumps.
-
-The **Data Logger** (`syn_datalog`) provides time-series binary data logging to a ring buffer, suitable for writing to flash storage.
+SyntropicOS provides high-level system services for interactive command line interfaces, software watchdog monitoring, logging, and time synchronization.
 
 ---
 
-## Command-Line Interface
+## 1. Interactive Serial CLI (`cli/syn_cli.h`)
 
-| Module | Header | Config |
-|---|---|---|
-| CLI | `cli/syn_cli.h` | `SYN_USE_CLI` |
+The `syn_cli` module enables zero-allocation, interactive command-line interfaces over UART or USB Virtual COM Port.
 
-A lightweight interactive shell over UART or any byte stream. Commands are registered as a static table — no dynamic allocation. Input is processed one character at a time, making it easy to feed from a UART ISR or polled loop.
+### Features
+- Command registry with argument parsing (`argc`, `argv`).
+- Built-in `help` command automatically listing all registered commands and descriptions.
+- Backspace, Line-feed (`\r\n`), and prompt string management (`"> "`).
 
-**Features:**
-
-- Static command table (name + help string + handler function)
-- Automatic `argc`/`argv` parsing (whitespace-delimited, with quoted strings)
-- Built-in `help` command
-- Backspace and line editing
-- Optional command history (`SYN_CLI_HISTORY_DEPTH`)
-- Echo control
-
-**Setup:**
+### Complete Code Example
 
 ```c
-static int cmd_led(int argc, char *argv[]);
-static int cmd_reset(int argc, char *argv[]);
-
-static const SYN_CLI_Command commands[] = {
-    { "led",   "led <on|off>  — Control the LED",  cmd_led   },
-    { "reset", "reset         — System reset",     cmd_reset },
-};
+#include <syntropic/cli/syn_cli.h>
+#include <syntropic/port/syn_port_serial.h>
 
 static SYN_CLI cli;
-syn_cli_init(&cli, commands, 2, my_putchar, "> ");
 
-// In main loop or UART RX handler:
-syn_cli_process_char(&cli, received_byte);
+// Command 1: Echo handler
+static int cmd_echo(int argc, char *argv[]) {
+    if (argc < 2) {
+        syn_cli_printf(&cli, "Usage: echo <text>\r\n");
+        return 1;
+    }
+    syn_cli_printf(&cli, "Echo: %s\r\n", argv[1]);
+    return 0;
+}
+
+// Command 2: System info handler
+static int cmd_info(int argc, char *argv[]) {
+    (void)argc; (void)argv;
+    syn_cli_printf(&cli, "SyntropicOS v1.0.0\r\nUptime: %lu ms\r\n",
+                   (unsigned long)syn_port_get_tick_ms());
+    return 0;
+}
+
+static const SYN_CLI_Command command_table[] = {
+    { "echo", "Echo argument back to terminal", cmd_echo },
+    { "info", "Print system version and uptime", cmd_info },
+};
+
+void app_init(void) {
+    syn_port_serial_init(115200);
+    
+    // Initialize CLI with command table and prompt
+    syn_cli_init(&cli, command_table, sizeof(command_table)/sizeof(command_table[0]), "> ");
+    syn_cli_printf(&cli, "\r\n--- SyntropicOS Serial CLI ---\r\n");
+    syn_cli_print_prompt(&cli);
+}
+
+void app_loop(void) {
+    uint8_t rx_char;
+    if (syn_port_serial_read(&rx_char, 1) > 0) {
+        // Feed character into CLI state machine
+        syn_cli_process_char(&cli, (char)rx_char);
+    }
+}
 ```
 
-**Built-in diagnostic commands** (enabled by default, individually toggleable):
+---
 
-| Command | Config Define | Description |
-|---|---|---|
-| `version` | `SYN_CLI_CMD_VERSION` | Print `syn_version()` info |
-| `uptime` | `SYN_CLI_CMD_UPTIME` | Print tick_ms uptime |
-| `errors` | `SYN_CLI_CMD_ERRORS` | Dump errlog entries (requires `syn_cli_set_errlog()`) |
-| `tasks` | `SYN_CLI_CMD_TASKS` | Show scheduler task states (requires `syn_cli_set_scheduler()`) |
+## 2. Multi-Task Software Watchdog (`system/syn_watchdog.h`)
+
+The software watchdog monitors multiple concurrent tasks, ensuring that if any individual protothread hangs or deadlocks, the system hardware watchdog resets the device.
+
+```c
+#include <syntropic/system/syn_watchdog.h>
+
+static SYN_Watchdog wdt;
+
+void task_worker(void) {
+    // Kick task 0 heartbeat
+    syn_watchdog_kick(&wdt, 0);
+}
+
+void app_init(void) {
+    // Monitor 3 tasks with a 2000ms timeout window
+    syn_watchdog_init(&wdt, 3, 2000);
+}
+
+void app_check_watchdog(void) {
+    if (!syn_watchdog_check(&wdt)) {
+        // One or more tasks failed to kick within 2000ms!
+        printf("ERROR: Task deadlock detected! Resetting system...\n");
+        syn_port_reset();
+    }
+}
+```

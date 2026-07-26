@@ -1,146 +1,115 @@
-# Communication
+# Communication & Networking Modules
 
-## Framing & Fieldbus Protocols
+SyntropicOS provides a comprehensive suite of communication protocols ranging from zero-overhead byte stuffing and point-to-point packet routing up to industrial fieldbuses and automotive networks.
 
-| Module | Header | Config | Description |
+---
+
+## Protocol Overview
+
+| Layer | Module | Header | Description |
 |---|---|---|---|
-| COBS | `proto/syn_cobs.h` | `SYN_USE_COBS` | Consistent Overhead Byte Stuffing — packet framing with a streaming byte-at-a-time decoder. Zero-delimited packets over any byte stream. |
-| LIN Bus (ISO 17987 / LIN 2.1) | `proto/syn_lin.h` | `SYN_USE_LIN` | Local Interconnect Network protocol engine: PID parity calculation/validation ($P0/P1$), Classic & Enhanced checksums, Master Schedule Table execution, Slave publishing/subscription filters, and Diagnostic Request (`0x3C`) & Response (`0x3D`) framing over UART streams. |
-| DALI (IEC 62386 / DALI-2) | `proto/syn_dali.h` | `SYN_USE_DALI` | Digital Addressable Lighting Interface protocol stack: 16-bit Master Forward Frame & 8-bit Slave Backward Frame codec, Short ($0..63$), Group ($0..15$), and Broadcast address matching, Direct Arc Power Level ($0..254$), standard commands (`OFF`, `UP`, `DOWN`, `RECALL MAX`, `RECALL MIN`, `ENABLE DAPC SEQUENCE`, `GO TO SCENE`), configuration commands (`INITIALISE`, `RANDOMISE`, `COMPARE`, `PROGRAM SHORT ADDRESS`), query responses, and Manchester bi-phase bit encoding/decoding. |
-| Infrared Remote Protocol | `proto/syn_ir.h` | `SYN_USE_IR` | Non-blocking, zero-allocation Universal IR Remote Control protocol engine: non-blocking microsecond pulse decoder and pulse-sequence encoder supporting Pulse Distance (PDM), Pulse Width (PWM), and Manchester encoding for NEC (Standard, Extended, Apple), Sony SIRCS (12/15/20-bit), Philips RC5/RC6, Samsung, Panasonic/Kaseikyo, and Denon/Sharp remotes. |
-| Modbus RTU Slave | `proto/syn_modbus.h` | `SYN_USE_MODBUS` | Complete 19-function-code Modbus RTU slave implementation: FC01 (Read Coils), FC02 (Read Discrete Inputs), FC03 (Read Holding), FC04 (Read Input), FC05 (Write Single Coil), FC06 (Write Single Register), FC07 (Read Exception Status), FC08 (Diagnostics Echo), FC0B (Get Comm Event Counter), FC0C (Get Comm Event Log), FC0F (Write Multiple Coils), FC10 (Write Multiple Registers), FC11 (Report Server ID), FC14 (Read File Record), FC15 (Write File Record), FC16 (Mask Write Register), FC17 (Read/Write Multiple), FC18 (Read FIFO Queue), FC2B/0E (Read Device Identification). Uses `syn_crc16_modbus()`. |
-| SMBus (1.1 / 2.0 / 3.0) | `proto/syn_smbus.h` | `SYN_USE_SMBUS` | System Management Bus protocol engine: CRC-8 Packet Error Checking (PEC, polynomial `0x07`), non-blocking transaction codecs for Quick Command, Send/Receive Byte, Write/Read Byte, Write/Read Word, Write/Read Block, Process Call, and Block Process Call frames, Alert Response Address (`0x0C`), and Default ARP (`0x61`) addressing. |
-| PMBus (1.2 / 1.3) | `proto/syn_pmbus.h` | `SYN_USE_PMBUS` | Power Management Bus protocol & telemetry converter: standard command definitions (`PAGE`, `OPERATION`, `VOUT_MODE`, `VOUT_COMMAND`, `READ_VIN`, `READ_IOUT`, `STATUS_WORD`), status bitmask helpers, and zero-allocation **Linear11** and **Linear16** floating-point numerical converters. |
-| Modbus RTU Master | `proto/syn_modbus_master.h` | `SYN_USE_MODBUS` | Non-blocking Modbus RTU Master / Client state machine supporting FC01, FC02, FC03, FC04, FC05, FC06, FC0F, FC10, FC11, FC16, and FC18 queries, stream parsing, and tick-based timeout tracking. |
-| Modbus TCP ADU | `proto/syn_modbus_tcp.h` | `SYN_USE_MODBUS` | MBAP 7-byte header encapsulation over TCP sockets (`syn_transport_tcp`), enabling zero-overhead Modbus TCP Client and Server functionality. |
-| NMEA 0183 Navigation | `proto/syn_nmea.h` | `SYN_USE_NMEA` | Streaming NMEA 0183 sentence parser and decoder for GNSS/GPS devices (GGA, RMC, VTG, GSA, ZDA), XOR checksum validation, and DDMM.MMMM coordinate conversion. |
-| CANopen DS301 Slave | `proto/syn_canopen.h` | `SYN_USE_CANOPEN` | Zero-allocation CANopen DS301 slave protocol engine supporting Object Dictionary (OD) lookup, SDO Server (expedited download/upload, segmented SDO, SDO Aborts), up to 4 RPDOs & 4 TPDOs, Heartbeat Producer, Emergency (EMCY) alarms, and NMT state machine management. |
-| CANopen CiA 402 Drive | `proto/syn_cia402.h` | `SYN_USE_CIA402` | CANopen CiA 402 Servo Drive & Motion Control profile engine supporting standard 8-state power drive state machine, Controlword (0x6040), Statusword (0x6041), Profile Position (PP), Profile Velocity (PV), Profile Torque (PT), and Cyclic Synchronous (CSP/CSV) modes with S-Curve trajectory generation. |
-| CANopen CiA 305 LSS | `proto/syn_lss.h` | `SYN_USE_CANOPEN` | Layer Setting Services (LSS) master and slave protocol engines for dynamic Node-ID allocation, bit-timing baud rate selection, fastscan, and non-volatile configuration store. |
-| CANopen CiA 302 Manager | `proto/syn_canopen_mgr.h` | `SYN_USE_CANOPEN` | Network Manager, NMT Master, non-blocking SDO Client (expedited read/write), and 128-node heartbeat monitoring engine. |
-| SAE J1939 Heavy-Duty | `proto/syn_j1939.h` | `SYN_USE_J1939` | SAE J1939 CAN protocol engine for commercial vehicles, heavy equipment, and battery management systems (BMS). 29-bit CAN ID parsing/packing, Transport Protocol (TP.CM BAM & RTS/CTS up to 1785 bytes), Address Claiming (J1939-81), and Active DM1 Diagnostic Trouble Codes. |
-| ISO-TP (ISO 15765-2) | `proto/syn_isotp.h` | `SYN_USE_ISOTP` | Non-blocking multi-frame CAN transport segmentation & reassembly with Single Frame (SF), First Frame (FF), Consecutive Frame (CF), Flow Control (FC), and microsecond $ST_{\min}$ separation pacing. Opt-in CAN FD 64-byte payload support via `#define SYN_USE_CAN_FD 1`. |
-| NMEA 2000 Marine CAN | `proto/syn_n2k.h` | `SYN_USE_N2K` | NMEA 2000 (IEC 61162-3) marine CAN bus protocol stack: Fast-Packet multi-frame transport reassembly up to 223 bytes, integer fixed-point encoders/decoders for Position Rapid (129025), COG/SOG Rapid (129026), Vessel Heading (127250), Battery Status (127508), and Environmental Parameters (130310). |
+| **Framing** | COBS | `proto/syn_cobs.h` | Consistent Overhead Byte Stuffing (`0x00` packet delimiter) |
+| **Routing** | Router | `net/syn_router.h` | Addressed packet dispatch (Node ID), type routing, & ACKs |
+| **Industrial** | Modbus | `proto/syn_modbus.h` | Modbus RTU & Modbus TCP Master/Slave support |
+| **Metering** | M-Bus | `proto/syn_mbus.h` | EN 13757-2 / EN 13757-3 European Meter Bus protocol |
+| **Automotive** | ISO-TP | `proto/syn_isotp.h` | ISO 15765-2 multi-frame CAN transport layer |
+| **Automotive** | J1939 | `proto/syn_j1939.h` | SAE J1939 heavy vehicle network protocol (PGN / SPN) |
+| **Marine** | NMEA 2000 | `proto/syn_n2k.h` | NMEA 2000 marine CAN bus protocol decoder |
 
-## Cooperative Network Stack
+---
 
-All network modules are cooperative — they yield between operations so other scheduler tasks continue to run. Zero-allocation throughout.
+## 1. COBS & Packet Router Pipeline (`syn_cobs` + `syn_router`)
 
-!!! note "Include individually"
-    The higher-level network modules (HTTP, MQTT, WebSocket, DNS) are **not** auto-included by the umbrella header `syntropic.h` because they depend on platform socket support. Include them directly in files that need them, e.g. `#include "syntropic/net/syn_http.h"`.
+For MCU-to-MCU serial communication over UART TTL or RS232/RS485, SyntropicOS pairs **COBS Framing** with the **Addressed Router**.
 
-### Application Protocols
+### Pipeline Data Flow
 
-| Module | Header | Config | Description |
-|---|---|---|---|
-| HTTP Client | `net/syn_http.h` | `SYN_USE_HTTP` | Cooperative HTTP/1.1 client with streaming response handling |
-| HTTP Server | `net/syn_httpd.h` | `SYN_USE_HTTPD` | Route-based minimal HTTP/1.1 server. Yields between accepts so other tasks keep running. |
-| WebSockets | `net/syn_websocket.h` | `SYN_USE_WEBSOCKET` | WebSocket protocol support on the HTTP server |
-| MQTT Client | `net/syn_mqtt.h` | `SYN_USE_MQTT` | Cooperative MQTT 3.1.1 client with publish, subscribe, and QoS support |
-| DNS Resolver | `net/syn_dns.h` | `SYN_USE_DNS` | UDP DNS resolver and mDNS responder |
-| CoAP | `net/syn_coap.h` | `SYN_USE_COAP` | Constrained Application Protocol (CoAP) client/server helper |
+```mermaid
+flowchart LR
+    UART["Single-Byte UART RX Interrupt"] --> Decoder["syn_cobs_decoder_feed()"]
+    Decoder -- 0x00 Delimiter Found --> Assembly["Decoded Frame"]
+    Assembly --> Router["syn_router_feed()"]
+    Router -- Match Node ID & Msg Type --> Callback["Handler Callback (e.g. on_set_led)"]
+```
 
-### Transport & Routing
-
-| Module | Header | Config | Description |
-|---|---|---|---|
-| Transport | `net/syn_transport.h` | Always available | Transport layer interface abstraction |
-| TCP Transport | `net/syn_transport_tcp.h` | `SYN_USE_TRANSPORT_TCP` | TCP socket transport implementation |
-| Router | `net/syn_router.h` | `SYN_USE_ROUTER` | Software packet router / transport dispatcher |
-| Heartbeat | `net/syn_heartbeat.h` | `SYN_USE_HEARTBEAT` | Peer discovery and keep-alive monitor |
-
-### Network Services
-
-| Module | Header | Config | Description |
-|---|---|---|---|
-| SNTP | `net/syn_sntp.h` | `SYN_USE_SNTP` | SNTPv4 client — single-query time sync with retry and periodic re-sync |
-
-The SNTP client is a cooperative protothread task that syncs to a configurable NTP server.
-Provides Unix-epoch timestamps with nanosecond sub-second resolution.
+### Complete STM32 HAL UART Single-Byte Interrupt Example
 
 ```c
-#include "syntropic/net/syn_sntp.h"
+#include <syntropic/proto/syn_cobs.h>
+#include <syntropic/net/syn_router.h>
 
-static SYN_SNTP sntp;
-SYN_SockAddr ntp_server = { .ip = SYN_IP4(216,239,35,0), .port = 123 };
+#define MASTER_NODE_ID 0x01
+#define SLAVE_NODE_ID  0x02
+#define MSG_TYPE_LED   0x10
 
-syn_sntp_init(&sntp, &ntp_server, 3600);  /* re-sync every hour */
+static uint8_t rx_byte;
+static SYN_COBS_Decoder cobs_dec;
+static uint8_t cobs_buf[128];
 
-/* Register as a scheduler task */
-syn_task_create(&tasks[0], "sntp", syn_sntp_task, 0, &sntp);
+static SYN_Router router;
+static SYN_RouterHandler handlers[4];
 
-/* Read current time */
-uint32_t epoch = syn_sntp_get_epoch_s(&sntp);
-uint32_t ns    = syn_sntp_get_epoch_ns(&sntp);
+// Custom Transport: Send framed COBS packet over UART
+static SYN_Status uart_send(const uint8_t *data, size_t len, void *ctx) {
+    uint8_t enc[140];
+    size_t enc_len = syn_cobs_encode(data, len, enc);
+    enc[enc_len++] = 0x00; // Append 0x00 frame delimiter
+    
+    HAL_UART_Transmit(&huart2, enc, (uint16_t)enc_len, 100);
+    return SYN_OK;
+}
+
+static SYN_Transport transport = { .send = uart_send, .ctx = NULL };
+
+// COBS Decoder Callback when a complete frame arrives
+static void on_cobs_frame(const uint8_t *data, size_t len, void *ctx) {
+    syn_router_feed(&router, data, len);
+}
+
+// Single-Byte UART Interrupt Callback (No DMA)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART2) {
+        syn_cobs_decoder_feed(&cobs_dec, rx_byte);
+        HAL_UART_Receive_IT(&huart2, &rx_byte, 1); // Re-arm interrupt
+    }
+}
+
+// Message Handler Callback
+static void on_led_command(const SYN_Packet *pkt, void *ctx) {
+    if (pkt->len > 0 && pkt->payload[0] == 0x01) {
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET); // LED ON
+    }
+}
+
+void app_init(void) {
+    syn_cobs_decoder_init(&cobs_dec, cobs_buf, sizeof(cobs_buf), on_cobs_frame, NULL);
+    
+    syn_router_init(&router, SLAVE_NODE_ID, &transport, handlers, 4);
+    syn_router_register(&router, MSG_TYPE_LED, on_led_command, NULL);
+    
+    HAL_UART_Receive_IT(&huart2, &rx_byte, 1);
+}
 ```
 
 ---
 
-## CANopen Ecosystem (CiA 301, 302, 305, 401, 402)
+## 2. M-Bus Protocol (`syn_mbus.h`)
 
-SyntropicOS features a complete, zero-allocation, bare-metal CANopen suite suitable for motor drives, sensor blocks, battery management systems (BMS), and central motion controllers.
+The M-Bus (Meter-Bus) driver supports utility metering devices (water, gas, electricity, heat meters) compliant with EN 13757-2 / EN 13757-3.
 
-### CANopen Layer Setting Services (CiA 305 LSS)
-
-Configures Node-ID allocation and CAN bitrate over the CAN bus without physical DIP switches.
+### Features
+- Single-byte ACK (`0xE5`) parsing.
+- Short frame (`0x10`) and Long frame (`0x68`) header validation.
+- Arithmetic checksum calculation and byte-at-a-time streaming parser.
 
 ```c
-#include "syntropic/proto/syn_lss.h"
+#include <syntropic/proto/syn_mbus.h>
 
-static SYN_LSSSlave lss;
-static SYN_LSSAddress lss_addr = {
-    .vendor_id = 0x000000A5,
-    .product_code = 0x12345678,
-    .revision_no = 0x00010000,
-    .serial_no = 0x88776655
-};
-
-/* Initialize slave with default unconfigured node ID 0xFF */
-syn_lss_slave_init(&lss, &lss_addr, 0xFF);
-
-/* Process incoming CAN frames on COB-ID 0x7E5 */
-SYN_CAN_Frame rx_frame, tx_resp;
-if (syn_lss_slave_process(&lss, &rx_frame, &tx_resp)) {
-    syn_can_send(&can, &tx_resp); /* Transmit response on 0x7E4 */
+void parse_mbus_stream(const uint8_t *buffer, size_t len) {
+    SYN_MBusFrame frame;
+    if (syn_mbus_parse_long(buffer, len, &frame) == SYN_OK) {
+        printf("M-Bus Frame Received! C-Field: 0x%02X, Address: 0x%02X\n",
+               frame.control, frame.address);
+    }
 }
 ```
-
-### CANopen Generic I/O Profile (CiA 401)
-
-Binds digital and analog I/O lines to standard CANopen Object Dictionary indices (`0x6000`, `0x6200`, `0x6401`, `0x6411`).
-
-```c
-#include "syntropic/proto/syn_cia401.h"
-
-static SYN_CiA401_Device io_dev;
-static SYN_CANOpenODEntry od_table[32];
-
-/* Initialize 2 digital input bytes, 2 digital output bytes, 4 analog inputs, 2 analog outputs */
-syn_cia401_init(&io_dev, 2, 2, 4, 2);
-
-/* Populate Object Dictionary table */
-size_t od_count = syn_cia401_populate_od(&io_dev, od_table, 32);
-```
-
-### CANopen Network Manager & Master (CiA 302)
-
-Acts as a central CANopen Master node commanding remote slaves via NMT, reading/writing Object Dictionaries via non-blocking SDO, and monitoring remote node heartbeats.
-
-```c
-#include "syntropic/proto/syn_canopen_mgr.h"
-
-static SYN_CANOpenManager mgr;
-syn_canopen_mgr_init(&mgr);
-
-/* Broadcast NMT Start Node to all slave nodes */
-SYN_CAN_Frame nmt_frame;
-syn_canopen_mgr_build_nmt(&nmt_frame, 0x00, SYN_CANOPEN_NMT_CMD_START);
-syn_can_send(&can, &nmt_frame);
-
-/* Issue SDO Read request to Node 5, Index 0x1000, Subindex 0x00 */
-SYN_CAN_Frame sdo_req;
-syn_canopen_mgr_sdo_read_init(&mgr, &sdo_req, 5, 0x1000, 0x00);
-syn_can_send(&can, &sdo_req);
-```
-
-Used as a prerequisite by the [WireGuard VPN client](crypto.md#wireguard-vpn-client) for TAI64N handshake timestamps.

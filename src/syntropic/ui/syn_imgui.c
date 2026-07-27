@@ -43,28 +43,19 @@ void syn_imgui_begin(SYN_IMGUI_Context *ctx, SYN_GfxContext gfx, bool select, bo
     ctx->next_id = 0;
 
     /* Focus navigation by encoder only if screen is NOT being touched and no slider is active */
-    if (ctx->active_id == 0 && !touch_down && enc_delta != 0) {
-        if (enc_delta > 100)
-            enc_delta = 100;
-        if (enc_delta < -100)
-            enc_delta = -100;
-
-        if (enc_delta > 0) {
-            for (int32_t i = 0; i < enc_delta; i++) {
-                ctx->focused_id++;
-                if (ctx->focused_id > ctx->last_max_id) {
-                    ctx->focused_id = 1;
-                }
-            }
-        } else if (enc_delta < 0) {
-            for (int32_t i = enc_delta; i < 0; i++) {
-                if (ctx->focused_id <= 1) {
-                    ctx->focused_id = (ctx->last_max_id > 0) ? ctx->last_max_id : 1;
-                } else {
-                    ctx->focused_id--;
-                }
-            }
+    if (ctx->active_id == 0 && !touch_down && enc_delta != 0 && ctx->last_max_id > 0) {
+        int32_t count = (int32_t)ctx->last_max_id;
+        int32_t idx = (int32_t)ctx->focused_id - 1;
+        if (idx < 0) {
+            idx = 0;
         }
+
+        idx = (idx + (enc_delta % count)) % count;
+        if (idx < 0) {
+            idx += count;
+        }
+
+        ctx->focused_id = (uint16_t)(idx + 1);
     }
 }
 

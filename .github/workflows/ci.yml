@@ -1,0 +1,29 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Build & Run Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ clang clang-format make cmake gcc-arm-none-eabi libnewlib-arm-none-eabi lcov cppcheck valgrind
+
+      - name: Run Code Formatting Check
+        run: |
+          make format
+
+      - name: Run Unit Tests
+        run: |
+          make test

@@ -26,6 +26,15 @@ extern "C" {
                  (uint8_t)(((uint32_t)(gpio_pin) > 15U) ? __builtin_ctz((uint32_t)(gpio_pin)) \
                                                         : (uint32_t)(gpio_pin)))
 
+/**
+ * @brief Register an STM32 HAL UART_HandleTypeDef pointer (e.g. &huart1) with a SyntropicOS UART instance (0..5).
+ *
+ * @param instance  SyntropicOS UART instance index (0..5).
+ * @param huart     Pointer to STM32 HAL UART_HandleTypeDef (e.g. &huart1 or &huart3).
+ * @return SYN_OK on success, SYN_INVALID_PARAM if instance >= 6.
+ */
+SYN_Status syn_port_stm32_register_uart(SYN_UARTInstance instance, void *huart);
+
 #ifdef __cplusplus
 }
 #endif

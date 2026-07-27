@@ -277,6 +277,15 @@ SYN_Status syn_port_gpio_toggle(SYN_GPIO_Pin pin)
  */
 UART_HandleTypeDef *syn_port_uart_handles[6] = {NULL};
 
+SYN_Status syn_port_stm32_register_uart(SYN_UARTInstance instance, void *huart)
+{
+    if (instance >= 6) {
+        return SYN_INVALID_PARAM;
+    }
+    syn_port_uart_handles[instance] = (UART_HandleTypeDef *)huart;
+    return SYN_OK;
+}
+
 static UART_HandleTypeDef *get_uart_handle(SYN_UARTInstance instance)
 {
     if (instance < 6) {

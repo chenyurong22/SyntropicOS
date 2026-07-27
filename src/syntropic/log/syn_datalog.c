@@ -9,12 +9,13 @@
 
 void syn_datalog_init(SYN_DataLog *log, uint8_t *buf, size_t size)
 {
-    if (log == NULL || buf == NULL || size <= sizeof(SYN_DataLogHeader)) {
-        return;
-    }
     SYN_ASSERT(log != NULL);
     SYN_ASSERT(buf != NULL);
     SYN_ASSERT(size > sizeof(SYN_DataLogHeader));
+
+    if (log == NULL || buf == NULL || size <= sizeof(SYN_DataLogHeader)) {
+        return;
+    }
 
     syn_ringbuf_init(&log->rb, buf, size);
     log->dropped_frames = 0;
@@ -22,11 +23,12 @@ void syn_datalog_init(SYN_DataLog *log, uint8_t *buf, size_t size)
 
 bool syn_datalog_write(SYN_DataLog *log, uint16_t id, const void *data, uint16_t len)
 {
+    SYN_ASSERT(log != NULL);
+    SYN_ASSERT(data != NULL || len == 0);
+
     if (log == NULL || (data == NULL && len > 0)) {
         return false;
     }
-    SYN_ASSERT(log != NULL);
-    SYN_ASSERT(data != NULL || len == 0);
 
     size_t required = sizeof(SYN_DataLogHeader) + len;
 
@@ -50,12 +52,13 @@ bool syn_datalog_write(SYN_DataLog *log, uint16_t id, const void *data, uint16_t
 
 size_t syn_datalog_read(SYN_DataLog *log, uint16_t *out_id, void *out_data, size_t max_len)
 {
-    if (log == NULL || out_id == NULL || out_data == NULL) {
-        return 0;
-    }
     SYN_ASSERT(log != NULL);
     SYN_ASSERT(out_id != NULL);
     SYN_ASSERT(out_data != NULL);
+
+    if (log == NULL || out_id == NULL || out_data == NULL) {
+        return 0;
+    }
 
     if (syn_ringbuf_count(&log->rb) < sizeof(SYN_DataLogHeader)) {
         return 0; /* empty or incomplete header */

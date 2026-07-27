@@ -16,12 +16,13 @@
 
 void syn_seq_init(SYN_Sequencer *seq, const SYN_SeqStep *steps, uint16_t count)
 {
-    if (seq == NULL || steps == NULL || count == 0) {
-        return;
-    }
     SYN_ASSERT(seq != NULL);
     SYN_ASSERT(steps != NULL);
     SYN_ASSERT(count > 0);
+
+    if (seq == NULL || steps == NULL || count == 0) {
+        return;
+    }
 
     memset(seq, 0, sizeof(*seq));
     seq->steps = steps;
@@ -31,39 +32,43 @@ void syn_seq_init(SYN_Sequencer *seq, const SYN_SeqStep *steps, uint16_t count)
 
 void syn_seq_on_complete(SYN_Sequencer *seq, SYN_SeqCompleteCallback cb, void *ctx)
 {
+    SYN_ASSERT(seq != NULL);
+
     if (seq == NULL) {
         return;
     }
-    SYN_ASSERT(seq != NULL);
     seq->on_complete = cb;
     seq->on_complete_ctx = ctx;
 }
 
 void syn_seq_set_loop(SYN_Sequencer *seq, bool loop)
 {
+    SYN_ASSERT(seq != NULL);
+
     if (seq == NULL) {
         return;
     }
-    SYN_ASSERT(seq != NULL);
     seq->loop = loop;
 }
 
 void syn_seq_start(SYN_Sequencer *seq)
 {
+    SYN_ASSERT(seq != NULL);
+
     if (seq == NULL) {
         return;
     }
-    SYN_ASSERT(seq != NULL);
     seq->current = 0;
     seq->state = SYN_SEQ_RUNNING;
 }
 
 void syn_seq_stop(SYN_Sequencer *seq)
 {
+    SYN_ASSERT(seq != NULL);
+
     if (seq == NULL) {
         return;
     }
-    SYN_ASSERT(seq != NULL);
     seq->state = SYN_SEQ_IDLE;
 }
 

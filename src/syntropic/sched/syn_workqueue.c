@@ -16,6 +16,9 @@
 
 void syn_workqueue_init(SYN_WorkQueue *wq, SYN_WorkItem *buf, size_t capacity)
 {
+    if (wq == NULL || buf == NULL || capacity <= 1) {
+        return;
+    }
     SYN_ASSERT(wq != NULL);
     SYN_ASSERT(buf != NULL);
     SYN_ASSERT(capacity > 1);

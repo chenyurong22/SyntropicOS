@@ -16,6 +16,9 @@
 
 void syn_seq_init(SYN_Sequencer *seq, const SYN_SeqStep *steps, uint16_t count)
 {
+    if (seq == NULL || steps == NULL || count == 0) {
+        return;
+    }
     SYN_ASSERT(seq != NULL);
     SYN_ASSERT(steps != NULL);
     SYN_ASSERT(count > 0);
@@ -28,6 +31,9 @@ void syn_seq_init(SYN_Sequencer *seq, const SYN_SeqStep *steps, uint16_t count)
 
 void syn_seq_on_complete(SYN_Sequencer *seq, SYN_SeqCompleteCallback cb, void *ctx)
 {
+    if (seq == NULL) {
+        return;
+    }
     SYN_ASSERT(seq != NULL);
     seq->on_complete = cb;
     seq->on_complete_ctx = ctx;
@@ -35,12 +41,18 @@ void syn_seq_on_complete(SYN_Sequencer *seq, SYN_SeqCompleteCallback cb, void *c
 
 void syn_seq_set_loop(SYN_Sequencer *seq, bool loop)
 {
+    if (seq == NULL) {
+        return;
+    }
     SYN_ASSERT(seq != NULL);
     seq->loop = loop;
 }
 
 void syn_seq_start(SYN_Sequencer *seq)
 {
+    if (seq == NULL) {
+        return;
+    }
     SYN_ASSERT(seq != NULL);
     seq->current = 0;
     seq->state = SYN_SEQ_RUNNING;
@@ -48,6 +60,9 @@ void syn_seq_start(SYN_Sequencer *seq)
 
 void syn_seq_stop(SYN_Sequencer *seq)
 {
+    if (seq == NULL) {
+        return;
+    }
     SYN_ASSERT(seq != NULL);
     seq->state = SYN_SEQ_IDLE;
 }
@@ -77,6 +92,9 @@ static void execute_step(SYN_Sequencer *seq)
 
 bool syn_seq_update(SYN_Sequencer *seq)
 {
+    if (seq == NULL || seq->steps == NULL) {
+        return false;
+    }
     SYN_ASSERT(seq != NULL);
 
     if (seq->state == SYN_SEQ_IDLE || seq->state == SYN_SEQ_DONE) {
@@ -93,8 +111,10 @@ bool syn_seq_update(SYN_Sequencer *seq)
         seq->state = SYN_SEQ_RUNNING;
     }
 
-    /* Execute steps (may chain multiple zero-delay steps) */
-    while (seq->state == SYN_SEQ_RUNNING) {
+    /* Execute steps (limit execution per tick to step_count + 1 to prevent infinite loops on 0-delay loop sequences while allowing completion check) */
+    size_t max_exec = (size_t)seq->step_count + 1;
+    size_t executed = 0;
+    while (seq->state == SYN_SEQ_RUNNING && executed < max_exec) {
         if (seq->current >= seq->step_count) {
             /* Sequence complete */
             seq->loop_count++;
@@ -113,6 +133,7 @@ bool syn_seq_update(SYN_Sequencer *seq)
         }
 
         execute_step(seq);
+        executed++;
     }
 
     return false;

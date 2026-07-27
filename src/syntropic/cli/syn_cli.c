@@ -310,9 +310,11 @@ void syn_cli_process_char(SYN_CLI *cli, char ch)
         cli_history_push(cli, cli->line_buf);
 #endif
 
+        cli->prompt_visible = false;
+        cli->line_pos = 0;
+
         cli_dispatch(cli, cli->line_buf);
 
-        cli->line_pos = 0;
         syn_cli_print_prompt(cli);
         return;
     }
@@ -407,16 +409,33 @@ void syn_cli_process_line(SYN_CLI *cli, const char *line)
     cli_dispatch(cli, cli->line_buf);
 }
 
-void syn_cli_print_prompt(const SYN_CLI *cli)
+void syn_cli_print_prompt(SYN_CLI *cli)
 {
     SYN_ASSERT(cli != NULL);
     cli_puts(cli, cli->prompt);
+    if (cli->line_pos > 0) {
+        cli->line_buf[cli->line_pos] = '\0';
+        cli_puts(cli, cli->line_buf);
+    }
+    cli->prompt_visible = true;
+}
+
+void syn_cli_refresh_prompt(SYN_CLI *cli)
+{
+    syn_cli_print_prompt(cli);
 }
 
 #if !defined(SYN_CLI_USE_PRINTF) || SYN_CLI_USE_PRINTF
-void syn_cli_printf(const SYN_CLI *cli, const char *fmt, ...)
+void syn_cli_printf(SYN_CLI *cli, const char *fmt, ...)
 {
     SYN_ASSERT(cli != NULL);
+
+    bool was_prompt_visible = cli->prompt_visible;
+    if (was_prompt_visible) {
+        /* Clear prompt & active draft line once before outputting text */
+        cli_puts(cli, "\r\033[K");
+        cli->prompt_visible = false;
+    }
 
     char buf[SYN_CLI_LINE_BUF_SIZE];
     va_list args;
@@ -427,6 +446,11 @@ void syn_cli_printf(const SYN_CLI *cli, const char *fmt, ...)
     if (n > 0) {
         buf[sizeof(buf) - 1] = '\0';
         cli_puts(cli, buf);
+    }
+
+    if (was_prompt_visible) {
+        /* Redraw prompt & draft text after outputting text */
+        syn_cli_print_prompt(cli);
     }
 }
 #endif

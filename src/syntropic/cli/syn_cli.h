@@ -102,6 +102,7 @@ typedef struct {
     /* Configuration */
     const char *prompt;   /**< Prompt string               */
     bool echo;            /**< Echo enabled                */
+    bool prompt_visible;  /**< Prompt currently visible on screen */
     uint8_t escape_state; /**< ANSI escape sequence state  */
 
     /* History */
@@ -163,26 +164,27 @@ void syn_cli_process_char(SYN_CLI *cli, char ch);
  */
 void syn_cli_process_line(SYN_CLI *cli, const char *line);
 
+void syn_cli_print_prompt(SYN_CLI *cli);
+
 /**
- * @brief Print the prompt.
+ * @brief Refresh / redraw the prompt and active draft line.
  *
- * Called automatically after command execution. Can also be called
- * manually (e.g., on startup to show the initial prompt).
+ * Useful after external serial output to restore prompt visual state.
  *
  * @param cli  CLI instance.
  */
-void syn_cli_print_prompt(const SYN_CLI *cli);
+void syn_cli_refresh_prompt(SYN_CLI *cli);
 
 /**
  * @brief Print formatted output through the CLI's output function.
  *
- * Convenience function for command handlers that need printf-style output.
+ * Automatically manages prompt restoration during asynchronous logging.
  *
  * @param cli  CLI instance.
  * @param fmt  Format string.
  * @param ...  Arguments.
  */
-void syn_cli_printf(const SYN_CLI *cli, const char *fmt, ...);
+void syn_cli_printf(SYN_CLI *cli, const char *fmt, ...);
 
 /* ── Built-in commands ──────────────────────────────────────────────────── */
 

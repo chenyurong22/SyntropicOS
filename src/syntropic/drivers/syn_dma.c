@@ -150,7 +150,7 @@ SYN_Status syn_dma_ringbuf_start(SYN_DMA_RingBuf *r, const void *periph_src)
 
 size_t syn_dma_ringbuf_bytes_available(const SYN_DMA_RingBuf *r)
 {
-    if (!r || !r->dma) {
+    if (!r || !r->dma || r->capacity == 0) {
         return 0;
     }
 
@@ -167,7 +167,7 @@ size_t syn_dma_ringbuf_bytes_available(const SYN_DMA_RingBuf *r)
 
 size_t syn_dma_ringbuf_read(SYN_DMA_RingBuf *r, uint8_t *dest, size_t len)
 {
-    if (!r || !dest || len == 0) {
+    if (!r || !dest || len == 0 || r->capacity == 0) {
         return 0;
     }
 

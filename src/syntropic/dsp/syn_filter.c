@@ -20,6 +20,9 @@
 
 void syn_filter_ma_init(SYN_FilterMA *f, uint8_t window)
 {
+    if (f == NULL || window == 0 || window > SYN_FILTER_MAX_WINDOW) {
+        return;
+    }
     SYN_ASSERT(f != NULL);
     SYN_ASSERT(window > 0 && window <= SYN_FILTER_MAX_WINDOW);
 
@@ -29,6 +32,9 @@ void syn_filter_ma_init(SYN_FilterMA *f, uint8_t window)
 
 int16_t syn_filter_ma_update(SYN_FilterMA *f, int16_t sample)
 {
+    if (f == NULL || f->window == 0) {
+        return sample;
+    }
     SYN_ASSERT(f != NULL);
 
     if (f->count >= f->window) {
@@ -48,6 +54,9 @@ int16_t syn_filter_ma_update(SYN_FilterMA *f, int16_t sample)
 
 void syn_filter_ma_reset(SYN_FilterMA *f)
 {
+    if (f == NULL) {
+        return;
+    }
     SYN_ASSERT(f != NULL);
     uint8_t w = f->window;
     memset(f, 0, sizeof(*f));
@@ -60,6 +69,9 @@ void syn_filter_ma_reset(SYN_FilterMA *f)
 
 void syn_filter_ema_init(SYN_FilterEMA *f, uint8_t alpha)
 {
+    if (f == NULL) {
+        return;
+    }
     SYN_ASSERT(f != NULL);
 
     f->value = 0;
@@ -69,6 +81,9 @@ void syn_filter_ema_init(SYN_FilterEMA *f, uint8_t alpha)
 
 int16_t syn_filter_ema_update(SYN_FilterEMA *f, int16_t sample)
 {
+    if (f == NULL) {
+        return sample;
+    }
     SYN_ASSERT(f != NULL);
 
     if (!f->primed) {
@@ -87,6 +102,9 @@ int16_t syn_filter_ema_update(SYN_FilterEMA *f, int16_t sample)
 
 void syn_filter_ema_reset(SYN_FilterEMA *f)
 {
+    if (f == NULL) {
+        return;
+    }
     SYN_ASSERT(f != NULL);
     uint8_t a = f->alpha;
     f->value = 0;
@@ -100,6 +118,9 @@ void syn_filter_ema_reset(SYN_FilterEMA *f)
 
 void syn_filter_median_init(SYN_FilterMedian *f, uint8_t window)
 {
+    if (f == NULL || window == 0 || window > SYN_FILTER_MAX_WINDOW) {
+        return;
+    }
     SYN_ASSERT(f != NULL);
     SYN_ASSERT(window > 0 && window <= SYN_FILTER_MAX_WINDOW);
 
@@ -109,6 +130,9 @@ void syn_filter_median_init(SYN_FilterMedian *f, uint8_t window)
 
 int16_t syn_filter_median_update(SYN_FilterMedian *f, int16_t sample)
 {
+    if (f == NULL || f->window == 0) {
+        return sample;
+    }
     SYN_ASSERT(f != NULL);
 
     /* Insert into circular buffer */

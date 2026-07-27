@@ -43,7 +43,12 @@ void syn_imgui_begin(SYN_IMGUI_Context *ctx, SYN_GfxContext gfx, bool select, bo
     ctx->next_id = 0;
 
     /* Focus navigation by encoder only if screen is NOT being touched and no slider is active */
-    if (ctx->active_id == 0 && !touch_down) {
+    if (ctx->active_id == 0 && !touch_down && enc_delta != 0) {
+        if (enc_delta > 100)
+            enc_delta = 100;
+        if (enc_delta < -100)
+            enc_delta = -100;
+
         if (enc_delta > 0) {
             for (int32_t i = 0; i < enc_delta; i++) {
                 ctx->focused_id++;

@@ -2,6 +2,10 @@
 
 **High-Performance Bare-Metal Application Framework & Cooperative OS**
 
+[![GitHub Repository](https://img.shields.io/badge/GitHub-outlookhazy%2FSyntropicOS-blue?logo=github)](https://github.com/outlookhazy/SyntropicOS)
+[![Latest Release](https://img.shields.io/github/v/release/outlookhazy/SyntropicOS?logo=github)](https://github.com/outlookhazy/SyntropicOS/releases)
+[![License](https://img.shields.io/github/license/outlookhazy/SyntropicOS)](https://github.com/outlookhazy/SyntropicOS/blob/main/LICENSE)
+
 SyntropicOS is a zero-overhead, production-grade C99 framework designed for deeply embedded systems. It provides stackless multitasking, non-blocking drivers, industrial fieldbuses, and display graphics for targets ranging from 8-bit microcontrollers to 32-bit Cortex-M and RISC-V targets.
 
 ---

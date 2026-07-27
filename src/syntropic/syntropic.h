@@ -424,6 +424,10 @@ extern "C" {
 #include "proto/syn_isotp.h"
 #endif
 
+#if !defined(SYN_USE_CJT188) || SYN_USE_CJT188
+#include "proto/syn_cjt188.h"
+#endif
+
 #if !defined(SYN_USE_ETHERCAT) || SYN_USE_ETHERCAT
 #include "proto/syn_ethercat.h"
 #endif

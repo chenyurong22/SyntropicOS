@@ -68,6 +68,9 @@ static void fire_enter(const SYN_FSM *fsm, SYN_FSM_State state)
 void syn_fsm_init(SYN_FSM *fsm, const SYN_FSM_Transition *transitions, SYN_FSM_State initial,
                   const char *tag)
 {
+    if (fsm == NULL || transitions == NULL) {
+        return;
+    }
     SYN_ASSERT(fsm != NULL);
     SYN_ASSERT(transitions != NULL);
 
@@ -79,24 +82,36 @@ void syn_fsm_init(SYN_FSM *fsm, const SYN_FSM_Transition *transitions, SYN_FSM_S
 
 void syn_fsm_set_state_descs(SYN_FSM *fsm, const SYN_FSM_StateDesc *descs)
 {
+    if (fsm == NULL) {
+        return;
+    }
     SYN_ASSERT(fsm != NULL);
     fsm->state_descs = descs;
 }
 
 void syn_fsm_set_state_names(SYN_FSM *fsm, const char *const *names)
 {
+    if (fsm == NULL) {
+        return;
+    }
     SYN_ASSERT(fsm != NULL);
     fsm->state_names = names;
 }
 
 void syn_fsm_set_context(SYN_FSM *fsm, void *ctx)
 {
+    if (fsm == NULL) {
+        return;
+    }
     SYN_ASSERT(fsm != NULL);
     fsm->ctx = ctx;
 }
 
 bool syn_fsm_dispatch(SYN_FSM *fsm, SYN_FSM_Event event)
 {
+    if (fsm == NULL || fsm->transitions == NULL) {
+        return false;
+    }
     SYN_ASSERT(fsm != NULL);
 
     const SYN_FSM_Transition *t = fsm->transitions;

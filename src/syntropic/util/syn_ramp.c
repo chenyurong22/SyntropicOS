@@ -16,6 +16,9 @@
 
 void syn_ramp_init(SYN_Ramp *ramp, int32_t initial)
 {
+    if (ramp == NULL) {
+        return;
+    }
     SYN_ASSERT(ramp != NULL);
 
     memset(ramp, 0, sizeof(*ramp));
@@ -26,7 +29,12 @@ void syn_ramp_init(SYN_Ramp *ramp, int32_t initial)
 
 void syn_ramp_set_target(SYN_Ramp *ramp, int32_t target, int32_t rate)
 {
+    if (ramp == NULL) {
+        return;
+    }
     SYN_ASSERT(ramp != NULL);
+    if (rate <= 0)
+        rate = 1;
     SYN_ASSERT(rate > 0);
 
     ramp->target = target;
@@ -39,7 +47,14 @@ void syn_ramp_set_target(SYN_Ramp *ramp, int32_t target, int32_t rate)
 
 void syn_ramp_set_target_trapezoid(SYN_Ramp *ramp, int32_t target, int32_t max_rate, int32_t accel)
 {
+    if (ramp == NULL) {
+        return;
+    }
     SYN_ASSERT(ramp != NULL);
+    if (max_rate <= 0)
+        max_rate = 1;
+    if (accel <= 0)
+        accel = 1;
     SYN_ASSERT(max_rate > 0);
     SYN_ASSERT(accel > 0);
 
@@ -56,7 +71,16 @@ void syn_ramp_set_target_trapezoid(SYN_Ramp *ramp, int32_t target, int32_t max_r
 void syn_ramp_set_target_trapezoid_fp(SYN_Ramp *ramp, int32_t target, int32_t max_rate,
                                       int32_t accel, uint8_t frac_bits)
 {
+    if (ramp == NULL) {
+        return;
+    }
     SYN_ASSERT(ramp != NULL);
+    if (max_rate <= 0)
+        max_rate = 1;
+    if (accel <= 0)
+        accel = 1;
+    if (frac_bits > 16)
+        frac_bits = 16;
     SYN_ASSERT(max_rate > 0);
     SYN_ASSERT(accel > 0);
     SYN_ASSERT(frac_bits <= 16);

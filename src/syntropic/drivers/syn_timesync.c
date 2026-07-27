@@ -20,6 +20,9 @@
 void syn_timesync_init(SYN_TimeSync *tsync)
 {
     SYN_ASSERT(tsync != NULL);
+    if (tsync == NULL) {
+        return;
+    }
 
     memset(tsync, 0, sizeof(SYN_TimeSync));
     tsync->base_jitter_ns = SYN_TIMESYNC_DEFAULT_JITTER_NS;

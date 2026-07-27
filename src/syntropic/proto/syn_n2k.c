@@ -225,7 +225,7 @@ SYN_Status syn_n2k_fastpacket_process(SYN_N2K_FastPacketRx *rx, const SYN_CAN_Fr
                                       uint32_t target_pgn, const uint8_t **out_payload,
                                       size_t *out_len)
 {
-    if (!rx || !frame || !out_payload || !out_len)
+    if (!rx || !frame || !out_payload || !out_len || frame->dlc < 8)
         return SYN_INVALID_PARAM;
 
     SYN_J1939_Header hdr;

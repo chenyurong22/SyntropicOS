@@ -24,6 +24,8 @@
  */
 static uint16_t angle_to_us(const SYN_Servo *s, uint16_t angle)
 {
+    if (s == NULL || s->angle_range == 0)
+        return 0;
     if (angle > s->angle_range)
         angle = s->angle_range;
     uint32_t range_us = (uint32_t)(s->pulse_max - s->pulse_min);
@@ -38,6 +40,8 @@ static uint16_t angle_to_us(const SYN_Servo *s, uint16_t angle)
  */
 static uint16_t clamp_us(const SYN_Servo *s, uint16_t us)
 {
+    if (s == NULL)
+        return us;
     if (us < s->pulse_min)
         return s->pulse_min;
     if (us > s->pulse_max)
@@ -49,6 +53,9 @@ static uint16_t clamp_us(const SYN_Servo *s, uint16_t us)
 
 void syn_servo_init(SYN_Servo *servo, uint16_t pulse_min, uint16_t pulse_max, uint16_t angle_range)
 {
+    if (servo == NULL || pulse_max <= pulse_min || angle_range == 0) {
+        return;
+    }
     SYN_ASSERT(servo != NULL);
     SYN_ASSERT(pulse_max > pulse_min);
     SYN_ASSERT(angle_range > 0);
@@ -66,6 +73,8 @@ void syn_servo_init(SYN_Servo *servo, uint16_t pulse_min, uint16_t pulse_max, ui
 
 void syn_servo_set_angle(SYN_Servo *servo, uint16_t angle)
 {
+    if (servo == NULL)
+        return;
     SYN_ASSERT(servo != NULL);
     uint16_t us = angle_to_us(servo, angle);
     servo->current_us = us;
@@ -75,6 +84,8 @@ void syn_servo_set_angle(SYN_Servo *servo, uint16_t angle)
 
 void syn_servo_set_pulse(SYN_Servo *servo, uint16_t us)
 {
+    if (servo == NULL)
+        return;
     SYN_ASSERT(servo != NULL);
     us = clamp_us(servo, us);
     servo->current_us = us;
@@ -84,6 +95,8 @@ void syn_servo_set_pulse(SYN_Servo *servo, uint16_t us)
 
 void syn_servo_move_to(SYN_Servo *servo, uint16_t angle, uint16_t duration)
 {
+    if (servo == NULL)
+        return;
     SYN_ASSERT(servo != NULL);
 
     uint16_t target = angle_to_us(servo, angle);

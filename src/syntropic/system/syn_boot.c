@@ -20,6 +20,9 @@
 
 SYN_Status syn_boot_init(SYN_Boot *boot, SYN_ParamStore *store, uint16_t safe_threshold)
 {
+    if (boot == NULL || store == NULL) {
+        return SYN_INVALID_PARAM;
+    }
     SYN_ASSERT(boot != NULL);
     SYN_ASSERT(store != NULL);
 
@@ -75,6 +78,9 @@ SYN_Status syn_boot_init(SYN_Boot *boot, SYN_ParamStore *store, uint16_t safe_th
 
 SYN_Status syn_boot_mark_healthy(SYN_Boot *boot)
 {
+    if (boot == NULL || !boot->initialized) {
+        return SYN_INVALID_PARAM;
+    }
     SYN_ASSERT(boot != NULL);
     SYN_ASSERT(boot->initialized);
 
@@ -86,12 +92,18 @@ SYN_Status syn_boot_mark_healthy(SYN_Boot *boot)
 
 void syn_boot_set_reset_reason(SYN_Boot *boot, uint8_t reason)
 {
+    if (boot == NULL) {
+        return;
+    }
     SYN_ASSERT(boot != NULL);
     boot->data.last_reset = reason;
 }
 
 SYN_Status syn_boot_clear_safe_mode(SYN_Boot *boot)
 {
+    if (boot == NULL || !boot->initialized) {
+        return SYN_INVALID_PARAM;
+    }
     SYN_ASSERT(boot != NULL);
     SYN_ASSERT(boot->initialized);
 
@@ -104,15 +116,19 @@ SYN_Status syn_boot_clear_safe_mode(SYN_Boot *boot)
 
 void syn_boot_set_errlog(SYN_Boot *boot, SYN_ErrLog *errlog)
 {
+    if (boot == NULL) {
+        return;
+    }
     SYN_ASSERT(boot != NULL);
     boot->errlog = errlog;
 }
 
 void syn_boot_log_events(SYN_Boot *boot)
 {
-    SYN_ASSERT(boot != NULL);
-    if (boot->errlog == NULL)
+    if (boot == NULL || boot->errlog == NULL) {
         return;
+    }
+    SYN_ASSERT(boot != NULL);
 
     /* Log crash-loop if previous boot wasn't healthy */
     if (boot->data.fail_count > 0) {

@@ -23,6 +23,10 @@ static uint16_t compute_crc(const void *data, uint16_t size)
 SYN_Status syn_settings_init(SYN_Settings *s, uint32_t flash_base, uint8_t sector_count, void *data,
                              uint16_t data_size, const void *defaults)
 {
+    if (s == NULL || data == NULL || defaults == NULL || data_size == 0) {
+        return SYN_INVALID_PARAM;
+    }
+
     SYN_ASSERT(s != NULL);
     SYN_ASSERT(data != NULL);
     SYN_ASSERT(defaults != NULL);
@@ -56,6 +60,10 @@ SYN_Status syn_settings_init(SYN_Settings *s, uint32_t flash_base, uint8_t secto
 
 SYN_Status syn_settings_save(SYN_Settings *s)
 {
+    if (s == NULL || s->data == NULL) {
+        return SYN_INVALID_PARAM;
+    }
+
     SYN_ASSERT(s != NULL);
 
     uint16_t new_crc = compute_crc(s->data, s->data_size);

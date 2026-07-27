@@ -251,7 +251,9 @@ SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node, const SYN_CAN_Frame *fr
             uint32_t pgn =
                 (uint32_t)syn_peek_u16_le(frame->data, 5) | ((uint32_t)frame->data[7] << 16);
 
-            if (total_bytes <= sizeof(node->tp_rx.data) && total_packets > 0) {
+            uint8_t expected_packets = (uint8_t)((total_bytes + 6U) / 7U);
+            if (total_bytes <= sizeof(node->tp_rx.data) && total_packets > 0 &&
+                total_packets == expected_packets) {
                 node->tp_rx.active = true;
                 node->tp_rx.is_bam = (ctrl == SYN_J1939_TP_CTRL_BAM);
                 node->tp_rx.sa = hdr.sa;

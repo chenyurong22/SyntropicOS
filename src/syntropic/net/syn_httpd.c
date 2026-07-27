@@ -401,6 +401,9 @@ void syn_httpd_stop(SYN_Httpd *srv)
 
 void syn_httpd_status(const SYN_HttpdResponse *resp, int code, const char *reason)
 {
+    if (resp == NULL || reason == NULL) {
+        return;
+    }
     SYN_ASSERT(resp != NULL);
     SYN_ASSERT(!resp->headers_sent);
 
@@ -420,6 +423,9 @@ void syn_httpd_status(const SYN_HttpdResponse *resp, int code, const char *reaso
 
 void syn_httpd_header(const SYN_HttpdResponse *resp, const char *name, const char *value)
 {
+    if (resp == NULL || name == NULL || value == NULL) {
+        return;
+    }
     SYN_ASSERT(resp != NULL);
     SYN_ASSERT(!resp->headers_sent);
 
@@ -445,6 +451,9 @@ static void finalize_headers(SYN_HttpdResponse *resp)
 
 void syn_httpd_body(SYN_HttpdResponse *resp, const void *data, size_t len)
 {
+    if (resp == NULL) {
+        return;
+    }
     SYN_ASSERT(resp != NULL);
     finalize_headers(resp);
     if (data != NULL && len > 0) {

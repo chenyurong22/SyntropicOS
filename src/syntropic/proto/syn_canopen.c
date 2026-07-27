@@ -29,8 +29,14 @@ static void canopen_queue_tx(SYN_CANOpenNode *node, uint32_t cob_id, const uint8
         return;
     }
 
+    if (len > sizeof(node->tx_data)) {
+        len = (uint8_t)sizeof(node->tx_data);
+    }
+
     node->tx_cob_id = cob_id;
-    (void)memcpy(node->tx_data, data, len);
+    if (data != NULL && len > 0) {
+        (void)memcpy(node->tx_data, data, len);
+    }
     node->tx_len = len;
     node->tx_pending = true;
 }

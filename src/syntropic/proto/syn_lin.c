@@ -248,8 +248,10 @@ bool syn_lin_slave_process_byte(SYN_LIN_Slave *slave, uint8_t byte, SYN_LIN_Fram
     }
 
     case SYN_LIN_STATE_DATA:
-        slave->rx_frame.data[slave->rx_idx++] = byte;
-        if (slave->rx_idx >= slave->expected_len) {
+        if (slave->rx_idx < SYN_LIN_DATA_MAX) {
+            slave->rx_frame.data[slave->rx_idx++] = byte;
+        }
+        if (slave->rx_idx >= slave->expected_len || slave->rx_idx >= SYN_LIN_DATA_MAX) {
             slave->rx_frame.len = slave->rx_idx;
             slave->state = SYN_LIN_STATE_CHECKSUM;
         }

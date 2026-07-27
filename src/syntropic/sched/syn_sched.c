@@ -31,6 +31,10 @@ void syn_sched_init(SYN_Sched *sched, SYN_Task *tasks, size_t count)
     SYN_ASSERT(sched != NULL);
     SYN_ASSERT(tasks != NULL || count == 0);
 
+    if (sched == NULL || (tasks == NULL && count > 0)) {
+        return;
+    }
+
     sched->tasks = tasks;
     sched->task_count = count;
 
@@ -48,6 +52,10 @@ void syn_task_create(SYN_Task *task, const char *name, SYN_TaskFunc func, uint8_
     SYN_ASSERT(task != NULL);
     SYN_ASSERT(func != NULL);
     SYN_ASSERT(priority < SYN_SCHED_PRIO_LEVELS);
+
+    if (task == NULL || func == NULL || priority >= SYN_SCHED_PRIO_LEVELS) {
+        return;
+    }
 
     PT_INIT(&task->pt);
     task->func = func;

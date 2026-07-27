@@ -119,6 +119,10 @@ SYN_Status syn_param_init(SYN_ParamStore *store, uint32_t flash_base, uint8_t se
     SYN_ASSERT(sector_count > 0);
     SYN_ASSERT(data_size > 0);
 
+    if (store == NULL || sector_count == 0 || data_size == 0) {
+        return SYN_INVALID_PARAM;
+    }
+
     memset(store, 0, sizeof(*store));
     store->flash_base = flash_base;
     store->sector_count = sector_count;
@@ -173,6 +177,10 @@ SYN_Status syn_param_load(const SYN_ParamStore *store, void *data)
     SYN_ASSERT(store->initialized);
     SYN_ASSERT(data != NULL);
 
+    if (store == NULL || !store->initialized || data == NULL) {
+        return SYN_INVALID_PARAM;
+    }
+
     SYN_ParamSlotHeader hdr;
     if (read_slot(store, store->active_sector, store->active_slot, &hdr, data)) {
         /* Verify CRC with actual data */
@@ -190,6 +198,10 @@ SYN_Status syn_param_save(SYN_ParamStore *store, const void *data)
     SYN_ASSERT(store != NULL);
     SYN_ASSERT(store->initialized);
     SYN_ASSERT(data != NULL);
+
+    if (store == NULL || !store->initialized || data == NULL) {
+        return SYN_INVALID_PARAM;
+    }
 
     /* Determine next write position */
     uint8_t sec = store->active_sector;
@@ -247,6 +259,10 @@ SYN_Status syn_param_erase_all(SYN_ParamStore *store)
 {
     SYN_ASSERT(store != NULL);
     SYN_ASSERT(store->initialized);
+
+    if (store == NULL || !store->initialized) {
+        return SYN_INVALID_PARAM;
+    }
 
     for (uint8_t sec = 0; sec < store->sector_count; sec++) {
         SYN_Status err =

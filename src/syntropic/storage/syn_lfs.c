@@ -82,6 +82,10 @@ void syn_lfs_init_config(struct lfs_config *cfg, const SYN_LfsConfig *syn_cfg)
     SYN_ASSERT(cfg != NULL);
     SYN_ASSERT(syn_cfg != NULL);
 
+    if (cfg == NULL || syn_cfg == NULL || syn_cfg->block_size == 0) {
+        return;
+    }
+
     cfg->context = (void *)syn_cfg;
     cfg->read = syn_lfs_bd_read;
     cfg->prog = syn_lfs_bd_prog;

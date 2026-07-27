@@ -14,6 +14,9 @@ SYN_Status syn_climate_init(SYN_Climate *sensor, SYN_GPIO_Pin scl, SYN_GPIO_Pin 
                             uint8_t i2c_addr, SYN_ClimateType type)
 {
     SYN_ASSERT(sensor != NULL);
+    if (sensor == NULL) {
+        return SYN_INVALID_PARAM;
+    }
 
     memset(sensor, 0, sizeof(*sensor));
     sensor->type = type;

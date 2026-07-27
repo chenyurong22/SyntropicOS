@@ -35,6 +35,9 @@ static void set_direction(const SYN_Stepper *s, bool forward)
 void syn_stepper_init(SYN_Stepper *s, SYN_GPIO_Pin step_pin, SYN_GPIO_Pin dir_pin)
 {
     SYN_ASSERT(s != NULL);
+    if (s == NULL) {
+        return;
+    }
 
     memset(s, 0, sizeof(*s));
     s->step_pin = step_pin;
@@ -49,6 +52,9 @@ void syn_stepper_init(SYN_Stepper *s, SYN_GPIO_Pin step_pin, SYN_GPIO_Pin dir_pi
 void syn_stepper_set_enable_pin(SYN_Stepper *s, SYN_GPIO_Pin pin, bool active_low)
 {
     SYN_ASSERT(s != NULL);
+    if (s == NULL) {
+        return;
+    }
     s->enable_pin = pin;
     s->enable_invert = active_low;
 }
@@ -58,6 +64,10 @@ void syn_stepper_set_speed(SYN_Stepper *s, uint32_t max_sps, uint32_t accel_sps2
     SYN_ASSERT(s != NULL);
     SYN_ASSERT(max_sps > 0);
     SYN_ASSERT(accel_sps2 > 0);
+
+    if (s == NULL || max_sps == 0 || accel_sps2 == 0) {
+        return;
+    }
 
     s->max_speed = max_sps;
     s->accel = accel_sps2;

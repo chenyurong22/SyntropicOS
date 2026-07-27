@@ -15,6 +15,10 @@ SYN_Status syn_powermon_init(SYN_PowerMon *pm, SYN_GPIO_Pin scl, SYN_GPIO_Pin sd
     SYN_ASSERT(pm != NULL);
     SYN_ASSERT(shunt_resistor_ohms > 0.0001f);
 
+    if (pm == NULL || shunt_resistor_ohms <= 0.0001f) {
+        return SYN_INVALID_PARAM;
+    }
+
     memset(pm, 0, sizeof(*pm));
     pm->type = type;
     pm->i2c_addr = i2c_addr;

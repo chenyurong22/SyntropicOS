@@ -20,6 +20,10 @@ void syn_soft_pwm_init(SYN_SoftPWM *pwm, SYN_GPIO_Pin pin, uint16_t resolution)
     SYN_ASSERT(pwm != NULL);
     SYN_ASSERT(resolution > 0);
 
+    if (pwm == NULL || resolution == 0) {
+        return;
+    }
+
     memset(pwm, 0, sizeof(*pwm));
     pwm->pin = pin;
     pwm->resolution = resolution;
@@ -33,6 +37,9 @@ void syn_soft_pwm_init(SYN_SoftPWM *pwm, SYN_GPIO_Pin pin, uint16_t resolution)
 void syn_soft_pwm_set_duty(SYN_SoftPWM *pwm, uint16_t duty)
 {
     SYN_ASSERT(pwm != NULL);
+    if (pwm == NULL) {
+        return;
+    }
 
     if (duty > pwm->resolution) {
         duty = pwm->resolution;
@@ -43,6 +50,9 @@ void syn_soft_pwm_set_duty(SYN_SoftPWM *pwm, uint16_t duty)
 void syn_soft_pwm_set_percent(SYN_SoftPWM *pwm, uint8_t percent)
 {
     SYN_ASSERT(pwm != NULL);
+    if (pwm == NULL) {
+        return;
+    }
 
     if (percent > 100)
         percent = 100;
@@ -53,6 +63,9 @@ void syn_soft_pwm_set_percent(SYN_SoftPWM *pwm, uint8_t percent)
 void syn_soft_pwm_tick(SYN_SoftPWM *pwm)
 {
     SYN_ASSERT(pwm != NULL);
+    if (pwm == NULL || pwm->resolution == 0) {
+        return;
+    }
 
     bool on;
 
@@ -81,6 +94,9 @@ void syn_soft_pwm_tick(SYN_SoftPWM *pwm)
 void syn_soft_pwm_service(SYN_SoftPWM *channels, size_t count)
 {
     SYN_ASSERT(channels != NULL || count == 0);
+    if (channels == NULL || count == 0) {
+        return;
+    }
 
     for (size_t i = 0; i < count; i++) {
         syn_soft_pwm_tick(&channels[i]);

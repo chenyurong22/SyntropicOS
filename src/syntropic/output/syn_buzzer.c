@@ -21,6 +21,10 @@ SYN_Status syn_buzzer_init(SYN_Buzzer *buz, SYN_GPIO_Pin pin, bool active_high)
 {
     SYN_ASSERT(buz != NULL);
 
+    if (buz == NULL) {
+        return SYN_INVALID_PARAM;
+    }
+
     memset(buz, 0, sizeof(*buz));
     buz->pin = pin;
     buz->active_high = active_high;
@@ -34,6 +38,9 @@ SYN_Status syn_buzzer_init(SYN_Buzzer *buz, SYN_GPIO_Pin pin, bool active_high)
 SYN_Status syn_buzzer_beep(SYN_Buzzer *buz, uint32_t freq_hz, uint32_t duration_ms)
 {
     SYN_ASSERT(buz != NULL);
+    if (buz == NULL) {
+        return SYN_INVALID_PARAM;
+    }
 
     buz->pattern_freqs = NULL;
     buz->pattern_durs = NULL;
@@ -61,6 +68,10 @@ SYN_Status syn_buzzer_play_pattern(SYN_Buzzer *buz, const uint16_t *freqs, const
     SYN_ASSERT(freqs != NULL);
     SYN_ASSERT(durs != NULL);
     SYN_ASSERT(count > 0);
+
+    if (buz == NULL || freqs == NULL || durs == NULL || count == 0) {
+        return SYN_INVALID_PARAM;
+    }
 
     buz->pattern_freqs = freqs;
     buz->pattern_durs = durs;

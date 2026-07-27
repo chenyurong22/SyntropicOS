@@ -35,14 +35,14 @@ SYN_Status syn_spsc_queue_init(SYN_SPSC_Queue *q, void *elem_buf, size_t elem_si
 
 bool syn_spsc_queue_is_empty(const SYN_SPSC_Queue *q)
 {
-    if (!q)
+    if (!q || !q->buffer || q->capacity == 0)
         return true;
     return (SYN_LOAD_ACQUIRE(&q->head) == q->tail);
 }
 
 bool syn_spsc_queue_is_full(const SYN_SPSC_Queue *q)
 {
-    if (!q)
+    if (!q || !q->buffer || q->capacity == 0)
         return false;
     size_t next_head = spsc_advance(q->head, q->capacity);
     return (next_head == SYN_LOAD_ACQUIRE(&q->tail));
@@ -50,7 +50,7 @@ bool syn_spsc_queue_is_full(const SYN_SPSC_Queue *q)
 
 size_t syn_spsc_queue_count(const SYN_SPSC_Queue *q)
 {
-    if (!q)
+    if (!q || !q->buffer || q->capacity == 0)
         return 0;
     size_t head = SYN_LOAD_ACQUIRE(&q->head);
     size_t tail = q->tail;
@@ -62,7 +62,7 @@ size_t syn_spsc_queue_count(const SYN_SPSC_Queue *q)
 
 SYN_Status syn_spsc_queue_push(SYN_SPSC_Queue *q, const void *item)
 {
-    if (!q || !item)
+    if (!q || !q->buffer || !item || q->capacity == 0 || q->elem_size == 0)
         return SYN_INVALID_PARAM;
 
     size_t current_head = q->head;
@@ -80,7 +80,7 @@ SYN_Status syn_spsc_queue_push(SYN_SPSC_Queue *q, const void *item)
 
 SYN_Status syn_spsc_queue_pop(SYN_SPSC_Queue *q, void *out_item)
 {
-    if (!q || !out_item)
+    if (!q || !q->buffer || !out_item || q->capacity == 0 || q->elem_size == 0)
         return SYN_INVALID_PARAM;
 
     size_t current_head = SYN_LOAD_ACQUIRE(&q->head);

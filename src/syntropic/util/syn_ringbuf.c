@@ -32,6 +32,10 @@ void syn_ringbuf_init(SYN_RingBuf *rb, uint8_t *buf, size_t size)
     SYN_ASSERT(buf != NULL);
     SYN_ASSERT(size > 1); /* need at least 2 bytes (1 usable + 1 sentinel) */
 
+    if (rb == NULL || buf == NULL || size <= 1) {
+        return;
+    }
+
     rb->buf = buf;
     rb->size = size;
     SYN_STORE_RELEASE(&rb->head, 0);
@@ -41,6 +45,9 @@ void syn_ringbuf_init(SYN_RingBuf *rb, uint8_t *buf, size_t size)
 void syn_ringbuf_reset(SYN_RingBuf *rb)
 {
     SYN_ASSERT(rb != NULL);
+    if (rb == NULL) {
+        return;
+    }
     SYN_STORE_RELEASE(&rb->head, 0);
     SYN_STORE_RELEASE(&rb->tail, 0);
 }
@@ -48,6 +55,9 @@ void syn_ringbuf_reset(SYN_RingBuf *rb)
 bool syn_ringbuf_put(SYN_RingBuf *rb, uint8_t byte)
 {
     SYN_ASSERT(rb != NULL);
+    if (rb == NULL || rb->buf == NULL || rb->size <= 1) {
+        return false;
+    }
 
     size_t head = SYN_LOAD_ACQUIRE(&rb->head);
     size_t tail = SYN_LOAD_ACQUIRE(&rb->tail);
@@ -65,6 +75,9 @@ bool syn_ringbuf_get(SYN_RingBuf *rb, uint8_t *byte)
 {
     SYN_ASSERT(rb != NULL);
     SYN_ASSERT(byte != NULL);
+    if (rb == NULL || rb->buf == NULL || byte == NULL || rb->size <= 1) {
+        return false;
+    }
 
     size_t head = SYN_LOAD_ACQUIRE(&rb->head);
     size_t tail = SYN_LOAD_ACQUIRE(&rb->tail);
@@ -81,6 +94,9 @@ bool syn_ringbuf_peek(const SYN_RingBuf *rb, uint8_t *byte)
 {
     SYN_ASSERT(rb != NULL);
     SYN_ASSERT(byte != NULL);
+    if (rb == NULL || rb->buf == NULL || byte == NULL || rb->size <= 1) {
+        return false;
+    }
 
     size_t head = SYN_LOAD_ACQUIRE(&rb->head);
     size_t tail = SYN_LOAD_ACQUIRE(&rb->tail);
@@ -95,6 +111,9 @@ bool syn_ringbuf_peek(const SYN_RingBuf *rb, uint8_t *byte)
 bool syn_ringbuf_full(const SYN_RingBuf *rb)
 {
     SYN_ASSERT(rb != NULL);
+    if (rb == NULL || rb->size <= 1) {
+        return false;
+    }
     size_t head = SYN_LOAD_ACQUIRE(&rb->head);
     size_t tail = SYN_LOAD_ACQUIRE(&rb->tail);
     return advance(head, rb->size) == tail;
@@ -103,6 +122,9 @@ bool syn_ringbuf_full(const SYN_RingBuf *rb)
 bool syn_ringbuf_empty(const SYN_RingBuf *rb)
 {
     SYN_ASSERT(rb != NULL);
+    if (rb == NULL) {
+        return true;
+    }
     size_t head = SYN_LOAD_ACQUIRE(&rb->head);
     size_t tail = SYN_LOAD_ACQUIRE(&rb->tail);
     return head == tail;
@@ -111,6 +133,9 @@ bool syn_ringbuf_empty(const SYN_RingBuf *rb)
 size_t syn_ringbuf_count(const SYN_RingBuf *rb)
 {
     SYN_ASSERT(rb != NULL);
+    if (rb == NULL || rb->size <= 1) {
+        return 0;
+    }
 
     size_t h = SYN_LOAD_ACQUIRE(&rb->head);
     size_t t = SYN_LOAD_ACQUIRE(&rb->tail);
@@ -124,6 +149,9 @@ size_t syn_ringbuf_count(const SYN_RingBuf *rb)
 size_t syn_ringbuf_free(const SYN_RingBuf *rb)
 {
     SYN_ASSERT(rb != NULL);
+    if (rb == NULL || rb->size <= 1) {
+        return 0;
+    }
     /* Capacity is size - 1 (one slot reserved as sentinel). */
     return (rb->size - 1) - syn_ringbuf_count(rb);
 }
@@ -132,6 +160,9 @@ size_t syn_ringbuf_write(SYN_RingBuf *rb, const uint8_t *data, size_t len)
 {
     SYN_ASSERT(rb != NULL);
     SYN_ASSERT(data != NULL || len == 0);
+    if (rb == NULL || (data == NULL && len > 0)) {
+        return 0;
+    }
 
     size_t avail = syn_ringbuf_free(rb);
     if (len > avail) {
@@ -164,6 +195,9 @@ size_t syn_ringbuf_read(SYN_RingBuf *rb, uint8_t *data, size_t len)
 {
     SYN_ASSERT(rb != NULL);
     SYN_ASSERT(data != NULL || len == 0);
+    if (rb == NULL || (data == NULL && len > 0)) {
+        return 0;
+    }
 
     size_t peeked = syn_ringbuf_peek_n(rb, data, len);
     if (peeked > 0) {
@@ -178,6 +212,9 @@ size_t syn_ringbuf_peek_n(const SYN_RingBuf *rb, uint8_t *data, size_t len)
 {
     SYN_ASSERT(rb != NULL);
     SYN_ASSERT(data != NULL || len == 0);
+    if (rb == NULL || (data == NULL && len > 0)) {
+        return 0;
+    }
 
     size_t avail = syn_ringbuf_count(rb);
     if (len > avail) {

@@ -40,6 +40,22 @@ typedef int32_t q16_t;
 #define Q16_ONE ((q16_t)(1L << Q16_SHIFT))        /**< 1.0 in Q16.16              */
 #define Q16_HALF ((q16_t)(1L << (Q16_SHIFT - 1))) /**< 0.5 in Q16.16              */
 
+/* ── Q0.7 (INT8) & Q0.15 (INT16) Types ─────────────────────────────────── */
+
+/** Fixed-point Q0.7 type (INT8): 1 sign bit, 7 fractional bits (-1.0 to +0.992). */
+typedef int8_t q7_t;
+
+#define Q7_SHIFT 7
+#define Q7_ONE ((q7_t)127)
+#define Q7_MIN ((q7_t) - 128)
+
+/** Fixed-point Q0.15 type (INT16): 1 sign bit, 15 fractional bits (-1.0 to +0.99996). */
+typedef int16_t q15_t;
+
+#define Q15_SHIFT 15
+#define Q15_ONE ((q15_t)32767)
+#define Q15_MIN ((q15_t) - 32768)
+
 /* ── Constants ──────────────────────────────────────────────────────────── */
 
 #define Q16_PI 205887   /**< 3.14159265 in Q16.16 */
@@ -72,6 +88,78 @@ typedef int32_t q16_t;
 
 /** Fractional part as 0–9999 (for printf: "%d.%04d"). */
 #define Q16_FRAC_10000(q) ((int32_t)((((q) & 0xFFFF) * 10000L) >> Q16_SHIFT))
+
+/** Float literal to Q7. */
+#define Q7_FROM_FLOAT(f)                 \
+    ((q7_t)((f) * 128.0f >= 127.0f ? 127 \
+                                   : ((f) * 128.0f <= -128.0f ? -128 : (int8_t)((f) * 128.0f))))
+
+/** Q7 to float. */
+#define Q7_TO_FLOAT(q) ((float)(q) / 128.0f)
+
+/** Float literal to Q15. */
+#define Q15_FROM_FLOAT(f)               \
+    ((q15_t)((f) * 32768.0f >= 32767.0f \
+                 ? 32767                \
+                 : ((f) * 32768.0f <= -32768.0f ? -32768 : (int16_t)((f) * 32768.0f))))
+
+/** Q15 to float. */
+#define Q15_TO_FLOAT(q) ((float)(q) / 32768.0f)
+
+/* ── Cross-Format Conversions ───────────────────────────────────────────── */
+
+/** Convert Q7 (INT8) to Q16.16. */
+static inline q16_t q7_to_q16(q7_t q)
+{
+    return (q16_t)((int32_t)q << 9);
+}
+
+/** Convert Q16.16 to Q7 (INT8) with saturation clamping. */
+static inline q7_t q16_to_q7(q16_t q)
+{
+    int32_t val = q >> 9;
+    if (val > 127)
+        return 127;
+    if (val < -128)
+        return -128;
+    return (q7_t)val;
+}
+
+/** Convert Q15 (INT16) to Q16.16. */
+static inline q16_t q15_to_q16(q15_t q)
+{
+    return (q16_t)((int32_t)q << 1);
+}
+
+/** Convert Q16.16 to Q15 (INT16) with saturation clamping. */
+static inline q15_t q16_to_q15(q16_t q)
+{
+    int32_t val = q >> 1;
+    if (val > 32767)
+        return 32767;
+    if (val < -32768)
+        return -32768;
+    return (q15_t)val;
+}
+
+/** Multiply two Q7 numbers. */
+static inline q7_t q7_mul(q7_t a, q7_t b)
+{
+    return (q7_t)(((int16_t)a * (int16_t)b) >> 7);
+}
+
+/**
+ * @brief Multiply two Q7 (INT8) numbers and accumulate into a 32-bit Q16.16 accumulator.
+ * @param acc  Existing Q16.16 accumulator.
+ * @param a    First Q7 factor.
+ * @param b    Second Q7 factor.
+ * @return New Q16.16 accumulated sum.
+ */
+static inline q16_t q7_mac(q16_t acc, q7_t a, q7_t b)
+{
+    int32_t prod = (int32_t)a * (int32_t)b;
+    return acc + (int32_t)((uint32_t)prod << 2);
+}
 
 /* ── Inline arithmetic ──────────────────────────────────────────────────── */
 

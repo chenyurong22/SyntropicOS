@@ -16,7 +16,7 @@ SRC_FILES=$(find src/syntropic -name "*.c" ! -path "*/port_stubs/*" ! -name "syn
 TEST_FILES=$(find tests/unit -name "test_*.c" ! -name "test_runner.c")
 
 arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -std=c99 -pedantic -Wall -Wextra \
-    -O2 -fno-unwind-tables -fno-asynchronous-unwind-tables -I. -Isrc -Itests/unit -Itests/unit/mocks \
+    -O2 -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections -Wl,--gc-sections -I. -Isrc -Itests/unit -Itests/unit/mocks \
     -DSYN_LOG_COLOR=0 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_AT_PARSER=1 \
     -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format -Wno-stringop-truncation -Wno-type-limits \
     -T "${QEMU_DIR}/qemu_arm.ld" \
@@ -28,6 +28,8 @@ arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -std=c99 -pedantic -Wall -Wextra \
     tests/unit/test_runner.c \
     ${TEST_FILES} \
     -o build/test_cortexm4.elf -lm
+
+bash "${QEMU_DIR}/measure_arm_size.sh"
 
 echo "=== Executing in QEMU ARM Cortex-M4 (mps2-an385) ==="
 if command -v qemu-system-arm >/dev/null 2>&1; then

@@ -443,5 +443,38 @@ int main(void)
     run_rfid_tests();
     run_biometric_tests();
 
+    /* Fixed-Point DSP & TinyML Neural Network Engine Tests */
+    extern void test_q7_math_boundaries_and_saturation(void);
+    extern void test_q15_math_boundaries_and_saturation(void);
+    extern void test_cross_format_conversions(void);
+    extern void test_q7_mul_and_mac(void);
+    extern void test_nn_activations(void);
+    extern void test_nn_softmax(void);
+    extern void test_nn_attention(void);
+    extern void test_nn_dct_transformer_pipeline(void);
+    extern void test_nn_protothread_coroutine(void);
+    extern void test_nn_conv1d_and_coroutine(void);
+    extern void test_nn_affine_quantization(void);
+    extern void test_nn_pooling_layers(void);
+    extern void test_nn_edge_cases_and_null_checks(void);
+    extern void test_dsp_dct2_null_params(void);
+    extern void test_dsp_dct2_dc_constant(void);
+
+    RUN_TEST(test_q7_math_boundaries_and_saturation);
+    RUN_TEST(test_q15_math_boundaries_and_saturation);
+    RUN_TEST(test_cross_format_conversions);
+    RUN_TEST(test_q7_mul_and_mac);
+    RUN_TEST(test_nn_activations);
+    RUN_TEST(test_nn_softmax);
+    RUN_TEST(test_nn_attention);
+    RUN_TEST(test_nn_dct_transformer_pipeline);
+    RUN_TEST(test_nn_protothread_coroutine);
+    RUN_TEST(test_nn_conv1d_and_coroutine);
+    RUN_TEST(test_nn_affine_quantization);
+    RUN_TEST(test_nn_pooling_layers);
+    RUN_TEST(test_nn_edge_cases_and_null_checks);
+    RUN_TEST(test_dsp_dct2_null_params);
+    RUN_TEST(test_dsp_dct2_dc_constant);
+
     return UNITY_END();
 }

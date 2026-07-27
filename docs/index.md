@@ -53,6 +53,11 @@ Quick-jump to specific feature guides and API references:
 - **[Display Canvas (`syn_canvas`)](modules/display.md#1-framebuffer-display-canvas)**: Hardware-independent 1bpp/16bpp framebuffer & 2D graphics.
 - **[Immediate-Mode GUI (`syn_imgui`)](modules/display.md#2-immediate-mode-gui)**: Zero-heap UI widgets (buttons, sliders, gauges, graphs).
 
+### 📈 DSP & TinyML Neural Networks ([Read DSP & TinyML Docs →](modules/dsp.md))
+- **[Fixed-Point Filters (`syn_filter`)](modules/dsp.md#1-digital-filters)**: Biquad lowpass/highpass, EMA, and median spike rejection.
+- **[Spectral Analysis (`syn_fft` / `syn_dsp`)](modules/dsp.md#3-fast-fourier-transform--peak-detection)**: Radix-2 FFT, DCT-II, windowing, and peak tracking.
+- **[TinyML Neural Networks (`syn_nn`)](modules/dsp.md#4-tinyml--fixed-point-neural-networks-utilsyn_nnh)**: Quantized 1D-CNNs, 1D Pooling, Dense layers, Self-Attention, and Protothread inference.
+
 ### 🔬 Diagnostics & System Services ([Read Debug Docs →](modules/debug.md))
 - **[Lightweight Event Tracer (`syn_trace`)](modules/debug.md#1-lightweight-event-tracer)**: Timestamped circular event recorder for ISRs & tasks.
 - **[Task CPU Profiler (`syn_profiler`)](modules/debug.md#2-task-cpu-profiler)**: Task CPU percentage, peak execution time, and run metrics.

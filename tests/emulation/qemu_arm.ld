@@ -15,8 +15,10 @@ SECTIONS
         *(.text*)
         *(.init)
         *(.fini)
-        *(.eh_frame*)
+        *(.ARM.extab*)
+        __exidx_start = .;
         *(.ARM.exidx*)
+        __exidx_end = .;
         *(.rodata*)
         _etext = .;
     } > FLASH

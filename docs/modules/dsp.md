@@ -111,3 +111,49 @@ void analyze_spectrum(void) {
     uint16_t peak_bin = syn_fft_find_peak(mag_buf, FFT_SIZE / 2);
 }
 ```
+
+---
+
+## 4. TinyML & Fixed-Point Neural Networks (`util/syn_nn.h`)
+
+SyntropicOS features a zero-heap, fixed-point TinyML inference engine tailored for edge sensor processing (e.g., Human Activity Recognition, vibration fault detection, anomaly classification).
+
+### Key Neural Network Features
+
+- **Quantized 1D Convolution (`syn_nn_conv1d_quant_q7`)**: Multi-channel temporal feature extraction with TFLite-style affine quantization scaling.
+- **Quantized Dense Layers (`syn_nn_dense_quant_q7`)**: Fully connected layers supporting arbitrary activation functions.
+- **1D Max & Average Pooling (`syn_nn_maxpool1d_q7` / `syn_nn_avgpool1d_q7`)**: INT8 temporal downsampling.
+- **Self-Attention Transformer Engine (`syn_nn_attention_q7`)**: Multi-head / single-head QKV dot-product self-attention mechanism.
+- **Stackless Protothread Coroutines (`syn_nn_conv1d_pt` / `syn_nn_dense_pt`)**: Time-sliced inference that yields execution back to the RTOS event loop every `chunk_size` steps without stack memory overhead.
+
+### Complete Code Example (Affine-Quantized 1D-CNN Inference)
+
+```c
+#include <syntropic/util/syn_nn.h>
+
+// Scaled affine quantization parameters
+static const syn_nn_quant_t layer1_quant = {
+    .multiplier = 32768, // Fixed-point multiplier (Q15)
+    .shift = 1,          // Bit-shift
+    .zero_point = 0      // INT8 zero-point offset
+};
+
+void run_sensor_inference(const q7_t *sensor_data, q7_t *class_probabilities) {
+    q7_t conv_out[16 * 32];
+    q7_t pool_out[8 * 32];
+
+    // 1. 1D Convolution: 16 time steps, 3 accelerometer channels -> 32 filters, 3x1 kernel
+    syn_nn_conv1d_quant_q7(sensor_data, 16, 3, conv1_weights, conv1_biases,
+                           conv_out, 32, 3, 1, SYN_NN_ACT_RELU, &layer1_quant);
+
+    // 2. 1D Max Pooling: Pool size 2, Stride 2 (16 steps -> 8 steps)
+    syn_nn_maxpool1d_q7(conv_out, 16, 32, pool_out, 2, 2);
+
+    // 3. Dense Classifier Output
+    syn_nn_dense_quant_q7(pool_out, 8 * 32, dense_weights, dense_biases,
+                          class_probabilities, 6, SYN_NN_ACT_NONE, &layer1_quant);
+
+    // 4. ArgMax Class Index Selection
+    size_t predicted_activity = syn_nn_argmax_q7(class_probabilities, 6);
+}
+```

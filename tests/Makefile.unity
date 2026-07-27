@@ -114,7 +114,9 @@ SYN_SRCS := \
 	src/syntropic/sensor/syn_scale.c \
 	src/syntropic/sensor/syn_lux.c \
 	src/syntropic/drivers/syn_rfid.c \
-	src/syntropic/sensor/syn_biometric.c
+	src/syntropic/sensor/syn_biometric.c \
+	src/syntropic/util/syn_nn.c \
+	src/syntropic/util/syn_dsp.c
 
 # Unity framework
 UNITY_SRCS := tests/unit/unity/unity.c

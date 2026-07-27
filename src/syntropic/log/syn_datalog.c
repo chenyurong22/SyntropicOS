@@ -9,6 +9,9 @@
 
 void syn_datalog_init(SYN_DataLog *log, uint8_t *buf, size_t size)
 {
+    if (log == NULL || buf == NULL || size <= sizeof(SYN_DataLogHeader)) {
+        return;
+    }
     SYN_ASSERT(log != NULL);
     SYN_ASSERT(buf != NULL);
     SYN_ASSERT(size > sizeof(SYN_DataLogHeader));
@@ -19,6 +22,9 @@ void syn_datalog_init(SYN_DataLog *log, uint8_t *buf, size_t size)
 
 bool syn_datalog_write(SYN_DataLog *log, uint16_t id, const void *data, uint16_t len)
 {
+    if (log == NULL || (data == NULL && len > 0)) {
+        return false;
+    }
     SYN_ASSERT(log != NULL);
     SYN_ASSERT(data != NULL || len == 0);
 
@@ -44,6 +50,9 @@ bool syn_datalog_write(SYN_DataLog *log, uint16_t id, const void *data, uint16_t
 
 size_t syn_datalog_read(SYN_DataLog *log, uint16_t *out_id, void *out_data, size_t max_len)
 {
+    if (log == NULL || out_id == NULL || out_data == NULL) {
+        return 0;
+    }
     SYN_ASSERT(log != NULL);
     SYN_ASSERT(out_id != NULL);
     SYN_ASSERT(out_data != NULL);
@@ -61,6 +70,11 @@ size_t syn_datalog_read(SYN_DataLog *log, uint16_t *out_id, void *out_data, size
     SYN_DataLogHeader header;
     if (syn_ringbuf_peek_n(&log->rb, (uint8_t *)&header, sizeof(header)) < sizeof(header)) {
         return 0; /* should not happen if count check above passed */
+    }
+
+    /* Verify that full frame (header + payload) is available in ringbuffer */
+    if (syn_ringbuf_count(&log->rb) < sizeof(header) + (size_t)header.len) {
+        return 0;
     }
 
     *out_id = header.id;

@@ -161,6 +161,16 @@ static void test_dlt645_error_handling(void)
     TEST_ASSERT_EQUAL_INT(
         SYN_OK, syn_dlt645_parse(preamble_buf, sizeof(preamble_buf), SYN_DLT645_VER_2007, &frame));
 
+    /* Oversized payload length in frame header (> 64 bytes) */
+    uint8_t oversized_payload[120];
+    memset(oversized_payload, 0, sizeof(oversized_payload));
+    oversized_payload[0] = 0x68;
+    oversized_payload[7] = 0x68;
+    oversized_payload[9] = 100;    /* data_len = 100 > 64 */
+    oversized_payload[111] = 0x16; /* EOF at expected_total - 1 */
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_dlt645_parse(oversized_payload, sizeof(oversized_payload),
+                                                        SYN_DLT645_VER_2007, &frame));
+
     /* Decoder NULL and invalid feeds */
     syn_dlt645_decoder_feed(NULL, 0x68);
 

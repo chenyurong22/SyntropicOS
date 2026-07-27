@@ -148,7 +148,11 @@ SYN_Status syn_dlt645_parse(const uint8_t *in_buf, size_t len, SYN_DLT645_Ver ve
     }
 
     /* Decode Payload (subtract 0x33) */
-    out_frame->payload_len = (uint8_t)(data_len - di_len);
+    size_t payload_bytes = data_len - di_len;
+    if (payload_bytes > sizeof(out_frame->payload)) {
+        return SYN_ERROR;
+    }
+    out_frame->payload_len = (uint8_t)payload_bytes;
     size_t payload_offset = 10 + di_len;
 
     for (uint8_t i = 0; i < out_frame->payload_len; i++) {

@@ -7,6 +7,8 @@
  * Designed for bare-metal (no RTOS, no vendor HAL).
  */
 
+#if defined(STM32F407xx) && !defined(ARDUINO)
+
 #include <stdint.h>
 #include <string.h>
 
@@ -88,3 +90,5 @@ __attribute__((section(".isr_vector"), used)) void (*const g_pfnVectors[])(void)
     PendSV_Handler,   /* PendSV */
     SysTick_Handler,  /* SysTick */
 };
+
+#endif /* STM32F407xx && !ARDUINO */

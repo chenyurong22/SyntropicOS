@@ -5,6 +5,8 @@
 
 #include "syn_timer_wheel.h"
 
+#include "../util/syn_assert.h"
+
 #include <string.h>
 
 SYN_Status syn_timer_wheel_init(SYN_TimerWheel *wheel)

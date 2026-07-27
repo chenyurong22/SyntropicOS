@@ -110,7 +110,8 @@ static void send_exception(SYN_Modbus *mb, uint8_t func, uint8_t ex_code)
  * @param regs       Register array.
  * @param reg_count  Total register count.
  */
-static void handle_read_regs(SYN_Modbus *mb, uint16_t frame_len, const uint16_t *regs, uint16_t reg_count)
+static void handle_read_regs(SYN_Modbus *mb, uint16_t frame_len, const uint16_t *regs,
+                             uint16_t reg_count)
 {
     if (frame_len < 8) {
         send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_VALUE);
@@ -527,7 +528,8 @@ static void set_bit(uint8_t *bits, uint16_t idx, bool val)
 /**
  * @brief Handle Read Coils (FC 0x01) and Read Discrete Inputs (FC 0x02).
  */
-static void handle_read_bits(SYN_Modbus *mb, uint16_t frame_len, const uint8_t *bits, uint16_t total_bits)
+static void handle_read_bits(SYN_Modbus *mb, uint16_t frame_len, const uint8_t *bits,
+                             uint16_t total_bits)
 {
     if (bits == NULL) {
         send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_ADDR);

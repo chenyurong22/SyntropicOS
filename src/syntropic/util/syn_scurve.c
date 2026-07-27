@@ -11,20 +11,29 @@
 
 void syn_scurve_init(SYN_SCurve *sc, int32_t initial_p)
 {
+    if (sc == NULL) {
+        return;
+    }
     SYN_ASSERT(sc != NULL);
     memset(sc, 0, sizeof(*sc));
     sc->p = initial_p;
     sc->target_p = initial_p;
+    sc->v_max = 1;
+    sc->a_max = 1;
+    sc->j_max = 1;
     sc->done = true;
     sc->current_phase = 7;
 }
 
 void syn_scurve_set_constraints(SYN_SCurve *sc, int32_t v_max, int32_t a_max, int32_t j_max)
 {
+    if (sc == NULL) {
+        return;
+    }
     SYN_ASSERT(sc != NULL);
-    sc->v_max = v_max;
-    sc->a_max = a_max;
-    sc->j_max = j_max;
+    sc->v_max = (v_max > 0) ? v_max : 1;
+    sc->a_max = (a_max > 0) ? a_max : 1;
+    sc->j_max = (j_max > 0) ? j_max : 1;
 }
 
 #include "syn_qmath.h"
@@ -36,7 +45,18 @@ static inline uint32_t syn_isqrt(uint32_t n)
 
 void syn_scurve_set_target(SYN_SCurve *sc, int32_t target)
 {
+    if (sc == NULL) {
+        return;
+    }
     SYN_ASSERT(sc != NULL);
+
+    if (sc->v_max <= 0)
+        sc->v_max = 1;
+    if (sc->a_max <= 0)
+        sc->a_max = 1;
+    if (sc->j_max <= 0)
+        sc->j_max = 1;
+
     sc->target_p = target;
     int32_t dist = target - sc->p;
 
@@ -75,6 +95,9 @@ void syn_scurve_set_target(SYN_SCurve *sc, int32_t target)
     // Decel is symmetric. So total distance without constant v phase is approx:
     // D_accel_decel = v_max * (2*Tj + Ta)
     uint32_t vmax_reached = (uint32_t)sc->j_max * Tj * Tj + (uint32_t)sc->a_max * Ta;
+    if (vmax_reached == 0) {
+        vmax_reached = 1;
+    }
     uint32_t D_ad = vmax_reached * (2u * Tj + Ta);
 
     uint32_t Tv = 0;

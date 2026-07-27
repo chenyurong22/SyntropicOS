@@ -9,6 +9,9 @@
 
 void syn_pubsub_init(SYN_PubSubBroker *broker, SYN_PubSubSub *sub_array, size_t capacity)
 {
+    if (broker == NULL) {
+        return;
+    }
     SYN_ASSERT(broker != NULL);
     SYN_ASSERT(sub_array != NULL || capacity == 0);
     broker->subs = sub_array;
@@ -19,6 +22,9 @@ void syn_pubsub_init(SYN_PubSubBroker *broker, SYN_PubSubSub *sub_array, size_t 
 bool syn_pubsub_subscribe(SYN_PubSubBroker *broker, uint16_t topic, SYN_PubSubHandler handler,
                           void *ctx)
 {
+    if (broker == NULL || broker->subs == NULL || handler == NULL) {
+        return false;
+    }
     SYN_ASSERT(broker != NULL);
     SYN_ASSERT(handler != NULL);
 
@@ -43,6 +49,9 @@ bool syn_pubsub_subscribe(SYN_PubSubBroker *broker, uint16_t topic, SYN_PubSubHa
 
 bool syn_pubsub_unsubscribe(SYN_PubSubBroker *broker, uint16_t topic, SYN_PubSubHandler handler)
 {
+    if (broker == NULL || broker->subs == NULL || handler == NULL) {
+        return false;
+    }
     SYN_ASSERT(broker != NULL);
     SYN_ASSERT(handler != NULL);
 
@@ -61,10 +70,15 @@ bool syn_pubsub_unsubscribe(SYN_PubSubBroker *broker, uint16_t topic, SYN_PubSub
 
 void syn_pubsub_publish(SYN_PubSubBroker *broker, uint16_t topic, const void *payload, size_t len)
 {
+    if (broker == NULL || broker->subs == NULL) {
+        return;
+    }
     SYN_ASSERT(broker != NULL);
 
-    for (size_t i = 0; i < broker->count; i++) {
-        if (broker->subs[i].topic == topic || broker->subs[i].topic == SYN_PUBSUB_TOPIC_ALL) {
+    size_t count = broker->count;
+    for (size_t i = 0; i < count && i < broker->count; i++) {
+        if (broker->subs[i].handler != NULL &&
+            (broker->subs[i].topic == topic || broker->subs[i].topic == SYN_PUBSUB_TOPIC_ALL)) {
             broker->subs[i].handler(topic, payload, len, broker->subs[i].ctx);
         }
     }

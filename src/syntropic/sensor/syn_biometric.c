@@ -14,6 +14,9 @@ SYN_Status syn_biometric_init(SYN_Biometric *bio, SYN_GPIO_Pin scl, SYN_GPIO_Pin
                               uint8_t i2c_addr, SYN_BiometricType type)
 {
     SYN_ASSERT(bio != NULL);
+    if (bio == NULL) {
+        return SYN_INVALID_PARAM;
+    }
 
     memset(bio, 0, sizeof(*bio));
     bio->type = type;

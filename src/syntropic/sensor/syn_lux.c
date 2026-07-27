@@ -14,6 +14,9 @@ SYN_Status syn_lux_init(SYN_Lux *sensor, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uin
                         SYN_LuxType type)
 {
     SYN_ASSERT(sensor != NULL);
+    if (sensor == NULL) {
+        return SYN_INVALID_PARAM;
+    }
 
     memset(sensor, 0, sizeof(*sensor));
     sensor->type = type;

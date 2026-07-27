@@ -89,6 +89,9 @@ void syn_coredump_save(const SYN_FaultContext *ctx)
 bool syn_coredump_read(SYN_CoreDump *out)
 {
     SYN_ASSERT(out != NULL);
+    if (out == NULL) {
+        return false;
+    }
 
     SYN_CoreDump dump;
     SYN_Status st = syn_port_flash_read(SYN_COREDUMP_FLASH_ADDR, &dump, sizeof(dump));

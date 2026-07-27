@@ -63,6 +63,10 @@ SYN_Status syn_fwupdate_begin(SYN_FwUpdate *upd, uint32_t slot_addr, uint32_t ma
     SYN_ASSERT(page_buf != NULL);
     SYN_ASSERT(page_buf_size > 0);
 
+    if (upd == NULL || page_buf == NULL || page_buf_size == 0) {
+        return SYN_INVALID_PARAM;
+    }
+
     memset(upd, 0, sizeof(*upd));
     upd->slot_addr = slot_addr;
     upd->data_addr = slot_addr + (uint32_t)sizeof(SYN_FwImageHeader);

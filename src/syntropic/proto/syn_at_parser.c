@@ -194,7 +194,7 @@ bool syn_at_parser_get_param_str(const char *line, size_t param_idx, char *out_b
     }
 
     const char *p = find_param_start(line, param_idx);
-    if (p == NULL || *p == '\0') {
+    if (p == NULL) {
         return false;
     }
 
@@ -210,5 +210,5 @@ bool syn_at_parser_get_param_str(const char *line, size_t param_idx, char *out_b
     }
     out_buf[out_idx] = '\0';
 
-    return out_idx > 0;
+    return true;
 }

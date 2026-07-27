@@ -92,6 +92,9 @@ size_t syn_cobs_decode(const void *src, size_t src_len, void *dst)
 void syn_cobs_decoder_init(SYN_COBS_Decoder *dec, uint8_t *buf, size_t buf_size,
                            SYN_COBS_PacketCallback callback, void *ctx)
 {
+    if (dec == NULL || buf == NULL || buf_size == 0) {
+        return;
+    }
     SYN_ASSERT(dec != NULL);
     SYN_ASSERT(buf != NULL);
     SYN_ASSERT(buf_size > 0);
@@ -105,6 +108,9 @@ void syn_cobs_decoder_init(SYN_COBS_Decoder *dec, uint8_t *buf, size_t buf_size,
 
 void syn_cobs_decoder_feed(SYN_COBS_Decoder *dec, uint8_t byte)
 {
+    if (dec == NULL || dec->buf == NULL) {
+        return;
+    }
     SYN_ASSERT(dec != NULL);
 
     if (byte == 0x00) {
@@ -130,6 +136,9 @@ void syn_cobs_decoder_feed(SYN_COBS_Decoder *dec, uint8_t byte)
 
 void syn_cobs_decoder_reset(SYN_COBS_Decoder *dec)
 {
+    if (dec == NULL) {
+        return;
+    }
     SYN_ASSERT(dec != NULL);
     dec->idx = 0;
 }

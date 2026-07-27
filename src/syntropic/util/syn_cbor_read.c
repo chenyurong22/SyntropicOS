@@ -134,22 +134,30 @@ void syn_cbor_skip(SYN_CborReader *r)
 
         if (major == 7u) {
             /* float32: 4 more bytes; float16: 2; float64: 8; else 0 */
+            size_t skip_bytes = 0;
             if (info == 25u) {
-                r->pos += 2u;
+                skip_bytes = 2u;
             } else if (info == 26u) {
-                r->pos += 4u;
+                skip_bytes = 4u;
             } else if (info == 27u) {
-                r->pos += 8u;
+                skip_bytes = 8u;
+            }
+            if (skip_bytes > 0) {
+                if (r->len - r->pos < skip_bytes) {
+                    r->ok = false;
+                    return;
+                }
+                r->pos += skip_bytes;
             }
             /* bool/null/simple: 0 extra bytes */
         } else if (major == 2u || major == 3u) {
             /* byte/text string: skip 'arg' data bytes */
             uint64_t n = decode_arg(r, info);
-            r->pos += (size_t)n;
-            if (r->pos > r->len) {
+            if (!r->ok || (size_t)n > (r->len - r->pos)) {
                 r->ok = false;
                 return;
             }
+            r->pos += (size_t)n;
         } else if (major == 4u) {
             /* array: push 'arg' items */
             uint64_t n = decode_arg(r, info);
@@ -328,8 +336,10 @@ size_t syn_cbor_read_text(SYN_CborReader *r, char *buf, size_t cap)
         }
         buf[copy] = '\0';
     }
-    r->pos += n;
-    if (r->pos > r->len) {
+    if (n <= available) {
+        r->pos += n;
+    } else {
+        r->pos = r->len;
         r->ok = false;
     }
     return n;
@@ -359,8 +369,10 @@ size_t syn_cbor_read_bytes(SYN_CborReader *r, uint8_t *buf, size_t cap)
     if (buf != NULL && copy > 0u) {
         memcpy(buf, r->buf + r->pos, copy);
     }
-    r->pos += n;
-    if (r->pos > r->len) {
+    if (n <= available) {
+        r->pos += n;
+    } else {
+        r->pos = r->len;
         r->ok = false;
     }
     return n;

@@ -28,8 +28,11 @@ void syn_quat_init(SYN_Quaternion *q, q16_t w, q16_t x, q16_t y, q16_t z)
 void syn_quat_mul(const SYN_Quaternion *q1, const SYN_Quaternion *q2, SYN_Quaternion *out)
 {
     SYN_ASSERT(q1 != NULL && q2 != NULL && out != NULL);
+    if (q1 == NULL || q2 == NULL || out == NULL)
+        return;
 
     int64_t w1 = q1->w, x1 = q1->x, y1 = q1->y, z1 = q1->z;
+
     int64_t w2 = q2->w, x2 = q2->x, y2 = q2->y, z2 = q2->z;
 
     int64_t w = (w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2) >> Q16_SHIFT;
@@ -72,7 +75,10 @@ SYN_Status syn_quat_normalize(SYN_Quaternion *q)
 void syn_quat_conjugate(const SYN_Quaternion *q, SYN_Quaternion *out)
 {
     SYN_ASSERT(q != NULL && out != NULL);
+    if (q == NULL || out == NULL)
+        return;
     out->w = q->w;
+
     out->x = -q->x;
     out->y = -q->y;
     out->z = -q->z;

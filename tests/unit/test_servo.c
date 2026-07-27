@@ -92,7 +92,7 @@ static void test_servo_edge_cases_and_nulls(void)
     memset(&servo, 0, sizeof(servo));
     syn_servo_init(NULL, 1000, 2000, 180);
     syn_servo_init(&servo, 2000, 1000, 180); /* invalid range */
-    syn_servo_init(&servo, 1000, 2000, 0);    /* invalid range */
+    syn_servo_init(&servo, 1000, 2000, 0);   /* invalid range */
 
     syn_servo_init(&servo, 1000, 2000, 180);
 

@@ -19,6 +19,8 @@ void syn_mbap_encode_header(const SYN_MBAP_Header *hdr, uint8_t *buf)
 {
     SYN_ASSERT(hdr != NULL);
     SYN_ASSERT(buf != NULL);
+    if (hdr == NULL || buf == NULL)
+        return;
 
     size_t pos = 0;
     syn_pack_u16(buf, &pos, hdr->transaction_id);

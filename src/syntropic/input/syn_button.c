@@ -37,7 +37,10 @@ enum {
  */
 static bool button_read_raw(const SYN_Button *btn)
 {
+    if (btn == NULL)
+        return false;
     SYN_GPIO_State level = syn_gpio_read(btn->pin);
+
     if (btn->polarity == (uint8_t)SYN_BUTTON_ACTIVE_LOW) {
         return level == SYN_GPIO_LOW;
     }

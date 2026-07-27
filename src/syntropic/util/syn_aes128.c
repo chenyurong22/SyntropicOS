@@ -322,8 +322,8 @@ SYN_Status syn_aes128_cbc_decrypt(const SYN_AES128_Context *ctx, const uint8_t i
     SYN_ASSERT(out != NULL);
     SYN_ASSERT(out_len != NULL);
 
-    if (ctx == NULL || iv == NULL || in == NULL || out == NULL || out_len == NULL ||
-        in_len == 0 || in_len % 16 != 0 || out_capacity < in_len) {
+    if (ctx == NULL || iv == NULL || in == NULL || out == NULL || out_len == NULL || in_len == 0 ||
+        in_len % 16 != 0 || out_capacity < in_len) {
         return SYN_INVALID_PARAM;
     }
 

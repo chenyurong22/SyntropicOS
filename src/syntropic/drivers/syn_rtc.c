@@ -46,7 +46,10 @@ static uint8_t rtc_days_in_month(uint8_t month, uint16_t year)
 bool syn_rtc_is_valid(const SYN_RTC_DateTime *dt)
 {
     SYN_ASSERT(dt != NULL);
+    if (dt == NULL)
+        return false;
     if (dt->year < 1970u)
+
         return false;
     if (dt->month < 1u || dt->month > 12u)
         return false;

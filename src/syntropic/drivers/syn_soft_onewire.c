@@ -29,6 +29,8 @@
  */
 static void ow_delay(const SYN_SoftOneWire *ow, uint32_t us)
 {
+    if (ow == NULL)
+        return;
     volatile uint32_t cnt = us * ow->delay_loops;
     while (cnt--) {
         /* NOP */
@@ -41,6 +43,8 @@ static void ow_delay(const SYN_SoftOneWire *ow, uint32_t us)
  */
 static void ow_drive_low(const SYN_SoftOneWire *ow)
 {
+    if (ow == NULL)
+        return;
     syn_port_gpio_write(ow->pin, 0u);
 }
 
@@ -50,6 +54,8 @@ static void ow_drive_low(const SYN_SoftOneWire *ow)
  */
 static void ow_release(const SYN_SoftOneWire *ow)
 {
+    if (ow == NULL)
+        return;
     syn_port_gpio_write(ow->pin, 1u);
 }
 

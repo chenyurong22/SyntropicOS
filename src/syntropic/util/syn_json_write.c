@@ -23,7 +23,7 @@
  */
 static void jw_putc(SYN_JsonWriter *w, char ch)
 {
-    if (w->overflow)
+    if (w == NULL || w->overflow)
         return;
     if (w->len + 1 >= w->capacity) {
         w->overflow = true;
@@ -40,8 +40,9 @@ static void jw_putc(SYN_JsonWriter *w, char ch)
  */
 static void jw_puts(SYN_JsonWriter *w, const char *s)
 {
-    if (w->overflow)
+    if (w == NULL || s == NULL || w->overflow)
         return;
+
     size_t slen = strlen(s);
     if (w->len + slen >= w->capacity) {
         w->overflow = true;
@@ -59,6 +60,8 @@ static void jw_puts(SYN_JsonWriter *w, const char *s)
  */
 static void jw_str(SYN_JsonWriter *w, const char *s)
 {
+    if (w == NULL || s == NULL)
+        return;
     jw_putc(w, '"');
     while (*s && !w->overflow) {
         char ch = *s++;
@@ -166,6 +169,8 @@ static void jw_uint(SYN_JsonWriter *w, uint32_t val)
  */
 static void jw_comma(SYN_JsonWriter *w)
 {
+    if (w == NULL)
+        return;
     if (w->needs_comma) {
         jw_putc(w, ',');
     }

@@ -153,7 +153,7 @@ static bool queue_pending(SYN_Router *r, uint8_t dst, uint8_t type, uint8_t seq,
  */
 static void check_retries(SYN_Router *r)
 {
-    if (r->pending == NULL)
+    if (r == NULL || r->pending == NULL)
         return;
 
     uint32_t now = syn_port_get_tick_ms();

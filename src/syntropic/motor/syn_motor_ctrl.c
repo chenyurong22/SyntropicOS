@@ -55,9 +55,9 @@ static void apply_output(SYN_MotorCtrl *ctrl, int32_t output)
  */
 static void stop_motor(SYN_MotorCtrl *ctrl)
 {
-    if (ctrl->cfg.motor.coast != NULL) {
-        ctrl->cfg.motor.coast(ctrl->cfg.motor.ctx);
-    }
+    if (ctrl == NULL || ctrl->cfg.motor.coast == NULL)
+        return;
+    ctrl->cfg.motor.coast(ctrl->cfg.motor.ctx);
 }
 
 /**
@@ -66,9 +66,9 @@ static void stop_motor(SYN_MotorCtrl *ctrl)
  */
 static void brake_motor(SYN_MotorCtrl *ctrl)
 {
-    if (ctrl->cfg.motor.brake != NULL) {
-        ctrl->cfg.motor.brake(ctrl->cfg.motor.ctx);
-    }
+    if (ctrl == NULL || ctrl->cfg.motor.brake == NULL)
+        return;
+    ctrl->cfg.motor.brake(ctrl->cfg.motor.ctx);
 }
 
 /**
@@ -78,6 +78,8 @@ static void brake_motor(SYN_MotorCtrl *ctrl)
  */
 static int32_t read_position(SYN_MotorCtrl *ctrl)
 {
+    if (ctrl == NULL || ctrl->cfg.read_pos == NULL)
+        return 0;
     return ctrl->cfg.read_pos(ctrl->cfg.read_pos_ctx);
 }
 
@@ -88,6 +90,8 @@ static int32_t read_position(SYN_MotorCtrl *ctrl)
  */
 static bool limits_enabled(const SYN_MotorCtrl *ctrl)
 {
+    if (ctrl == NULL)
+        return false;
     return (ctrl->cfg.position_min != 0 || ctrl->cfg.position_max != 0);
 }
 

@@ -56,8 +56,11 @@ static int16_t apply_filter(SYN_ADC *adc, int16_t value)
 int32_t syn_adc_read(SYN_ADC *adc)
 {
     SYN_ASSERT(adc != NULL);
+    if (adc == NULL)
+        return 0;
 
     /* Oversampling */
+
     uint8_t oversample = adc->cfg.oversample > 0 ? adc->cfg.oversample : 1;
     int32_t sum = 0;
     for (uint8_t i = 0; i < oversample; i++) {

@@ -62,6 +62,8 @@ void syn_matrix_add(const SYN_Matrix *a, const SYN_Matrix *b, SYN_Matrix *out)
 void syn_matrix_sub(const SYN_Matrix *a, const SYN_Matrix *b, SYN_Matrix *out)
 {
     SYN_ASSERT(a != NULL && b != NULL && out != NULL);
+    if (a == NULL || b == NULL || out == NULL)
+        return;
     SYN_ASSERT(a->rows == b->rows && a->cols == b->cols);
     SYN_ASSERT(out->rows == a->rows && out->cols == a->cols);
 

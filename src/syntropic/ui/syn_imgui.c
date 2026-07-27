@@ -801,6 +801,8 @@ void syn_imgui_layout_begin(SYN_IMGUI_Context *ctx, int16_t x, int16_t y, int16_
 void syn_imgui_layout_end(SYN_IMGUI_Context *ctx)
 {
     SYN_ASSERT(ctx != NULL);
+    if (ctx == NULL)
+        return;
     ctx->layout.in_layout = false;
 }
 
@@ -839,7 +841,7 @@ void syn_imgui_spacing(SYN_IMGUI_Context *ctx, int16_t pixels)
 static void layout_resolve(SYN_IMGUI_Context *ctx, int16_t *x, int16_t *y, int16_t *w, int16_t *h,
                            int16_t default_h)
 {
-    if (!ctx->layout.in_layout)
+    if (ctx == NULL || !ctx->layout.in_layout)
         return;
 
     if (ctx->layout.same_line) {

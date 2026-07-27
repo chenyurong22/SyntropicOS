@@ -116,7 +116,8 @@ bool syn_seq_update(SYN_Sequencer *seq)
         seq->state = SYN_SEQ_RUNNING;
     }
 
-    /* Execute steps (limit execution per tick to step_count + 1 to prevent infinite loops on 0-delay loop sequences while allowing completion check) */
+    /* Execute steps (limit execution per tick to step_count + 1 to prevent infinite loops on
+     * 0-delay loop sequences while allowing completion check) */
     size_t max_exec = (size_t)seq->step_count + 1;
     size_t executed = 0;
     while (seq->state == SYN_SEQ_RUNNING && executed < max_exec) {

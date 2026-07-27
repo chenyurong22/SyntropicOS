@@ -31,6 +31,8 @@ void syn_filter_biquad_init(SYN_FilterBiquad *f, q16_t b0, q16_t b1, q16_t b2, q
 void syn_filter_biquad_reset(SYN_FilterBiquad *f)
 {
     SYN_ASSERT(f != NULL);
+    if (f == NULL)
+        return;
     f->x1 = 0;
     f->x2 = 0;
     f->y1 = 0;

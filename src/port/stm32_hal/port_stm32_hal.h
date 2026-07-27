@@ -27,7 +27,8 @@ extern "C" {
                                                         : (uint32_t)(gpio_pin)))
 
 /**
- * @brief Register an STM32 HAL UART_HandleTypeDef pointer (e.g. &huart1) with a SyntropicOS UART instance (0..5).
+ * @brief Register an STM32 HAL UART_HandleTypeDef pointer (e.g. &huart1) with a SyntropicOS UART
+ * instance (0..5).
  *
  * @param instance  SyntropicOS UART instance index (0..5).
  * @param huart     Pointer to STM32 HAL UART_HandleTypeDef (e.g. &huart1 or &huart3).

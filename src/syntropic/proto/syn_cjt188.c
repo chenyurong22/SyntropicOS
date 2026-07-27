@@ -4,6 +4,7 @@
  */
 
 #include "syn_cjt188.h"
+
 #include "../util/syn_pack.h"
 
 #include <string.h>
@@ -21,8 +22,8 @@ uint8_t syn_cjt188_checksum(const uint8_t *buf, size_t len)
 }
 
 size_t syn_cjt188_encode_read_req(uint8_t *out_buf, size_t buf_size, uint8_t meter_type,
-                                   const uint8_t meter_id[5], const uint8_t vendor_id[2],
-                                   uint16_t data_id, uint8_t seq)
+                                  const uint8_t meter_id[5], const uint8_t vendor_id[2],
+                                  uint16_t data_id, uint8_t seq)
 {
     /*
      * Frame layout with 4-byte preamble:
@@ -74,8 +75,8 @@ size_t syn_cjt188_encode_read_req(uint8_t *out_buf, size_t buf_size, uint8_t met
 }
 
 size_t syn_cjt188_encode_valve_ctrl(uint8_t *out_buf, size_t buf_size, uint8_t meter_type,
-                                      const uint8_t meter_id[5], const uint8_t vendor_id[2],
-                                      bool open_valve, uint8_t seq)
+                                    const uint8_t meter_id[5], const uint8_t vendor_id[2],
+                                    bool open_valve, uint8_t seq)
 {
     /*
      * Frame layout with 4-byte preamble:

@@ -22,42 +22,42 @@ extern "C" {
 
 /* ── Meter Types (T) ────────────────────────────────────────────────────── */
 
-#define SYN_CJT188_METER_COLD_WATER      0x10U /**< Cold water meter           */
-#define SYN_CJT188_METER_HOT_WATER       0x11U /**< Domestic hot water meter    */
-#define SYN_CJT188_METER_DRINK_WATER     0x12U /**< Direct drinking water meter */
+#define SYN_CJT188_METER_COLD_WATER 0x10U      /**< Cold water meter           */
+#define SYN_CJT188_METER_HOT_WATER 0x11U       /**< Domestic hot water meter    */
+#define SYN_CJT188_METER_DRINK_WATER 0x12U     /**< Direct drinking water meter */
 #define SYN_CJT188_METER_RECLAIMED_WATER 0x13U /**< Reclaimed water meter       */
-#define SYN_CJT188_METER_HEAT            0x20U /**< Heat / caloric meter (heat) */
-#define SYN_CJT188_METER_COOLING         0x21U /**< Heat meter (cooling)        */
-#define SYN_CJT188_METER_GAS             0x30U /**< Gas meter                   */
-#define SYN_CJT188_METER_POWER           0x40U /**< Power meter                 */
+#define SYN_CJT188_METER_HEAT 0x20U            /**< Heat / caloric meter (heat) */
+#define SYN_CJT188_METER_COOLING 0x21U         /**< Heat meter (cooling)        */
+#define SYN_CJT188_METER_GAS 0x30U             /**< Gas meter                   */
+#define SYN_CJT188_METER_POWER 0x40U           /**< Power meter                 */
 
 /* ── Control Codes (C) ───────────────────────────────────────────────────── */
 
-#define SYN_CJT188_CTRL_READ_DATA        0x01U /**< Read meter data request     */
-#define SYN_CJT188_CTRL_READ_DATA_RESP   0x81U /**< Read meter data response    */
-#define SYN_CJT188_CTRL_WRITE_DATA       0x04U /**< Write data / control req    */
-#define SYN_CJT188_CTRL_WRITE_DATA_RESP  0x84U /**< Write data / control resp   */
-#define SYN_CJT188_CTRL_WRITE_ADDR       0x15U /**< Write meter address request */
-#define SYN_CJT188_CTRL_WRITE_ADDR_RESP  0x95U /**< Write meter address resp    */
+#define SYN_CJT188_CTRL_READ_DATA 0x01U       /**< Read meter data request     */
+#define SYN_CJT188_CTRL_READ_DATA_RESP 0x81U  /**< Read meter data response    */
+#define SYN_CJT188_CTRL_WRITE_DATA 0x04U      /**< Write data / control req    */
+#define SYN_CJT188_CTRL_WRITE_DATA_RESP 0x84U /**< Write data / control resp   */
+#define SYN_CJT188_CTRL_WRITE_ADDR 0x15U      /**< Write meter address request */
+#define SYN_CJT188_CTRL_WRITE_ADDR_RESP 0x95U /**< Write meter address resp    */
 
 /* ── Data Identifiers (DI) ──────────────────────────────────────────────── */
 
-#define SYN_CJT188_DI_READ_METER_DATA    0x901FU /**< Read meter current data    */
-#define SYN_CJT188_DI_READ_HIST_DATA     0xD120U /**< Read historical data       */
-#define SYN_CJT188_DI_VALVE_CONTROL      0xA017U /**< Valve control command      */
+#define SYN_CJT188_DI_READ_METER_DATA 0x901FU /**< Read meter current data    */
+#define SYN_CJT188_DI_READ_HIST_DATA 0xD120U  /**< Read historical data       */
+#define SYN_CJT188_DI_VALVE_CONTROL 0xA017U   /**< Valve control command      */
 
 /* ── Valve Control Function Codes ───────────────────────────────────────── */
 
-#define SYN_CJT188_VALVE_OPEN            0x55U /**< Open valve command          */
-#define SYN_CJT188_VALVE_CLOSE           0x99U /**< Close valve command         */
+#define SYN_CJT188_VALVE_OPEN 0x55U  /**< Open valve command          */
+#define SYN_CJT188_VALVE_CLOSE 0x99U /**< Close valve command         */
 
 /* ── Framing Delimiters ─────────────────────────────────────────────────── */
 
-#define SYN_CJT188_PREAMBLE_BYTE         0xFEU /**< Leading preamble byte       */
-#define SYN_CJT188_START_BYTE            0x68U /**< Frame start delimiter       */
-#define SYN_CJT188_END_BYTE              0x16U /**< Frame end delimiter         */
-#define SYN_CJT188_MIN_FRAME_SIZE        13U   /**< Min frame without preamble  */
-#define SYN_CJT188_MAX_FRAME_SIZE        128U  /**< Max supported frame length  */
+#define SYN_CJT188_PREAMBLE_BYTE 0xFEU /**< Leading preamble byte       */
+#define SYN_CJT188_START_BYTE 0x68U    /**< Frame start delimiter       */
+#define SYN_CJT188_END_BYTE 0x16U      /**< Frame end delimiter         */
+#define SYN_CJT188_MIN_FRAME_SIZE 13U  /**< Min frame without preamble  */
+#define SYN_CJT188_MAX_FRAME_SIZE 128U /**< Max supported frame length  */
 
 /* ── Data Structures ────────────────────────────────────────────────────── */
 
@@ -120,8 +120,8 @@ uint8_t syn_cjt188_checksum(const uint8_t *buf, size_t len);
  * @return Total bytes written to out_buf, or 0 if buffer too small.
  */
 size_t syn_cjt188_encode_read_req(uint8_t *out_buf, size_t buf_size, uint8_t meter_type,
-                                   const uint8_t meter_id[5], const uint8_t vendor_id[2],
-                                   uint16_t data_id, uint8_t seq);
+                                  const uint8_t meter_id[5], const uint8_t vendor_id[2],
+                                  uint16_t data_id, uint8_t seq);
 
 /**
  * @brief Encode a CJ/T 188 Valve Control Request (`0x04`).
@@ -136,8 +136,8 @@ size_t syn_cjt188_encode_read_req(uint8_t *out_buf, size_t buf_size, uint8_t met
  * @return Total bytes written, or 0 if buffer too small.
  */
 size_t syn_cjt188_encode_valve_ctrl(uint8_t *out_buf, size_t buf_size, uint8_t meter_type,
-                                      const uint8_t meter_id[5], const uint8_t vendor_id[2],
-                                      bool open_valve, uint8_t seq);
+                                    const uint8_t meter_id[5], const uint8_t vendor_id[2],
+                                    bool open_valve, uint8_t seq);
 
 /**
  * @brief Parse a raw CJ/T 188 binary frame.
@@ -162,7 +162,8 @@ void syn_cjt188_decoder_init(SYN_CJT188_Decoder *decoder);
  * @param out_frame  Output frame structure populated when a complete frame arrives.
  * @return true if a complete valid frame was decoded, false otherwise.
  */
-bool syn_cjt188_decoder_feed(SYN_CJT188_Decoder *decoder, uint8_t byte, SYN_CJT188_Frame *out_frame);
+bool syn_cjt188_decoder_feed(SYN_CJT188_Decoder *decoder, uint8_t byte,
+                             SYN_CJT188_Frame *out_frame);
 
 #ifdef __cplusplus
 }

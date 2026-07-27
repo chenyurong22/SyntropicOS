@@ -15,6 +15,9 @@
 SYN_Status syn_gpio_init_multiple(const SYN_GPIO_Pin *pins, size_t count, SYN_GPIO_Mode mode)
 {
     SYN_ASSERT(pins != NULL || count == 0);
+    if (pins == NULL && count > 0) {
+        return SYN_INVALID_PARAM;
+    }
 
     for (size_t i = 0; i < count; i++) {
         SYN_Status status = syn_port_gpio_init(pins[i], mode);
@@ -28,6 +31,9 @@ SYN_Status syn_gpio_init_multiple(const SYN_GPIO_Pin *pins, size_t count, SYN_GP
 SYN_Status syn_gpio_write_multiple(const SYN_GPIO_Pin *pins, size_t count, SYN_GPIO_State state)
 {
     SYN_ASSERT(pins != NULL || count == 0);
+    if (pins == NULL && count > 0) {
+        return SYN_INVALID_PARAM;
+    }
 
     for (size_t i = 0; i < count; i++) {
         SYN_Status status = syn_port_gpio_write(pins[i], state);

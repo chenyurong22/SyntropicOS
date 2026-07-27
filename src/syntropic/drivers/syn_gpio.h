@@ -22,7 +22,7 @@ extern "C" {
 /**
  * @brief Helper macro to pack Port Index (0..15) and Pin Number (0..15) into a 16-bit SYN_GPIO_Pin.
  */
-#define SYN_GPIO_PIN(port_idx, pin_num) (((uint16_t)(port_idx) << 4) | ((pin_num) & 0x0F))
+#define SYN_GPIO_PIN(port_idx, pin_num) (((uint16_t)(port_idx) << 4) | ((pin_num)&0x0F))
 #endif
 
 #ifndef SYN_GPIO_PIN_PORT
@@ -36,7 +36,7 @@ extern "C" {
 /**
  * @brief Helper macro to extract Pin Number (0..15) from a packed SYN_GPIO_Pin.
  */
-#define SYN_GPIO_PIN_NUM(pin) ((uint8_t)((uint16_t)(pin) & 0x0F))
+#define SYN_GPIO_PIN_NUM(pin) ((uint8_t)((uint16_t)(pin)&0x0F))
 #endif
 
 /* ── Convenience wrappers (inline pass-through to port layer) ─────────── */

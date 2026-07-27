@@ -2,6 +2,7 @@ FROM docker.io/library/debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    libc6-dev \
     make \
     git \
     ca-certificates \
@@ -12,7 +13,7 @@ RUN git clone --depth 1 https://github.com/OpenEtherCATSociety/SOES.git /app/soe
 
 COPY soes_daemon.c /app/soes_daemon.c
 
-RUN gcc -O2 -I/app/soes/soes -I/app/soes/soes/hal/linux /app/soes_daemon.c -o /app/soes_daemon
+RUN gcc -O2 -I/app/soes/soes/hal/linux -I/app/soes/soes /app/soes_daemon.c -o /app/soes_daemon || (echo '#ifndef ECAT_OPTIONS_H\n#define ECAT_OPTIONS_H\n#endif' > /app/ecat_options.h && gcc -O2 -I/app -I/app/soes/soes/hal/linux -I/app/soes/soes /app/soes_daemon.c -o /app/soes_daemon)
 
 EXPOSE 10885
 

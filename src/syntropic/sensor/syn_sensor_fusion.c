@@ -13,6 +13,9 @@
 void syn_sensor_fusion_init(SYN_SensorFusion *f, q16_t Kp, q16_t Ki, q16_t dt)
 {
     SYN_ASSERT(f != NULL);
+    if (f == NULL) {
+        return;
+    }
 
     memset(f, 0, sizeof(*f));
     f->Kp = Kp;
@@ -28,6 +31,9 @@ void syn_sensor_fusion_init(SYN_SensorFusion *f, q16_t Kp, q16_t Ki, q16_t dt)
 void syn_sensor_fusion_reset(SYN_SensorFusion *f)
 {
     SYN_ASSERT(f != NULL);
+    if (f == NULL) {
+        return;
+    }
 
     f->q.w = Q16_ONE;
     f->q.x = 0;

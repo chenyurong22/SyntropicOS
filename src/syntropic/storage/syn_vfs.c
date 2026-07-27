@@ -33,6 +33,10 @@ SYN_Status syn_vfs_mount(const char *prefix, const SYN_VfsOps *ops, void *fs_dat
     SYN_ASSERT(prefix != NULL);
     SYN_ASSERT(ops != NULL);
 
+    if (prefix == NULL || ops == NULL) {
+        return SYN_INVALID_PARAM;
+    }
+
     if (g_mount_count >= SYN_VFS_MAX_MOUNTS) {
         return SYN_ERROR;
     }
@@ -56,6 +60,9 @@ SYN_Status syn_vfs_mount(const char *prefix, const SYN_VfsOps *ops, void *fs_dat
 SYN_Status syn_vfs_unmount(const char *prefix)
 {
     SYN_ASSERT(prefix != NULL);
+    if (prefix == NULL) {
+        return SYN_INVALID_PARAM;
+    }
 
     for (size_t i = 0; i < g_mount_count; i++) {
         if (strcmp(g_mounts[i].prefix, prefix) == 0) {

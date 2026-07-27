@@ -81,6 +81,10 @@ SYN_Status syn_aes128_init(SYN_AES128_Context *ctx, const uint8_t key[SYN_AES128
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(key != NULL);
 
+    if (ctx == NULL || key == NULL) {
+        return SYN_INVALID_PARAM;
+    }
+
     memcpy(ctx->round_keys, key, 16);
     uint8_t temp[4];
     uint8_t i = 0;
@@ -125,6 +129,10 @@ void syn_aes128_encrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(in != NULL);
     SYN_ASSERT(out != NULL);
+
+    if (ctx == NULL || in == NULL || out == NULL) {
+        return;
+    }
 
     uint8_t state[4][4];
     for (int r = 0; r < 4; r++) {
@@ -190,6 +198,10 @@ void syn_aes128_decrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(in != NULL);
     SYN_ASSERT(out != NULL);
+
+    if (ctx == NULL || in == NULL || out == NULL) {
+        return;
+    }
 
     uint8_t state[4][4];
     for (int r = 0; r < 4; r++) {
@@ -260,6 +272,10 @@ SYN_Status syn_aes128_cbc_encrypt(const SYN_AES128_Context *ctx, const uint8_t i
     SYN_ASSERT(out != NULL);
     SYN_ASSERT(out_len != NULL);
 
+    if (ctx == NULL || iv == NULL || (in == NULL && in_len > 0) || out == NULL || out_len == NULL) {
+        return SYN_INVALID_PARAM;
+    }
+
     size_t pad_len = 16 - (in_len % 16);
     size_t total_len = in_len + pad_len;
 
@@ -306,7 +322,8 @@ SYN_Status syn_aes128_cbc_decrypt(const SYN_AES128_Context *ctx, const uint8_t i
     SYN_ASSERT(out != NULL);
     SYN_ASSERT(out_len != NULL);
 
-    if (in_len == 0 || in_len % 16 != 0 || out_capacity < in_len) {
+    if (ctx == NULL || iv == NULL || in == NULL || out == NULL || out_len == NULL ||
+        in_len == 0 || in_len % 16 != 0 || out_capacity < in_len) {
         return SYN_INVALID_PARAM;
     }
 

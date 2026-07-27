@@ -175,6 +175,9 @@ static void sha256_transform(uint32_t state[8], const uint8_t block[64])
 void syn_sha256_init(SYN_SHA256 *ctx)
 {
     SYN_ASSERT(ctx != NULL);
+    if (ctx == NULL) {
+        return;
+    }
     memcpy(ctx->state, H_INIT, sizeof(H_INIT));
     ctx->buf_len = 0;
     ctx->total_len_lo = 0;
@@ -184,7 +187,7 @@ void syn_sha256_init(SYN_SHA256 *ctx)
 void syn_sha256_update(SYN_SHA256 *ctx, const void *data, size_t len)
 {
     SYN_ASSERT(ctx != NULL);
-    if (data == NULL || len == 0)
+    if (ctx == NULL || data == NULL || len == 0)
         return;
 
     const uint8_t *p = (const uint8_t *)data;
@@ -230,6 +233,10 @@ void syn_sha256_final(SYN_SHA256 *ctx, uint8_t hash[SYN_SHA256_DIGEST_SIZE])
 {
     SYN_ASSERT(ctx != NULL);
     SYN_ASSERT(hash != NULL);
+
+    if (ctx == NULL || hash == NULL) {
+        return;
+    }
 
     /* Pad: append 0x80, then zeros, then 64-bit big-endian length */
     ctx->buf[ctx->buf_len++] = 0x80;

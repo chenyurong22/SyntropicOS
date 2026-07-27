@@ -285,6 +285,9 @@ bool syn_json_parse(SYN_JsonReader *r, char *json, size_t len)
 {
     SYN_ASSERT(r != NULL);
     SYN_ASSERT(json != NULL);
+    if (r == NULL || json == NULL || len == 0) {
+        return false;
+    }
 
     memset(r, 0, sizeof(*r));
 
@@ -306,7 +309,7 @@ const SYN_JsonToken *syn_json_find(const SYN_JsonReader *r, const char *key)
     SYN_ASSERT(r != NULL);
     SYN_ASSERT(key != NULL);
 
-    if (!r->valid)
+    if (r == NULL || key == NULL || !r->valid)
         return NULL;
 
     /* Check for dot notation: "parent.child" */
@@ -358,6 +361,9 @@ const SYN_JsonToken *syn_json_find(const SYN_JsonReader *r, const char *key)
 
 bool syn_json_get_str(const SYN_JsonReader *r, const char *key, char *out, size_t out_sz)
 {
+    if (r == NULL || key == NULL || out == NULL || out_sz == 0) {
+        return false;
+    }
     const SYN_JsonToken *tok = syn_json_find(r, key);
     if (tok == NULL || tok->type != SYN_JSON_STRING)
         return false;

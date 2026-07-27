@@ -180,6 +180,10 @@ void syn_json_init(SYN_JsonWriter *w, char *buf, size_t capacity)
     SYN_ASSERT(buf != NULL);
     SYN_ASSERT(capacity > 0);
 
+    if (w == NULL || buf == NULL || capacity == 0) {
+        return;
+    }
+
     w->buf = buf;
     w->capacity = capacity;
     w->len = 0;
@@ -192,6 +196,9 @@ void syn_json_init(SYN_JsonWriter *w, char *buf, size_t capacity)
 void syn_json_obj_open(SYN_JsonWriter *w)
 {
     SYN_ASSERT(w != NULL);
+    if (w == NULL) {
+        return;
+    }
     if (w->depth >= SYN_JSON_MAX_DEPTH) {
         w->overflow = true;
         return;
@@ -207,6 +214,9 @@ void syn_json_obj_open(SYN_JsonWriter *w)
 void syn_json_obj_close(SYN_JsonWriter *w)
 {
     SYN_ASSERT(w != NULL);
+    if (w == NULL) {
+        return;
+    }
     jw_putc(w, '}');
     if (w->depth > 0)
         w->depth--;
@@ -216,6 +226,9 @@ void syn_json_obj_close(SYN_JsonWriter *w)
 void syn_json_arr_open(SYN_JsonWriter *w)
 {
     SYN_ASSERT(w != NULL);
+    if (w == NULL) {
+        return;
+    }
     if (w->depth >= SYN_JSON_MAX_DEPTH) {
         w->overflow = true;
         return;
@@ -230,6 +243,9 @@ void syn_json_arr_open(SYN_JsonWriter *w)
 void syn_json_arr_close(SYN_JsonWriter *w)
 {
     SYN_ASSERT(w != NULL);
+    if (w == NULL) {
+        return;
+    }
     jw_putc(w, ']');
     if (w->depth > 0)
         w->depth--;
@@ -240,6 +256,9 @@ void syn_json_key(SYN_JsonWriter *w, const char *key)
 {
     SYN_ASSERT(w != NULL);
     SYN_ASSERT(key != NULL);
+    if (w == NULL || key == NULL) {
+        return;
+    }
     jw_comma(w);
     jw_str(w, key);
     jw_putc(w, ':');
@@ -250,6 +269,9 @@ void syn_json_key_str(SYN_JsonWriter *w, const char *key, const char *val)
 {
     SYN_ASSERT(w != NULL);
     SYN_ASSERT(key != NULL);
+    if (w == NULL || key == NULL) {
+        return;
+    }
     jw_comma(w);
     jw_str(w, key);
     jw_putc(w, ':');

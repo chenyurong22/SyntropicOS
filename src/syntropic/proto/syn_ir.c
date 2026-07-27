@@ -190,7 +190,7 @@ static bool timing_match(uint16_t actual, uint16_t expected, uint16_t tolerance)
 
 const char *syn_ir_protocol_name(SYN_IR_Protocol proto)
 {
-    if ((int)proto < 0 || proto >= SYN_IR_PROTO_COUNT) {
+    if (proto >= SYN_IR_PROTO_COUNT) {
         return "Unknown";
     }
     return proto_table[proto].name;
@@ -222,7 +222,7 @@ SYN_Status syn_ir_decoder_init(SYN_IR_Decoder *decoder)
 static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
 {
     SYN_IR_Protocol proto = decoder->active_proto;
-    if ((int)proto < 0 || proto >= SYN_IR_PROTO_COUNT) {
+    if (proto >= SYN_IR_PROTO_COUNT) {
         return false;
     }
     const SYN_IR_ProtoDesc *desc = &proto_table[proto];

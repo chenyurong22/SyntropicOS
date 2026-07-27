@@ -22,7 +22,7 @@ static const SYN_CANOpenODEntry test_od[] = {
     {0x2001U, 0x02U, SYN_CANOPEN_TYPE_U8, SYN_CANOPEN_ACCESS_RO, &od_node_status,
      sizeof(od_node_status)},
     {0x2002U, 0x00U, SYN_CANOPEN_TYPE_U8, SYN_CANOPEN_ACCESS_WO, &od_wo_val, sizeof(od_wo_val)},
-    {0x2003U, 0x00U, SYN_CANOPEN_TYPE_U32, SYN_CANOPEN_ACCESS_RO, &od_large_val,
+    {0x2003U, 0x00U, SYN_CANOPEN_TYPE_U32, SYN_CANOPEN_ACCESS_RW, &od_large_val,
      sizeof(od_large_val)}};
 
 static void test_canopen_init_and_bootup(void)
@@ -438,6 +438,35 @@ static void test_canopen_sdo_segmented_transfer(void)
     TEST_ASSERT_EQUAL(0x585U, tx_id);
     TEST_ASSERT_EQUAL(0x1DU, tx_buf[0]); /* t=1, n=6 (1 byte remaining), c=1 (last segment) */
     TEST_ASSERT_EQUAL(0x11U, tx_buf[1]);
+
+    /* 2. Test Segmented Download of 0x2003:0x00 (8-byte od_large_val) */
+    syn_canopen_init(&node, &cfg, test_od, sizeof(test_od) / sizeof(test_od[0]));
+    syn_canopen_get_tx(&node, &dummy_id, dummy_buf, &dummy_len);
+
+    uint8_t dn_init[8] = {0x20U, 0x03U, 0x20U, 0x00U, 8, 0, 0, 0}; /* e=0, s=1 */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, dn_init, 8));
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x60U, tx_buf[0]);
+
+    /* Segment 0 Download Request (7 bytes) */
+    uint8_t seg0_dn[8] = {0x00U, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, seg0_dn, 8));
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x20U, tx_buf[0]); /* t=0 ack */
+
+    /* Segment 1 Download Request (1 byte, c=1, n=6) */
+    uint8_t seg1_dn[8] = {0x1DU, 0x22, 0, 0, 0, 0, 0, 0};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, seg1_dn, 8));
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    const uint8_t *val_bytes = (const uint8_t *)&od_large_val;
+    TEST_ASSERT_EQUAL_HEX8(0xAA, val_bytes[0]);
+    TEST_ASSERT_EQUAL_HEX8(0xBB, val_bytes[1]);
+    TEST_ASSERT_EQUAL_HEX8(0xCC, val_bytes[2]);
+    TEST_ASSERT_EQUAL_HEX8(0xDD, val_bytes[3]);
+    TEST_ASSERT_EQUAL_HEX8(0xEE, val_bytes[4]);
+    TEST_ASSERT_EQUAL_HEX8(0xFF, val_bytes[5]);
+    TEST_ASSERT_EQUAL_HEX8(0x11, val_bytes[6]);
+    TEST_ASSERT_EQUAL_HEX8(0x22, val_bytes[7]);
 }
 
 void run_canopen_tests(void)

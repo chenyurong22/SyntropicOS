@@ -110,8 +110,13 @@ static void send_exception(SYN_Modbus *mb, uint8_t func, uint8_t ex_code)
  * @param regs       Register array.
  * @param reg_count  Total register count.
  */
-static void handle_read_regs(SYN_Modbus *mb, const uint16_t *regs, uint16_t reg_count)
+static void handle_read_regs(SYN_Modbus *mb, uint16_t frame_len, const uint16_t *regs, uint16_t reg_count)
 {
+    if (frame_len < 8) {
+        send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_VALUE);
+        return;
+    }
+
     uint16_t addr = read_u16(&mb->buf[2]);
     uint16_t count = read_u16(&mb->buf[4]);
 
@@ -137,8 +142,13 @@ static void handle_read_regs(SYN_Modbus *mb, const uint16_t *regs, uint16_t reg_
  * @brief Handle Modbus write single register request.
  * @param mb  Modbus instance.
  */
-static void handle_write_single(SYN_Modbus *mb)
+static void handle_write_single(SYN_Modbus *mb, uint16_t frame_len)
 {
+    if (frame_len < 8) {
+        send_exception(mb, SYN_MB_FC_WRITE_SINGLE, SYN_MB_EX_ILLEGAL_VALUE);
+        return;
+    }
+
     uint16_t addr = read_u16(&mb->buf[2]);
     uint16_t value = read_u16(&mb->buf[4]);
 
@@ -165,13 +175,18 @@ static void handle_write_single(SYN_Modbus *mb)
  * @brief Handle Modbus write multiple registers request.
  * @param mb  Modbus instance.
  */
-static void handle_write_multiple(SYN_Modbus *mb)
+static void handle_write_multiple(SYN_Modbus *mb, uint16_t frame_len)
 {
+    if (frame_len < 9) {
+        send_exception(mb, SYN_MB_FC_WRITE_MULTIPLE, SYN_MB_EX_ILLEGAL_VALUE);
+        return;
+    }
+
     uint16_t addr = read_u16(&mb->buf[2]);
     uint16_t count = read_u16(&mb->buf[4]);
     uint8_t bytes = mb->buf[6];
 
-    if (count == 0 || count > 123 || bytes != count * 2) {
+    if (count == 0 || count > 123 || bytes != count * 2 || frame_len < (uint16_t)(9 + bytes)) {
         send_exception(mb, SYN_MB_FC_WRITE_MULTIPLE, SYN_MB_EX_ILLEGAL_VALUE);
         return;
     }
@@ -512,10 +527,15 @@ static void set_bit(uint8_t *bits, uint16_t idx, bool val)
 /**
  * @brief Handle Read Coils (FC 0x01) and Read Discrete Inputs (FC 0x02).
  */
-static void handle_read_bits(SYN_Modbus *mb, const uint8_t *bits, uint16_t total_bits)
+static void handle_read_bits(SYN_Modbus *mb, uint16_t frame_len, const uint8_t *bits, uint16_t total_bits)
 {
     if (bits == NULL) {
         send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_ADDR);
+        return;
+    }
+
+    if (frame_len < 8) {
+        send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_VALUE);
         return;
     }
 
@@ -549,10 +569,15 @@ static void handle_read_bits(SYN_Modbus *mb, const uint8_t *bits, uint16_t total
 /**
  * @brief Handle Write Single Coil (FC 0x05).
  */
-static void handle_write_single_coil(SYN_Modbus *mb)
+static void handle_write_single_coil(SYN_Modbus *mb, uint16_t frame_len)
 {
     if (mb->cfg.coils == NULL) {
         send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_ADDR);
+        return;
+    }
+
+    if (frame_len < 8) {
+        send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_VALUE);
         return;
     }
 
@@ -577,10 +602,15 @@ static void handle_write_single_coil(SYN_Modbus *mb)
 /**
  * @brief Handle Write Multiple Coils (FC 0x0F).
  */
-static void handle_write_multiple_coils(SYN_Modbus *mb)
+static void handle_write_multiple_coils(SYN_Modbus *mb, uint16_t frame_len)
 {
     if (mb->cfg.coils == NULL) {
         send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_ADDR);
+        return;
+    }
+
+    if (frame_len < 9) {
+        send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_VALUE);
         return;
     }
 
@@ -589,7 +619,8 @@ static void handle_write_multiple_coils(SYN_Modbus *mb)
     uint8_t byte_count = mb->buf[6];
 
     uint8_t expected_bytes = (uint8_t)((count + 7U) / 8U);
-    if (count == 0 || count > 1968 || byte_count != expected_bytes) {
+    if (count == 0 || count > 1968 || byte_count != expected_bytes ||
+        frame_len < (uint16_t)(9 + byte_count)) {
         send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_VALUE);
         return;
     }
@@ -768,35 +799,35 @@ bool syn_modbus_process(SYN_Modbus *mb)
     case SYN_MB_FC_READ_COILS:
         if (is_broadcast)
             break;
-        handle_read_bits(mb, mb->cfg.coils, mb->cfg.coils_count);
+        handle_read_bits(mb, len, mb->cfg.coils, mb->cfg.coils_count);
         return true;
 
     case SYN_MB_FC_READ_DISCRETE_INPUTS:
         if (is_broadcast)
             break;
-        handle_read_bits(mb, mb->cfg.discrete_inputs, mb->cfg.discrete_count);
+        handle_read_bits(mb, len, mb->cfg.discrete_inputs, mb->cfg.discrete_count);
         return true;
 
     case SYN_MB_FC_READ_HOLDING:
         if (is_broadcast)
             break;
-        handle_read_regs(mb, mb->cfg.holding_regs, mb->cfg.holding_count);
+        handle_read_regs(mb, len, mb->cfg.holding_regs, mb->cfg.holding_count);
         mb->comm_event_counter++;
         return true;
 
     case SYN_MB_FC_READ_INPUT:
         if (is_broadcast)
             break;
-        handle_read_regs(mb, mb->cfg.input_regs, mb->cfg.input_count);
+        handle_read_regs(mb, len, mb->cfg.input_regs, mb->cfg.input_count);
         mb->comm_event_counter++;
         return true;
 
     case SYN_MB_FC_WRITE_SINGLE_COIL:
-        handle_write_single_coil(mb);
+        handle_write_single_coil(mb, len);
         return !is_broadcast;
 
     case SYN_MB_FC_WRITE_SINGLE:
-        handle_write_single(mb);
+        handle_write_single(mb, len);
         mb->comm_event_counter++;
         return !is_broadcast;
 
@@ -825,11 +856,11 @@ bool syn_modbus_process(SYN_Modbus *mb)
         return true;
 
     case SYN_MB_FC_WRITE_MULTIPLE_COILS:
-        handle_write_multiple_coils(mb);
+        handle_write_multiple_coils(mb, len);
         return !is_broadcast;
 
     case SYN_MB_FC_WRITE_MULTIPLE:
-        handle_write_multiple(mb);
+        handle_write_multiple(mb, len);
         mb->comm_event_counter++;
         return !is_broadcast;
 

@@ -18,7 +18,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc g++ clang clang-format make cmake gcc-arm-none-eabi libnewlib-arm-none-eabi lcov cppcheck valgrind
+          sudo apt-get install -y lcov
 
       - name: Run Code Formatting Check
         run: |

@@ -121,6 +121,9 @@ void syn_servo_move_to(SYN_Servo *servo, uint16_t angle, uint16_t duration)
 void syn_servo_update(SYN_Servo *servo)
 {
     SYN_ASSERT(servo != NULL);
+    if (servo == NULL) {
+        return;
+    }
 
     if (servo->current_us == servo->target_us || servo->rate == 0)
         return;

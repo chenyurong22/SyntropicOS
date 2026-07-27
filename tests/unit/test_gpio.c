@@ -66,6 +66,13 @@ static void test_gpio_single_ops(void)
     TEST_ASSERT_EQUAL_INT(SYN_GPIO_LOW, syn_gpio_read(99));
 }
 
+/** null pins with count > 0 */
+static void test_gpio_null_pins(void)
+{
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_gpio_init_multiple(NULL, 5, SYN_GPIO_OUTPUT));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_gpio_write_multiple(NULL, 5, SYN_GPIO_HIGH));
+}
+
 void run_gpio_tests(void)
 {
     RUN_TEST(test_gpio_init_multiple);
@@ -75,4 +82,5 @@ void run_gpio_tests(void)
     RUN_TEST(test_gpio_write_multiple_zero);
     RUN_TEST(test_gpio_write_multiple_fail);
     RUN_TEST(test_gpio_single_ops);
+    RUN_TEST(test_gpio_null_pins);
 }

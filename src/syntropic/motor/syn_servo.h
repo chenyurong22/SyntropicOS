@@ -108,6 +108,8 @@ void syn_servo_update(SYN_Servo *servo);
  */
 static inline uint16_t syn_servo_get_pulse_us(const SYN_Servo *servo)
 {
+    if (servo == NULL)
+        return 0;
     return servo->current_us;
 }
 
@@ -118,6 +120,8 @@ static inline uint16_t syn_servo_get_pulse_us(const SYN_Servo *servo)
  */
 static inline uint16_t syn_servo_get_angle(const SYN_Servo *servo)
 {
+    if (servo == NULL)
+        return 0;
     uint32_t range_us = (uint32_t)(servo->pulse_max - servo->pulse_min);
     if (range_us == 0)
         return 0;
@@ -132,6 +136,8 @@ static inline uint16_t syn_servo_get_angle(const SYN_Servo *servo)
  */
 static inline bool syn_servo_at_target(const SYN_Servo *servo)
 {
+    if (servo == NULL)
+        return true;
     return servo->current_us == servo->target_us;
 }
 

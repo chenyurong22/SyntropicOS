@@ -86,9 +86,36 @@ static void test_servo_rate_clamp(void)
     TEST_ASSERT_FALSE(syn_servo_at_target(&servo));
 }
 
+static void test_servo_edge_cases_and_nulls(void)
+{
+    SYN_Servo servo;
+    memset(&servo, 0, sizeof(servo));
+    syn_servo_init(NULL, 1000, 2000, 180);
+    syn_servo_init(&servo, 2000, 1000, 180); /* invalid range */
+    syn_servo_init(&servo, 1000, 2000, 0);    /* invalid range */
+
+    syn_servo_init(&servo, 1000, 2000, 180);
+
+    /* Out of bounds clamping */
+    syn_servo_set_angle(&servo, 250); /* > 180 */
+    TEST_ASSERT_EQUAL_INT(2000, syn_servo_get_pulse_us(&servo));
+
+    syn_servo_set_pulse(&servo, 500); /* < 1000 */
+    TEST_ASSERT_EQUAL_INT(1000, syn_servo_get_pulse_us(&servo));
+
+    syn_servo_set_pulse(&servo, 2500); /* > 2000 */
+    TEST_ASSERT_EQUAL_INT(2000, syn_servo_get_pulse_us(&servo));
+
+    /* Check NULL getters */
+    TEST_ASSERT_EQUAL_INT(0, syn_servo_get_pulse_us(NULL));
+    TEST_ASSERT_EQUAL_INT(0, syn_servo_get_angle(NULL));
+    TEST_ASSERT_TRUE(syn_servo_at_target(NULL));
+}
+
 void run_servo_tests(void)
 {
     RUN_TEST(test_servo);
     RUN_TEST(test_servo_move_immediate);
     RUN_TEST(test_servo_rate_clamp);
+    RUN_TEST(test_servo_edge_cases_and_nulls);
 }

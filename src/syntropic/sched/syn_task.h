@@ -25,10 +25,6 @@ extern "C" {
 
 /* ── Task states ────────────────────────────────────────────────────────── */
 
-/* Forward-declare SYN_EventGroup so tasks can hold a pointer to one
- * without pulling in the full event header.                          */
-struct SYN_EventGroup;
-
 /** @brief Cooperative task lifecycle state. */
 typedef enum {
     SYN_TASK_READY = 0,     /**< Eligible to run on next scheduler tick */

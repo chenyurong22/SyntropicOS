@@ -125,9 +125,10 @@ static SYN_PT_Status blink_task(SYN_PT *pt, SYN_Task *task)
 static SYN_PT_Status cli_task(SYN_PT *pt, SYN_Task *task)
 {
     uint8_t ch;
+    int r;
     PT_BEGIN(pt);
     for (;;) {
-        int r = syn_port_serial_read(&ch, 1);
+        r = syn_port_serial_read(&ch, 1);
         if (r > 0) {
             syn_cli_process_char(&cli, (char)ch);
             PT_YIELD(pt);
@@ -142,6 +143,7 @@ static SYN_PT_Status cli_task(SYN_PT *pt, SYN_Task *task)
 static SYN_PT_Status pid_task(SYN_PT *pt, SYN_Task *task)
 {
     PT_BEGIN(pt);
+    int32_t err;
     for (;;) {
         /* 1. Simulate thermal plant behavior */
         raw_temp = simulate_thermal_plant(raw_temp, heater_pwm);
@@ -153,7 +155,7 @@ static SYN_PT_Status pid_task(SYN_PT *pt, SYN_Task *task)
         heater_pwm = syn_pid_update(&pid, setpoint, filt_temp, 100);
 
         /* 4. Check convergence stability */
-        int32_t err = abs(setpoint - filt_temp);
+        err = abs(setpoint - filt_temp);
         if (err <= 5) { /* within ±0.5°C */
             if (settled_count < 10) {
                 settled_count++;

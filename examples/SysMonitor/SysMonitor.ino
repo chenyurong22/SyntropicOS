@@ -59,7 +59,7 @@ static void on_wdt_timeout(SYN_Watchdog *w, const SYN_WDT_Entry *entry, void *ct
 {
     (void)w; (void)ctx;
     syn_cli_printf(&cli, "[WDT] Timeout detected on task: %s!\r\n", entry->name ? entry->name : "unknown");
-    syn_errlog_record(&errlog, ERR_WDT_TIMEOUT, SYN_ERR_WARNING, (uint32_t)entry->name);
+    syn_errlog_record(&errlog, ERR_WDT_TIMEOUT, SYN_ERR_WARNING, (uintptr_t)entry->name);
     syn_led_pattern(&led, "... --- ... |", 100); /* Flash SOS pattern on fault */
 }
 

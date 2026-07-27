@@ -16,7 +16,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#if defined(SYN_USE_PMBUS) && SYN_USE_PMBUS
+#if !defined(SYN_USE_PMBUS) || SYN_USE_PMBUS
 
 #ifdef __cplusplus
 extern "C" {

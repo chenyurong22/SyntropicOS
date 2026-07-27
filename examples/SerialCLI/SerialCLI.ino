@@ -104,9 +104,10 @@ static SYN_PT_Status blink_task(SYN_PT *pt, SYN_Task *task)
 static SYN_PT_Status cli_task(SYN_PT *pt, SYN_Task *task)
 {
     uint8_t buf[16];
+    int r;
     PT_BEGIN(pt);
     for (;;) {
-        int r = syn_port_serial_read(buf, sizeof(buf));
+        r = syn_port_serial_read(buf, sizeof(buf));
         if (r > 0) {
             for (int i = 0; i < r; i++) {
                 syn_cli_process_char(&cli, (char)buf[i]);

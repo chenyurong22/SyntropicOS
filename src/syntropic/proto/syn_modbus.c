@@ -521,7 +521,7 @@ static void set_bit(uint8_t *bits, uint16_t idx, bool val)
     if (val) {
         bits[idx / 8U] |= (uint8_t)(1U << (idx % 8U));
     } else {
-        bits[idx / 8U] &= (uint8_t) ~(1U << (idx % 8U));
+        bits[idx / 8U] &= (uint8_t)~(1U << (idx % 8U));
     }
 }
 

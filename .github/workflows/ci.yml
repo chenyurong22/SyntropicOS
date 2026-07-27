@@ -9,21 +9,17 @@ on:
 
 jobs:
   test:
-    name: Build & Run Unit Tests
+    name: Build & Run Containerized Suite
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Build Dependencies
+      - name: Run Containerized Code Formatting Check
         run: |
-          sudo apt-get update
-          sudo apt-get install -y lcov
+          make container-format
 
-      - name: Run Code Formatting Check
+      - name: Run Containerized Unit Tests
         run: |
-          make format
+          make container-test
 
-      - name: Run Unit Tests
-        run: |
-          make test

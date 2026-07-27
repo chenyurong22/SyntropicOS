@@ -85,7 +85,7 @@ static GPIO_TypeDef *const gpio_ports[] = {GPIOA, GPIOB, GPIOC, GPIOD, GPIOE,
                                            GPIOF, GPIOG, GPIOH, GPIOI};
 #define NUM_GPIO_PORTS (sizeof(gpio_ports) / sizeof(gpio_ports[0]))
 #define GPIO_PORT(pin) gpio_ports[(pin) >> 4]
-#define GPIO_BIT(pin) ((pin)&0x0F)
+#define GPIO_BIT(pin) ((pin) & 0x0F)
 
 /* ── USART ──────────────────────────────────────────────────────────────── */
 

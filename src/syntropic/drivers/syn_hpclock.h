@@ -90,10 +90,7 @@ typedef struct {
 } SYN_HPTimestamp;
 
 /** @brief Static initializer for SYN_HPTimestamp (all zeros). */
-#define SYN_HPTIMESTAMP_INIT \
-    {                        \
-        0, 0, 0              \
-    }
+#define SYN_HPTIMESTAMP_INIT {0, 0, 0}
 
 /* ── Capture macro ─────────────────────────────────────────────────────── */
 

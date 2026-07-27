@@ -62,7 +62,7 @@ void syn_shiftreg_out_set_bit(SYN_ShiftRegOut *sr, uint16_t bit_index, bool stat
     if (state) {
         sr->buffer[chip_idx] |= (uint8_t)(1u << bit_pos);
     } else {
-        sr->buffer[chip_idx] &= (uint8_t) ~(1u << bit_pos);
+        sr->buffer[chip_idx] &= (uint8_t)~(1u << bit_pos);
     }
 }
 

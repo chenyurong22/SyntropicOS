@@ -21,7 +21,7 @@
 #include <stdint.h>
 
 /** @brief Physical parameters for the simulated plant. */
-typedef struct { /* ── Physical parameters ─────────────────────────────────────── */
+typedef struct {    /* ── Physical parameters ─────────────────────────────────────── */
     double mass_kg; /**< Cart mass (e.g., 136 kg = 300 lb)   */
 
     /* Motor model: F = Km * (command - Kb * velocity)

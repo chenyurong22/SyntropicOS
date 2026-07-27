@@ -52,7 +52,7 @@ typedef int32_t q16_t;
 /* ── Conversion macros ──────────────────────────────────────────────────── */
 
 /** Integer to Q16. */
-#define Q16_FROM_INT(n) ((q16_t)((int32_t)(n)*Q16_ONE))
+#define Q16_FROM_INT(n) ((q16_t)((int32_t)(n) * Q16_ONE))
 
 /** Fraction to Q16: Q16_FROM_FRAC(1, 3) ≈ 0.333. */
 #define Q16_FROM_FRAC(num, den) \
@@ -68,10 +68,10 @@ typedef int32_t q16_t;
 #define Q16_TO_INT_ROUND(q) ((int32_t)(((q) + Q16_HALF) >> Q16_SHIFT))
 
 /** Fractional part as 0–999 (for printf: "%d.%03d"). */
-#define Q16_FRAC_1000(q) ((int32_t)((((q)&0xFFFF) * 1000L) >> Q16_SHIFT))
+#define Q16_FRAC_1000(q) ((int32_t)((((q) & 0xFFFF) * 1000L) >> Q16_SHIFT))
 
 /** Fractional part as 0–9999 (for printf: "%d.%04d"). */
-#define Q16_FRAC_10000(q) ((int32_t)((((q)&0xFFFF) * 10000L) >> Q16_SHIFT))
+#define Q16_FRAC_10000(q) ((int32_t)((((q) & 0xFFFF) * 10000L) >> Q16_SHIFT))
 
 /* ── Inline arithmetic ──────────────────────────────────────────────────── */
 

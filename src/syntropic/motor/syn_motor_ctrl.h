@@ -266,7 +266,7 @@ typedef struct {
         .pid_kp = 1 << 6, /* 0.25 effective (conservative) */              \
         .pid_ki = 0,      /* no integral by default */                     \
         .pid_kd = 0,      /* no derivative by default */                   \
-        .pid_scale = 8,   /* gains ÷ 256 */                               \
+        .pid_scale = 8,   /* gains ÷ 256 */                                \
         .position_deadband = 2,                                            \
         .stall_timeout_ms = 1000,                                          \
         .stall_threshold = 1,                                              \

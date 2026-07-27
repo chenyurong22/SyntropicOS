@@ -103,7 +103,7 @@ typedef struct {
 #define SYN_PID_GAINS(kp_f, ki_f, kd_f, scale_val, omin, omax) \
     ((SYN_PID_Config){                                         \
         .kp = (int32_t)((kp_f) * (scale_val)),                 \
-        .ki = (int32_t)((ki_f) * (scale_val)*1000),            \
+        .ki = (int32_t)((ki_f) * (scale_val) * 1000),          \
         .kd = (int32_t)((kd_f) * (scale_val)),                 \
         .scale = (scale_val),                                  \
         .out_min = (omin),                                     \

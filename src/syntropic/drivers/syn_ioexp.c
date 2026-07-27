@@ -56,7 +56,7 @@ void syn_ioexp_set_pin_mode(SYN_IOExp *ioexp, uint8_t pin, SYN_GPIO_Mode mode)
         return;
 
     if (mode == SYN_GPIO_OUTPUT) {
-        ioexp->dir_mask &= (uint16_t) ~(1u << pin);
+        ioexp->dir_mask &= (uint16_t)~(1u << pin);
     } else {
         ioexp->dir_mask |= (uint16_t)(1u << pin);
         if (mode == SYN_GPIO_INPUT_PULLUP) {
@@ -81,7 +81,7 @@ void syn_ioexp_write_pin(SYN_IOExp *ioexp, uint8_t pin, SYN_GPIO_State state)
     if (state == SYN_GPIO_HIGH) {
         ioexp->out_mask |= (uint16_t)(1u << pin);
     } else {
-        ioexp->out_mask &= (uint16_t) ~(1u << pin);
+        ioexp->out_mask &= (uint16_t)~(1u << pin);
     }
 
     syn_ioexp_write_port(ioexp, ioexp->out_mask);

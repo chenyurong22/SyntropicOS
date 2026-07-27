@@ -46,7 +46,7 @@ typedef int16_t SYN_FSM_State; /**< FSM state type.  */
 typedef int16_t SYN_FSM_Event; /**< FSM event type.  */
 
 /** Sentinel value marking the end of a transition table. */
-#define SYN_FSM_STATE_NONE ((SYN_FSM_State)-1)
+#define SYN_FSM_STATE_NONE ((SYN_FSM_State) - 1)
 
 /**
  * @brief Guard function — return true to allow the transition.
@@ -73,10 +73,7 @@ typedef struct {
 } SYN_FSM_Transition;
 
 /** Table terminator. Place at the end of your transition array. */
-#define SYN_FSM_END                          \
-    {                                        \
-        SYN_FSM_STATE_NONE, 0, 0, NULL, NULL \
-    }
+#define SYN_FSM_END {SYN_FSM_STATE_NONE, 0, 0, NULL, NULL}
 
 /* ── State descriptor (optional) ────────────────────────────────────────── */
 
@@ -93,10 +90,7 @@ typedef struct {
 } SYN_FSM_StateDesc;
 
 /** State descriptor table terminator. */
-#define SYN_FSM_STATE_END              \
-    {                                  \
-        SYN_FSM_STATE_NONE, NULL, NULL \
-    }
+#define SYN_FSM_STATE_END {SYN_FSM_STATE_NONE, NULL, NULL}
 
 /* ── FSM instance ───────────────────────────────────────────────────────── */
 

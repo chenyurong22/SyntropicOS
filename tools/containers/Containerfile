@@ -1,5 +1,5 @@
 # SyntropicOS Lightweight Test & Tooling Container
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # Install compilation tools, sanitizers, cross-compilers, QEMU ARM, libFuzzer, static analysis, coverage & Doxygen tools
 RUN apt-get update && apt-get install -y --no-install-recommends \

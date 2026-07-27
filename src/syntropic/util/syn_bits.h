@@ -28,7 +28,7 @@ extern "C" {
 #define SYN_BIT_TOGGLE(reg, bit) ((reg) ^= SYN_BIT(bit))
 
 /** Check if bit @p bit is set in @p reg. Evaluates to non-zero if set. */
-#define SYN_BIT_CHECK(reg, bit) ((reg)&SYN_BIT(bit))
+#define SYN_BIT_CHECK(reg, bit) ((reg) & SYN_BIT(bit))
 
 /**
  * Produce a bitmask of @p width bits starting at bit position @p offset.

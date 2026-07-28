@@ -469,6 +469,10 @@ extern "C" {
 #include "net/syn_dhcp.h"
 #endif
 
+#if !defined(SYN_USE_ICMP) || SYN_USE_ICMP
+#include "net/syn_icmp.h"
+#endif
+
 #if !defined(SYN_USE_NMEA) || SYN_USE_NMEA
 #include "proto/syn_nmea.h"
 #endif

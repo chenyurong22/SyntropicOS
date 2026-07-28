@@ -538,6 +538,11 @@ int main(void)
     extern void test_dhcp_process_offer_and_ack(void);
     extern void test_dhcp_coroutine_pt(void);
     extern void test_dhcp_null_checks(void);
+    extern void test_icmp_init(void);
+    extern void test_icmp_checksum(void);
+    extern void test_icmp_build_echo_request(void);
+    extern void test_icmp_process_echo_request(void);
+    extern void test_icmp_null_checks(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -625,6 +630,11 @@ int main(void)
     RUN_TEST(test_dhcp_process_offer_and_ack);
     RUN_TEST(test_dhcp_coroutine_pt);
     RUN_TEST(test_dhcp_null_checks);
+    RUN_TEST(test_icmp_init);
+    RUN_TEST(test_icmp_checksum);
+    RUN_TEST(test_icmp_build_echo_request);
+    RUN_TEST(test_icmp_process_echo_request);
+    RUN_TEST(test_icmp_null_checks);
 
     return UNITY_END();
 }

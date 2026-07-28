@@ -9,13 +9,13 @@ SyntropicOS provides production-grade system resilience services, including cras
 ```mermaid
 flowchart TD
     PowerOn["System Power On"] --> BootMgr["Boot Manager (syn_boot)"]
-    BootMgr -- Crash Count Exceeded --> SafeMode["Safe Mode Boot / Fallback Slot"]
-    BootMgr -- Normal Boot --> CheckDump{"Previous HardFault Core Dump?"}
-    CheckDump -- Yes --> SaveErrLog["Record Crash Registers to syn_errlog"]
-    CheckDump -- No --> AppInit["Initialize System & Tasks"]
+    BootMgr -->|Crash Count Exceeded| SafeMode["Safe Mode Boot / Fallback Slot"]
+    BootMgr -->|Normal Boot| CheckDump{"Previous HardFault Core Dump?"}
+    CheckDump -->|Yes| SaveErrLog["Record Crash Registers to syn_errlog"]
+    CheckDump -->|No| AppInit["Initialize System & Tasks"]
     SaveErrLog --> AppInit
     AppInit --> RunLoop["Scheduler Task Loop"]
-    RunLoop -- HardFault / Crash --> CoreDumpSave["syn_coredump_save() -> Flash Sector"]
+    RunLoop -->|HardFault / Crash| CoreDumpSave["syn_coredump_save to Flash Sector"]
     CoreDumpSave --> Reset["System Reset"]
 ```
 

@@ -18,9 +18,9 @@ The `syn_trace` module is a high-speed, timestamped circular event recorder. It 
 
 ```mermaid
 flowchart LR
-    ISR["Hardware ISR"] -- SYN_TRACE() --> RingBuffer["SYN_Trace Circular Buffer"]
-    Task["OS Protothread"] -- SYN_TRACE() --> RingBuffer
-    RingBuffer -- syn_trace_dump() --> CLI["Serial CLI / Post-Mortem Log"]
+    ISR["Hardware ISR"] -->|SYN_TRACE| RingBuffer["SYN_Trace Circular Buffer"]
+    Task["OS Protothread"] -->|SYN_TRACE| RingBuffer
+    RingBuffer -->|syn_trace_dump| CLI["Serial CLI / Post-Mortem Log"]
 ```
 
 ### Complete Code Example

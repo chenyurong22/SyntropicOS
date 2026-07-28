@@ -18,8 +18,8 @@ SyntropicOS provides portable hardware abstraction drivers for GPIO, UART, ADC, 
 
 ```mermaid
 flowchart LR
-    HW["Hardware Peripheral (UART / ADC)"] -- ISR / DMA Interrupt --> RingBuf["SPSC Ring Buffer (syn_ringbuf)"]
-    RingBuf -- syn_uart_read() --> Task["Cooperative Protothread Task"]
+    HW["Hardware Peripheral (UART / ADC)"] -->|ISR / DMA Interrupt| RingBuf["SPSC Ring Buffer (syn_ringbuf)"]
+    RingBuf -->|syn_uart_read| Task["Cooperative Protothread Task"]
     Task --> Processing["Process Byte Stream"]
 ```
 

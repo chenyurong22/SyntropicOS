@@ -26,9 +26,9 @@ SyntropicOS provides header-only foundation macros, ISR-safe data structures, bi
 
 ```mermaid
 flowchart LR
-    ISR["UART ISR / DMA"] -- syn_stream_put() --> RingBuffer["Lock-Free Ring Buffer"]
-    RingBuffer -- PT_STREAM_WAIT() --> Protothread["Protothread Task"]
-    Protothread -- Read Line / Frame --> Processing["Process Message"]
+    ISR["UART ISR / DMA"] -->|syn_stream_put| RingBuffer["Lock-Free Ring Buffer"]
+    RingBuffer -->|PT_STREAM_WAIT| Protothread["Protothread Task"]
+    Protothread -->|Read Line / Frame| Processing["Process Message"]
 ```
 
 ### Complete Code Example (Line-Oriented Serial Stream)

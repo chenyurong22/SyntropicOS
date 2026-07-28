@@ -16,14 +16,14 @@ The `syn_settings` module simplifies non-volatile configuration management. It w
 
 ```mermaid
 flowchart TD
-    Init["syn_settings_init()"] --> CheckFlash{"Valid CRC in Flash?"}
-    CheckFlash -- Yes --> LoadFlash["Load Settings from Flash"]
-    CheckFlash -- No / Corrupted --> ApplyDefault["Apply Factory Defaults & Save"]
+    Init["syn_settings_init"] --> CheckFlash{"Valid CRC in Flash?"}
+    CheckFlash -->|Yes| LoadFlash["Load Settings from Flash"]
+    CheckFlash -->|No / Corrupted| ApplyDefault["Apply Factory Defaults & Save"]
     LoadFlash --> AppReady["Application Ready"]
     ApplyDefault --> AppReady
-    AppReady -- Modify Data & Save --> CheckDirty{"Data Changed?"}
-    CheckDirty -- Yes --> WriteFlash["Compute CRC-16 & Write Flash"]
-    CheckDirty -- No --> SkipWrite["Skip Write (Protect Flash Wear)"]
+    AppReady -->|Modify Data & Save| CheckDirty{"Data Changed?"}
+    CheckDirty -->|Yes| WriteFlash["Compute CRC-16 & Write Flash"]
+    CheckDirty -->|No| SkipWrite["Skip Write (Protect Flash Wear)"]
 ```
 
 ### Complete Code Example

@@ -23,8 +23,8 @@ The `syn_pid` module provides an integer-only PID controller with anti-windup cl
 ```mermaid
 flowchart LR
     Setpoint["Target Setpoint"] --> ErrorCalc["Error = Setpoint - Feedback"]
-    Feedback["Sensor Feedback"] --> ErrorCalc
-    ErrorCalc --> PID["SYN_PID (Kp + Ki + Kd)"]
+    Feedback --> ErrorCalc
+    ErrorCalc --> PID["SYN_PID (Kp, Ki, Kd)"]
     PID --> AntiWindup["Anti-Windup Clamp (Min/Max Out)"]
     AntiWindup --> Actuator["PWM / Motor Drive Output"]
 ```

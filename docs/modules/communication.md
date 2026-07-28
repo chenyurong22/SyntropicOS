@@ -34,10 +34,10 @@ For MCU-to-MCU serial communication over UART TTL or RS232/RS485, SyntropicOS pa
 
 ```mermaid
 flowchart LR
-    UART["Single-Byte UART RX Interrupt"] --> Decoder["syn_cobs_decoder_feed()"]
-    Decoder -- 0x00 Delimiter Found --> Assembly["Decoded Frame"]
-    Assembly --> Router["syn_router_feed()"]
-    Router -- Match Node ID & Msg Type --> Callback["Handler Callback (e.g. on_set_led)"]
+    UART["Single-Byte UART RX Interrupt"] --> Decoder["syn_cobs_decoder_feed"]
+    Decoder -->|0x00 Delimiter Found| Assembly["Decoded Frame"]
+    Assembly --> Router["syn_router_feed"]
+    Router -->|Match Node ID & Msg Type| Callback["Handler Callback (e.g. on_set_led)"]
 ```
 
 ### Complete STM32 HAL UART Single-Byte Interrupt Example

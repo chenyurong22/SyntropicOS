@@ -63,8 +63,8 @@ The **Active Object (AO)** integration combines three core primitives:
 
 ```mermaid
 flowchart LR
-    EventProducer["Async Interrupt / Driver"] -- syn_ao_post() --> EventQueue["SPSC Event Queue"]
-    EventQueue -- Protothread Task Run --> AOTask["syn_ao_step()"]
-    AOTask -- Dispatch Event --> FSM["SYN_FSM State Machine"]
+    EventProducer["Async Interrupt / Driver"] -->|syn_ao_post| EventQueue["SPSC Event Queue"]
+    EventQueue -->|Protothread Task Run| AOTask["syn_ao_step"]
+    AOTask -->|Dispatch Event| FSM["SYN_FSM State Machine"]
     FSM --> StateAction["Execute State Action Callback"]
 ```

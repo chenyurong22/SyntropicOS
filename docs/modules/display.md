@@ -13,7 +13,7 @@ The `syn_canvas` driver provides a hardware-agnostic framebuffer supporting both
 ```mermaid
 flowchart LR
     Drawing["Drawing Primitives (line, text, rect)"] --> Canvas["SYN_Canvas Framebuffer"]
-    Canvas -- syn_canvas_flush() --> HardwareFn["Flush Function (SPI/I2C DMA)"]
+    Canvas -->|syn_canvas_flush| HardwareFn["Flush Function (SPI/I2C DMA)"]
     HardwareFn --> OLED["Physical OLED / TFT Display"]
 ```
 

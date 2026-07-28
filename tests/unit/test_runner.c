@@ -668,6 +668,7 @@ int main(void)
     extern void test_igmp_non_igmp_packets(void);
     extern void run_bacnet_tests(void);
     extern void run_modbus_master_tests(void);
+    extern void run_lut_tests(void);
 
     RUN_TEST(test_igmp_init);
     RUN_TEST(test_igmp_join_and_leave);
@@ -678,6 +679,7 @@ int main(void)
 
     run_bacnet_tests();
     run_modbus_master_tests();
+    run_lut_tests();
 
     return UNITY_END();
 

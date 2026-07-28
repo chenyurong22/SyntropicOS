@@ -473,6 +473,14 @@ extern "C" {
 #include "net/syn_icmp.h"
 #endif
 
+#if !defined(SYN_USE_AUTOIP) || SYN_USE_AUTOIP
+#include "net/syn_autoip.h"
+#endif
+
+#if !defined(SYN_USE_NETCFG) || SYN_USE_NETCFG
+#include "net/syn_netcfg.h"
+#endif
+
 #if !defined(SYN_USE_NMEA) || SYN_USE_NMEA
 #include "proto/syn_nmea.h"
 #endif

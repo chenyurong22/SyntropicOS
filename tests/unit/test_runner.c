@@ -543,6 +543,15 @@ int main(void)
     extern void test_icmp_build_echo_request(void);
     extern void test_icmp_process_echo_request(void);
     extern void test_icmp_null_checks(void);
+    extern void test_autoip_init(void);
+    extern void test_autoip_probe_and_announce(void);
+    extern void test_autoip_process_arp_binding(void);
+    extern void test_autoip_coroutine_pt(void);
+    extern void test_autoip_null_checks(void);
+    extern void test_netcfg_init_static(void);
+    extern void test_netcfg_autoip_fallback(void);
+    extern void test_netcfg_coroutine_pt(void);
+    extern void test_netcfg_null_checks(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -635,6 +644,15 @@ int main(void)
     RUN_TEST(test_icmp_build_echo_request);
     RUN_TEST(test_icmp_process_echo_request);
     RUN_TEST(test_icmp_null_checks);
+    RUN_TEST(test_autoip_init);
+    RUN_TEST(test_autoip_probe_and_announce);
+    RUN_TEST(test_autoip_process_arp_binding);
+    RUN_TEST(test_autoip_coroutine_pt);
+    RUN_TEST(test_autoip_null_checks);
+    RUN_TEST(test_netcfg_init_static);
+    RUN_TEST(test_netcfg_autoip_fallback);
+    RUN_TEST(test_netcfg_coroutine_pt);
+    RUN_TEST(test_netcfg_null_checks);
 
     return UNITY_END();
 }

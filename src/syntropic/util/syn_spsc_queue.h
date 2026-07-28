@@ -80,6 +80,20 @@ bool syn_spsc_queue_is_full(const SYN_SPSC_Queue *q);
  */
 size_t syn_spsc_queue_count(const SYN_SPSC_Queue *q);
 
+/* ── Protothread & Task Integration ─────────────────────────────────────── */
+
+#include "../pt/syn_pt.h"
+
+/**
+ * @brief Wait until SPSC queue is not empty (polling).
+ */
+#define PT_QUEUE_WAIT_POP(pt, q) PT_WAIT_UNTIL(pt, !syn_spsc_queue_is_empty(q))
+
+/**
+ * @brief Block task execution (SYN_TASK_BLOCKED) until SPSC queue is not empty.
+ */
+#define PT_BLOCK_QUEUE_POP(pt, task, q) PT_BLOCK_CONDITION(pt, task, !syn_spsc_queue_is_empty(q))
+
 #ifdef __cplusplus
 }
 #endif

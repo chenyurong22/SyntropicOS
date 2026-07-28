@@ -32,8 +32,8 @@ static SYN_PT_Status syn_ao_pt_run(SYN_PT *pt, SYN_Task *task)
     PT_BEGIN(pt);
 
     for (;;) {
-        /* Yield until mailbox is not empty */
-        PT_WAIT_UNTIL(pt, !syn_mailbox_empty(&ao->mailbox));
+        /* Block task until mailbox is not empty */
+        PT_BLOCK_CONDITION(pt, task, !syn_mailbox_empty(&ao->mailbox));
 
         SYN_AO_Event ev;
         bool has_msg = syn_mailbox_receive(&ao->mailbox, &ev);
@@ -75,6 +75,9 @@ bool syn_ao_post(SYN_ActiveObject *ao, uint16_t sig, void *data)
 
     syn_port_enter_critical();
     bool success = syn_mailbox_post(&ao->mailbox, &ev);
+    if (success && ao->task.state == (uint8_t)SYN_TASK_BLOCKED) {
+        syn_task_resume(&ao->task);
+    }
     syn_port_exit_critical();
 
     return success;

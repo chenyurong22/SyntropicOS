@@ -26,7 +26,8 @@ Protothreads are stackless cooperative coroutines implemented via the Duff's dev
 | `PT_DELAY_MS(pt, target, ms)` | Non-blocking delay (needs a `uint32_t*` for deadline storage) |
 | `PT_TASK_DELAY_MS(pt, task, ms)` | Convenience form using `task->delay_until` |
 | `PT_DEFER(pt, task)` | Defer to all ready tasks regardless of priority (one pass) |
-| `PT_BLOCK_EVENT(pt, task, grp, mask)` | Block until any event bit is set (true blocking, not polled) |
+| `PT_BLOCK_CONDITION(pt, task, cond)` | Block task execution (`SYN_TASK_BLOCKED`) until condition expression becomes true |
+| `PT_BLOCK_EVENT(pt, task, grp, mask)` | Block task execution (`SYN_TASK_BLOCKED`) until event bit fires |
 
 ### Writing Tasks: Rules and Gotchas
 
@@ -239,11 +240,11 @@ Consider Task A (Priority 0) and Task B (Priority 1):
     - *Fix*: Use `PT_TASK_DELAY_MS` or `PT_BLOCK_EVENT` when waiting for external timing or peripheral interrupts.
 
 
-### Blocking on Events (`PT_BLOCK_EVENT`)
+### True Task Blocking Primitives (`SYN_TASK_BLOCKED`)
 
-The existing `PT_WAIT_EVENT` uses cooperative polling — the task stays READY, runs every pass, checks its condition, and returns `PT_WAITING`. This wastes CPU and prevents tickless sleep.
+Standard protothread `PT_WAIT_UNTIL` and `PT_WAIT_EVENT` use cooperative polling — the task stays `SYN_TASK_READY`, executes on every scheduler tick, checks its condition, and returns `SYN_PT_WAITING`. While functional, this wastes CPU cycles and prevents tickless sleep hardware low-power modes.
 
-`PT_BLOCK_EVENT` sets the task state to `SYN_TASK_BLOCKED`. The scheduler **skips the task entirely** until the event fires, then transitions it back to READY:
+SyntropicOS provides **First-Class Native Task Blocking**. When a coroutine blocks using `PT_BLOCK_CONDITION` or a subsystem blocking primitive, its task state transitions to `SYN_TASK_BLOCKED`. The scheduler **skips the task entirely** on subsequent ticks (zero CPU overhead) until an ISR, event, post, or timer calls `syn_task_resume(task)`:
 
 ```c
 #define EVT_DATA_READY  SYN_BIT(0)
@@ -252,7 +253,7 @@ static SYN_EventGroup uart_events;
 
 // ISR:
 void UART_IRQHandler(void) {
-    syn_event_set(&uart_events, EVT_DATA_READY);  // ISR-safe
+    syn_event_set(&uart_events, EVT_DATA_READY);  // ISR-safe, auto-resumes blocked tasks
 }
 
 // Task:
@@ -268,10 +269,26 @@ static SYN_PT_Status uart_task(SYN_PT *pt, SYN_Task *task)
 }
 ```
 
+#### Native Task Blocking Matrix Across OS Services
+
+| Subsystem / Layer | Polled Primitive | Native Task-Blocking Primitive | Wake / Resume Mechanism |
+|---|---|---|---|
+| **Core Expression** | `PT_WAIT_UNTIL(pt, cond)` | `PT_BLOCK_CONDITION(pt, task, cond)` | `syn_task_resume(task)` |
+| **Event Flags** | `PT_WAIT_EVENT(pt, grp, mask)` | `PT_BLOCK_EVENT(pt, task, grp, mask)` | `syn_event_set(grp, mask)` |
+| **Semaphores** | `PT_SEM_WAIT(pt, sem)` | `PT_SEM_BLOCK(pt, task, sem)` | `PT_SEM_SIGNAL(sem)` |
+| **Stream I/O** | `PT_STREAM_WAIT(pt, stream)` | `PT_BLOCK_STREAM(pt, task, stream)` | `syn_stream_write_byte(stream, b)` |
+| **SPSC Queue** | `PT_QUEUE_WAIT_POP(pt, q)` | `PT_BLOCK_QUEUE_POP(pt, task, q)` | `syn_spsc_queue_push(q, item)` |
+| **Active Objects** | (Polled internal) | `syn_ao_pt_run()` (Built-in `PT_BLOCK_CONDITION`) | `syn_ao_post(ao, ev, p)` |
+| **Ethernet Driver** | `PT_ETH_WAIT_FRAME(...)` | `PT_ETH_BLOCK_FRAME(pt, task, eth)` | `syn_port_eth_rx()` frame arrival |
+| **DHCP Engine** | `PT_DHCP_WAIT_BOUND(pt, dhcp)` | `PT_DHCP_BLOCK_BOUND(pt, task, dhcp)` | `syn_dhcp_process_packet()` binding |
+| **Network Config** | `PT_NETCFG_WAIT_BOUND(...)` | `PT_NETCFG_BLOCK_BOUND(pt, task, netcfg)` | IP assignment event |
+| **AutoIP Service** | `PT_AUTOIP_WAIT_BOUND(...)` | `PT_AUTOIP_BLOCK_BOUND(pt, task, autoip)` | Link-local probe completion |
+| **Button Input** | `PT_WAIT_BUTTON_PRESS(...)` | `PT_BUTTON_BLOCK_PRESS(pt, task, btn)` | `syn_button_update()` debounce |
+
 | Approach | Scheduling cost | Tickless-safe | Use case |
 |---|---|---|---|
-| `PT_WAIT_EVENT` | Polled every pass | No — prevents sleep | Legacy / simple cases |
-| `PT_BLOCK_EVENT` | Skipped entirely while blocked | Yes | Production event-driven code |
+| `PT_WAIT_*` (Polled) | Polled every pass | No — prevents sleep | Simple standalone / legacy coroutines |
+| `PT_BLOCK_*` (Native) | Skipped entirely while blocked | Yes | Production low-power event-driven services |
 
 ### Yield-Safe Priority Boosting (`syn_task_boost_priority`)
 

@@ -990,6 +990,52 @@ static void test_pt_delay_us(void)
     TEST_ASSERT_EQUAL_INT(2, run_log[1]);
 }
 
+static bool block_cond_flag = false;
+static int block_cond_runs = 0;
+
+static SYN_PT_Status task_block_cond_entry(SYN_PT *pt, SYN_Task *task)
+{
+    PT_BEGIN(pt);
+
+    block_cond_runs++;
+    PT_BLOCK_CONDITION(pt, task, block_cond_flag);
+    block_cond_runs++;
+
+    PT_END(pt);
+}
+
+static void test_block_condition_and_primitives(void)
+{
+    SYN_Task task;
+    SYN_Sched sched;
+
+    block_cond_flag = false;
+    block_cond_runs = 0;
+
+    syn_task_create(&task, "block_cond", task_block_cond_entry, 0, NULL);
+    syn_sched_init(&sched, &task, 1);
+
+    /* Run 1: Task runs up to PT_BLOCK_CONDITION, increments to 1, sets state to BLOCKED */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(1, block_cond_runs);
+    TEST_ASSERT_EQUAL_INT((uint8_t)SYN_TASK_BLOCKED, task.state);
+
+    /* Run 2: Task is BLOCKED, condition still false — scheduler skips task */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(1, block_cond_runs);
+    TEST_ASSERT_EQUAL_INT((uint8_t)SYN_TASK_BLOCKED, task.state);
+
+    /* Resume task by setting condition true and unblocking */
+    block_cond_flag = true;
+    syn_task_resume(&task);
+    TEST_ASSERT_EQUAL_INT((uint8_t)SYN_TASK_READY, task.state);
+
+    /* Run 3: Task unblocks, evaluates condition true, and completes */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(2, block_cond_runs);
+    TEST_ASSERT_EQUAL_INT((uint8_t)SYN_TASK_DEAD, task.state);
+}
+
 void run_sched_tests(void)
 {
     RUN_TEST(test_scheduler);
@@ -1020,4 +1066,5 @@ void run_sched_tests(void)
     RUN_TEST(test_task_priority_boost_and_restore);
     RUN_TEST(test_two_deferring_high_pri_tasks_starve_lower);
     RUN_TEST(test_pt_delay_us);
+    RUN_TEST(test_block_condition_and_primitives);
 }

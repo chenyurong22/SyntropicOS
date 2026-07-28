@@ -69,6 +69,20 @@ typedef struct {
         (sem)->count--;                      \
     } while (0)
 
+/**
+ * @brief Block task execution (SYN_TASK_BLOCKED) until semaphore count is > 0,
+ *        then decrement it.
+ *
+ * @param pt   Protothread.
+ * @param task Pointer to SYN_Task.
+ * @param sem  Semaphore to wait on.
+ */
+#define PT_SEM_BLOCK(pt, task, sem)                     \
+    do {                                                \
+        PT_BLOCK_CONDITION(pt, task, (sem)->count > 0); \
+        (sem)->count--;                                 \
+    } while (0)
+
 /* ── Signal (any context) ───────────────────────────────────────────────── */
 
 /**

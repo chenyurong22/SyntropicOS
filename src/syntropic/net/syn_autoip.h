@@ -99,6 +99,16 @@ SYN_Status syn_autoip_process_arp(SYN_AUTOIP *autoip, SYN_ETH *eth, const uint8_
 #define PT_AUTOIP_WAIT_BOUND(pt, autoip) \
     PT_WAIT_UNTIL(pt, (autoip)->state == SYN_AUTOIP_STATE_BOUND)
 
+/**
+ * @brief Block task execution (SYN_TASK_BLOCKED) until AutoIP link-local binding completes.
+ *
+ * @param pt     Protothread context.
+ * @param task   Pointer to SYN_Task.
+ * @param autoip Pointer to AutoIP context.
+ */
+#define PT_AUTOIP_BLOCK_BOUND(pt, task, autoip) \
+    PT_BLOCK_CONDITION(pt, task, (autoip)->state == SYN_AUTOIP_STATE_BOUND)
+
 #ifdef __cplusplus
 }
 #endif

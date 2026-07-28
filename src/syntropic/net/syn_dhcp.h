@@ -120,6 +120,16 @@ SYN_Status syn_dhcp_process_packet(SYN_DHCP *dhcp, SYN_ETH *eth, const uint8_t *
  */
 #define PT_DHCP_WAIT_BOUND(pt, dhcp) PT_WAIT_UNTIL(pt, (dhcp)->state == SYN_DHCP_STATE_BOUND)
 
+/**
+ * @brief Block task execution (SYN_TASK_BLOCKED) until DHCP IP lease binding completes.
+ *
+ * @param pt   Protothread context.
+ * @param task Pointer to SYN_Task.
+ * @param dhcp Pointer to DHCP context.
+ */
+#define PT_DHCP_BLOCK_BOUND(pt, task, dhcp) \
+    PT_BLOCK_CONDITION(pt, task, (dhcp)->state == SYN_DHCP_STATE_BOUND)
+
 #ifdef __cplusplus
 }
 #endif

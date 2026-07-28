@@ -377,7 +377,7 @@ void syn_task_suspend(SYN_Task *task)
 void syn_task_resume(SYN_Task *task)
 {
     SYN_ASSERT(task != NULL);
-    if (task->state == (uint8_t)SYN_TASK_SUSPENDED) {
+    if (task->state == (uint8_t)SYN_TASK_SUSPENDED || task->state == (uint8_t)SYN_TASK_BLOCKED) {
         task->state = (uint8_t)SYN_TASK_READY;
     }
 }

@@ -334,9 +334,19 @@ static inline uint8_t syn_button_poll_events(SYN_Button *btn)
     PT_WAIT_UNTIL(pt, (btn)->events &SYN_BUTTON_EVT_PRESS); \
     (btn)->events &= (uint8_t)~SYN_BUTTON_EVT_PRESS
 
+/** Block task execution (SYN_TASK_BLOCKED) until the button is pressed (debounced). */
+#define PT_BUTTON_BLOCK_PRESS(pt, task, btn)                              \
+    PT_BLOCK_CONDITION(pt, task, ((btn)->events & SYN_BUTTON_EVT_PRESS)); \
+    (btn)->events &= (uint8_t)~SYN_BUTTON_EVT_PRESS
+
 /** Block until the button is released. */
 #define PT_WAIT_BUTTON_RELEASE(pt, btn)                       \
     PT_WAIT_UNTIL(pt, (btn)->events &SYN_BUTTON_EVT_RELEASE); \
+    (btn)->events &= (uint8_t)~SYN_BUTTON_EVT_RELEASE
+
+/** Block task execution (SYN_TASK_BLOCKED) until the button is released. */
+#define PT_BUTTON_BLOCK_RELEASE(pt, task, btn)                              \
+    PT_BLOCK_CONDITION(pt, task, ((btn)->events & SYN_BUTTON_EVT_RELEASE)); \
     (btn)->events &= (uint8_t)~SYN_BUTTON_EVT_RELEASE
 
 #ifdef __cplusplus

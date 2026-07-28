@@ -123,6 +123,12 @@ SYN_Status syn_netcfg_trigger_autoip_fallback(SYN_NETCFG *netcfg, SYN_ETH *eth,
 #define PT_NETCFG_WAIT_BOUND(pt, netcfg) PT_WAIT_UNTIL(pt, (netcfg)->is_bound == true)
 
 /**
+ * @brief Block task execution (SYN_TASK_BLOCKED) until IP configuration binding completes.
+ */
+#define PT_NETCFG_BLOCK_BOUND(pt, task, netcfg) \
+    PT_BLOCK_CONDITION(pt, task, (netcfg)->is_bound == true)
+
+/**
  * @brief Block a protothread coroutine until physical link is UP.
  *
  * @param pt     Protothread context.
@@ -130,6 +136,12 @@ SYN_Status syn_netcfg_trigger_autoip_fallback(SYN_NETCFG *netcfg, SYN_ETH *eth,
  */
 #define PT_NETCFG_WAIT_LINK_UP(pt, netcfg) \
     PT_WAIT_UNTIL(pt, (netcfg)->link_state == SYN_NETCFG_LINK_UP)
+
+/**
+ * @brief Block task execution (SYN_TASK_BLOCKED) until physical link is UP.
+ */
+#define PT_NETCFG_BLOCK_LINK_UP(pt, task, netcfg) \
+    PT_BLOCK_CONDITION(pt, task, (netcfg)->link_state == SYN_NETCFG_LINK_UP)
 
 #ifdef __cplusplus
 }

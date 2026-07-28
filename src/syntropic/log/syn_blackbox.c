@@ -14,7 +14,7 @@ size_t syn_blackbox_encode_varint(int32_t val, uint8_t *buf_out)
     }
 
     /* ZigZag encoding: maps signed integers to unsigned integers */
-    uint32_t uval = (uint32_t)((val << 1) ^ (val >> 31));
+    uint32_t uval = ((uint32_t)val << 1) ^ (uint32_t)(val >> 31);
     size_t len = 0;
 
     while (uval >= 0x80) {

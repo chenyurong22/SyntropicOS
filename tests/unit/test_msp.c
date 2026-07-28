@@ -56,7 +56,7 @@ void test_msp_null_and_error_handling(void)
     uint8_t bad_frame[6] = {'$', 'M', '<', 0, 101, 0xFF};
     SYN_Status status = SYN_BUSY;
     for (int i = 0; i < 5; i++) {
-        status = syn_msp_parse_byte(&parser, bad_frame[i], NULL);
+        (void)syn_msp_parse_byte(&parser, bad_frame[i], NULL);
     }
     status = syn_msp_parse_byte(&parser, bad_frame[5], NULL);
     TEST_ASSERT_EQUAL_INT(SYN_ERROR, status);

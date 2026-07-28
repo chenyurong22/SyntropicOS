@@ -304,6 +304,26 @@ typedef enum {
         (grp)->flags &= ~(mask); /* Auto-clear matched */ \
     } while (0)
 
+/**
+ * @brief Block task execution (SYN_TASK_BLOCKED) until @p cond becomes true.
+ *
+ * Unlike PT_WAIT_UNTIL, this macro transitions the SYN_Task state to BLOCKED
+ * so the scheduler skips executing the task function on subsequent passes
+ * until an event or ISR wakes the task.
+ *
+ * @param pt    Protothread.
+ * @param task  Pointer to the SYN_Task struct.
+ * @param cond  Boolean condition expression to evaluate.
+ */
+#define PT_BLOCK_CONDITION(pt, task, cond)             \
+    do {                                               \
+        while (!(cond)) {                              \
+            (task)->state = (uint8_t)SYN_TASK_BLOCKED; \
+            PT_YIELD(pt);                              \
+        }                                              \
+        (task)->state = (uint8_t)SYN_TASK_READY;       \
+    } while (0)
+
 /* ── Query macros ───────────────────────────────────────────────────────── */
 
 /** Check if a protothread is still running (has not exited). */

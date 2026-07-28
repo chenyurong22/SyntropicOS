@@ -230,6 +230,17 @@ void syn_stream_flush(SYN_Stream *s);
  */
 #define PT_STREAM_WAIT(pt, stream) PT_WAIT_UNTIL(pt, syn_stream_readable(stream))
 
+/**
+ * @brief Block task execution (SYN_TASK_BLOCKED) until the stream is readable.
+ *
+ * Suspends the SYN_Task so the scheduler skips it until readable.
+ *
+ * @param pt      Protothread context.
+ * @param task    Pointer to SYN_Task.
+ * @param stream  Pointer to SYN_Stream.
+ */
+#define PT_BLOCK_STREAM(pt, task, stream) PT_BLOCK_CONDITION(pt, task, syn_stream_readable(stream))
+
 #ifdef __cplusplus
 }
 #endif

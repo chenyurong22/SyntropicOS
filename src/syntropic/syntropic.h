@@ -389,7 +389,6 @@ extern "C" {
 #include "proto/syn_bacnet.h"
 #endif
 
-
 #if !defined(SYN_USE_SMBUS) || SYN_USE_SMBUS
 #include "proto/syn_smbus.h"
 #endif

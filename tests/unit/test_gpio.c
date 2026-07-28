@@ -75,28 +75,25 @@ static void test_gpio_null_pins(void)
 
 #define MOCK_GPIOA_BASE 0x40020000UL
 #define MOCK_GPIOH_BASE (MOCK_GPIOA_BASE + (7UL * 0x0400UL))
-#define MOCK_GPIOA      ((void *)MOCK_GPIOA_BASE)
-#define MOCK_GPIOH      ((void *)MOCK_GPIOH_BASE)
-#define GPIOA           MOCK_GPIOA
+#define MOCK_GPIOA ((void *)MOCK_GPIOA_BASE)
+#define MOCK_GPIOH ((void *)MOCK_GPIOH_BASE)
+#define GPIOA MOCK_GPIOA
 
 #include "port/stm32_hal/port_stm32_hal.h"
 
-
-#define MOCK_GPIO_PIN_0  0x0001U
-#define MOCK_GPIO_PIN_1  0x0002U
-#define MOCK_GPIO_PIN_2  0x0004U
-#define MOCK_GPIO_PIN_3  0x0008U
+#define MOCK_GPIO_PIN_0 0x0001U
+#define MOCK_GPIO_PIN_1 0x0002U
+#define MOCK_GPIO_PIN_2 0x0004U
+#define MOCK_GPIO_PIN_3 0x0008U
 
 static void test_stm32_hal_pin_macro(void)
 {
     /* Comprehensive exhaust test: 9 ports (GPIOA..GPIOI), 16 pins (0..15) */
-    for (uint8_t port_idx = 0; port_idx < 9; port_idx++)
-    {
+    for (uint8_t port_idx = 0; port_idx < 9; port_idx++) {
         uintptr_t port_addr = MOCK_GPIOA_BASE + ((uintptr_t)port_idx * 0x0400UL);
         void *port_ptr = (void *)port_addr;
 
-        for (uint8_t pin_num = 0; pin_num < 16; pin_num++)
-        {
+        for (uint8_t pin_num = 0; pin_num < 16; pin_num++) {
             uint32_t hal_pin_mask = (1U << pin_num);
             uint16_t expected_handle = ((uint16_t)port_idx << 4) | pin_num;
 
@@ -105,8 +102,6 @@ static void test_stm32_hal_pin_macro(void)
         }
     }
 }
-
-
 
 void run_gpio_tests(void)
 {
@@ -120,4 +115,3 @@ void run_gpio_tests(void)
     RUN_TEST(test_gpio_null_pins);
     RUN_TEST(test_stm32_hal_pin_macro);
 }
-

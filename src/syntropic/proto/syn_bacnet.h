@@ -25,7 +25,7 @@ extern "C" {
 
 #define SYN_BACNET_MSTP_PREAMBLE_1 0x55U
 #define SYN_BACNET_MSTP_PREAMBLE_2 0xFFU
-#define SYN_BACNET_BROADCAST_MAC   0xFFU
+#define SYN_BACNET_BROADCAST_MAC 0xFFU
 
 /** @brief BACnet MS/TP Frame Types (ISO 16484-5 Clause 9.2) */
 typedef enum {
@@ -79,10 +79,10 @@ typedef struct {
 
 /** @brief BACnet Object Instance Definition */
 typedef struct {
-    uint8_t object_type;   /**< SYN_BACnet_ObjectType (AI, AO, BI, BO, Device) */
-    uint32_t instance_id;  /**< Object Instance Number (0..4194303) */
-    float present_value;   /**< Current Numeric/Boolean Present Value */
-    const char *name;      /**< Object Name string */
+    uint8_t object_type;  /**< SYN_BACnet_ObjectType (AI, AO, BI, BO, Device) */
+    uint32_t instance_id; /**< Object Instance Number (0..4194303) */
+    float present_value;  /**< Current Numeric/Boolean Present Value */
+    const char *name;     /**< Object Name string */
 } SYN_BACnet_Object;
 
 #ifndef SYN_BACNET_MAX_OBJECTS
@@ -91,11 +91,11 @@ typedef struct {
 
 /** @brief BACnet MS/TP Node Context */
 typedef struct {
-    uint8_t mac_address;                            /**< Local MS/TP MAC (0..127) */
-    uint32_t device_id;                             /**< BACnet Device Object Instance */
-    uint8_t max_master;                             /**< Max Master MAC (default 127) */
+    uint8_t mac_address;                               /**< Local MS/TP MAC (0..127) */
+    uint32_t device_id;                                /**< BACnet Device Object Instance */
+    uint8_t max_master;                                /**< Max Master MAC (default 127) */
     SYN_BACnet_Object objects[SYN_BACNET_MAX_OBJECTS]; /**< Static Object Table */
-    size_t object_count;                            /**< Active Object count */
+    size_t object_count;                               /**< Active Object count */
 } SYN_BACnet_Node;
 
 /* ── API Functions ──────────────────────────────────────────────────────── */
@@ -128,8 +128,7 @@ uint16_t syn_bacnet_crc16(const uint8_t *data, size_t len);
  * @return Total encoded frame byte count.
  */
 size_t syn_bacnet_mstp_encode_frame(uint8_t frame_type, uint8_t dest_mac, uint8_t src_mac,
-                                    const uint8_t *payload, uint16_t payload_len,
-                                    uint8_t *out_buf);
+                                    const uint8_t *payload, uint16_t payload_len, uint8_t *out_buf);
 
 /**
  * @brief Decode a raw byte buffer into a BACnet MS/TP Frame structure.

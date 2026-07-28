@@ -21,13 +21,12 @@ extern "C" {
  *   SYN_PORT_STM32_PIN(GPIOC, GPIO_PIN_13)        -> PC13
  *   SYN_PORT_STM32_PIN(USER_BTN_GPIO_Port, USER_BTN_Pin) -> CubeMX pin
  */
-#define SYN_PORT_STM32_PIN(gpio_port, gpio_pin)                                               \
-    SYN_GPIO_PIN((uint8_t)(((uintptr_t)(gpio_port) - (uintptr_t)GPIOA) / 0x0400UL),           \
-                 (uint8_t)(((uint32_t)(gpio_pin) == 0U) ? 0U :                               \
-                            (((uint32_t)(gpio_pin) & ((uint32_t)(gpio_pin) - 1U)) == 0U) ?   \
-                            (uint32_t)__builtin_ctz((uint32_t)(gpio_pin)) :                  \
-                            (uint32_t)(gpio_pin)))
-
+#define SYN_PORT_STM32_PIN(gpio_port, gpio_pin)                                           \
+    SYN_GPIO_PIN((uint8_t)(((uintptr_t)(gpio_port) - (uintptr_t)GPIOA) / 0x0400UL),       \
+                 (uint8_t)(((uint32_t)(gpio_pin) == 0U) ? 0U                              \
+                           : (((uint32_t)(gpio_pin) & ((uint32_t)(gpio_pin) - 1U)) == 0U) \
+                               ? (uint32_t)__builtin_ctz((uint32_t)(gpio_pin))            \
+                               : (uint32_t)(gpio_pin)))
 
 /**
  * @brief Register an STM32 HAL UART_HandleTypeDef pointer (e.g. &huart1) with a SyntropicOS UART

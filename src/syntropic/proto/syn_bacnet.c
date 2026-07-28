@@ -12,17 +12,12 @@
 uint8_t syn_bacnet_crc8(const uint8_t *data, size_t len)
 {
     uint8_t crc = 0xFFU;
-    for (size_t i = 0; i < len; i++)
-    {
+    for (size_t i = 0; i < len; i++) {
         crc ^= data[i];
-        for (uint8_t j = 0; j < 8; j++)
-        {
-            if (crc & 0x01U)
-            {
+        for (uint8_t j = 0; j < 8; j++) {
+            if (crc & 0x01U) {
                 crc = (uint8_t)((crc >> 1) ^ 0x91U);
-            }
-            else
-            {
+            } else {
                 crc = (uint8_t)(crc >> 1);
             }
         }
@@ -33,17 +28,12 @@ uint8_t syn_bacnet_crc8(const uint8_t *data, size_t len)
 uint16_t syn_bacnet_crc16(const uint8_t *data, size_t len)
 {
     uint16_t crc = 0xFFFFU;
-    for (size_t i = 0; i < len; i++)
-    {
+    for (size_t i = 0; i < len; i++) {
         crc ^= (uint16_t)data[i];
-        for (uint8_t j = 0; j < 8; j++)
-        {
-            if (crc & 0x0001U)
-            {
+        for (uint8_t j = 0; j < 8; j++) {
+            if (crc & 0x0001U) {
                 crc = (uint16_t)((crc >> 1) ^ 0xA001U);
-            }
-            else
-            {
+            } else {
                 crc = (uint16_t)(crc >> 1);
             }
         }
@@ -54,8 +44,7 @@ uint16_t syn_bacnet_crc16(const uint8_t *data, size_t len)
 /* ── MS/TP Framing ──────────────────────────────────────────────────────── */
 
 size_t syn_bacnet_mstp_encode_frame(uint8_t frame_type, uint8_t dest_mac, uint8_t src_mac,
-                                    const uint8_t *payload, uint16_t payload_len,
-                                    uint8_t *out_buf)
+                                    const uint8_t *payload, uint16_t payload_len, uint8_t *out_buf)
 {
     if (!out_buf)
         return 0;
@@ -70,8 +59,7 @@ size_t syn_bacnet_mstp_encode_frame(uint8_t frame_type, uint8_t dest_mac, uint8_
     out_buf[7] = syn_bacnet_crc8(&out_buf[2], 5);
 
     size_t idx = 8;
-    if (payload && payload_len > 0)
-    {
+    if (payload && payload_len > 0) {
         memcpy(&out_buf[idx], payload, payload_len);
         idx += payload_len;
 
@@ -103,16 +91,15 @@ bool syn_bacnet_mstp_decode_frame(const uint8_t *buf, size_t len, SYN_BACnet_MST
     if (frame->data_len > 501)
         return false;
 
-    if (frame->data_len > 0)
-    {
+    if (frame->data_len > 0) {
         if (len < (size_t)(8 + frame->data_len + 2))
             return false;
 
         memcpy(frame->payload, &buf[8], frame->data_len);
 
         uint16_t expected_crc = syn_bacnet_crc16(frame->payload, frame->data_len);
-        uint16_t actual_crc = (uint16_t)buf[8 + frame->data_len] |
-                             ((uint16_t)buf[8 + frame->data_len + 1] << 8);
+        uint16_t actual_crc =
+            (uint16_t)buf[8 + frame->data_len] | ((uint16_t)buf[8 + frame->data_len + 1] << 8);
 
         if (expected_crc != actual_crc)
             return false;
@@ -134,7 +121,8 @@ SYN_Status syn_bacnet_node_init(SYN_BACnet_Node *node, uint8_t mac_address, uint
     node->max_master = 127;
 
     /* Automatically register Device Object */
-    syn_bacnet_add_object(node, SYN_BACNET_OBJ_DEVICE, device_id, 0.0f, "SyntropicOS-BACnet-Device");
+    syn_bacnet_add_object(node, SYN_BACNET_OBJ_DEVICE, device_id, 0.0f,
+                          "SyntropicOS-BACnet-Device");
 
     return SYN_OK;
 }
@@ -166,21 +154,17 @@ SYN_Status syn_bacnet_node_process(SYN_BACnet_Node *node, const SYN_BACnet_MSTP_
 
     /* Ignore frames not addressed to local MAC or Broadcast */
     if (rx_frame->destination_mac != node->mac_address &&
-        rx_frame->destination_mac != SYN_BACNET_BROADCAST_MAC)
-    {
+        rx_frame->destination_mac != SYN_BACNET_BROADCAST_MAC) {
         return SYN_OK;
     }
 
     /* Handle Token / Poll For Master MS/TP control frames */
-    if (rx_frame->frame_type == SYN_BACNET_MSTP_FRAME_TOKEN)
-    {
+    if (rx_frame->frame_type == SYN_BACNET_MSTP_FRAME_TOKEN) {
         return SYN_OK;
     }
 
-    if (rx_frame->frame_type == SYN_BACNET_MSTP_FRAME_POLL_FOR_MASTER)
-    {
-        if (rx_frame->destination_mac == node->mac_address)
-        {
+    if (rx_frame->frame_type == SYN_BACNET_MSTP_FRAME_POLL_FOR_MASTER) {
+        if (rx_frame->destination_mac == node->mac_address) {
             tx_frame->frame_type = SYN_BACNET_MSTP_FRAME_REPLY_TO_POLL_FOR_MASTER;
             tx_frame->destination_mac = rx_frame->source_mac;
             tx_frame->source_mac = node->mac_address;
@@ -194,15 +178,13 @@ SYN_Status syn_bacnet_node_process(SYN_BACnet_Node *node, const SYN_BACnet_MSTP_
     if (rx_frame->data_len < 2)
         return SYN_OK;
 
-
     uint8_t service_type = rx_frame->payload[0];
     uint8_t service_choice = rx_frame->payload[1];
 
     /* 1. Unconfirmed Request: Who-Is -> Respond with I-Am */
-    if (service_choice == SYN_BACNET_SERVICE_UNCONFIRMED_WHO_IS)
-    {
+    if (service_choice == SYN_BACNET_SERVICE_UNCONFIRMED_WHO_IS) {
         uint8_t payload[16];
-        payload[0] = 0x10;                              /* Unconfirmed APDU */
+        payload[0] = 0x10;                                /* Unconfirmed APDU */
         payload[1] = SYN_BACNET_SERVICE_UNCONFIRMED_I_AM; /* Service Choice I-Am */
 
         /* Device Object Identifier (4 bytes) */
@@ -225,8 +207,7 @@ SYN_Status syn_bacnet_node_process(SYN_BACnet_Node *node, const SYN_BACnet_MSTP_
     }
 
     /* 2. Confirmed Request: ReadProperty -> Respond with ReadProperty-ACK */
-    if (service_choice == SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY)
-    {
+    if (service_choice == SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY) {
         uint8_t invoke_id = rx_frame->payload[1];
         (void)service_type;
 
@@ -234,14 +215,12 @@ SYN_Status syn_bacnet_node_process(SYN_BACnet_Node *node, const SYN_BACnet_MSTP_
         float val = 0.0f;
         bool found = false;
 
-        if (node->object_count > 0)
-        {
+        if (node->object_count > 0) {
             val = node->objects[0].present_value;
             found = true;
         }
 
-        if (found)
-        {
+        if (found) {
             uint8_t payload[32];
             payload[0] = 0x30; /* Complex-ACK APDU */
             payload[1] = invoke_id;

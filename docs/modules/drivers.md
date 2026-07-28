@@ -116,3 +116,90 @@ void start_dma_transfer(const uint32_t *src, uint32_t *dst, size_t count) {
     syn_dma_start(&dma, (const void*)src, (void*)dst, count * sizeof(uint32_t));
 }
 ```
+
+---
+
+## 5. Controller Area Network (`drivers/syn_can.h`)
+
+Provides CAN 2.0A/B frame transmission, reception filtering, and mailbox queuing.
+
+```c
+#include <syntropic/drivers/syn_can.h>
+
+void can_demo(void) {
+    SYN_CAN_Frame frame = {
+        .id = 0x123,
+        .extended = false,
+        .dlc = 4,
+        .data = {0x01, 0x02, 0x03, 0x04}
+    };
+    syn_can_send(0, &frame);
+}
+```
+
+---
+
+## 6. External Interrupt Controller (`drivers/syn_exti.h`)
+
+Configures pin edge-triggered interrupts (rising, falling, both) with ISR callback dispatch.
+
+```c
+#include <syntropic/drivers/syn_exti.h>
+
+void on_pin_interrupt(SYN_GPIO_Pin pin, void *ctx) {
+    // Process ISR trigger
+}
+
+void exti_setup(void) {
+    syn_exti_attach(5, SYN_EXTI_RISING, on_pin_interrupt, NULL);
+}
+```
+
+---
+
+## 7. Shift Register & I/O Expander (`drivers/syn_shiftreg.h` & `drivers/syn_ioexp.h`)
+
+Supports 74HC595 output expansion, 74HC165 input reading, and MCP23017 / PCF8574 I2C/SPI GPIO expanders.
+
+```c
+#include <syntropic/drivers/syn_shiftreg.h>
+#include <syntropic/drivers/syn_ioexp.h>
+
+void expander_demo(void) {
+    // 74HC595 Shift register write
+    syn_shiftreg_out_write(0xAA);
+
+    // MCP23017 I2C GPIO Expander write
+    syn_ioexp_mcp23017_write_pin(0, 4, SYN_GPIO_HIGH);
+}
+```
+
+---
+
+## 8. Sensor Interface Drivers (`sensor/*.h`)
+
+SyntropicOS provides zero-allocation drivers for common industrial and embedded sensors:
+
+| Sensor Header | Target Hardware | Description |
+|---|---|---|
+| `sensor/syn_powermon.h` | INA219 / INA226 | Bus voltage, shunt current, and power monitoring |
+| `sensor/syn_climate.h` | BME280 / DHT22 / SHT30 | Temperature, relative humidity, and barometric pressure |
+| `sensor/syn_distance.h` | HC-SR04 / VL53L0X | Ultrasonic pulse timing and ToF laser distance |
+| `sensor/syn_scale.h` | HX711 | 24-bit ADC load cell weight measurement and tare calibration |
+| `sensor/syn_lux.h` | BH1750 / TSL2561 | Ambient light lux intensity reading |
+| `sensor/syn_biometric.h` | MAX30102 | PPG optical pulse oximeter and heart rate monitoring |
+
+### Sensor Usage Example
+```c
+#include <syntropic/sensor/syn_climate.h>
+#include <syntropic/sensor/syn_powermon.h>
+
+void read_sensors(void) {
+    float temp_c, humidity;
+    if (syn_climate_read(&temp_c, &humidity) == SYN_OK) {
+        printf("Temperature: %.1f C, Humidity: %.1f%%\n", temp_c, humidity);
+    }
+}
+```
+
+

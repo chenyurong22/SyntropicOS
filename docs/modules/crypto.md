@@ -58,3 +58,42 @@ void encrypt_sensor_telemetry(void) {
                      ciphertext, auth_tag);
 }
 ```
+
+
+---
+
+## 3. X25519 ECDH Key Exchange (`crypto/syn_x25519.h`)
+
+Elliptic Curve Diffie-Hellman (Curve25519 / RFC 7748) key exchange for secure peer-to-peer session key negotiation.
+
+```c
+#include <syntropic/crypto/syn_x25519.h>
+
+void ecdh_key_exchange(void) {
+    uint8_t my_private[32];
+    uint8_t my_public[32];
+    uint8_t peer_public[32];
+    uint8_t shared_secret[32];
+
+    // Generate public key: P = k * G
+    syn_x25519_base(my_public, my_private);
+
+    // Derive shared secret: S = k * Peer_P
+    syn_x25519(shared_secret, my_private, peer_public);
+}
+```
+
+---
+
+## 4. SHA-256 Hash Engine (`util/syn_sha256.h`)
+
+Standard NIST FIPS 180-4 SHA-256 digest computation for bootloader firmware verification and packet checksums.
+
+```c
+#include <syntropic/util/syn_sha256.h>
+
+void sha256_demo(const uint8_t *data, size_t len, uint8_t hash[32]) {
+    syn_sha256(data, len, hash);
+}
+```
+

@@ -102,3 +102,36 @@ void render_gui(void) {
     syn_imgui_end_frame(&ui);
 }
 ```
+
+---
+
+## 3. Character LCD & OLED Direct Drivers (`display/syn_charlcd.h` & `display/syn_oled.h`)
+
+Supports HD44780 16x2 / 20x4 Character LCD displays (GPIO 4-bit / I2C backpack) and SSD1306 / SH1106 monochrome OLED direct command initialization.
+
+```c
+#include <syntropic/display/syn_charlcd.h>
+#include <syntropic/display/syn_oled.h>
+
+void charlcd_demo(void) {
+    syn_charlcd_init(16, 2);
+    syn_charlcd_set_cursor(0, 0);
+    syn_charlcd_print("SyntropicOS v2.0");
+}
+```
+
+---
+
+## 4. 7-Segment LED Multiplex Driver (`display/syn_seg7.h`)
+
+Multiplexed 7-segment digital display driver supporting decimal integers, floating-point rendering, and custom hexadecimal patterns.
+
+```c
+#include <syntropic/display/syn_seg7.h>
+
+void seg7_demo(void) {
+    // Render float number 12.34 across 4 digits
+    syn_seg7_display_float(12.34f, 2);
+}
+```
+

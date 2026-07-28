@@ -134,3 +134,48 @@ Enables software PWM output on any arbitrary GPIO pin without requiring hardware
 | `syn_soft_pwm_init()` | Initialize pin and frequency |
 | `syn_soft_pwm_set_duty()` | Set duty cycle (0–255 or 0–100%) |
 | `syn_soft_pwm_update()` | Service software PWM toggle loop |
+
+---
+
+## 5. Matrix Keypad & Touch (`syn_keypad.h` & `syn_touch.h`)
+
+Scanning matrix keypads ($3\times4$, $4\times4$) and capacitive touch sensor inputs with debouncing.
+
+```c
+#include <syntropic/input/syn_keypad.h>
+#include <syntropic/input/syn_touch.h>
+
+void keypad_demo(void) {
+    char key = syn_keypad_scan();
+    if (key) {
+        printf("Key Pressed: %c\n", key);
+    }
+}
+```
+
+---
+
+## 6. DIP Switch Array & Analog Joystick (`syn_dipswitch.h` & `syn_joystick.h`)
+
+Provides parallel reading of DIP switch position banks and 2-axis ADC joystick coordinate normalization with deadzone filtering.
+
+---
+
+## 7. Piezo Buzzer & WS2812 Smart LED (`syn_buzzer.h` & `syn_smartled.h`)
+
+Non-blocking piezo buzzer melody/beep generator and WS2812 (NeoPixel) RGB LED bit-bang driver.
+
+```c
+#include <syntropic/output/syn_buzzer.h>
+#include <syntropic/output/syn_smartled.h>
+
+void audio_visual_demo(void) {
+    // Play 1kHz beep for 100ms
+    syn_buzzer_beep(1000, 100);
+
+    // Set WS2812 LED 0 to Red
+    SYN_RGB color = {255, 0, 0};
+    syn_smartled_set(0, color);
+}
+```
+

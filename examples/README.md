@@ -64,11 +64,13 @@ This directory contains bare-metal C and MCU HAL example projects demonstrating 
 - **[`esp32_ota`](esp32_ota)** — ESP32 Firmware Over-The-Air (OTA) update task.
 
 ### DSP & Motion Control
+- **[`stm32_stepper`](stm32_stepper)** — Stepper motor trapezoidal speed ramp & position controller.
 - **[`MotionPlanner`](MotionPlanner)** — Trapezoidal S-curve motor motion planner.
 - **[`MotorFSM`](MotorFSM)** — Finite state machine controlling a DC motor ramp profile.
 - **[`PID_TempControl`](PID_TempControl)** — Closed-loop integer PID temperature controller.
 - **[`BiquadFilter`](BiquadFilter)** — Audio & sensor digital biquad IIR filtering.
 - **[`FftSpectrumAnalyzer`](FftSpectrumAnalyzer)** — Real-time FFT spectral decomposition.
+
 
 ### IoT & Network Protocol Stacks
 - **[`MqttClient`](MqttClient)** — MQTT v3.1.1 network client with QoS0/QoS1 support.

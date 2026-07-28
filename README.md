@@ -106,6 +106,8 @@ SyntropicOS ships with hardware and SDK examples across bare-metal C, STM32 HAL,
 - **[`examples/stm32_pmbus_power`](examples/stm32_pmbus_power)** — STM32 HAL PMBus (Power Management Bus 1.2/1.3) digital power telemetry.
 - **[`examples/stm32_smbus_battery`](examples/stm32_smbus_battery)** — STM32 HAL SMBus 2.0 Smart Battery System (SBS 1.1) telemetry & alert handler.
 - **[`examples/stm32_modbus_master`](examples/stm32_modbus_master)** — STM32 RS485 Modbus RTU Master querying slave registers.
+- **[`examples/stm32_modbus_tcp`](examples/stm32_modbus_tcp)** — STM32 HAL Modbus TCP Server (port 502) & Client (Master) in a single project.
+
 
 
 

@@ -101,7 +101,9 @@ int main(void) {
 SyntropicOS ships with hardware and SDK examples across bare-metal C, STM32 HAL, PlatformIO, and Arduino:
 
 - **[`examples/stm32_bacnet_mstp`](examples/stm32_bacnet_mstp)** — STM32 RS485 BACnet MS/TP Smart Thermostat / Sensor node.
+- **[`examples/stm32_lin_bus`](examples/stm32_lin_bus)** — STM32 HAL LIN 2.1 automotive bus Master schedule table & Slave response node.
 - **[`examples/stm32_modbus_master`](examples/stm32_modbus_master)** — STM32 RS485 Modbus RTU Master querying slave registers.
+
 - **[`examples/stm32_dali_lighting`](examples/stm32_dali_lighting)** — STM32 DALI (IEC 62386) LED Dimmer / Control Gear node.
 - **[`examples/stm32_crypto_usart`](examples/stm32_crypto_usart)** — STM32 USART receiver with SHA-256 digest & AES-128 encryption.
 - **[`examples/stm32_spsc_usart`](examples/stm32_spsc_usart)** — STM32 USART RX interrupt ingestion using `syn_spsc_queue`.

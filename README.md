@@ -58,7 +58,7 @@ flowchart TD
 ### Module Guides
 - ⚡ **[Core & Multitasking](docs/modules/multitasking.md)** — Protothreads, Task Scheduler, Active Objects, Workqueues.
 - 🎛️ **[Input / Output](docs/modules/io.md)** — Debounced Buttons, Tap Gestures, Combos, Rotary Encoders, LEDs, Soft PWM.
-- 📡 **[Communication Protocols](docs/modules/communication.md)** — COBS Framing, Addressed Router, Modbus, M-Bus, ISO-TP, J1939.
+- 📡 **[Communication Protocols](docs/modules/communication.md)** — COBS Framing, Addressed Router, Modbus RTU/TCP, DALI, BACnet MS/TP, M-Bus, ISO-TP, J1939, NMEA 2000.
 - 💾 **[Storage & Filesystems](docs/modules/storage.md)** — Persistent Settings Manager, Wear-Leveled Flash, LittleFS, FAT.
 - 🖥️ **[Display & Embedded UI](docs/modules/display.md)** — Framebuffer Canvas, 2D Graphics, Zero-Heap IMGUI.
 - 🔬 **[Diagnostics & Debug](docs/modules/debug.md)** — Lightweight Event Tracer (`syn_trace`), Task CPU Profiler (`syn_profiler`), Serial CLI.
@@ -97,9 +97,16 @@ int main(void) {
 
 ## Example Projects Directory ([`examples/`](examples/))
 
-SyntropicOS ships with 30+ hardware and SDK examples across bare-metal C, STM32 HAL, PlatformIO, and Arduino:
+SyntropicOS ships with hardware and SDK examples across bare-metal C, STM32 HAL, PlatformIO, and Arduino:
 
+- **[`examples/stm32_bacnet_mstp`](examples/stm32_bacnet_mstp)** — STM32 RS485 BACnet MS/TP Smart Thermostat / Sensor node.
+- **[`examples/stm32_modbus_master`](examples/stm32_modbus_master)** — STM32 RS485 Modbus RTU Master querying slave registers.
+- **[`examples/stm32_dali_lighting`](examples/stm32_dali_lighting)** — STM32 DALI (IEC 62386) LED Dimmer / Control Gear node.
+- **[`examples/stm32_crypto_usart`](examples/stm32_crypto_usart)** — STM32 USART receiver with SHA-256 digest & AES-128 encryption.
+- **[`examples/stm32_spsc_usart`](examples/stm32_spsc_usart)** — STM32 USART RX interrupt ingestion using `syn_spsc_queue`.
+- **[`examples/stm32_ringbuf_usart`](examples/stm32_ringbuf_usart)** — STM32 USART RX interrupt ring buffer processing.
 - **[`examples/stm32_uart_mcu_comm`](examples/stm32_uart_mcu_comm)** — STM32 HAL single-byte UART interrupt Master/Slave packet router.
+
 - **[`examples/ButtonEvents`](examples/ButtonEvents)** — Multi-click tap gestures, long-press, and chorded button combos.
 - **[`examples/SensorLogger`](examples/SensorLogger)** — Dual-channel ADC sampling, EMA filtering, and Serial CLI.
 - **[`examples/MotorFSM`](examples/MotorFSM)** — Finite state machine controlling a DC motor ramp profile.

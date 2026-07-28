@@ -770,8 +770,22 @@ bool syn_modbus_process(SYN_Modbus *mb)
 {
     SYN_ASSERT(mb != NULL);
 
+    if (mb->rx_len == 0) {
+        return false;
+    }
+
+    uint32_t now = syn_port_get_tick_ms();
+    uint32_t silence_gap = (mb->cfg.silence_ms > 0) ? mb->cfg.silence_ms : MB_SILENCE_MS;
+    bool silence_elapsed = (mb->last_byte_tick == 0) || ((now - mb->last_byte_tick) >= silence_gap);
+
+    /* Do not touch or discard partial frames while inter-frame silence gap is still running */
+    if (!mb->frame_ready && !silence_elapsed) {
+        return false;
+    }
+
     if (mb->rx_len < MB_MIN_FRAME_LEN) {
         mb->rx_len = 0;
+        mb->frame_ready = false;
         return false;
     }
 

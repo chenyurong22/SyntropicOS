@@ -2055,6 +2055,46 @@ static void test_modbus_100_percent_coverage(void)
     TEST_ASSERT_EQUAL_HEX8(241, mock_uart_tx_buf[2]); /* 240 max + 1 status */
 }
 
+static void test_modbus_tight_loop_streaming(void)
+{
+    static uint16_t holding[4] = {10, 20, 30, 40};
+    static uint8_t mb_buf[64];
+
+    mock_port_reset();
+    mock_tick_ms = 1000;
+
+    SYN_Modbus mb;
+    SYN_Modbus_Config cfg = {
+        .slave_addr = 1,
+        .holding_regs = holding,
+        .holding_count = 4,
+    };
+    syn_modbus_init(&mb, &cfg, mb_buf, sizeof(mb_buf));
+
+    uint8_t req[8] = {1, 0x03, 0, 0, 0, 2, 0, 0};
+    uint16_t crc = syn_crc16_modbus(req, 6);
+    req[6] = (uint8_t)(crc & 0xFF);
+    req[7] = (uint8_t)(crc >> 8);
+
+    /* Simulate tight while(1) loop feeding bytes one by one and processing immediately */
+    for (size_t idx = 0; idx < 8; idx++) {
+        syn_modbus_feed(&mb, req[idx]);
+        /* syn_modbus_process must NOT wipe rx_len while bytes are actively arriving */
+        bool processed = syn_modbus_process(&mb);
+        TEST_ASSERT_FALSE(processed);
+    }
+
+    TEST_ASSERT_EQUAL_INT(8, mb.rx_len);
+
+    /* Advance time past inter-frame silence gap (5ms) */
+    mock_tick_advance(6);
+    bool processed = syn_modbus_process(&mb);
+
+    TEST_ASSERT_TRUE(processed);
+    TEST_ASSERT_EQUAL_INT(1, mb.frames_rx);
+    TEST_ASSERT_EQUAL_INT(9, mock_uart_tx_len);
+}
+
 void run_modbus_tests(void)
 {
     RUN_TEST(test_modbus_basic);
@@ -2071,4 +2111,5 @@ void run_modbus_tests(void)
     RUN_TEST(test_modbus_ext_error_paths);
     RUN_TEST(test_modbus_new_function_codes);
     RUN_TEST(test_modbus_100_percent_coverage);
+    RUN_TEST(test_modbus_tight_loop_streaming);
 }

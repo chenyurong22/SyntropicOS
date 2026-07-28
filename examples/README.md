@@ -39,7 +39,9 @@ This directory contains bare-metal C and MCU HAL example projects demonstrating 
 - **[`stm32_soft_pwm`](stm32_soft_pwm)** — Multi-channel software PWM LED dimmer & motor driver.
 - **[`stm32_led`](stm32_led)** — GPIO status LED heartbeat, blinking, and error patterns.
 - **[`stm32_smart_led`](stm32_smart_led)** — WS2812B / Neopixel Smart RGB LED strip rainbow animator.
+- **[`stm32_buzzer`](stm32_buzzer)** — Piezo buzzer audio tone, chime arpeggio, and siren alarm.
 - **[`stm32_button`](stm32_button)** — Multi-tap button gesture & combo handler.
+
 
 
 

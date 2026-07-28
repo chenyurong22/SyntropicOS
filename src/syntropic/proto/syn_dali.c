@@ -92,6 +92,12 @@ SYN_Status syn_dali_slave_init(SYN_DALI_SlaveState *slave, const SYN_DALI_SlaveC
     return SYN_OK;
 }
 
+/**
+ * @brief Check if incoming DALI frame address matches slave configuration.
+ * @param slave Pointer to DALI slave state.
+ * @param req Pointer to forward frame request.
+ * @return True if address matches, false otherwise.
+ */
 static bool check_address_match(const SYN_DALI_SlaveState *slave, const SYN_DALI_ForwardFrame *req)
 {
     if (req->addr_type == SYN_DALI_ADDR_BROADCAST) {

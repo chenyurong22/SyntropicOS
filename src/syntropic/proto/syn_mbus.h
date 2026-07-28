@@ -10,7 +10,7 @@
  *   - Control Frame (0x68)
  *   - Long Frame (0x68)
  *
- * @ingroup syn_proto
+ * @ingroup syn_protocol
  */
 
 #ifndef SYN_MBUS_H
@@ -70,12 +70,13 @@ extern "C" {
 
 /* ── M-Bus Frame Types ─────────────────────────────────────────────────── */
 
+/** M-Bus Frame Format Types Enum. */
 typedef enum {
-    SYN_MBUS_FRAME_TYPE_UNKNOWN = 0,
-    SYN_MBUS_FRAME_TYPE_SINGLE_ACK, /**< Single byte 0xE5 ACK */
-    SYN_MBUS_FRAME_TYPE_SHORT,      /**< Short frame (5 bytes) */
-    SYN_MBUS_FRAME_TYPE_CONTROL,    /**< Control frame (9 bytes) */
-    SYN_MBUS_FRAME_TYPE_LONG,       /**< Long frame (N >= 9 bytes) */
+    SYN_MBUS_FRAME_TYPE_UNKNOWN = 0, /**< Unrecognized frame type */
+    SYN_MBUS_FRAME_TYPE_SINGLE_ACK,  /**< Single byte 0xE5 ACK */
+    SYN_MBUS_FRAME_TYPE_SHORT,       /**< Short frame (5 bytes) */
+    SYN_MBUS_FRAME_TYPE_CONTROL,     /**< Control frame (9 bytes) */
+    SYN_MBUS_FRAME_TYPE_LONG,        /**< Long frame (N >= 9 bytes) */
 } SYN_MBUS_FrameType;
 
 /* ── M-Bus Decoded Frame Structure ──────────────────────────────────────── */

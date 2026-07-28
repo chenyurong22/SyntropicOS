@@ -26,6 +26,7 @@ typedef struct {
     SYN_BLDC_GateState w; /**< Phase W gate state. */
 } PhaseGatePattern;
 
+/** Clockwise commutation step table */
 static const PhaseGatePattern s_step_table_cw[7] = {
     {SYN_BLDC_GATE_OFF, SYN_BLDC_GATE_OFF, SYN_BLDC_GATE_OFF}, /* 0: Invalid */
     {SYN_BLDC_GATE_PWM, SYN_BLDC_GATE_OFF, SYN_BLDC_GATE_LOW}, /* 1: Hall 0b001 (Step 2: U+ W-) */
@@ -36,6 +37,7 @@ static const PhaseGatePattern s_step_table_cw[7] = {
     {SYN_BLDC_GATE_LOW, SYN_BLDC_GATE_OFF, SYN_BLDC_GATE_PWM}, /* 6: Hall 0b110 (Step 5: W+ U-) */
 };
 
+/** Counter-clockwise commutation step table */
 static const PhaseGatePattern s_step_table_ccw[7] = {
     {SYN_BLDC_GATE_OFF, SYN_BLDC_GATE_OFF, SYN_BLDC_GATE_OFF}, /* 0: Invalid */
     {SYN_BLDC_GATE_LOW, SYN_BLDC_GATE_OFF, SYN_BLDC_GATE_PWM}, /* 1: Hall 0b001 */

@@ -25,7 +25,7 @@
  *       syn_dali_slave_process(&dali_slave, &req, &resp, &has_resp);
  *   }
  * @endcode
- * @ingroup syn_proto
+ * @ingroup syn_protocol
  */
 
 #ifndef SYN_DALI_H
@@ -82,7 +82,7 @@ typedef struct {
 
 /** @brief DALI Slave Runtime State */
 typedef struct {
-    SYN_DALI_SlaveConfig cfg;
+    SYN_DALI_SlaveConfig cfg;  /**< Persistent slave configuration settings */
     uint8_t actual_level;      /**< Current arc power level (0..254) */
     uint8_t scenes[16];        /**< Scene levels 0..15 (255=MASK) */
     uint32_t random_address;   /**< 24-bit Random Search Address */
@@ -100,70 +100,74 @@ typedef struct {
 
 /* ── Standard DALI Command Definitions (IEC 62386-102) ─────────────────── */
 
-#define SYN_DALI_CMD_OFF 0x00U
-#define SYN_DALI_CMD_UP 0x01U
-#define SYN_DALI_CMD_DOWN 0x02U
-#define SYN_DALI_CMD_STEP_UP 0x03U
-#define SYN_DALI_CMD_STEP_DOWN 0x04U
-#define SYN_DALI_CMD_RECALL_MAX 0x05U
-#define SYN_DALI_CMD_RECALL_MIN 0x06U
-#define SYN_DALI_CMD_STEP_DOWN_AND_OFF 0x07U
-#define SYN_DALI_CMD_ON_AND_STEP_UP 0x08U
-#define SYN_DALI_CMD_ENABLE_DAPC_SEQUENCE 0x09U
-#define SYN_DALI_CMD_GO_TO_SCENE_BASE 0x10U /* 0x10..0x1F */
+#define SYN_DALI_CMD_OFF 0x00U                  /**< Turn off light output */
+#define SYN_DALI_CMD_UP 0x01U                   /**< Fade up light output */
+#define SYN_DALI_CMD_DOWN 0x02U                 /**< Fade down light output */
+#define SYN_DALI_CMD_STEP_UP 0x03U              /**< Step up light output level */
+#define SYN_DALI_CMD_STEP_DOWN 0x04U            /**< Step down light output level */
+#define SYN_DALI_CMD_RECALL_MAX 0x05U           /**< Recall maximum level */
+#define SYN_DALI_CMD_RECALL_MIN 0x06U           /**< Recall minimum level */
+#define SYN_DALI_CMD_STEP_DOWN_AND_OFF 0x07U    /**< Step down and turn off */
+#define SYN_DALI_CMD_ON_AND_STEP_UP 0x08U       /**< Turn on and step up */
+#define SYN_DALI_CMD_ENABLE_DAPC_SEQUENCE 0x09U /**< Enable DAPC sequence */
+#define SYN_DALI_CMD_GO_TO_SCENE_BASE 0x10U /**< Base command for Go To Scene 0..15 (0x10..0x1F) \
+                                             */
 
-#define SYN_DALI_CMD_RESET 0x20U
-#define SYN_DALI_CMD_STORE_ACTUAL_LEVEL_IN_DTR 0x21U
-#define SYN_DALI_CMD_STORE_DTR_AS_MAX_LEVEL 0x2AU
-#define SYN_DALI_CMD_STORE_DTR_AS_MIN_LEVEL 0x2BU
-#define SYN_DALI_CMD_STORE_DTR_AS_SYS_FAIL_LEVEL 0x2CU
-#define SYN_DALI_CMD_STORE_DTR_AS_POWER_ON_LEVEL 0x2DU
-#define SYN_DALI_CMD_STORE_DTR_AS_FADE_TIME 0x2EU
-#define SYN_DALI_CMD_STORE_DTR_AS_FADE_RATE 0x2FU
+#define SYN_DALI_CMD_RESET 0x20U /**< Reset control gear parameters to defaults */
+#define SYN_DALI_CMD_STORE_ACTUAL_LEVEL_IN_DTR 0x21U   /**< Store current actual level in DTR */
+#define SYN_DALI_CMD_STORE_DTR_AS_MAX_LEVEL 0x2AU      /**< Store DTR as maximum level */
+#define SYN_DALI_CMD_STORE_DTR_AS_MIN_LEVEL 0x2BU      /**< Store DTR as minimum level */
+#define SYN_DALI_CMD_STORE_DTR_AS_SYS_FAIL_LEVEL 0x2CU /**< Store DTR as system failure level */
+#define SYN_DALI_CMD_STORE_DTR_AS_POWER_ON_LEVEL 0x2DU /**< Store DTR as power-on level */
+#define SYN_DALI_CMD_STORE_DTR_AS_FADE_TIME 0x2EU      /**< Store DTR as fade time */
+#define SYN_DALI_CMD_STORE_DTR_AS_FADE_RATE 0x2FU      /**< Store DTR as fade rate */
 
-#define SYN_DALI_CMD_STORE_DTR_AS_SCENE_BASE 0x40U /* 0x40..0x4F */
-#define SYN_DALI_CMD_REMOVE_FROM_SCENE_BASE 0x50U  /* 0x50..0x5F */
-#define SYN_DALI_CMD_ADD_TO_GROUP_BASE 0x60U       /* 0x60..0x6F */
-#define SYN_DALI_CMD_REMOVE_FROM_GROUP_BASE 0x70U  /* 0x70..0x7F */
-#define SYN_DALI_CMD_STORE_DTR_AS_SHORT_ADDR 0x80U
-#define SYN_DALI_CMD_ENABLE_WRITE_MEMORY 0x81U
+#define SYN_DALI_CMD_STORE_DTR_AS_SCENE_BASE \
+    0x40U /**< Base for Store DTR as Scene 0..15 (0x40..0x4F) */
+#define SYN_DALI_CMD_REMOVE_FROM_SCENE_BASE \
+    0x50U                                    /**< Base for Remove from Scene 0..15 (0x50..0x5F) */
+#define SYN_DALI_CMD_ADD_TO_GROUP_BASE 0x60U /**< Base for Add to Group 0..15 (0x60..0x6F) */
+#define SYN_DALI_CMD_REMOVE_FROM_GROUP_BASE \
+    0x70U /**< Base for Remove from Group 0..15 (0x70..0x7F) */
+#define SYN_DALI_CMD_STORE_DTR_AS_SHORT_ADDR 0x80U /**< Store DTR as short address */
+#define SYN_DALI_CMD_ENABLE_WRITE_MEMORY 0x81U     /**< Enable write memory */
 
-#define SYN_DALI_CMD_QUERY_STATUS 0x90U
-#define SYN_DALI_CMD_QUERY_CONTROL_GEAR 0x91U
-#define SYN_DALI_CMD_QUERY_LAMP_FAILURE 0x92U
-#define SYN_DALI_CMD_QUERY_LAMP_POWER_ON 0x93U
-#define SYN_DALI_CMD_QUERY_CONTENT_DTR 0x98U
-#define SYN_DALI_CMD_QUERY_DEVICE_TYPE 0x99U
-#define SYN_DALI_CMD_QUERY_PHYSICAL_MIN_LEVEL 0x9AU
-#define SYN_DALI_CMD_QUERY_CONTENT_DTR1 0x9CU
-#define SYN_DALI_CMD_QUERY_CONTENT_DTR2 0x9DU
-#define SYN_DALI_CMD_QUERY_ACTUAL_LEVEL 0xA0U
-#define SYN_DALI_CMD_QUERY_MAX_LEVEL 0xA1U
-#define SYN_DALI_CMD_QUERY_MIN_LEVEL 0xA2U
-#define SYN_DALI_CMD_QUERY_POWER_ON_LEVEL 0xA3U
-#define SYN_DALI_CMD_QUERY_SYS_FAIL_LEVEL 0xA4U
+#define SYN_DALI_CMD_QUERY_STATUS 0x90U             /**< Query gear status byte */
+#define SYN_DALI_CMD_QUERY_CONTROL_GEAR 0x91U       /**< Query if control gear present */
+#define SYN_DALI_CMD_QUERY_LAMP_FAILURE 0x92U       /**< Query lamp failure status */
+#define SYN_DALI_CMD_QUERY_LAMP_POWER_ON 0x93U      /**< Query lamp power on status */
+#define SYN_DALI_CMD_QUERY_CONTENT_DTR 0x98U        /**< Query DTR content */
+#define SYN_DALI_CMD_QUERY_DEVICE_TYPE 0x99U        /**< Query device type identifier */
+#define SYN_DALI_CMD_QUERY_PHYSICAL_MIN_LEVEL 0x9AU /**< Query physical minimum level */
+#define SYN_DALI_CMD_QUERY_CONTENT_DTR1 0x9CU       /**< Query DTR1 content */
+#define SYN_DALI_CMD_QUERY_CONTENT_DTR2 0x9DU       /**< Query DTR2 content */
+#define SYN_DALI_CMD_QUERY_ACTUAL_LEVEL 0xA0U       /**< Query current actual level */
+#define SYN_DALI_CMD_QUERY_MAX_LEVEL 0xA1U          /**< Query maximum level setting */
+#define SYN_DALI_CMD_QUERY_MIN_LEVEL 0xA2U          /**< Query minimum level setting */
+#define SYN_DALI_CMD_QUERY_POWER_ON_LEVEL 0xA3U     /**< Query power-on level setting */
+#define SYN_DALI_CMD_QUERY_SYS_FAIL_LEVEL 0xA4U     /**< Query system failure level setting */
 
-#define SYN_DALI_CMD_QUERY_GROUPS_0_7 0xC0U
-#define SYN_DALI_CMD_QUERY_GROUPS_8_15 0xC1U
-#define SYN_DALI_CMD_QUERY_RANDOM_ADDR_H 0xC2U
-#define SYN_DALI_CMD_QUERY_RANDOM_ADDR_M 0xC3U
-#define SYN_DALI_CMD_QUERY_RANDOM_ADDR_L 0xC4U
+#define SYN_DALI_CMD_QUERY_GROUPS_0_7 0xC0U    /**< Query group membership 0..7 */
+#define SYN_DALI_CMD_QUERY_GROUPS_8_15 0xC1U   /**< Query group membership 8..15 */
+#define SYN_DALI_CMD_QUERY_RANDOM_ADDR_H 0xC2U /**< Query random address high byte */
+#define SYN_DALI_CMD_QUERY_RANDOM_ADDR_M 0xC3U /**< Query random address middle byte */
+#define SYN_DALI_CMD_QUERY_RANDOM_ADDR_L 0xC4U /**< Query random address low byte */
 
 /* Special / Configuration Commands */
-#define SYN_DALI_SPEC_TERMINATE 0xA1U
-#define SYN_DALI_SPEC_DTR0 0xA3U
-#define SYN_DALI_SPEC_INITIALISE 0xA5U
-#define SYN_DALI_SPEC_RANDOMISE 0xA7U
-#define SYN_DALI_SPEC_COMPARE 0xA9U
-#define SYN_DALI_SPEC_WITHDRAW 0xABU
-#define SYN_DALI_SPEC_SEARCHADDRH 0xB1U
-#define SYN_DALI_SPEC_SEARCHADDRM 0xB3U
-#define SYN_DALI_SPEC_SEARCHADDRL 0xB5U
-#define SYN_DALI_SPEC_PROGRAM_SHORT_ADDR 0xB7U
-#define SYN_DALI_SPEC_VERIFY_SHORT_ADDR 0xB9U
-#define SYN_DALI_SPEC_QUERY_SHORT_ADDR 0xBBU
-#define SYN_DALI_SPEC_DTR1 0xC3U
-#define SYN_DALI_SPEC_DTR2 0xC5U
+#define SYN_DALI_SPEC_TERMINATE 0xA1U          /**< Special command Terminate addressing */
+#define SYN_DALI_SPEC_DTR0 0xA3U               /**< Special command Data Transfer Register 0 */
+#define SYN_DALI_SPEC_INITIALISE 0xA5U         /**< Special command Initialise addressing */
+#define SYN_DALI_SPEC_RANDOMISE 0xA7U          /**< Special command Randomise address */
+#define SYN_DALI_SPEC_COMPARE 0xA9U            /**< Special command Compare address search */
+#define SYN_DALI_SPEC_WITHDRAW 0xABU           /**< Special command Withdraw from search */
+#define SYN_DALI_SPEC_SEARCHADDRH 0xB1U        /**< Special command Search address high */
+#define SYN_DALI_SPEC_SEARCHADDRM 0xB3U        /**< Special command Search address middle */
+#define SYN_DALI_SPEC_SEARCHADDRL 0xB5U        /**< Special command Search address low */
+#define SYN_DALI_SPEC_PROGRAM_SHORT_ADDR 0xB7U /**< Special command Program short address */
+#define SYN_DALI_SPEC_VERIFY_SHORT_ADDR 0xB9U  /**< Special command Verify short address */
+#define SYN_DALI_SPEC_QUERY_SHORT_ADDR 0xBBU   /**< Special command Query short address */
+#define SYN_DALI_SPEC_DTR1 0xC3U               /**< Special command Data Transfer Register 1 */
+#define SYN_DALI_SPEC_DTR2 0xC5U               /**< Special command Data Transfer Register 2 */
 
 /* ── API Functions ──────────────────────────────────────────────────────── */
 

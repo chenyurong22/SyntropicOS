@@ -31,9 +31,9 @@ typedef enum {
  * @brief Generic Distance Sensor Context.
  */
 typedef struct {
-    SYN_DistanceType type;
-    SYN_GPIO_Pin trig_pin;
-    SYN_GPIO_Pin echo_pin;
+    SYN_DistanceType type;        /**< Distance sensor model type */
+    SYN_GPIO_Pin trig_pin;        /**< Trigger pulse / SCL GPIO pin */
+    SYN_GPIO_Pin echo_pin;        /**< Echo input / SDA GPIO pin */
     uint32_t last_distance_mm;    /**< Calculated distance in millimeters */
     uint32_t min_range_mm;        /**< Min sensor range in mm */
     uint32_t max_range_mm;        /**< Max sensor range in mm */

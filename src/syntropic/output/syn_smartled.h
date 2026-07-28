@@ -28,22 +28,22 @@ typedef enum {
 } SYN_SmartLEDOrder;
 
 /**
- * @brief 24-bit RGB Color Struct.
+ * @brief 24-bit RGB / 32-bit RGBW Color Struct.
  */
 typedef struct {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-    uint8_t w;
+    uint8_t r; /**< Red channel intensity (0-255) */
+    uint8_t g; /**< Green channel intensity (0-255) */
+    uint8_t b; /**< Blue channel intensity (0-255) */
+    uint8_t w; /**< White channel intensity (0-255) for RGBW strips */
 } SYN_SmartLEDColor;
 
 /**
  * @brief Generic Smart LED Strip Instance Context.
  */
 typedef struct {
-    SYN_GPIO_Pin data_pin;
-    SYN_SmartLEDOrder order;
-    uint16_t num_leds;
+    SYN_GPIO_Pin data_pin;        /**< Bit-bang or TIM/SPI GPIO data output pin */
+    SYN_SmartLEDOrder order;      /**< Pixel color channel order enum */
+    uint16_t num_leds;            /**< Total number of LEDs in chain */
     uint8_t brightness;           /**< Global brightness scale (0 to 255) */
     SYN_SmartLEDColor *pixel_buf; /**< Caller-allocated pixel buffer */
 } SYN_SmartLED;

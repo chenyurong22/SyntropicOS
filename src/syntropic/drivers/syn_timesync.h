@@ -51,9 +51,9 @@
 
 #if defined(SYN_USE_RTC) && SYN_USE_RTC
 #include "syn_rtc.h"
-#define SYN_TIMESYNC_HAS_RTC 1
+#define SYN_TIMESYNC_HAS_RTC 1 /**< RTC driver presence flag (1) */
 #else
-#define SYN_TIMESYNC_HAS_RTC 0
+#define SYN_TIMESYNC_HAS_RTC 0 /**< RTC driver presence flag (0) */
 #endif
 
 #include <stdbool.h>

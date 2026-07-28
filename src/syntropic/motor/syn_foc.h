@@ -114,12 +114,18 @@ void syn_foc_inv_park(const SYN_FOC_DQ *dq, q16_t theta, SYN_FOC_AB *ab);
 /* ── Utility ────────────────────────────────────────────────────────────── */
 
 /**
- * @brief Park transform: stationary (α,β) → rotating (d,q) using ultra-fast sincos.
+ * @brief Park transform: stationary (alpha,beta) -> rotating (d,q) using ultra-fast sincos.
+ * @param ab    Input stationary-frame values.
+ * @param theta Electrical angle in radians (Q16.16).
+ * @param dq    Output rotating-frame values.
  */
 void syn_foc_park_fast(const SYN_FOC_AB *ab, q16_t theta, SYN_FOC_DQ *dq);
 
 /**
- * @brief Inverse Park: rotating (d,q) → stationary (α,β) using ultra-fast sincos.
+ * @brief Inverse Park: rotating (d,q) -> stationary (alpha,beta) using ultra-fast sincos.
+ * @param dq    Input rotating-frame values.
+ * @param theta Electrical angle in radians (Q16.16).
+ * @param ab    Output stationary-frame values.
  */
 void syn_foc_inv_park_fast(const SYN_FOC_DQ *dq, q16_t theta, SYN_FOC_AB *ab);
 

@@ -24,23 +24,23 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_DHCP_CLIENT_PORT 68U
-#define SYN_DHCP_SERVER_PORT 67U
+#define SYN_DHCP_CLIENT_PORT 68U /**< DHCP UDP client port (68) */
+#define SYN_DHCP_SERVER_PORT 67U /**< DHCP UDP server port (67) */
 
-#define SYN_DHCP_MAGIC_COOKIE 0x63825363UL
+#define SYN_DHCP_MAGIC_COOKIE 0x63825363UL /**< DHCP options magic cookie (99.130.83.99) */
 
-#define SYN_DHCP_DISCOVER 1U
-#define SYN_DHCP_OFFER 2U
-#define SYN_DHCP_REQUEST 3U
-#define SYN_DHCP_DECLINE 4U
-#define SYN_DHCP_ACK 5U
-#define SYN_DHCP_NAK 6U
+#define SYN_DHCP_DISCOVER 1U /**< DHCP Message Type: DISCOVER (1) */
+#define SYN_DHCP_OFFER 2U    /**< DHCP Message Type: OFFER (2) */
+#define SYN_DHCP_REQUEST 3U  /**< DHCP Message Type: REQUEST (3) */
+#define SYN_DHCP_DECLINE 4U  /**< DHCP Message Type: DECLINE (4) */
+#define SYN_DHCP_ACK 5U      /**< DHCP Message Type: ACK (5) */
+#define SYN_DHCP_NAK 6U      /**< DHCP Message Type: NAK (6) */
 
-#define SYN_DHCP_OPT_SUBNET_MASK 1U
-#define SYN_DHCP_OPT_ROUTER 3U
-#define SYN_DHCP_OPT_LEASE_TIME 51U
-#define SYN_DHCP_OPT_MSG_TYPE 53U
-#define SYN_DHCP_OPT_END 255U
+#define SYN_DHCP_OPT_SUBNET_MASK 1U /**< DHCP Option 1: Subnet Mask */
+#define SYN_DHCP_OPT_ROUTER 3U      /**< DHCP Option 3: Router/Gateway IP */
+#define SYN_DHCP_OPT_LEASE_TIME 51U /**< DHCP Option 51: IP Address Lease Time */
+#define SYN_DHCP_OPT_MSG_TYPE 53U   /**< DHCP Option 53: DHCP Message Type */
+#define SYN_DHCP_OPT_END 255U       /**< DHCP Option 255: End Marker */
 
 /** DHCP Client State Machine Enum. */
 typedef enum {
@@ -53,7 +53,7 @@ typedef enum {
 
 /** DHCP Client Context Descriptor. */
 typedef struct {
-    SYN_DHCP_State state;
+    SYN_DHCP_State state;    /**< Active state machine state */
     uint32_t xid;            /**< Transaction ID */
     uint32_t offered_ip;     /**< IP offered by server */
     uint32_t subnet_mask;    /**< Subnet mask */

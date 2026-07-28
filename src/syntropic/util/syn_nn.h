@@ -49,21 +49,21 @@ typedef enum { SYN_NN_LAYER_DENSE = 0, SYN_NN_LAYER_ATTENTION } SYN_NN_LayerType
  * @brief Layer Descriptor Struct.
  */
 typedef struct {
-    SYN_NN_LayerType type;
-    size_t num_inputs;
-    size_t num_outputs;
-    const q7_t *weights;
-    const q16_t *biases;
-    SYN_NN_Activation act;
-    uint8_t out_shift;
+    SYN_NN_LayerType type; /**< Layer type enum (Dense or Attention) */
+    size_t num_inputs;     /**< Number of input features */
+    size_t num_outputs;    /**< Number of output neurons/filters */
+    const q7_t *weights;   /**< Pointer to layer INT8 weights array */
+    const q16_t *biases;   /**< Pointer to layer Q16 biases array */
+    SYN_NN_Activation act; /**< Activation function enum */
+    uint8_t out_shift;     /**< Right bit-shift output scaling factor */
 } SYN_NN_Layer;
 
 /**
  * @brief Model Descriptor Struct.
  */
 typedef struct {
-    const SYN_NN_Layer *layers;
-    size_t num_layers;
+    const SYN_NN_Layer *layers; /**< Pointer to array of network layers */
+    size_t num_layers;          /**< Number of layers in model */
 } SYN_NN_Model;
 
 /**
@@ -87,6 +87,19 @@ SYN_Status syn_nn_dense_q7(const q7_t *inputs, size_t num_inputs, const q7_t *we
 
 /**
  * @brief Evaluate a Dense Neural Network layer cooperatively inside a protothread.
+ *
+ * @param pt             Pointer to protothread state machine.
+ * @param inputs         Pointer to input vector.
+ * @param num_inputs     Number of input features.
+ * @param weights        Flat weight matrix.
+ * @param biases         Bias vector or NULL.
+ * @param outputs        Destination output vector.
+ * @param num_outputs    Number of output neurons.
+ * @param act            Activation function to apply.
+ * @param out_shift      Right bit-shift scaling factor.
+ * @param current_neuron State variable tracking progress across yields.
+ * @param chunk_size     Number of neurons to evaluate per protothread tick.
+ * @return SYN_PT_YIELDING while evaluating, SYN_PT_ENDED on completion.
  */
 SYN_PT_Status syn_nn_dense_pt(SYN_PT *pt, const q7_t *inputs, size_t num_inputs,
                               const q7_t *weights, const q16_t *biases, q7_t *outputs,
@@ -150,7 +163,21 @@ SYN_Status syn_nn_conv1d_q7(const q7_t *inputs, size_t seq_len, size_t num_chann
 /**
  * @brief Evaluate a 1D Temporal Convolution layer cooperatively inside a protothread.
  *
- * Computes chunk_size output steps per protothread tick, yielding to caller via PT_YIELD.
+ * @param pt           Pointer to protothread state machine.
+ * @param inputs       Pointer to input matrix.
+ * @param seq_len      Sequence length.
+ * @param num_channels Number of input channels.
+ * @param weights      Kernel weights matrix.
+ * @param biases       Bias vector or NULL.
+ * @param outputs      Destination output matrix.
+ * @param num_filters  Number of output filters.
+ * @param kernel_size  Kernel window size.
+ * @param stride       Stride step.
+ * @param act          Activation function.
+ * @param out_shift    Right bit-shift scaling factor.
+ * @param current_step State variable tracking step progress across yields.
+ * @param chunk_size   Number of output steps to evaluate per tick.
+ * @return SYN_PT_YIELDING while evaluating, SYN_PT_ENDED on completion.
  */
 SYN_PT_Status syn_nn_conv1d_pt(SYN_PT *pt, const q7_t *inputs, size_t seq_len, size_t num_channels,
                                const q7_t *weights, const q16_t *biases, q7_t *outputs,
@@ -160,6 +187,19 @@ SYN_PT_Status syn_nn_conv1d_pt(SYN_PT *pt, const q7_t *inputs, size_t seq_len, s
 
 /**
  * @brief Evaluate a 1D Temporal Convolution layer with affine quantization scaling.
+ *
+ * @param inputs       Pointer to input matrix.
+ * @param seq_len      Sequence length.
+ * @param num_channels Number of input channels.
+ * @param weights      Kernel weights matrix.
+ * @param biases       Bias vector or NULL.
+ * @param outputs      Destination output matrix.
+ * @param num_filters  Number of output filters.
+ * @param kernel_size  Kernel window size.
+ * @param stride       Stride step.
+ * @param act          Activation function.
+ * @param quant        Pointer to affine quantization scaling parameters.
+ * @return SYN_OK on success, SYN_INVALID_PARAM on failure.
  */
 SYN_Status syn_nn_conv1d_quant_q7(const q7_t *inputs, size_t seq_len, size_t num_channels,
                                   const q7_t *weights, const q16_t *biases, q7_t *outputs,
@@ -168,6 +208,16 @@ SYN_Status syn_nn_conv1d_quant_q7(const q7_t *inputs, size_t seq_len, size_t num
 
 /**
  * @brief Evaluate a Dense layer with affine quantization scaling.
+ *
+ * @param inputs      Pointer to input vector.
+ * @param num_inputs  Number of input features.
+ * @param weights     Flat weight matrix.
+ * @param biases      Bias vector or NULL.
+ * @param outputs     Destination output vector.
+ * @param num_outputs Number of output neurons.
+ * @param act         Activation function.
+ * @param quant       Pointer to affine quantization scaling parameters.
+ * @return SYN_OK on success, SYN_INVALID_PARAM on failure.
  */
 SYN_Status syn_nn_dense_quant_q7(const q7_t *inputs, size_t num_inputs, const q7_t *weights,
                                  const q16_t *biases, q7_t *outputs, size_t num_outputs,
@@ -175,18 +225,38 @@ SYN_Status syn_nn_dense_quant_q7(const q7_t *inputs, size_t num_inputs, const q7
 
 /**
  * @brief 1D Max Pooling Layer for INT8 Feature Maps.
+ *
+ * @param inputs       Pointer to input feature matrix.
+ * @param seq_len      Input sequence length.
+ * @param num_channels Number of feature channels.
+ * @param outputs      Destination output matrix.
+ * @param pool_size    Pooling window size.
+ * @param stride       Stride step size.
+ * @return SYN_OK on success, SYN_INVALID_PARAM on failure.
  */
 SYN_Status syn_nn_maxpool1d_q7(const q7_t *inputs, size_t seq_len, size_t num_channels,
                                q7_t *outputs, size_t pool_size, size_t stride);
 
 /**
  * @brief 1D Average Pooling Layer for INT8 Feature Maps.
+ *
+ * @param inputs       Pointer to input feature matrix.
+ * @param seq_len      Input sequence length.
+ * @param num_channels Number of feature channels.
+ * @param outputs      Destination output matrix.
+ * @param pool_size    Pooling window size.
+ * @param stride       Stride step size.
+ * @return SYN_OK on success, SYN_INVALID_PARAM on failure.
  */
 SYN_Status syn_nn_avgpool1d_q7(const q7_t *inputs, size_t seq_len, size_t num_channels,
                                q7_t *outputs, size_t pool_size, size_t stride);
 
 /**
  * @brief Find the class index with the highest output value (ArgMax).
+ *
+ * @param outputs     Pointer to output vector.
+ * @param num_outputs Number of output elements.
+ * @return Index of maximum value element (0 if num_outputs == 0 or NULL).
  */
 size_t syn_nn_argmax_q7(const q7_t *outputs, size_t num_outputs);
 

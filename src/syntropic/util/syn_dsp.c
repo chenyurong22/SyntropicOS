@@ -7,9 +7,11 @@
 
 #include <math.h>
 
+/** @cond */
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+/** @endcond */
 
 SYN_Status syn_dsp_dct2_q7(const q7_t *time_series, size_t num_samples, q7_t *dct_coeffs,
                            size_t num_coeffs)

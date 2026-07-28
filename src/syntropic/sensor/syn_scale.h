@@ -30,9 +30,9 @@ typedef enum {
  * @brief Generic Weight Scale Instance Context.
  */
 typedef struct {
-    SYN_ScaleType type;
-    SYN_GPIO_Pin dout_pin;
-    SYN_GPIO_Pin sck_pin;
+    SYN_ScaleType type;      /**< Scale ADC model type */
+    SYN_GPIO_Pin dout_pin;   /**< Serial data out / SDA GPIO pin */
+    SYN_GPIO_Pin sck_pin;    /**< Serial clock / SCL GPIO pin */
     int32_t tare_offset;     /**< Zero-point tare offset raw reading */
     float scale_factor;      /**< Counts per gram scale factor */
     float last_weight_grams; /**< Calculated weight in grams */

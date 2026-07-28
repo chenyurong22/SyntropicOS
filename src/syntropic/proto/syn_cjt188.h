@@ -89,11 +89,14 @@ typedef struct {
 /**
  * @brief Streaming Decoder State Machine for CJ/T 188.
  */
+/**
+ * @brief Streaming Decoder State Machine for CJ/T 188.
+ */
 typedef struct {
-    uint8_t buf[SYN_CJT188_MAX_FRAME_SIZE];
-    size_t index;
-    size_t expected_len;
-    bool in_frame;
+    uint8_t buf[SYN_CJT188_MAX_FRAME_SIZE]; /**< Frame assembly buffer */
+    size_t index;                           /**< Current byte index in buffer */
+    size_t expected_len;                    /**< Total expected frame byte length */
+    bool in_frame;                          /**< True if currently receiving active frame */
 } SYN_CJT188_Decoder;
 
 /* ── Public API ─────────────────────────────────────────────────────────── */
@@ -151,6 +154,7 @@ bool syn_cjt188_parse_frame(const uint8_t *buf, size_t len, SYN_CJT188_Frame *ou
 
 /**
  * @brief Initialize a CJ/T 188 streaming decoder instance.
+ * @param decoder Pointer to decoder instance.
  */
 void syn_cjt188_decoder_init(SYN_CJT188_Decoder *decoder);
 

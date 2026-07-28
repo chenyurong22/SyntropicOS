@@ -1,7 +1,7 @@
 /**
  * @file syn_at_parser.c
  * @brief Implementation of stream-oriented AT command parser.
- * @ingroup syn_proto
+ * @ingroup syn_protocol
  */
 
 #include "syn_at_parser.h"
@@ -38,6 +38,12 @@ void syn_at_parser_reset(SYN_AtParser *parser)
     }
 }
 
+/**
+ * @brief Check if string starts with given prefix.
+ * @param str Input string.
+ * @param prefix Prefix string.
+ * @return True if str starts with prefix.
+ */
 static bool starts_with(const char *str, const char *prefix)
 {
     if (str == NULL || prefix == NULL)
@@ -138,6 +144,12 @@ int syn_at_parser_get_cme_error(const SYN_AtParser *parser)
     return parser->cme_error_code;
 }
 
+/**
+ * @brief Find starting position of parameter by index.
+ * @param line Input line string.
+ * @param param_idx 0-based parameter index.
+ * @return Pointer to start of parameter, or NULL if index out of range.
+ */
 static const char *find_param_start(const char *line, size_t param_idx)
 {
     if (line == NULL) {

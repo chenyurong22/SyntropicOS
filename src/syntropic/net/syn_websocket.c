@@ -178,6 +178,12 @@ static void base64_encode(const uint8_t *src, size_t len, char *dst)
 
 #include "../util/syn_fmt.h"
 
+/**
+ * @brief Case-insensitive string prefix check.
+ * @param str Input string.
+ * @param prefix Prefix to test.
+ * @return True if str starts with prefix (case-insensitive).
+ */
 static inline bool prefix_icase(const char *str, const char *prefix)
 {
     return syn_str_prefix_icase(str, prefix);

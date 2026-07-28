@@ -22,9 +22,9 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_MAVLINK_STX_V2 0xFD
-#define SYN_MAVLINK_MAX_PAYLOAD_LEN 255U
-#define SYN_MAVLINK_HEADER_LEN 10U
+#define SYN_MAVLINK_STX_V2 0xFD          /**< MAVLink v2 Start of Frame marker byte (0xFD) */
+#define SYN_MAVLINK_MAX_PAYLOAD_LEN 255U /**< Maximum MAVLink payload length in bytes */
+#define SYN_MAVLINK_HEADER_LEN 10U       /**< MAVLink v2 header length in bytes */
 
 /** MAVLink Message IDs. */
 typedef enum {
@@ -37,32 +37,32 @@ typedef enum {
 
 /** Parsed MAVLink v2 Frame. */
 typedef struct {
-    uint8_t payload_len;
-    uint8_t incompat_flags;
-    uint8_t compat_flags;
-    uint8_t seq;
-    uint8_t sys_id;
-    uint8_t comp_id;
-    uint32_t msg_id;
-    uint8_t payload[SYN_MAVLINK_MAX_PAYLOAD_LEN];
+    uint8_t payload_len;                          /**< Payload length in bytes */
+    uint8_t incompat_flags;                       /**< Incompatibility flags byte */
+    uint8_t compat_flags;                         /**< Compatibility flags byte */
+    uint8_t seq;                                  /**< Sequence number */
+    uint8_t sys_id;                               /**< Sender system ID */
+    uint8_t comp_id;                              /**< Sender component ID */
+    uint32_t msg_id;                              /**< 24-bit Message ID */
+    uint8_t payload[SYN_MAVLINK_MAX_PAYLOAD_LEN]; /**< Frame payload bytes */
 } SYN_MAVLINK_Frame;
 
 /** MAVLink v2 Streaming Parser Instance. */
 typedef struct {
-    uint8_t state;
-    uint8_t payload_len;
-    uint8_t incompat_flags;
-    uint8_t compat_flags;
-    uint8_t seq;
-    uint8_t sys_id;
-    uint8_t comp_id;
-    uint32_t msg_id;
-    uint8_t payload_idx;
-    uint8_t payload[SYN_MAVLINK_MAX_PAYLOAD_LEN];
-    uint16_t crc;
-    SYN_MAVLINK_Frame last_frame;
-    uint32_t packets_received;
-    uint32_t crc_errors;
+    uint8_t state;                                /**< Internal parser state machine step */
+    uint8_t payload_len;                          /**< Expected payload length */
+    uint8_t incompat_flags;                       /**< Received incompatibility flags */
+    uint8_t compat_flags;                         /**< Received compatibility flags */
+    uint8_t seq;                                  /**< Received sequence number */
+    uint8_t sys_id;                               /**< Received system ID */
+    uint8_t comp_id;                              /**< Received component ID */
+    uint32_t msg_id;                              /**< Decoded message ID */
+    uint8_t payload_idx;                          /**< Current payload write index */
+    uint8_t payload[SYN_MAVLINK_MAX_PAYLOAD_LEN]; /**< Internal payload buffer */
+    uint16_t crc;                                 /**< Running CRC accumulator */
+    SYN_MAVLINK_Frame last_frame;                 /**< Last successfully parsed frame */
+    uint32_t packets_received;                    /**< Total valid packets parsed */
+    uint32_t crc_errors;                          /**< Count of CRC mismatch errors */
 } SYN_MAVLINK_Parser;
 
 /**
@@ -103,11 +103,10 @@ SYN_Status syn_mavlink_encode_msg(uint8_t sys_id, uint8_t comp_id, uint8_t seq, 
                                   uint8_t *buf_out, size_t *out_len);
 
 /**
- * @brief Compute MAVLink X25 CRC over buffer.
+ * @brief Accumulate single byte into MAVLink X25 CRC.
  *
- * @param data Pointer to input data.
- * @param len  Length in bytes.
- * @param crc  Initial CRC accumulator.
+ * @param byte Input byte to accumulate.
+ * @param crc  Initial CRC accumulator value.
  * @return Updated 16-bit CRC value.
  */
 uint16_t syn_mavlink_crc_accumulate(uint8_t byte, uint16_t crc);

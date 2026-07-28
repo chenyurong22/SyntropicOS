@@ -31,13 +31,13 @@ typedef enum {
  * @brief Generic Climate Sensor Context.
  */
 typedef struct {
-    SYN_ClimateType type;
-    SYN_SoftI2C i2c;
-    uint8_t i2c_addr;
-    float temperature_c; /**< Temperature in Degrees Celsius */
-    float humidity_rh;   /**< Relative Humidity % */
-    float pressure_hpa;  /**< Barometric Pressure in hPa / mbar */
-    float dew_point_c;   /**< Calculated Dew Point in Degrees Celsius */
+    SYN_ClimateType type; /**< Climate sensor model type */
+    SYN_SoftI2C i2c;      /**< Software I2C bus context */
+    uint8_t i2c_addr;     /**< 7-bit I2C device address */
+    float temperature_c;  /**< Temperature in Degrees Celsius */
+    float humidity_rh;    /**< Relative Humidity % */
+    float pressure_hpa;   /**< Barometric Pressure in hPa / mbar */
+    float dew_point_c;    /**< Calculated Dew Point in Degrees Celsius */
 } SYN_Climate;
 
 /**

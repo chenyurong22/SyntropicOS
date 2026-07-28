@@ -39,11 +39,11 @@ typedef struct {
 
 /** Failsafe Manager State Instance. */
 typedef struct {
-    SYN_Failsafe_Config config;
-    uint32_t last_frame_ms;
-    bool in_failsafe;
-    uint32_t failsafe_events;
-    uint16_t channels[SYN_RC_FAILSAFE_MAX_CHANNELS];
+    SYN_Failsafe_Config config;                      /**< Active configuration settings */
+    uint32_t last_frame_ms;                          /**< Timestamp of last valid frame in ms */
+    bool in_failsafe;                                /**< True if currently in failsafe mode */
+    uint32_t failsafe_events;                        /**< Total failsafe trigger events count */
+    uint16_t channels[SYN_RC_FAILSAFE_MAX_CHANNELS]; /**< Output channel pulse widths in us */
 } SYN_Failsafe_Manager;
 
 /**

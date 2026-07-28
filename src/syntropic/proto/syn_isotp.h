@@ -11,7 +11,7 @@
  * single link context).
  *
  * Support for CAN FD (64-byte payload frames & ISO 15765-2:2016 extended length)
- * is opt-in via #define SYN_USE_CAN_FD 1.
+ * is opt-in via `SYN_USE_CAN_FD`.
  *
  * ## Usage Example (STM32 / Hardware CAN Integration)
  * @code
@@ -69,6 +69,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/** @cond */
 #if !defined(_SSIZE_T_DEFINED_) && !defined(_SSIZE_T_DECLARED) && !defined(__ssize_t_defined) && \
     !defined(_SSIZE_T_) && !defined(_SSIZE_T) && !defined(_SSIZE_T_DEFINED)
 typedef intptr_t ssize_t;
@@ -79,6 +80,7 @@ typedef intptr_t ssize_t;
 #define _SSIZE_T
 #define _SSIZE_T_DEFINED
 #endif
+/** @endcond */
 
 #ifdef __cplusplus
 extern "C" {

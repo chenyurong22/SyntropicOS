@@ -23,7 +23,7 @@ extern "C" {
 /** @brief DMX512 Protocol Constants */
 #define SYN_DMX512_MAX_CHANNELS 512U
 #define SYN_DMX512_START_CODE_NULL 0x00U /**< Standard dimmer start code */
-#define SYN_DMX512_BAUD_RATE 250000UL
+#define SYN_DMX512_BAUD_RATE 250000UL    /**< DMX512 standard serial baud rate (250000) */
 
 /** @brief DMX512 Receiver State Machine States */
 typedef enum {

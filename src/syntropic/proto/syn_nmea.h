@@ -57,71 +57,71 @@ typedef enum {
 
 /** @brief Parsed NMEA GGA (Fix Data) Structure */
 typedef struct {
-    uint8_t hours;
-    uint8_t minutes;
-    uint8_t seconds;
-    uint16_t milliseconds;
-    double latitude;  /**< Decimal degrees (+N, -S) */
-    double longitude; /**< Decimal degrees (+E, -W) */
-    SYN_NMEA_FixQuality fix_quality;
-    uint8_t num_satellites;
-    float hdop;
-    float altitude_m;
-    bool valid;
+    uint8_t hours;                   /**< UTC hours (0..23) */
+    uint8_t minutes;                 /**< UTC minutes (0..59) */
+    uint8_t seconds;                 /**< UTC seconds (0..59) */
+    uint16_t milliseconds;           /**< UTC milliseconds (0..999) */
+    double latitude;                 /**< Decimal degrees (+N, -S) */
+    double longitude;                /**< Decimal degrees (+E, -W) */
+    SYN_NMEA_FixQuality fix_quality; /**< Fix quality indicator */
+    uint8_t num_satellites;          /**< Number of satellites in view/use */
+    float hdop;                      /**< Horizontal Dilution of Precision */
+    float altitude_m;                /**< Antenna altitude above mean sea level in meters */
+    bool valid;                      /**< True if frame parsed successfully */
 } SYN_NMEA_GGA;
 
 /** @brief Parsed NMEA RMC (Recommended Minimum Data) Structure */
 typedef struct {
-    uint8_t hours;
-    uint8_t minutes;
-    uint8_t seconds;
-    uint16_t milliseconds;
-    bool status_valid; /**< 'A' = valid, 'V' = receiver warning */
-    double latitude;   /**< Decimal degrees (+N, -S) */
-    double longitude;  /**< Decimal degrees (+E, -W) */
-    float speed_knots; /**< Speed over ground in knots */
-    float course_deg;  /**< Course over ground in true degrees */
-    uint8_t day;
-    uint8_t month;
-    uint16_t year;
-    bool valid;
+    uint8_t hours;         /**< UTC hours (0..23) */
+    uint8_t minutes;       /**< UTC minutes (0..59) */
+    uint8_t seconds;       /**< UTC seconds (0..59) */
+    uint16_t milliseconds; /**< UTC milliseconds (0..999) */
+    bool status_valid;     /**< 'A' = valid, 'V' = receiver warning */
+    double latitude;       /**< Decimal degrees (+N, -S) */
+    double longitude;      /**< Decimal degrees (+E, -W) */
+    float speed_knots;     /**< Speed over ground in knots */
+    float course_deg;      /**< Course over ground in true degrees */
+    uint8_t day;           /**< Day of month (1..31) */
+    uint8_t month;         /**< Month of year (1..12) */
+    uint16_t year;         /**< Full year (e.g. 2026) */
+    bool valid;            /**< True if frame parsed successfully */
 } SYN_NMEA_RMC;
 
 /** @brief Parsed NMEA VTG (Velocity & Course) Structure */
 typedef struct {
-    float course_true_deg;
-    float speed_knots;
-    float speed_kph;
-    bool valid;
+    float course_true_deg; /**< True track course in degrees */
+    float speed_knots;     /**< Speed over ground in knots */
+    float speed_kph;       /**< Speed over ground in km/h */
+    bool valid;            /**< True if frame parsed successfully */
 } SYN_NMEA_VTG;
 
 /** @brief Parsed NMEA GSA (DOP & Active Satellites) Structure */
 typedef struct {
     char mode;        /**< 'M' = Manual, 'A' = Automatic */
     uint8_t fix_type; /**< 1 = No fix, 2 = 2D fix, 3 = 3D fix */
-    float pdop;
-    float hdop;
-    float vdop;
-    bool valid;
+    float pdop;       /**< Position Dilution of Precision */
+    float hdop;       /**< Horizontal Dilution of Precision */
+    float vdop;       /**< Vertical Dilution of Precision */
+    bool valid;       /**< True if frame parsed successfully */
 } SYN_NMEA_GSA;
 
 /** @brief Parsed NMEA ZDA (UTC Date & Time) Structure */
 typedef struct {
-    uint8_t hours;
-    uint8_t minutes;
-    uint8_t seconds;
-    uint16_t milliseconds;
-    uint8_t day;
-    uint8_t month;
-    uint16_t year;
-    bool valid;
+    uint8_t hours;         /**< UTC hours (0..23) */
+    uint8_t minutes;       /**< UTC minutes (0..59) */
+    uint8_t seconds;       /**< UTC seconds (0..59) */
+    uint16_t milliseconds; /**< UTC milliseconds (0..999) */
+    uint8_t day;           /**< Day of month (1..31) */
+    uint8_t month;         /**< Month of year (1..12) */
+    uint16_t year;         /**< Full year (e.g. 2026) */
+    bool valid;            /**< True if frame parsed successfully */
 } SYN_NMEA_ZDA;
 
 /** @brief Streaming NMEA Parser State Machine */
 typedef struct {
-    char buf[SYN_NMEA_MAX_SENTENCE_LEN + 1];
-    uint8_t pos;
-    bool in_sentence;
+    char buf[SYN_NMEA_MAX_SENTENCE_LEN + 1]; /**< Sentence assembly line buffer */
+    uint8_t pos;                             /**< Current buffer write index */
+    bool in_sentence;                        /**< True if start byte '$' received */
 } SYN_NMEA_Parser;
 
 /**

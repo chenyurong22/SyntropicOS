@@ -11,12 +11,22 @@
 
 #include <string.h>
 
+/**
+ * @brief Write 16-bit unsigned integer in big-endian byte order.
+ * @param p Pointer to output buffer.
+ * @param val 16-bit integer value.
+ */
 static inline void write_u16_be(uint8_t *p, uint16_t val)
 {
     size_t pos = 0;
     syn_pack_u16(p, &pos, val);
 }
 
+/**
+ * @brief Read 16-bit unsigned integer in big-endian byte order.
+ * @param p Pointer to input buffer.
+ * @return Unpacked 16-bit integer value.
+ */
 static inline uint16_t read_u16_be(const uint8_t *p)
 {
     return syn_peek_u16(p, 0);

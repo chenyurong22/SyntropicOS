@@ -28,9 +28,9 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_CRSF_MAX_PACKET_LEN 64U
-#define SYN_CRSF_NUM_CHANNELS 16U
-#define SYN_CRSF_ADDR_FC 0xC8U
+#define SYN_CRSF_MAX_PACKET_LEN 64U /**< Maximum CRSF frame byte length */
+#define SYN_CRSF_NUM_CHANNELS 16U   /**< Number of RC channels in CRSF frame (16) */
+#define SYN_CRSF_ADDR_FC 0xC8U      /**< Flight Controller sync address (0xC8) */
 
 /** CRSF Frame Types. */
 typedef enum {
@@ -61,13 +61,13 @@ typedef struct {
 
 /** CRSF Parser Instance. */
 typedef struct {
-    uint8_t buf[SYN_CRSF_MAX_PACKET_LEN];
-    uint8_t idx;
-    uint8_t payload_len;
-    uint32_t packets_received;
-    uint32_t crc_errors;
-    SYN_CRSF_ChannelsFrame last_channels;
-    SYN_CRSF_LinkStats last_link_stats;
+    uint8_t buf[SYN_CRSF_MAX_PACKET_LEN]; /**< Assembly buffer */
+    uint8_t idx;                          /**< Current write index */
+    uint8_t payload_len;                  /**< Expected payload length */
+    uint32_t packets_received;            /**< Total valid packets received */
+    uint32_t crc_errors;                  /**< Count of CRC errors */
+    SYN_CRSF_ChannelsFrame last_channels; /**< Last decoded RC channels */
+    SYN_CRSF_LinkStats last_link_stats;   /**< Last decoded link statistics */
 } SYN_CRSF_Parser;
 
 /**

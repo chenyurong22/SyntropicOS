@@ -27,7 +27,7 @@
  *       // Process decoded frame: frame.protocol, frame.address, frame.command
  *   }
  * @endcode
- * @ingroup syn_proto
+ * @ingroup syn_protocol
  */
 
 #ifndef SYN_IR_H
@@ -80,7 +80,7 @@ typedef enum {
 
 /* ── Frame Flags ────────────────────────────────────────────────────────── */
 
-#define SYN_IR_FLAG_NONE 0x0000U
+#define SYN_IR_FLAG_NONE 0x0000U     /**< No frame flags active */
 #define SYN_IR_FLAG_REPEAT (1U << 0) /**< Set if this frame is a repeat code / held key */
 #define SYN_IR_FLAG_TOGGLE (1U << 1) /**< Toggle bit active (RC5 / RC6) */
 
@@ -110,10 +110,11 @@ typedef struct {
 
 /* ── Decoder State Machine Handle ───────────────────────────────────────── */
 
+/** IR Decoder Finite State Machine States. */
 typedef enum {
-    SYN_IR_STATE_IDLE = 0,
-    SYN_IR_STATE_LEADER,
-    SYN_IR_STATE_DATA,
+    SYN_IR_STATE_IDLE = 0, /**< Idle, awaiting leader pulse */
+    SYN_IR_STATE_LEADER,   /**< Leader pulse received */
+    SYN_IR_STATE_DATA,     /**< Decoding data bits */
     SYN_IR_STATE_TRAILER
 } SYN_IR_FsmState;
 

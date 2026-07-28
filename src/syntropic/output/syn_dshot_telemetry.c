@@ -7,7 +7,7 @@
 
 #include "syntropic/output/syn_dshot.h"
 
-/* GCR (Group Code Recording) 5-bit to 4-bit nibble lookup table (-1 = invalid) */
+/** GCR (Group Code Recording) 5-bit to 4-bit nibble lookup table (-1 = invalid) */
 static const int8_t gcr_to_nibble[32] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, 9,  10,
                                          11, -1, 13, 14, 15, -1, -1, 2,  3,  -1, 5,
                                          6,  7,  -1, 0,  8,  1,  -1, 4,  12, -1};

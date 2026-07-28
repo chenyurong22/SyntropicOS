@@ -11,7 +11,9 @@
 
 #include <string.h>
 
+/** Global native UDP stack pointer */
 static SYN_UDP *g_native_udp = NULL;
+/** Internal static transmission buffer */
 static uint8_t g_udp_tx_buf[SYN_ETH_MAX_FRAME_LEN];
 
 void syn_transport_udp_set_instance(SYN_UDP *udp)

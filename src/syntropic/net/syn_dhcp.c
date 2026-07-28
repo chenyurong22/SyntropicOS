@@ -18,6 +18,11 @@ SYN_Status syn_dhcp_init(SYN_DHCP *dhcp, uint32_t xid)
     return SYN_OK;
 }
 
+/**
+ * @brief Pack 32-bit integer in big-endian byte order.
+ * @param buf Output byte buffer.
+ * @param val 32-bit value to pack.
+ */
 static void pack_uint32(uint8_t *buf, uint32_t val)
 {
     buf[0] = (uint8_t)(val >> 24);
@@ -26,6 +31,11 @@ static void pack_uint32(uint8_t *buf, uint32_t val)
     buf[3] = (uint8_t)(val);
 }
 
+/**
+ * @brief Unpack 32-bit integer from big-endian byte order.
+ * @param buf Input byte buffer.
+ * @return Unpacked 32-bit integer.
+ */
 static uint32_t unpack_uint32(const uint8_t *buf)
 {
     return ((uint32_t)buf[0] << 24) | ((uint32_t)buf[1] << 16) | ((uint32_t)buf[2] << 8) |

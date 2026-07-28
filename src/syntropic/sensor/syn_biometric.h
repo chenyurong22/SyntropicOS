@@ -30,9 +30,9 @@ typedef enum {
  * @brief Generic Biometric Sensor Context.
  */
 typedef struct {
-    SYN_BiometricType type;
-    SYN_SoftI2C i2c;
-    uint8_t i2c_addr;
+    SYN_BiometricType type;  /**< Biometric sensor model type */
+    SYN_SoftI2C i2c;         /**< Software I2C bus context */
+    uint8_t i2c_addr;        /**< 7-bit I2C device address */
     uint16_t heart_rate_bpm; /**< Measured Heart Rate in BPM (e.g. 72) */
     float spo2_pct;          /**< Measured Blood Oxygen Saturation % (e.g. 98.5%) */
     bool finger_detected;    /**< True if finger placed on sensor glass */

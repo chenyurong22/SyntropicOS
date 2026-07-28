@@ -14,22 +14,34 @@
 
 #include <string.h>
 
+/**
+ * @brief Weak hook to obtain UDP transport instance.
+ * @return Pointer to global SYN_UDP instance, or NULL if unavailable.
+ */
 SYN_WEAK SYN_UDP *syn_transport_udp_get_instance(void)
 {
     return NULL;
 }
 
-/** Weak hook so callers can inject ICMP and TCP engine instances. */
+/**
+ * @brief Weak hook so callers can inject ICMP engine instance.
+ * @return Pointer to global SYN_ICMP instance, or NULL if unavailable.
+ */
 SYN_WEAK struct SYN_ICMP *syn_eth_get_icmp_instance(void)
 {
     return NULL;
 }
 
+/**
+ * @brief Weak hook so callers can inject TCP engine instance.
+ * @return Pointer to global SYN_TCP instance, or NULL if unavailable.
+ */
 SYN_WEAK struct SYN_TCP *syn_eth_get_tcp_instance(void)
 {
     return NULL;
 }
 
+/** Broadcast MAC address (FF:FF:FF:FF:FF:FF) */
 static const uint8_t MAC_BROADCAST[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 SYN_Status syn_eth_generate_mac(const void *uid_bytes, size_t uid_len, uint8_t mac_out[6])

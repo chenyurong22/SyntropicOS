@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#define SYN_SEG7_MAX_DIGITS 8
+#define SYN_SEG7_MAX_DIGITS 8 /**< Maximum supported display digits (8) */
 
 /**
  * @brief 7-segment display wiring polarity.

@@ -15,9 +15,11 @@
 #include <math.h>
 #include <string.h>
 
+/** @cond */
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+/** @endcond */
 
 void syn_interpolator_init(SYN_Interpolator *interp)
 {

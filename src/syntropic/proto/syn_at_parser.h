@@ -1,10 +1,10 @@
 /**
  * @file syn_at_parser.h
  * @brief Zero-allocation, stream-oriented AT command parser for cellular & serial modems.
- * @ingroup syn_proto
+ * @ingroup syn_protocol
  *
  * Lightweight, non-blocking line and prompt parser for modems (SIM800, Quectel, ESP-AT, etc.).
- * Feeds from SYN_Stream or raw byte feeds, handles \r\n line framing, prompt '>' detection,
+ * Feeds from SYN_Stream or raw byte feeds, handles CRLF line framing, prompt '>' detection,
  * CME ERROR decoding, URC filtering, and parameter extraction without dynamic memory allocation.
  *
  * @par Usage
@@ -45,7 +45,7 @@ typedef enum {
     SYN_AT_RESP_NONE = 0,  /**< No complete response line or prompt decoded yet */
     SYN_AT_RESP_OK,        /**< Standard 'OK' response */
     SYN_AT_RESP_ERROR,     /**< Standard 'ERROR' response */
-    SYN_AT_RESP_CME_ERROR, /**< Extended '+CME ERROR: <code>' or '+CMS ERROR: <code>' */
+    SYN_AT_RESP_CME_ERROR, /**< Extended '+CME ERROR: err_code' or '+CMS ERROR: err_code' */
     SYN_AT_RESP_PROMPT,    /**< Modem data entry prompt '>' */
     SYN_AT_RESP_LINE,      /**< Response data line (e.g. "+CSQ: 20,0", "CONNECT OK", IP address) */
     SYN_AT_RESP_URC,       /**< Unsolicited Result Code line (e.g. "+RECEIVE,0,17", "CLOSED") */
@@ -85,7 +85,7 @@ void syn_at_parser_reset(SYN_AtParser *parser);
 /**
  * @brief Feed a single byte into the AT parser.
  *
- * Processes a single character. Returns response type if a complete line (\r\n)
+ * Processes a single character. Returns response type if a complete line (CRLF)
  * or prompt ('>') has been parsed.
  *
  * @param parser Parser instance.

@@ -16,9 +16,9 @@
 
 /* NMT State constants matching CiA 301 / syn_canopen_mgr */
 #ifndef SYN_CANOPEN_NMT_STOPPED
-#define SYN_CANOPEN_NMT_STOPPED 0x04U
-#define SYN_CANOPEN_NMT_OPERATIONAL 0x05U
-#define SYN_CANOPEN_NMT_PRE_OPERATIONAL 0x7FU
+#define SYN_CANOPEN_NMT_STOPPED 0x04U         /**< NMT Stopped state code (0x04) */
+#define SYN_CANOPEN_NMT_OPERATIONAL 0x05U     /**< NMT Operational state code (0x05) */
+#define SYN_CANOPEN_NMT_PRE_OPERATIONAL 0x7FU /**< NMT Pre-Operational state code (0x7F) */
 #endif
 
 void syn_cia303_init(SYN_CiA303_Indicator *ind, SYN_LED *run_led, SYN_LED *err_led)

@@ -36,6 +36,11 @@ SYN_Status syn_crsf_init(SYN_CRSF_Parser *parser)
     return SYN_OK;
 }
 
+/**
+ * @brief Unpack 11-bit CRSF RC channels from packed byte stream.
+ * @param payload Pointer to raw payload buffer.
+ * @param channels Pointer to channels frame structure.
+ */
 static void parse_channels(const uint8_t *payload, SYN_CRSF_ChannelsFrame *channels)
 {
     channels->channels[0] = (uint16_t)(((payload[0]) | (payload[1] << 8)) & 0x07FFU);
@@ -60,6 +65,11 @@ static void parse_channels(const uint8_t *payload, SYN_CRSF_ChannelsFrame *chann
     channels->channels[15] = (uint16_t)(((payload[20] >> 5) | (payload[21] << 3)) & 0x07FFU);
 }
 
+/**
+ * @brief Unpack CRSF link statistics from payload stream.
+ * @param payload Pointer to raw payload buffer.
+ * @param stats Pointer to link stats structure.
+ */
 static void parse_link_stats(const uint8_t *payload, SYN_CRSF_LinkStats *stats)
 {
     stats->uplink_rssi1 = payload[0];

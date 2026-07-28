@@ -18,18 +18,18 @@
 extern "C" {
 #endif
 
-#define SYN_DIPSWITCH_MAX_PINS 16
+#define SYN_DIPSWITCH_MAX_PINS 16 /**< Maximum supported GPIO pins in DIP switch array (16) */
 
 /**
  * @brief DIP Switch Context.
  */
 typedef struct {
-    SYN_GPIO_Pin pins[SYN_DIPSWITCH_MAX_PINS];
-    uint8_t count;
-    bool active_low;
-    uint32_t current_value;
-    uint32_t previous_value;
-    bool changed;
+    SYN_GPIO_Pin pins[SYN_DIPSWITCH_MAX_PINS]; /**< Array of GPIO pins */
+    uint8_t count;                             /**< Number of configured switch pins */
+    bool active_low;                           /**< True if switch ON grounds input pin */
+    uint32_t current_value;                    /**< Packed binary integer value */
+    uint32_t previous_value;                   /**< Previously read value */
+    bool changed;                              /**< True if value changed since last read */
 } SYN_DipSwitch;
 
 /**

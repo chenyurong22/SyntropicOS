@@ -211,7 +211,7 @@ typedef struct {
 } SYN_ModbusMasterQuery;
 
 #ifndef SYN_MODBUS_QUEUE_SIZE
-#define SYN_MODBUS_QUEUE_SIZE 16
+#define SYN_MODBUS_QUEUE_SIZE 16 /**< Maximum Modbus master query queue capacity (16) */
 #endif
 
 /** @brief Modbus Master transaction queue manager. */

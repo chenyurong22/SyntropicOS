@@ -159,6 +159,11 @@ size_t syn_fmt_hex(char *buf, size_t size, uint32_t val, uint8_t min_digits)
     return (pos < size) ? pos : size - 1;
 }
 
+/**
+ * @brief Convert hexadecimal character to 4-bit nibble value.
+ * @param c Input character ('0'-'9', 'a'-'f', 'A'-'F').
+ * @return 4-bit nibble integer value (0-15), or -1 if invalid.
+ */
 static int hex_char_to_nibble(char c)
 {
     if (c >= '0' && c <= '9')

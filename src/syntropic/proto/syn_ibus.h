@@ -23,10 +23,10 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_IBUS_FRAME_SIZE 32U
-#define SYN_IBUS_NUM_CHANNELS 14U
-#define SYN_IBUS_HEADER1 0x20U
-#define SYN_IBUS_HEADER2 0x40U
+#define SYN_IBUS_FRAME_SIZE 32U   /**< IBUS frame size in bytes (32) */
+#define SYN_IBUS_NUM_CHANNELS 14U /**< Number of RC channels in IBUS frame (14) */
+#define SYN_IBUS_HEADER1 0x20U    /**< First header byte of IBUS frame (0x20) */
+#define SYN_IBUS_HEADER2 0x40U    /**< Second header byte of IBUS frame (0x40) */
 
 /** Parsed IBUS Frame. */
 typedef struct {
@@ -36,11 +36,11 @@ typedef struct {
 
 /** IBUS Streaming Parser Instance. */
 typedef struct {
-    uint8_t buf[SYN_IBUS_FRAME_SIZE];
-    uint8_t idx;
-    uint32_t frames_received;
-    uint32_t checksum_errors;
-    SYN_IBUS_Frame last_frame;
+    uint8_t buf[SYN_IBUS_FRAME_SIZE]; /**< Frame assembly buffer */
+    uint8_t idx;                      /**< Current write index */
+    uint32_t frames_received;         /**< Total valid IBUS frames decoded */
+    uint32_t checksum_errors;         /**< Count of checksum errors */
+    SYN_IBUS_Frame last_frame;        /**< Last successfully decoded IBUS frame */
 } SYN_IBUS_Parser;
 
 /**

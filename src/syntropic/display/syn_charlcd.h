@@ -32,7 +32,7 @@ typedef enum {
  * @brief Generic Character LCD Context.
  */
 typedef struct {
-    SYN_CharLCDMode mode;
+    SYN_CharLCDMode mode;    /**< Interface mode (I2C or 4-bit GPIO) */
     uint8_t cols;            /**< Display columns (e.g. 16, 20) */
     uint8_t rows;            /**< Display rows (e.g. 2, 4) */
     uint8_t display_control; /**< Display ON/OFF control state */
@@ -40,13 +40,13 @@ typedef struct {
     bool backlight;          /**< True if backlight enabled */
 
     /* I2C Mode Context */
-    SYN_SoftI2C i2c;
-    uint8_t i2c_addr;
-    uint8_t backlight_mask;
+    SYN_SoftI2C i2c;        /**< Software I2C bus context */
+    uint8_t i2c_addr;       /**< 7-bit I2C device address */
+    uint8_t backlight_mask; /**< Backlight bit mask */
 
     /* 4-Bit GPIO Mode Context */
-    SYN_GPIO_Pin rs_pin;
-    SYN_GPIO_Pin en_pin;
+    SYN_GPIO_Pin rs_pin;    /**< Register select GPIO pin */
+    SYN_GPIO_Pin en_pin;    /**< Enable pulse GPIO pin */
     SYN_GPIO_Pin d_pins[4]; /**< D4, D5, D6, D7 pins */
 } SYN_CharLCD;
 

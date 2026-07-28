@@ -9,6 +9,13 @@
 
 #include <string.h>
 
+/**
+ * @brief Write buffer over software I2C bus.
+ * @param i2c Pointer to software I2C instance.
+ * @param dev_addr 7-bit device I2C address.
+ * @param buf Pointer to data buffer.
+ * @param len Byte length to write.
+ */
 static void write_i2c_bytes(SYN_SoftI2C *i2c, uint8_t dev_addr, const uint8_t *buf, size_t len)
 {
     syn_soft_i2c_start(i2c);

@@ -20,8 +20,9 @@
 extern "C" {
 #endif
 
-#define SYN_TIMER_WHEEL_BUCKETS 64U
+#define SYN_TIMER_WHEEL_BUCKETS 64U /**< Number of timer wheel slot buckets (64) */
 
+/** @brief Timer wheel expiration callback function typedef. */
 typedef void (*SYN_TimerWheelCb)(void *arg);
 
 /**

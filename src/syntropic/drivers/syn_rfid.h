@@ -31,12 +31,12 @@ typedef enum {
  * @brief Generic RFID Instance Context.
  */
 typedef struct {
-    SYN_RFIDType type;
-    SYN_GPIO_Pin ss_pin;
-    SYN_GPIO_Pin rst_pin;
-    uint8_t uid[10];   /**< Extracted card UID byte array */
-    uint8_t uid_len;   /**< UID length (4, 7, or 10 bytes) */
-    bool card_present; /**< True if card detected near antenna */
+    SYN_RFIDType type;    /**< RFID reader model type */
+    SYN_GPIO_Pin ss_pin;  /**< SPI Slave Select / SDA GPIO pin */
+    SYN_GPIO_Pin rst_pin; /**< Hardware reset GPIO pin */
+    uint8_t uid[10];      /**< Extracted card UID byte array */
+    uint8_t uid_len;      /**< UID length (4, 7, or 10 bytes) */
+    bool card_present;    /**< True if card detected near antenna */
 } SYN_RFID;
 
 /**

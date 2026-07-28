@@ -17,7 +17,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Helper to extract comma-separated field */
+/**
+ * @brief Extract comma-separated NMEA field from sentence.
+ * @param sentence Input NMEA sentence string.
+ * @param index Field index (0-based).
+ * @param dest Destination string buffer.
+ * @param max_len Maximum capacity of destination buffer.
+ * @return True if field extracted, false otherwise.
+ */
 static bool get_field(const char *sentence, uint8_t index, char *dest, size_t max_len)
 {
     if (sentence == NULL || dest == NULL || max_len == 0)
@@ -53,6 +60,11 @@ static bool get_field(const char *sentence, uint8_t index, char *dest, size_t ma
     return false;
 }
 
+/**
+ * @brief Convert hexadecimal character to decimal integer value.
+ * @param c Input character ('0'-'9', 'A'-'F', 'a'-'f').
+ * @return Decimal value (0 to 15).
+ */
 static uint8_t hex2dec(char c)
 {
     if (c >= '0' && c <= '9')
@@ -190,6 +202,14 @@ double syn_nmea_parse_coord(const char *nmea_coord, char dir)
     return decimal;
 }
 
+/**
+ * @brief Parse NMEA UTC time field (hhmmss.ss) into components.
+ * @param field NMEA time field string.
+ * @param h Pointer to receive hours (0-23).
+ * @param m Pointer to receive minutes (0-59).
+ * @param s Pointer to receive seconds (0-59).
+ * @param ms Pointer to receive milliseconds (0-999).
+ */
 static void parse_time(const char *field, uint8_t *h, uint8_t *m, uint8_t *s, uint16_t *ms)
 {
     *h = 0;

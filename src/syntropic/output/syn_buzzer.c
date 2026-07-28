@@ -9,6 +9,11 @@
 
 #include <string.h>
 
+/**
+ * @brief Set hardware buzzer GPIO output state based on active polarity.
+ * @param buz Pointer to buzzer instance.
+ * @param state Desired boolean output state (true = active tone, false = silence).
+ */
 static void set_buzzer_state(SYN_Buzzer *buz, bool state)
 {
     if (buz == NULL)

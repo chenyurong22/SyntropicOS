@@ -40,19 +40,19 @@ typedef void (*SYN_NETCFG_LinkCb)(struct SYN_NETCFG_s *netcfg, SYN_NETCFG_LinkSt
 
 /** Network IP Manager Context. */
 typedef struct SYN_NETCFG_s {
-    SYN_NETCFG_Mode mode;
-    SYN_NETCFG_LinkState link_state;
-    SYN_DHCP dhcp;
-    SYN_AUTOIP autoip;
-    bool is_bound;
-    uint32_t static_ip;
-    uint32_t static_netmask;
-    uint32_t static_gateway;
-    uint32_t assigned_ip;
-    uint32_t assigned_netmask;
-    uint32_t assigned_gateway;
-    SYN_NETCFG_LinkCb link_cb;
-    void *user_data;
+    SYN_NETCFG_Mode mode;            /**< IP configuration mode (Static, DHCP, AutoIP, Hybrid) */
+    SYN_NETCFG_LinkState link_state; /**< Physical link state (Down/Up) */
+    SYN_DHCP dhcp;                   /**< Embedded DHCP client context */
+    SYN_AUTOIP autoip;               /**< Embedded AutoIP (Link-Local) context */
+    bool is_bound;                   /**< True if IP configuration is active and bound */
+    uint32_t static_ip;              /**< Configured static IPv4 address */
+    uint32_t static_netmask;         /**< Configured static subnet mask */
+    uint32_t static_gateway;         /**< Configured static default gateway IP */
+    uint32_t assigned_ip;            /**< Currently bound active IPv4 address */
+    uint32_t assigned_netmask;       /**< Currently bound active subnet mask */
+    uint32_t assigned_gateway;       /**< Currently bound active gateway IP */
+    SYN_NETCFG_LinkCb link_cb;       /**< Optional application link state change callback */
+    void *user_data;                 /**< User context pointer passed to callback */
 } SYN_NETCFG;
 
 /**

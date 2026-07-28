@@ -22,15 +22,16 @@ extern "C" {
 
 /* ── Protocol Constants ─────────────────────────────────────────────────── */
 
-#define SYN_DLT645_SOF 0x68
-#define SYN_DLT645_EOF 0x16
-#define SYN_DLT645_OFFSET 0x33
-#define SYN_DLT645_PREAMBLE 0xFE
+#define SYN_DLT645_SOF 0x68      /**< Start of frame delimiter byte (0x68) */
+#define SYN_DLT645_EOF 0x16      /**< End of frame delimiter byte (0x16) */
+#define SYN_DLT645_OFFSET 0x33   /**< Data byte encoding offset (+0x33) */
+#define SYN_DLT645_PREAMBLE 0xFE /**< Preamble wake-up byte (0xFE) */
 
-#define SYN_DLT645_ADDR_LEN 6
+#define SYN_DLT645_ADDR_LEN 6 /**< Meter BCD address length in bytes (6) */
 
 /* ── Protocol Versions ──────────────────────────────────────────────────── */
 
+/** DL/T 645 Protocol Version Standard Enum. */
 typedef enum {
     SYN_DLT645_VER_1997 = 0, /**< DL/T 645-1997 (2-byte Data Identifier) */
     SYN_DLT645_VER_2007 = 1  /**< DL/T 645-2007 (4-byte Data Identifier) */
@@ -38,6 +39,7 @@ typedef enum {
 
 /* ── Control Codes ──────────────────────────────────────────────────────── */
 
+/** DL/T 645 Control Code Commands Enum. */
 typedef enum {
     SYN_DLT645_CMD_READ_DATA = 0x11,        /**< Master read data request            */
     SYN_DLT645_CMD_READ_DATA_RESP = 0x91,   /**< Slave read data response            */

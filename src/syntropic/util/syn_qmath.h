@@ -45,16 +45,16 @@ typedef int32_t q16_t;
 /** Fixed-point Q0.7 type (INT8): 1 sign bit, 7 fractional bits (-1.0 to +0.992). */
 typedef int8_t q7_t;
 
-#define Q7_SHIFT 7
-#define Q7_ONE ((q7_t)127)
-#define Q7_MIN ((q7_t) - 128)
+#define Q7_SHIFT 7            /**< Q0.7 fractional shift count */
+#define Q7_ONE ((q7_t)127)    /**< Q0.7 maximum positive value (+1.0) */
+#define Q7_MIN ((q7_t) - 128) /**< Q0.7 minimum value (-1.0) */
 
 /** Fixed-point Q0.15 type (INT16): 1 sign bit, 15 fractional bits (-1.0 to +0.99996). */
 typedef int16_t q15_t;
 
-#define Q15_SHIFT 15
-#define Q15_ONE ((q15_t)32767)
-#define Q15_MIN ((q15_t) - 32768)
+#define Q15_SHIFT 15              /**< Q0.15 fractional shift count */
+#define Q15_ONE ((q15_t)32767)    /**< Q0.15 maximum positive value (+1.0) */
+#define Q15_MIN ((q15_t) - 32768) /**< Q0.15 minimum value (-1.0) */
 
 /* ── Constants ──────────────────────────────────────────────────────────── */
 
@@ -108,13 +108,21 @@ typedef int16_t q15_t;
 
 /* ── Cross-Format Conversions ───────────────────────────────────────────── */
 
-/** Convert Q7 (INT8) to Q16.16. */
+/**
+ * @brief Convert Q7 (INT8) to Q16.16.
+ * @param q Q7 input value.
+ * @return Q16.16 converted value.
+ */
 static inline q16_t q7_to_q16(q7_t q)
 {
     return (q16_t)((int32_t)q << 9);
 }
 
-/** Convert Q16.16 to Q7 (INT8) with saturation clamping. */
+/**
+ * @brief Convert Q16.16 to Q7 (INT8) with saturation clamping.
+ * @param q Q16.16 input value.
+ * @return Clamped Q7 output.
+ */
 static inline q7_t q16_to_q7(q16_t q)
 {
     int32_t val = q >> 9;
@@ -125,13 +133,21 @@ static inline q7_t q16_to_q7(q16_t q)
     return (q7_t)val;
 }
 
-/** Convert Q15 (INT16) to Q16.16. */
+/**
+ * @brief Convert Q15 (INT16) to Q16.16.
+ * @param q Q15 input value.
+ * @return Q16.16 converted value.
+ */
 static inline q16_t q15_to_q16(q15_t q)
 {
     return (q16_t)((int32_t)q << 1);
 }
 
-/** Convert Q16.16 to Q15 (INT16) with saturation clamping. */
+/**
+ * @brief Convert Q16.16 to Q15 (INT16) with saturation clamping.
+ * @param q Q16.16 input value.
+ * @return Clamped Q15 output.
+ */
 static inline q15_t q16_to_q15(q16_t q)
 {
     int32_t val = q >> 1;
@@ -142,7 +158,12 @@ static inline q15_t q16_to_q15(q16_t q)
     return (q15_t)val;
 }
 
-/** Multiply two Q7 numbers. */
+/**
+ * @brief Multiply two Q7 numbers.
+ * @param a First Q7 factor.
+ * @param b Second Q7 factor.
+ * @return Q7 product.
+ */
 static inline q7_t q7_mul(q7_t a, q7_t b)
 {
     return (q7_t)(((int16_t)a * (int16_t)b) >> 7);

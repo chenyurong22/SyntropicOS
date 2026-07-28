@@ -21,46 +21,46 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_USB_REQ_GET_STATUS 0x00
-#define SYN_USB_REQ_CLEAR_FEATURE 0x01
-#define SYN_USB_REQ_SET_FEATURE 0x03
-#define SYN_USB_REQ_SET_ADDRESS 0x05
-#define SYN_USB_REQ_GET_DESCRIPTOR 0x06
-#define SYN_USB_REQ_SET_CONFIGURATION 0x09
+#define SYN_USB_REQ_GET_STATUS 0x00        /**< USB Standard Request Get Status (0x00) */
+#define SYN_USB_REQ_CLEAR_FEATURE 0x01     /**< USB Standard Request Clear Feature (0x01) */
+#define SYN_USB_REQ_SET_FEATURE 0x03       /**< USB Standard Request Set Feature (0x03) */
+#define SYN_USB_REQ_SET_ADDRESS 0x05       /**< USB Standard Request Set Address (0x05) */
+#define SYN_USB_REQ_GET_DESCRIPTOR 0x06    /**< USB Standard Request Get Descriptor (0x06) */
+#define SYN_USB_REQ_SET_CONFIGURATION 0x09 /**< USB Standard Request Set Configuration (0x09) */
 
-#define SYN_USB_CDC_SET_LINE_CODING 0x20
-#define SYN_USB_CDC_GET_LINE_CODING 0x21
-#define SYN_USB_CDC_SET_CONTROL_LINE_STATE 0x22
+#define SYN_USB_CDC_SET_LINE_CODING 0x20        /**< CDC Request Set Line Coding (0x20) */
+#define SYN_USB_CDC_GET_LINE_CODING 0x21        /**< CDC Request Get Line Coding (0x21) */
+#define SYN_USB_CDC_SET_CONTROL_LINE_STATE 0x22 /**< CDC Request Set Control Line State (0x22) */
 
 /** USB Setup Packet. */
 typedef struct {
-    uint8_t bmRequestType;
-    uint8_t bRequest;
-    uint16_t wValue;
-    uint16_t wIndex;
-    uint16_t wLength;
+    uint8_t bmRequestType; /**< Characteristics of request (direction, type, recipient) */
+    uint8_t bRequest;      /**< Specific request code */
+    uint16_t wValue;       /**< Word-sized field according to request */
+    uint16_t wIndex;       /**< Word-sized field (index/interface/endpoint) */
+    uint16_t wLength;      /**< Number of bytes to transfer if data stage */
 } SYN_USB_SetupPacket;
 
 /** CDC Line Coding Config (Baud rate, Stop bits, Parity, Data bits). */
 typedef struct {
-    uint32_t baudrate;
-    uint8_t stop_bits;
-    uint8_t parity;
-    uint8_t data_bits;
+    uint32_t baudrate; /**< Transmission baud rate in bits per second */
+    uint8_t stop_bits; /**< Stop bits setting (0=1, 1=1.5, 2=2) */
+    uint8_t parity;    /**< Parity setting (0=None, 1=Odd, 2=Even) */
+    uint8_t data_bits; /**< Data bits count (5, 6, 7, 8, 16) */
 } SYN_USB_CDC_LineCoding;
 
 /** USB CDC Instance. */
 typedef struct {
-    uint8_t ep_in;
-    uint8_t ep_out;
-    uint8_t ep_cmd;
-    uint8_t dev_address;
-    bool configured;
-    SYN_USB_CDC_LineCoding line_coding;
-    uint8_t rx_buf[128];
-    uint16_t rx_len;
-    uint8_t tx_buf[128];
-    uint16_t tx_len;
+    uint8_t ep_in;                      /**< Bulk IN Endpoint address */
+    uint8_t ep_out;                     /**< Bulk OUT Endpoint address */
+    uint8_t ep_cmd;                     /**< Interrupt Command Endpoint address */
+    uint8_t dev_address;                /**< Assigned USB device bus address */
+    bool configured;                    /**< True if USB device is in Configured state */
+    SYN_USB_CDC_LineCoding line_coding; /**< Active CDC line coding configuration */
+    uint8_t rx_buf[128];                /**< Internal RX ring/linear payload buffer */
+    uint16_t rx_len;                    /**< Length of unread data in rx_buf */
+    uint8_t tx_buf[128];                /**< Internal TX ring/linear payload buffer */
+    uint16_t tx_len;                    /**< Length of pending data in tx_buf */
 } SYN_USB_CDC;
 
 /**

@@ -10,7 +10,11 @@
 #include <stdio.h>
 #include <string.h>
 
-/* Standard 7-Segment Font Map: Bit 0=A, 1=B, 2=C, 3=D, 4=E, 5=F, 6=G, 7=DP */
+/**
+ * @brief Convert ASCII character to 7-segment bitmask.
+ * @param c ASCII character.
+ * @return 7-segment segment bitmask.
+ */
 static uint8_t char_to_seg7(char c)
 {
     switch (c) {

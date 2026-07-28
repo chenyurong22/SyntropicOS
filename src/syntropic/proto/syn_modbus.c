@@ -29,11 +29,21 @@
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
+/**
+ * @brief Read big-endian 16-bit unsigned integer from buffer.
+ * @param buf Pointer to 2-byte buffer.
+ * @return 16-bit value.
+ */
 static inline uint16_t read_u16(const uint8_t *buf)
 {
     return syn_peek_u16(buf, 0);
 }
 
+/**
+ * @brief Write big-endian 16-bit unsigned integer into buffer.
+ * @param buf Output buffer.
+ * @param val 16-bit value to write.
+ */
 static inline void write_u16(uint8_t *buf, uint16_t val)
 {
     size_t pos = 0;
@@ -107,6 +117,7 @@ static void send_exception(SYN_Modbus *mb, uint8_t func, uint8_t ex_code)
 /**
  * @brief Handle Modbus read holding/input register request.
  * @param mb         Modbus instance.
+ * @param frame_len  Received frame length.
  * @param regs       Register array.
  * @param reg_count  Total register count.
  */
@@ -141,7 +152,8 @@ static void handle_read_regs(SYN_Modbus *mb, uint16_t frame_len, const uint16_t 
 
 /**
  * @brief Handle Modbus write single register request.
- * @param mb  Modbus instance.
+ * @param mb         Modbus instance.
+ * @param frame_len  Received frame length.
  */
 static void handle_write_single(SYN_Modbus *mb, uint16_t frame_len)
 {
@@ -174,7 +186,8 @@ static void handle_write_single(SYN_Modbus *mb, uint16_t frame_len)
 
 /**
  * @brief Handle Modbus write multiple registers request.
- * @param mb  Modbus instance.
+ * @param mb         Modbus instance.
+ * @param frame_len  Received frame length.
  */
 static void handle_write_multiple(SYN_Modbus *mb, uint16_t frame_len)
 {
@@ -226,7 +239,8 @@ static void handle_read_exception_status(SYN_Modbus *mb)
 
 /**
  * @brief Handle Modbus read/write multiple registers (FC 0x17).
- * @param mb Modbus instance.
+ * @param mb         Modbus instance.
+ * @param frame_len  Received frame length.
  */
 static void handle_read_write_multiple(SYN_Modbus *mb, uint16_t frame_len)
 {
@@ -514,6 +528,9 @@ void syn_modbus_feed(SYN_Modbus *mb, uint8_t byte)
 
 /**
  * @brief Helper to get bit from array.
+ * @param bits Pointer to bit array.
+ * @param idx Bit index.
+ * @return True if bit set, false if clear.
  */
 static bool get_bit(const uint8_t *bits, uint16_t idx)
 {
@@ -522,6 +539,9 @@ static bool get_bit(const uint8_t *bits, uint16_t idx)
 
 /**
  * @brief Helper to set bit in array.
+ * @param bits Pointer to bit array.
+ * @param idx Bit index.
+ * @param val Value to set (true/false).
  */
 static void set_bit(uint8_t *bits, uint16_t idx, bool val)
 {
@@ -534,6 +554,10 @@ static void set_bit(uint8_t *bits, uint16_t idx, bool val)
 
 /**
  * @brief Handle Read Coils (FC 0x01) and Read Discrete Inputs (FC 0x02).
+ * @param mb Pointer to Modbus instance.
+ * @param frame_len Length of received frame.
+ * @param bits Pointer to coils or discrete inputs array.
+ * @param total_bits Total available bits in array.
  */
 static void handle_read_bits(SYN_Modbus *mb, uint16_t frame_len, const uint8_t *bits,
                              uint16_t total_bits)
@@ -577,6 +601,8 @@ static void handle_read_bits(SYN_Modbus *mb, uint16_t frame_len, const uint8_t *
 
 /**
  * @brief Handle Write Single Coil (FC 0x05).
+ * @param mb Pointer to Modbus instance.
+ * @param frame_len Length of received frame.
  */
 static void handle_write_single_coil(SYN_Modbus *mb, uint16_t frame_len)
 {
@@ -610,6 +636,8 @@ static void handle_write_single_coil(SYN_Modbus *mb, uint16_t frame_len)
 
 /**
  * @brief Handle Write Multiple Coils (FC 0x0F).
+ * @param mb Pointer to Modbus instance.
+ * @param frame_len Length of received frame.
  */
 static void handle_write_multiple_coils(SYN_Modbus *mb, uint16_t frame_len)
 {
@@ -650,6 +678,8 @@ static void handle_write_multiple_coils(SYN_Modbus *mb, uint16_t frame_len)
 
 /**
  * @brief Handle Diagnostics (FC 0x08).
+ * @param mb Pointer to Modbus instance.
+ * @param frame_len Length of received frame.
  */
 static void handle_diagnostics(SYN_Modbus *mb, uint16_t frame_len)
 {
@@ -669,6 +699,7 @@ static void handle_diagnostics(SYN_Modbus *mb, uint16_t frame_len)
 
 /**
  * @brief Handle Get Comm Event Counter (FC 0x0B).
+ * @param mb Pointer to Modbus instance.
  */
 static void handle_get_comm_event_cnt(SYN_Modbus *mb)
 {
@@ -680,6 +711,7 @@ static void handle_get_comm_event_cnt(SYN_Modbus *mb)
 
 /**
  * @brief Handle Get Comm Event Log (FC 0x0C).
+ * @param mb Pointer to Modbus instance.
  */
 static void handle_get_comm_event_log(SYN_Modbus *mb)
 {
@@ -695,6 +727,7 @@ static void handle_get_comm_event_log(SYN_Modbus *mb)
 
 /**
  * @brief Handle Report Server ID (FC 0x11).
+ * @param mb Pointer to Modbus instance.
  */
 static void handle_report_server_id(SYN_Modbus *mb)
 {
@@ -720,6 +753,8 @@ static void handle_report_server_id(SYN_Modbus *mb)
 
 /**
  * @brief Handle Mask Write Register (FC 0x16).
+ * @param mb Pointer to Modbus instance.
+ * @param frame_len Length of received frame.
  */
 static void handle_mask_write_register(SYN_Modbus *mb, uint16_t frame_len)
 {
@@ -758,6 +793,7 @@ static void handle_mask_write_register(SYN_Modbus *mb, uint16_t frame_len)
 
 /**
  * @brief Handle Read FIFO Queue (FC 0x18).
+ * @param mb Pointer to Modbus instance.
  */
 static void handle_read_fifo_queue(SYN_Modbus *mb)
 {

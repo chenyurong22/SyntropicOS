@@ -32,9 +32,9 @@ typedef enum {
  * @brief Generic I2C GPIO Expander Instance Context.
  */
 typedef struct {
-    SYN_IOExpType type;
-    SYN_SoftI2C i2c;
-    uint8_t i2c_addr;
+    SYN_IOExpType type;   /**< GPIO expander model type */
+    SYN_SoftI2C i2c;      /**< Software I2C bus context */
+    uint8_t i2c_addr;     /**< 7-bit I2C device address */
     uint8_t num_pins;     /**< Total pins (8 or 16) */
     uint16_t out_mask;    /**< Output state cache */
     uint16_t dir_mask;    /**< Direction mask (1 = input, 0 = output) */

@@ -20,7 +20,8 @@
 extern "C" {
 #endif
 
-#define SYN_NETBUF_HEADROOM_DEFAULT 32U
+#define SYN_NETBUF_HEADROOM_DEFAULT \
+    32U /**< Default packet buffer headroom allocation in bytes (32) */
 
 /**
  * @brief Zero-Copy Packet Buffer Descriptor.

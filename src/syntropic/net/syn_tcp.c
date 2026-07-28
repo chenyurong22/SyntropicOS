@@ -69,6 +69,16 @@ SYN_Status syn_tcp_listen(SYN_TCP *tcp, uint16_t port)
     return SYN_ERROR;
 }
 
+/**
+ * @brief Build outbound TCP segment frame into buffer.
+ * @param tcp Pointer to TCP stack.
+ * @param conn Pointer to TCP connection block.
+ * @param flags TCP control flags bitmask.
+ * @param payload Pointer to payload buffer.
+ * @param payload_len Payload byte length.
+ * @param tx_out Output Ethernet frame buffer.
+ * @param tx_len Output Ethernet frame length pointer.
+ */
 static void build_tcp_segment(SYN_TCP *tcp, SYN_TcpConn *conn, uint8_t flags,
                               const uint8_t *payload, size_t payload_len, uint8_t *tx_out,
                               size_t *tx_len)

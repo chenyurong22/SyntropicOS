@@ -4,7 +4,7 @@
  *
  * Provides PMBus standard command definitions, telemetry status decoding, and
  * Linear11 / Linear16 numeric data converters.
- * @ingroup syn_proto
+ * @ingroup syn_protocol
  */
 
 #ifndef SYN_PMBUS_H
@@ -65,14 +65,14 @@ extern "C" {
 
 /* ── PMBus Status Bitmask Definitions ───────────────────────────────────── */
 
-#define SYN_PMBUS_STATUS_BYTE_BUSY (1u << 7)
-#define SYN_PMBUS_STATUS_BYTE_OFF (1u << 6)
-#define SYN_PMBUS_STATUS_BYTE_VOUT_OV (1u << 5)
-#define SYN_PMBUS_STATUS_BYTE_IOUT_OC (1u << 4)
-#define SYN_PMBUS_STATUS_BYTE_VIN_UV (1u << 3)
-#define SYN_PMBUS_STATUS_BYTE_TEMP_FAULT (1u << 2)
-#define SYN_PMBUS_STATUS_BYTE_CBUF_FAULT (1u << 1)
-#define SYN_PMBUS_STATUS_BYTE_NONE_OF_ABOVE (1u << 0)
+#define SYN_PMBUS_STATUS_BYTE_BUSY (1u << 7)          /**< Bit 7: Device busy */
+#define SYN_PMBUS_STATUS_BYTE_OFF (1u << 6)           /**< Bit 6: Output disabled / off */
+#define SYN_PMBUS_STATUS_BYTE_VOUT_OV (1u << 5)       /**< Bit 5: VOUT Overvoltage fault */
+#define SYN_PMBUS_STATUS_BYTE_IOUT_OC (1u << 4)       /**< Bit 4: IOUT Overcurrent fault */
+#define SYN_PMBUS_STATUS_BYTE_VIN_UV (1u << 3)        /**< Bit 3: VIN Undervoltage fault */
+#define SYN_PMBUS_STATUS_BYTE_TEMP_FAULT (1u << 2)    /**< Bit 2: Temperature fault/warning */
+#define SYN_PMBUS_STATUS_BYTE_CBUF_FAULT (1u << 1)    /**< Bit 1: CBUF / Communications fault */
+#define SYN_PMBUS_STATUS_BYTE_NONE_OF_ABOVE (1u << 0) /**< Bit 0: Other fault occurred */
 
 /* ── API Function Declarations ───────────────────────────────────────────── */
 

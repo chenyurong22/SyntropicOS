@@ -23,22 +23,23 @@ extern "C" {
 /* ── Constants ─────────────────────────────────────────────────────────── */
 
 #ifndef SYN_TCP_MAX_CONNS
-#define SYN_TCP_MAX_CONNS 1
+#define SYN_TCP_MAX_CONNS 1 /**< Maximum concurrent TCP connections */
 #endif
 
 #ifndef SYN_TCP_BUF_SIZE
-#define SYN_TCP_BUF_SIZE 512
+#define SYN_TCP_BUF_SIZE 512 /**< TCP RX/TX internal payload buffer size in bytes */
 #endif
 
 /** TCP Header Flags */
-#define SYN_TCP_FLAG_FIN 0x01
-#define SYN_TCP_FLAG_SYN 0x02
-#define SYN_TCP_FLAG_RST 0x04
-#define SYN_TCP_FLAG_PSH 0x08
-#define SYN_TCP_FLAG_ACK 0x10
+#define SYN_TCP_FLAG_FIN 0x01 /**< Finish flag: No more data from sender */
+#define SYN_TCP_FLAG_SYN 0x02 /**< Synchronize sequence numbers flag */
+#define SYN_TCP_FLAG_RST 0x04 /**< Reset connection flag */
+#define SYN_TCP_FLAG_PSH 0x08 /**< Push function flag */
+#define SYN_TCP_FLAG_ACK 0x10 /**< Acknowledgment field significant flag */
 
 /* ── States ────────────────────────────────────────────────────────────── */
 
+/** TCP Connection State Machine Enum. */
 typedef enum {
     SYN_TCP_CLOSED = 0,
     SYN_TCP_LISTEN = 1,
@@ -96,17 +97,55 @@ typedef struct {
 
 /* ── Functions ─────────────────────────────────────────────────────────── */
 
+/**
+ * @brief Initialize TCP Stack.
+ * @param tcp Pointer to TCP stack container.
+ * @param eth Pointer to Ethernet interface engine instance.
+ * @return SYN_OK on success.
+ */
 SYN_Status syn_tcp_init(SYN_TCP *tcp, SYN_ETH *eth);
 
+/**
+ * @brief Bind TCP listener to port.
+ * @param tcp  Pointer to TCP stack container.
+ * @param port Port number to listen on.
+ * @return SYN_OK on success.
+ */
 SYN_Status syn_tcp_listen(SYN_TCP *tcp, uint16_t port);
 
+/**
+ * @brief Process incoming TCP IPv4 segment.
+ * @param tcp       Pointer to TCP stack container.
+ * @param ip_packet Pointer to raw IPv4 packet.
+ * @param len       IPv4 packet byte length.
+ * @param tx_out    Output buffer for immediate TCP reply segment if generated.
+ * @param tx_len    Pointer to receive output segment byte length.
+ * @return SYN_OK on success.
+ */
 SYN_Status syn_tcp_process_packet(SYN_TCP *tcp, const uint8_t *ip_packet, size_t len,
                                   uint8_t *tx_out, size_t *tx_len);
 
+/**
+ * @brief Compute TCP 16-bit 1's complement checksum over pseudo-header and segment.
+ * @param src_ip  Source 32-bit IPv4 address.
+ * @param dst_ip  Destination 32-bit IPv4 address.
+ * @param tcp_seg Pointer to raw TCP segment bytes.
+ * @param len     TCP segment length in bytes.
+ * @return Computed 16-bit TCP checksum.
+ */
 uint16_t syn_tcp_checksum(uint32_t src_ip, uint32_t dst_ip, const uint8_t *tcp_seg, size_t len);
 
 /* ── Task Blocking Macros ───────────────────────────────────────────────── */
 
+/**
+ * @brief Protothread helper macro to block task until TCP data is available.
+ * @param pt         Protothread state.
+ * @param task       Task instance.
+ * @param conn       TCP connection pointer.
+ * @param buf        Destination read buffer.
+ * @param max_len    Maximum bytes to read.
+ * @param bytes_read Output variable receiving count of read bytes.
+ */
 #define PT_TCP_BLOCK_READ(pt, task, conn, buf, max_len, bytes_read)                               \
     do {                                                                                          \
         (conn)->blocked_task = (task);                                                            \

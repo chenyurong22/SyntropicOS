@@ -37,7 +37,11 @@ static uint8_t syn_can_fd_pad_len(uint8_t len)
 }
 #endif
 
-/* ── STmin conversion helper (microsecond resolution) ────────────────────── */
+/**
+ * @brief Decode ISO 15765-2 STmin byte value into microsecond delay.
+ * @param st_min Raw STmin byte value.
+ * @return Delay in microseconds.
+ */
 static uint32_t syn_isotp_decode_stmin_us(uint8_t st_min)
 {
     if (st_min <= 0x7F) {

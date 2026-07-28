@@ -30,9 +30,9 @@ typedef enum {
  * @brief Generic Power Monitor Instance Context.
  */
 typedef struct {
-    SYN_PowerMonType type;
-    SYN_SoftI2C i2c;
-    uint8_t i2c_addr;
+    SYN_PowerMonType type;     /**< Power monitor sensor model type */
+    SYN_SoftI2C i2c;           /**< Software I2C bus context */
+    uint8_t i2c_addr;          /**< 7-bit I2C device address */
     float shunt_resistor_ohms; /**< Shunt resistor value (e.g. 0.1 ohms) */
     float bus_voltage_v;       /**< Measured Bus Voltage in Volts */
     float shunt_current_ma;    /**< Measured Shunt Current in Milliamps */

@@ -9,6 +9,13 @@
 
 #include <string.h>
 
+/**
+ * @brief Write register byte over software I2C.
+ * @param i2c Pointer to I2C interface.
+ * @param dev_addr 7-bit device I2C address.
+ * @param reg Register address.
+ * @param val Register value.
+ */
 static void write_i2c_reg(SYN_SoftI2C *i2c, uint8_t dev_addr, uint8_t reg, uint8_t val)
 {
     syn_soft_i2c_start(i2c);
@@ -18,6 +25,11 @@ static void write_i2c_reg(SYN_SoftI2C *i2c, uint8_t dev_addr, uint8_t reg, uint8
     syn_soft_i2c_stop(i2c);
 }
 
+/**
+ * @brief Send command byte to OLED controller.
+ * @param oled Pointer to OLED instance.
+ * @param cmd Command byte.
+ */
 static void send_command(SYN_OLED *oled, uint8_t cmd)
 {
     write_i2c_reg(&oled->i2c, oled->i2c_addr, 0x00, cmd);
@@ -103,6 +115,13 @@ void syn_oled_set_display_on(SYN_OLED *oled, bool on)
     send_command(oled, on ? 0xAF : 0xAE);
 }
 
+/**
+ * @brief Get pixel state from monochrome canvas.
+ * @param c Pointer to canvas.
+ * @param x X coordinate.
+ * @param y Y coordinate.
+ * @return True if pixel set, false if clear.
+ */
 static bool get_canvas_pixel(const SYN_Canvas *c, uint16_t x, uint16_t y)
 {
     if (c == NULL || c->framebuf == NULL || x >= c->width || y >= c->height)

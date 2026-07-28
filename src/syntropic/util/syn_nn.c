@@ -7,6 +7,13 @@
 
 #include <math.h>
 
+/**
+ * @brief Apply activation and quantization to Q16.16 accumulator.
+ * @param acc Q16.16 accumulator value.
+ * @param act Activation function enum.
+ * @param quant Pointer to quantization parameters structure.
+ * @return Quantized Q7 output byte.
+ */
 static q7_t apply_activation_quant(q16_t acc, SYN_NN_Activation act, const syn_nn_quant_t *quant)
 {
     if (quant != NULL && quant->multiplier > 0) {
@@ -52,9 +59,17 @@ static q7_t apply_activation_quant(q16_t acc, SYN_NN_Activation act, const syn_n
     default:
         break;
     }
+
     return q16_to_q7(acc);
 }
 
+/**
+ * @brief Apply activation and shift scaling to Q16.16 accumulator for Q7 layer.
+ * @param acc Q16.16 accumulator value.
+ * @param act Activation function enum.
+ * @param out_shift Output right shift bit count.
+ * @return Q7 output byte.
+ */
 static q7_t apply_activation_q7(q16_t acc, SYN_NN_Activation act, uint8_t out_shift)
 {
     if (out_shift > 0 && out_shift <= 16) {

@@ -33,6 +33,7 @@ extern "C" {
 
 /* ── EtherCAT Commands ─────────────────────────────────────────────────── */
 
+/** EtherCAT Datagram Commands Enum. */
 typedef enum {
     SYN_ECAT_CMD_NOP = 0,   /**< No Operation */
     SYN_ECAT_CMD_APRD = 1,  /**< Auto Increment Read */
@@ -53,8 +54,9 @@ typedef enum {
 
 /* ── EtherCAT State Machine (ESM) States ────────────────────────────────── */
 
+/** EtherCAT State Machine (ESM) States. */
 typedef enum {
-    SYN_ECAT_STATE_NONE = 0x00,
+    SYN_ECAT_STATE_NONE = 0x00,   /**< Uninitialized / None */
     SYN_ECAT_STATE_INIT = 0x01,   /**< Init State */
     SYN_ECAT_STATE_PREOP = 0x02,  /**< Pre-Operational State */
     SYN_ECAT_STATE_BOOT = 0x03,   /**< Bootstrap State */
@@ -64,22 +66,23 @@ typedef enum {
 
 /* ── CoE Mailbox Service Types ──────────────────────────────────────────── */
 
+/** CAN Application Protocol over EtherCAT (CoE) Service Types. */
 typedef enum {
-    SYN_ECAT_COE_TYPE_EMERGENCY = 1,
-    SYN_ECAT_COE_TYPE_SDO_REQ = 2,
-    SYN_ECAT_COE_TYPE_SDO_RESP = 3,
-    SYN_ECAT_COE_TYPE_RXPDO = 4,
-    SYN_ECAT_COE_TYPE_TXPDO = 5,
-    SYN_ECAT_COE_TYPE_SDO_INFO = 6
+    SYN_ECAT_COE_TYPE_EMERGENCY = 1, /**< CoE Emergency message */
+    SYN_ECAT_COE_TYPE_SDO_REQ = 2,   /**< SDO Request */
+    SYN_ECAT_COE_TYPE_SDO_RESP = 3,  /**< SDO Response */
+    SYN_ECAT_COE_TYPE_RXPDO = 4,     /**< RxPDO mapping */
+    SYN_ECAT_COE_TYPE_TXPDO = 5,     /**< TxPDO mapping */
+    SYN_ECAT_COE_TYPE_SDO_INFO = 6   /**< SDO Information object directory */
 } SYN_EcatCoEType;
 
 /* ── Struct Definitions ─────────────────────────────────────────────────── */
 
 /** @brief Raw EtherCAT Header (2 bytes) */
 typedef struct {
-    uint16_t length : 11; /**< Length of datagrams in bytes */
-    uint16_t reserved : 1;
-    uint16_t type : 4; /**< Type (1 for EtherCAT datagrams) */
+    uint16_t length : 11;  /**< Length of datagrams in bytes */
+    uint16_t reserved : 1; /**< Reserved bit */
+    uint16_t type : 4;     /**< Type (1 for EtherCAT datagrams) */
 } SYN_EcatHeader;
 
 /** @brief EtherCAT Datagram Header (10 bytes header + 2 bytes WKC = 12 bytes overhead) */
@@ -97,9 +100,9 @@ typedef struct {
 
 /** @brief CoE (CANoverEtherCAT) Mailbox Header */
 typedef struct {
-    uint16_t number : 9;
-    uint16_t res : 3;
-    uint16_t service_type : 4;
+    uint16_t number : 9;       /**< CoE detail/sequence number */
+    uint16_t res : 3;          /**< Reserved bits */
+    uint16_t service_type : 4; /**< CoE service type enum */
 } SYN_EcatCoEHeader;
 
 /** @brief EtherCAT Node Descriptor */

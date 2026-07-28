@@ -18,32 +18,40 @@
 extern "C" {
 #endif
 
-#define SYN_KEYPAD_MAX_ROWS 8
-#define SYN_KEYPAD_MAX_COLS 8
+#define SYN_KEYPAD_MAX_ROWS 8 /**< Maximum supported keypad rows (8) */
+#define SYN_KEYPAD_MAX_COLS 8 /**< Maximum supported keypad columns (8) */
 
 /**
  * @brief Matrix Keypad Context.
  */
 typedef struct SYN_Keypad SYN_Keypad;
 
+/**
+ * @brief Keypad Event Callback function prototype.
+ * @param kp       Pointer to keypad context.
+ * @param key      Ascii character key from keymap.
+ * @param pressed  True on key press down, false on release.
+ * @param user_ctx User-defined callback context pointer.
+ */
 typedef void (*SYN_KeypadCallback)(SYN_Keypad *kp, char key, bool pressed, void *user_ctx);
 
+/** Keypad State Context. */
 struct SYN_Keypad {
-    SYN_GPIO_Pin rows[SYN_KEYPAD_MAX_ROWS];
-    uint8_t num_rows;
+    SYN_GPIO_Pin rows[SYN_KEYPAD_MAX_ROWS]; /**< Array of row GPIO pins */
+    uint8_t num_rows;                       /**< Number of active row pins */
 
-    SYN_GPIO_Pin cols[SYN_KEYPAD_MAX_COLS];
-    uint8_t num_cols;
+    SYN_GPIO_Pin cols[SYN_KEYPAD_MAX_COLS]; /**< Array of column GPIO pins */
+    uint8_t num_cols;                       /**< Number of active column pins */
 
-    char keymap[SYN_KEYPAD_MAX_ROWS * SYN_KEYPAD_MAX_COLS];
+    char keymap[SYN_KEYPAD_MAX_ROWS * SYN_KEYPAD_MAX_COLS]; /**< Flat keymap character mapping */
 
-    char active_key;
-    bool is_pressed;
-    char last_raw_key;
-    uint32_t press_count;
+    char active_key;      /**< Currently pressed debounced key */
+    bool is_pressed;      /**< True if key currently down */
+    char last_raw_key;    /**< Last scanned raw key */
+    uint32_t press_count; /**< Total keypress count */
 
-    SYN_KeypadCallback on_event;
-    void *user_ctx;
+    SYN_KeypadCallback on_event; /**< Key event callback function */
+    void *user_ctx;              /**< User callback context */
 };
 
 /**

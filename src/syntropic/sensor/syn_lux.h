@@ -31,9 +31,9 @@ typedef enum {
  * @brief Generic Light & Color Sensor Context.
  */
 typedef struct {
-    SYN_LuxType type;
-    SYN_SoftI2C i2c;
-    uint8_t i2c_addr;
+    SYN_LuxType type;      /**< Light sensor model type */
+    SYN_SoftI2C i2c;       /**< Software I2C bus context */
+    uint8_t i2c_addr;      /**< 7-bit I2C device address */
     float illuminance_lux; /**< Ambient Light in Lux */
     uint16_t color_r;      /**< Raw Red channel (TCS34725) */
     uint16_t color_g;      /**< Raw Green channel (TCS34725) */

@@ -25,9 +25,9 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_SBUS_NUM_CHANNELS 16
-#define SYN_SBUS_FRAME_SIZE 25
-#define SYN_SBUS_HEADER 0x0FU
+#define SYN_SBUS_NUM_CHANNELS 16 /**< Number of analog channels in SBUS frame (16) */
+#define SYN_SBUS_FRAME_SIZE 25   /**< Total byte length of standard SBUS frame (25) */
+#define SYN_SBUS_HEADER 0x0FU    /**< SBUS frame header marker byte (0x0F) */
 
 /** Parsed SBUS Frame structure. */
 typedef struct {
@@ -40,12 +40,12 @@ typedef struct {
 
 /** SBUS Streaming Decoder State Machine Instance. */
 typedef struct {
-    uint8_t buf[SYN_SBUS_FRAME_SIZE];
-    uint8_t idx;
-    uint32_t frames_received;
-    uint32_t frame_loss_count;
-    uint32_t failsafe_count;
-    SYN_SBUS_Frame last_frame;
+    uint8_t buf[SYN_SBUS_FRAME_SIZE]; /**< Frame assembly buffer */
+    uint8_t idx;                      /**< Current byte index in buffer */
+    uint32_t frames_received;         /**< Total valid SBUS frames decoded */
+    uint32_t frame_loss_count;        /**< Count of frames with frame loss bit set */
+    uint32_t failsafe_count;          /**< Count of frames with failsafe bit set */
+    SYN_SBUS_Frame last_frame;        /**< Last successfully decoded SBUS frame */
 } SYN_SBUS_Parser;
 
 /**

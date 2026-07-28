@@ -115,14 +115,14 @@ void syn_filter_biquad_notch(SYN_FilterBiquad *f, q16_t fc, q16_t fs, q16_t q);
 
 /* ── Cascaded Biquad Filter Bank ─────────────────────────────────────────── */
 
-#define SYN_BIQUAD_CASCADE_MAX_STAGES 8
+#define SYN_BIQUAD_CASCADE_MAX_STAGES 8 /**< Maximum allowed biquad filter stages in cascade */
 
 /**
  * @brief Multi-stage cascaded biquad filter structure for high-order filtering.
  */
 typedef struct {
-    SYN_FilterBiquad stages[SYN_BIQUAD_CASCADE_MAX_STAGES];
-    uint8_t num_stages;
+    SYN_FilterBiquad stages[SYN_BIQUAD_CASCADE_MAX_STAGES]; /**< Array of biquad filter stages */
+    uint8_t num_stages;                                     /**< Number of active stages */
 } SYN_FilterBiquadCascade;
 
 /**

@@ -32,6 +32,12 @@
 
 #include "../util/syn_fmt.h"
 
+/**
+ * @brief Case-insensitive string prefix check.
+ * @param str Input string.
+ * @param prefix Prefix to test.
+ * @return True if str starts with prefix (case-insensitive).
+ */
 static inline bool prefix_icase(const char *str, const char *prefix)
 {
     return syn_str_prefix_icase(str, prefix);
@@ -68,6 +74,11 @@ static SYN_HttpMethod parse_method(const char *str, size_t len)
     return (SYN_HttpMethod)0xFF; /* Unrecognised — will produce 404/405 */
 }
 
+/**
+ * @brief Parse unsigned integer from string.
+ * @param s Input string.
+ * @return Parsed uint32_t value.
+ */
 static inline uint32_t parse_uint(const char *s)
 {
     return syn_fmt_parse_uint(s);

@@ -5,7 +5,7 @@
  * Provides non-blocking, zero-allocation LIN frame parsing, PID parity logic,
  * classic/enhanced checksum verification, Master schedule table execution,
  * and Slave response publishing/subscription state machines.
- * @ingroup syn_proto
+ * @ingroup syn_protocol
  */
 
 #ifndef SYN_LIN_H
@@ -112,12 +112,13 @@ typedef struct {
 #define SYN_LIN_SLAVE_MAX_FRAMES 8 /**< Maximum configured frame slots per LIN Slave */
 #endif
 
+/** LIN Bus Receiver State Machine Enum. */
 typedef enum {
-    SYN_LIN_STATE_IDLE = 0,
-    SYN_LIN_STATE_SYNC,
-    SYN_LIN_STATE_PID,
-    SYN_LIN_STATE_DATA,
-    SYN_LIN_STATE_CHECKSUM
+    SYN_LIN_STATE_IDLE = 0, /**< Idle state, awaiting break signal */
+    SYN_LIN_STATE_SYNC,     /**< Sync byte reception state */
+    SYN_LIN_STATE_PID,      /**< Protected Identifier reception state */
+    SYN_LIN_STATE_DATA,     /**< Data payload reception state */
+    SYN_LIN_STATE_CHECKSUM  /**< Checksum byte reception state */
 } SYN_LIN_State;
 
 /**

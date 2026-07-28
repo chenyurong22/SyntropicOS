@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-#define ALIGN4(x) (((x) + 3u) & ~3u)
+#define ALIGN4(x) (((x) + 3u) & ~3u) /**< Align size/offset to 4-byte boundary */
 
 SYN_Status syn_slab_init(SYN_SlabAllocator *slab, void *backing_memory, size_t total_size,
                          const size_t *block_sizes, const size_t *blocks_per_class,

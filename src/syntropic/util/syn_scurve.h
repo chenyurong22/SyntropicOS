@@ -119,9 +119,13 @@ int32_t syn_scurve_update(SYN_SCurve *sc);
 /** @brief Synchronized 3D S-Curve trajectory generator. */
 typedef struct {
     SYN_SCurve sc_master; /**< Master vector motion profile */
-    int32_t start_x, start_y, start_z;
-    int32_t delta_x, delta_y, delta_z;
-    uint32_t total_dist;
+    int32_t start_x;      /**< Starting X coordinate */
+    int32_t start_y;      /**< Starting Y coordinate */
+    int32_t start_z;      /**< Starting Z coordinate */
+    int32_t delta_x;      /**< Total X axis displacement */
+    int32_t delta_y;      /**< Total Y axis displacement */
+    int32_t delta_z;      /**< Total Z axis displacement */
+    uint32_t total_dist;  /**< Total 3D Euclidean travel distance */
 } SYN_SCurve3D;
 
 /**

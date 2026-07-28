@@ -18,24 +18,25 @@
 
 /** @brief Internal infrared protocol timing descriptor. */
 typedef struct {
-    SYN_IR_Protocol proto;
-    const char *name;
-    uint8_t carrier_khz;
-    SYN_IR_EncodingType encoding;
-    uint16_t leader_mark_us;
-    uint16_t leader_space_us;
-    uint16_t bit_mark_us;   /* PDM mark duration or PWM '0' mark */
-    uint16_t zero_space_us; /* PDM '0' space or PWM fixed space */
-    uint16_t one_space_us;  /* PDM '1' space */
-    uint16_t one_mark_us;   /* PWM '1' mark */
-    uint16_t half_bit_us;   /* Manchester half-bit duration */
-    uint8_t total_bits;
-    uint8_t addr_bits;
-    uint8_t cmd_bits;
-    uint16_t repeat_space_us;
-    uint16_t tolerance_us;
+    SYN_IR_Protocol proto;        /**< Protocol enum identifier */
+    const char *name;             /**< Human readable protocol name */
+    uint8_t carrier_khz;          /**< Modulation carrier frequency in kHz */
+    SYN_IR_EncodingType encoding; /**< Pulse encoding type (PDM, PWM, Manchester) */
+    uint16_t leader_mark_us;      /**< Preamble header mark duration in us */
+    uint16_t leader_space_us;     /**< Preamble header space duration in us */
+    uint16_t bit_mark_us;         /**< PDM mark duration or PWM '0' mark */
+    uint16_t zero_space_us;       /**< PDM '0' space or PWM fixed space */
+    uint16_t one_space_us;        /**< PDM '1' space */
+    uint16_t one_mark_us;         /**< PWM '1' mark */
+    uint16_t half_bit_us;         /**< Manchester half-bit duration */
+    uint8_t total_bits;           /**< Total bits in frame */
+    uint8_t addr_bits;            /**< Number of address bits */
+    uint8_t cmd_bits;             /**< Number of command bits */
+    uint16_t repeat_space_us;     /**< Repeat header space duration in us */
+    uint16_t tolerance_us;        /**< Measurement tolerance window in us */
 } SYN_IR_ProtoDesc;
 
+/** Protocol timing lookup table. */
 static const SYN_IR_ProtoDesc proto_table[SYN_IR_PROTO_COUNT] = {
     [SYN_IR_PROTO_UNKNOWN] = {.proto = SYN_IR_PROTO_UNKNOWN, .name = "Unknown"},
     [SYN_IR_PROTO_NEC] = {.proto = SYN_IR_PROTO_NEC,
@@ -181,6 +182,13 @@ static const SYN_IR_ProtoDesc proto_table[SYN_IR_PROTO_COUNT] = {
 
 /* ── Helper Functions ────────────────────────────────────────────────────── */
 
+/**
+ * @brief Check if measured pulse timing matches expected duration within tolerance.
+ * @param actual Measured pulse duration in us.
+ * @param expected Nominal target duration in us.
+ * @param tolerance Allowable +/- error window in us.
+ * @return true if within tolerance, false otherwise.
+ */
 static bool timing_match(uint16_t actual, uint16_t expected, uint16_t tolerance)
 {
     if (expected == 0)
@@ -197,6 +205,10 @@ const char *syn_ir_protocol_name(SYN_IR_Protocol proto)
     return proto_table[proto].name;
 }
 
+/**
+ * @brief Reset IR decoder state machine.
+ * @param decoder Decoder instance pointer.
+ */
 static void reset_decoder_state(SYN_IR_Decoder *decoder)
 {
     bool have_last = decoder->have_last;
@@ -220,6 +232,12 @@ SYN_Status syn_ir_decoder_init(SYN_IR_Decoder *decoder)
     return SYN_OK;
 }
 
+/**
+ * @brief Unpack raw 64-bit frame buffer into decoded SYN_IR_Frame fields.
+ * @param decoder Pointer to IR decoder instance.
+ * @param frame_out Pointer to output frame structure.
+ * @return True on successful frame unpacking, false otherwise.
+ */
 static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
 {
     SYN_IR_Protocol proto = decoder->active_proto;

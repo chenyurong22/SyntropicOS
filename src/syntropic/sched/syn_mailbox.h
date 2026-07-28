@@ -114,6 +114,9 @@ typedef struct {
 /* ── Forward declaration for IPC notify ────────────────────────────────── */
 
 #if defined(SYN_USE_MULTICORE) && SYN_USE_MULTICORE
+/**
+ * @brief Notify inter-processor communication (IPC) interrupt/hardware.
+ */
 void syn_port_ipc_notify(void);
 #endif
 

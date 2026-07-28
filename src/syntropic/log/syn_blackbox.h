@@ -23,14 +23,14 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_BLACKBOX_FRAME_INTRA 'I'
-#define SYN_BLACKBOX_FRAME_DELTA 'P'
-#define SYN_BLACKBOX_FRAME_SLOW 'S'
+#define SYN_BLACKBOX_FRAME_INTRA 'I' /**< Intra frame identifier 'I' (full uncompressed frame) */
+#define SYN_BLACKBOX_FRAME_DELTA 'P' /**< Delta frame identifier 'P' (predictive delta-encoded) */
+#define SYN_BLACKBOX_FRAME_SLOW 'S'  /**< Slow frame identifier 'S' (low-rate status fields) */
 
 /** Blackbox Flight State Record. */
 typedef struct {
-    uint32_t iteration;
-    uint32_t time_us;
+    uint32_t iteration;  /**< Main loop iteration counter */
+    uint32_t time_us;    /**< Microsecond timestamp */
     int16_t gyro[3];     /**< Roll, Pitch, Yaw deg/s */
     int16_t accel[3];    /**< X, Y, Z mg             */
     int16_t setpoint[4]; /**< Roll, Pitch, Yaw, Throttle */
@@ -39,9 +39,9 @@ typedef struct {
 
 /** Blackbox Recorder Instance. */
 typedef struct {
-    SYN_Blackbox_Record last_record;
-    uint32_t frame_count;
-    uint32_t bytes_written;
+    SYN_Blackbox_Record last_record; /**< Last logged record (used for delta prediction) */
+    uint32_t frame_count;            /**< Total frames encoded */
+    uint32_t bytes_written;          /**< Total bytes written to stream */
 } SYN_Blackbox;
 
 /**

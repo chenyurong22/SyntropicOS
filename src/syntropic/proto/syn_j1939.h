@@ -253,12 +253,19 @@ SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node, const SYN_CAN_Frame *fr
 
 /**
  * @brief Encode a J1939 DM2 payload (Previously Active Diagnostic Trouble Codes).
+ * @param buf Output byte buffer.
+ * @param buf_size Buffer capacity in bytes.
+ * @param dtc_list Array of previously active DTCs.
+ * @param dtc_count Number of DTCs in dtc_list.
+ * @param mil_lamp_status Malfunction Indicator Lamp status bits.
+ * @return Number of encoded bytes written to buf.
  */
 size_t syn_j1939_encode_dm2(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *dtc_list,
                             size_t dtc_count, uint8_t mil_lamp_status);
 
 #ifndef SYN_J1939_MAX_LOGGED_DTCS
-#define SYN_J1939_MAX_LOGGED_DTCS 16
+#define SYN_J1939_MAX_LOGGED_DTCS 16 /**< Maximum capacity of active/previously active DTC arrays \
+                                      */
 #endif
 
 /** @brief J1939 active and previously active DTC log container. */
@@ -271,26 +278,37 @@ typedef struct {
 
 /**
  * @brief Initialize a J1939 Diagnostic Trouble Code logger.
+ * @param log Pointer to DTC log container.
  */
 void syn_j1939_dtc_log_init(SYN_J1939_DTCLog *log);
 
 /**
  * @brief Add an active Diagnostic Trouble Code (DM1).
+ * @param log Pointer to DTC log container.
+ * @param spn Suspect Parameter Number (19-bit).
+ * @param fmi Failure Mode Identifier (5-bit).
+ * @return SYN_OK on success, SYN_NO_MEMORY if log is full.
  */
 SYN_Status syn_j1939_dtc_add_active(SYN_J1939_DTCLog *log, uint32_t spn, uint8_t fmi);
 
 /**
  * @brief Clear an active DTC and move it to previously active log (DM2).
+ * @param log Pointer to DTC log container.
+ * @param spn Suspect Parameter Number (19-bit).
+ * @param fmi Failure Mode Identifier (5-bit).
+ * @return SYN_OK if found and cleared, SYN_NOT_FOUND if absent.
  */
 SYN_Status syn_j1939_dtc_clear_active(SYN_J1939_DTCLog *log, uint32_t spn, uint8_t fmi);
 
 /**
  * @brief Clear all previously active DTCs (DM3 Request handling).
+ * @param log Pointer to DTC log container.
  */
 void syn_j1939_dtc_clear_dm3(SYN_J1939_DTCLog *log);
 
 /**
  * @brief Clear all active DTCs (DM11 Request handling).
+ * @param log Pointer to DTC log container.
  */
 void syn_j1939_dtc_clear_dm11(SYN_J1939_DTCLog *log);
 

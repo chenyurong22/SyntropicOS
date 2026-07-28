@@ -1,7 +1,7 @@
 /**
  * @file syn_pmbus.c
  * @brief PMBus Protocol Engine implementation.
- * @ingroup syn_proto
+ * @ingroup syn_protocol
  */
 
 #if __has_include("syn_config.h")

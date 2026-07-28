@@ -10,11 +10,17 @@
 
 #include <string.h>
 
-#define PCF8574_BL 0x08
-#define PCF8574_EN 0x04
-#define PCF8574_RW 0x02
-#define PCF8574_RS 0x01
+#define PCF8574_BL 0x08 /**< Backlight bit mask */
+#define PCF8574_EN 0x04 /**< Enable bit mask */
+#define PCF8574_RW 0x02 /**< Read/Write bit mask */
+#define PCF8574_RS 0x01 /**< Register Select bit mask */
 
+/**
+ * @brief Write byte to PCF8574 I2C I/O expander.
+ * @param i2c Pointer to I2C interface.
+ * @param dev_addr 7-bit device I2C address.
+ * @param byte Data byte.
+ */
 static void write_i2c_byte(SYN_SoftI2C *i2c, uint8_t dev_addr, uint8_t byte)
 {
     syn_soft_i2c_start(i2c);
@@ -23,6 +29,12 @@ static void write_i2c_byte(SYN_SoftI2C *i2c, uint8_t dev_addr, uint8_t byte)
     syn_soft_i2c_stop(i2c);
 }
 
+/**
+ * @brief Send 4-bit nibble over I2C PCF8574.
+ * @param lcd Pointer to LCD instance.
+ * @param nibble 4-bit data nibble.
+ * @param mode Control mode (RS/RW bit mask).
+ */
 static void send_i2c_nibble(SYN_CharLCD *lcd, uint8_t nibble, uint8_t mode)
 {
     uint8_t data = (uint8_t)(nibble | mode | lcd->backlight_mask);
@@ -31,12 +43,23 @@ static void send_i2c_nibble(SYN_CharLCD *lcd, uint8_t nibble, uint8_t mode)
     write_i2c_byte(&lcd->i2c, lcd->i2c_addr, (uint8_t)(data & ~PCF8574_EN));
 }
 
+/**
+ * @brief Send byte as two 4-bit nibbles over I2C.
+ * @param lcd Pointer to LCD instance.
+ * @param val Byte value.
+ * @param mode Control mode (RS/RW bit mask).
+ */
 static void send_i2c_byte(SYN_CharLCD *lcd, uint8_t val, uint8_t mode)
 {
     send_i2c_nibble(lcd, val & 0xF0, mode);
     send_i2c_nibble(lcd, (uint8_t)((val << 4) & 0xF0), mode);
 }
 
+/**
+ * @brief Send 4-bit nibble over parallel GPIO.
+ * @param lcd Pointer to LCD instance.
+ * @param nibble 4-bit data nibble.
+ */
 static void send_gpio_nibble(SYN_CharLCD *lcd, uint8_t nibble)
 {
     for (int i = 0; i < 4; i++) {
@@ -49,6 +72,12 @@ static void send_gpio_nibble(SYN_CharLCD *lcd, uint8_t nibble)
     syn_port_gpio_write(lcd->en_pin, SYN_GPIO_LOW);
 }
 
+/**
+ * @brief Send byte as two 4-bit nibbles over parallel GPIO.
+ * @param lcd Pointer to LCD instance.
+ * @param val Byte value.
+ * @param is_data True for data, false for command.
+ */
 static void send_gpio_byte(SYN_CharLCD *lcd, uint8_t val, bool is_data)
 {
     syn_port_gpio_write(lcd->rs_pin, is_data ? SYN_GPIO_HIGH : SYN_GPIO_LOW);
@@ -56,6 +85,11 @@ static void send_gpio_byte(SYN_CharLCD *lcd, uint8_t val, bool is_data)
     send_gpio_nibble(lcd, (uint8_t)(val & 0x0F));
 }
 
+/**
+ * @brief Send command byte to LCD controller.
+ * @param lcd Pointer to LCD instance.
+ * @param cmd Command byte.
+ */
 static void write_command(SYN_CharLCD *lcd, uint8_t cmd)
 {
     if (lcd->mode == SYN_CHARLCD_MODE_I2C) {
@@ -65,6 +99,11 @@ static void write_command(SYN_CharLCD *lcd, uint8_t cmd)
     }
 }
 
+/**
+ * @brief Write character data byte to LCD controller.
+ * @param lcd Pointer to LCD instance.
+ * @param data Character data byte.
+ */
 static void write_data(SYN_CharLCD *lcd, uint8_t data)
 {
     if (lcd->mode == SYN_CHARLCD_MODE_I2C) {

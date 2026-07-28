@@ -34,7 +34,7 @@ typedef struct {
 } SYN_TaskProfile;
 
 #ifndef SYN_TASK_PROFILE_MAX_TASKS
-#define SYN_TASK_PROFILE_MAX_TASKS 16
+#define SYN_TASK_PROFILE_MAX_TASKS 16 /**< Maximum profiled task slots in registry */
 #endif
 
 /**

@@ -11,6 +11,12 @@
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
+/**
+ * @brief Advance queue circular buffer index.
+ * @param idx Current index.
+ * @param capacity Queue buffer capacity.
+ * @return Advanced index value.
+ */
 static inline size_t spsc_advance(size_t idx, size_t capacity)
 {
     size_t next = idx + 1;

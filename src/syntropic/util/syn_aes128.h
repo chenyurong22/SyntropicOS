@@ -20,15 +20,15 @@
 extern "C" {
 #endif
 
-#define SYN_AES128_KEY_SIZE 16
-#define SYN_AES128_BLOCK_SIZE 16
-#define SYN_AES128_EXPANDED_KEY_SIZE 176
+#define SYN_AES128_KEY_SIZE 16           /**< AES-128 key length in bytes (16) */
+#define SYN_AES128_BLOCK_SIZE 16         /**< AES-128 cipher block size in bytes (16) */
+#define SYN_AES128_EXPANDED_KEY_SIZE 176 /**< Total expanded round keys size in bytes (176) */
 
 /**
  * @brief AES-128 Context — stores round keys.
  */
 typedef struct {
-    uint8_t round_keys[SYN_AES128_EXPANDED_KEY_SIZE];
+    uint8_t round_keys[SYN_AES128_EXPANDED_KEY_SIZE]; /**< Expanded round keys array */
 } SYN_AES128_Context;
 
 /**

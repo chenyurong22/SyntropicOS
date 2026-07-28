@@ -30,11 +30,17 @@ typedef struct {
 
 /**
  * @brief Initialize identity quaternion q = (1, 0, 0, 0).
+ * @param q Pointer to quaternion instance.
  */
 void syn_quat_identity(SYN_Quaternion *q);
 
 /**
  * @brief Initialize quaternion with given components.
+ * @param q Pointer to quaternion instance.
+ * @param w Scalar (real) component.
+ * @param x Vector i component.
+ * @param y Vector j component.
+ * @param z Vector k component.
  */
 void syn_quat_init(SYN_Quaternion *q, q16_t w, q16_t x, q16_t y, q16_t z);
 
@@ -48,22 +54,29 @@ void syn_quat_mul(const SYN_Quaternion *q1, const SYN_Quaternion *q2, SYN_Quater
 
 /**
  * @brief Calculate quaternion norm (magnitude).
+ * @param q Pointer to input quaternion.
+ * @return Magnitude |q| in Q16.16 format.
  */
 q16_t syn_quat_norm(const SYN_Quaternion *q);
 
 /**
  * @brief Normalize quaternion to unit length.
+ * @param q Pointer to quaternion to normalize.
  * @return SYN_OK on success, SYN_ERROR if zero magnitude.
  */
 SYN_Status syn_quat_normalize(SYN_Quaternion *q);
 
 /**
  * @brief Calculate quaternion conjugate q* = (w, -x, -y, -z).
+ * @param q   Pointer to input quaternion.
+ * @param out Destination conjugate quaternion.
  */
 void syn_quat_conjugate(const SYN_Quaternion *q, SYN_Quaternion *out);
 
 /**
  * @brief Calculate quaternion inverse q^-1 = q* / |q|^2.
+ * @param q   Pointer to input quaternion.
+ * @param out Destination inverse quaternion.
  * @return SYN_OK on success, SYN_ERROR if zero magnitude.
  */
 SYN_Status syn_quat_inverse(const SYN_Quaternion *q, SYN_Quaternion *out);
@@ -86,11 +99,19 @@ void syn_quat_to_mat3x3(const SYN_Quaternion *q, SYN_Matrix *out);
 /**
  * @brief Create orientation quaternion from Euler angles (roll, pitch, yaw) in Q16 radians (Z-Y-X
  * sequence).
+ * @param q     Destination quaternion.
+ * @param roll  Roll angle in Q16 radians.
+ * @param pitch Pitch angle in Q16 radians.
+ * @param yaw   Yaw angle in Q16 radians.
  */
 void syn_quat_from_euler(SYN_Quaternion *q, q16_t roll, q16_t pitch, q16_t yaw);
 
 /**
  * @brief Extract Euler angles (roll, pitch, yaw) in Q16 radians from unit quaternion.
+ * @param q     Input unit quaternion.
+ * @param roll  Output pointer for roll angle in Q16 radians.
+ * @param pitch Output pointer for pitch angle in Q16 radians.
+ * @param yaw   Output pointer for yaw angle in Q16 radians.
  */
 void syn_quat_to_euler(const SYN_Quaternion *q, q16_t *roll, q16_t *pitch, q16_t *yaw);
 

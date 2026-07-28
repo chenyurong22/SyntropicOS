@@ -48,7 +48,7 @@ typedef struct {
     bool angle_mode;      /**< True = Angle self-leveling mode, False = Acro rate mode. */
 } SYN_Flight_Commands;
 
-/** Quadcopter X Motor Output Command in Microseconds ($\mu s$). */
+/** Quadcopter X Motor Output Command in Microseconds (us). */
 typedef struct {
     uint16_t m1; /**< Front-Right Motor (1000..2000 us). */
     uint16_t m2; /**< Rear-Right Motor (1000..2000 us). */
@@ -58,11 +58,11 @@ typedef struct {
 
 /** 3-Axis Flight PID Controller Instance. */
 typedef struct {
-    SYN_PID pid_rate_roll;
-    SYN_PID pid_rate_pitch;
-    SYN_PID pid_rate_yaw;
-    SYN_PID pid_angle_roll;
-    SYN_PID pid_angle_pitch;
+    SYN_PID pid_rate_roll;   /**< Inner rate loop PID controller for Roll axis */
+    SYN_PID pid_rate_pitch;  /**< Inner rate loop PID controller for Pitch axis */
+    SYN_PID pid_rate_yaw;    /**< Inner rate loop PID controller for Yaw axis */
+    SYN_PID pid_angle_roll;  /**< Outer angle loop PID controller for Roll axis */
+    SYN_PID pid_angle_pitch; /**< Outer angle loop PID controller for Pitch axis */
 } SYN_Flight_Controller;
 
 /**

@@ -160,14 +160,29 @@ void syn_metrics_foreach(void (*cb)(const SYN_Metric *m, void *ctx), void *ctx);
 /** @brief Set a metric value (disabled). */
 #define SYN_METRIC_SET(m, v) ((void)0)
 
+/**
+ * @brief Initialize metrics module (no-op when disabled).
+ */
 static inline void syn_metrics_init(void)
 {
 }
+
+/**
+ * @brief Record a metric value (no-op when disabled).
+ * @param name Metric name.
+ * @param value Float value to record.
+ */
 static inline void syn_metrics_record(const char *name, float value)
 {
     (void)name;
     (void)value;
 }
+
+/**
+ * @brief Increment/decrement metric counter (no-op when disabled).
+ * @param name Metric name.
+ * @param delta Integer counter delta.
+ */
 static inline void syn_metrics_count(const char *name, int32_t delta)
 {
     (void)name;

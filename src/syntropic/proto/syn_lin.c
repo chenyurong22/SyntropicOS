@@ -1,7 +1,7 @@
 /**
  * @file syn_lin.c
  * @brief LIN Protocol Engine implementation.
- * @ingroup syn_proto
+ * @ingroup syn_protocol
  */
 
 #include "syn_lin.h"

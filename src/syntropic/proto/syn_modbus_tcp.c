@@ -43,6 +43,11 @@ bool syn_mbap_decode_header(const uint8_t *buf, SYN_MBAP_Header *hdr)
     return (hdr->protocol_id == 0x0000);
 }
 
+/**
+ * @brief Calculate expected response PDU byte length for Modbus TCP query.
+ * @param buf Pointer to MBAP/PDU payload buffer.
+ * @return Response PDU byte length.
+ */
 static uint16_t get_response_pdu_len(const uint8_t *buf)
 {
     uint8_t fc = buf[1];

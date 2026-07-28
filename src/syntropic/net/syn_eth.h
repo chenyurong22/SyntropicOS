@@ -26,48 +26,48 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_ETH_MAC_LEN 6U
-#define SYN_ETH_HEADER_LEN 14U
-#define SYN_ETH_MIN_FRAME_LEN 60U
-#define SYN_ETH_MAX_FRAME_LEN 1514U
+#define SYN_ETH_MAC_LEN 6U          /**< Ethernet MAC address length in bytes */
+#define SYN_ETH_HEADER_LEN 14U      /**< Ethernet II header length in bytes */
+#define SYN_ETH_MIN_FRAME_LEN 60U   /**< Minimum Ethernet frame length with padding */
+#define SYN_ETH_MAX_FRAME_LEN 1514U /**< Maximum standard Ethernet frame length */
 #ifndef SYN_ETH_ARP_CACHE_SIZE
-#define SYN_ETH_ARP_CACHE_SIZE 8U
+#define SYN_ETH_ARP_CACHE_SIZE 8U /**< Default ARP cache table capacity */
 #endif
 
-#define SYN_ETHTYPE_IPV4 0x0800U
-#define SYN_ETHTYPE_ARP 0x0806U
-#define SYN_ETHTYPE_IPV6 0x86DDU
-#define SYN_ETHTYPE_ETHERCAT 0x88A4U
+#define SYN_ETHTYPE_IPV4 0x0800U     /**< EtherType for IPv4 packets (0x0800) */
+#define SYN_ETHTYPE_ARP 0x0806U      /**< EtherType for ARP packets (0x0806) */
+#define SYN_ETHTYPE_IPV6 0x86DDU     /**< EtherType for IPv6 packets (0x86DD) */
+#define SYN_ETHTYPE_ETHERCAT 0x88A4U /**< EtherType for EtherCAT frames (0x88A4) */
 
-#define SYN_ARP_OP_REQUEST 1U
-#define SYN_ARP_OP_REPLY 2U
+#define SYN_ARP_OP_REQUEST 1U /**< ARP Operation: Request (1) */
+#define SYN_ARP_OP_REPLY 2U   /**< ARP Operation: Reply (2) */
 
 /** Parsed Ethernet II Header. */
 typedef struct {
-    uint8_t dst_mac[SYN_ETH_MAC_LEN];
-    uint8_t src_mac[SYN_ETH_MAC_LEN];
-    uint16_t ethertype;
+    uint8_t dst_mac[SYN_ETH_MAC_LEN]; /**< Destination MAC address */
+    uint8_t src_mac[SYN_ETH_MAC_LEN]; /**< Source MAC address */
+    uint16_t ethertype;               /**< 16-bit EtherType field */
 } SYN_ETH_Header;
 
 /** ARP Table Cache Entry. */
 typedef struct {
-    uint32_t ip;
-    uint8_t mac[SYN_ETH_MAC_LEN];
-    uint32_t last_seen_ms;
-    bool valid;
+    uint32_t ip;                  /**< 32-bit IPv4 address */
+    uint8_t mac[SYN_ETH_MAC_LEN]; /**< Resolved 6-byte MAC address */
+    uint32_t last_seen_ms;        /**< Tick timestamp of last update */
+    bool valid;                   /**< True if entry is active/valid */
 } SYN_ETH_ArpEntry;
 
 /** Native Ethernet Interface Engine. */
 typedef struct {
-    uint8_t mac_addr[SYN_ETH_MAC_LEN];
-    uint32_t ip_addr;
-    uint32_t netmask;
-    uint32_t gateway;
-    SYN_ETH_ArpEntry arp_cache[SYN_ETH_ARP_CACHE_SIZE];
-    uint32_t frames_tx;
-    uint32_t frames_rx;
-    uint32_t arp_requests;
-    uint32_t arp_replies;
+    uint8_t mac_addr[SYN_ETH_MAC_LEN];                  /**< Interface MAC address */
+    uint32_t ip_addr;                                   /**< Interface IPv4 address */
+    uint32_t netmask;                                   /**< Interface subnet mask */
+    uint32_t gateway;                                   /**< Default gateway IP address */
+    SYN_ETH_ArpEntry arp_cache[SYN_ETH_ARP_CACHE_SIZE]; /**< ARP cache table array */
+    uint32_t frames_tx;                                 /**< Total frames transmitted */
+    uint32_t frames_rx;                                 /**< Total frames received */
+    uint32_t arp_requests;                              /**< Total ARP requests processed */
+    uint32_t arp_replies;                               /**< Total ARP replies processed */
 } SYN_ETH;
 
 /**
@@ -129,6 +129,14 @@ SYN_Status syn_eth_build_frame(SYN_ETH *eth, const uint8_t dst_mac[6], uint16_t 
  */
 SYN_Status syn_eth_arp_lookup(SYN_ETH *eth, uint32_t ip, uint8_t mac_out[6]);
 
+/**
+ * @brief Update or insert an entry into the local ARP cache table.
+ *
+ * @param eth Pointer to Ethernet instance.
+ * @param ip  32-bit IPv4 address.
+ * @param mac Resolved 6-byte MAC address.
+ * @return SYN_OK on success.
+ */
 SYN_Status syn_eth_arp_update(SYN_ETH *eth, uint32_t ip, const uint8_t mac[6]);
 
 /* ── Protocol engine injection ──────────────────────────────────────────── */

@@ -21,8 +21,8 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_PPM_MAX_CHANNELS 12
-#define SYN_PPM_SYNC_MIN_US 2700U
+#define SYN_PPM_MAX_CHANNELS 12   /**< Maximum supported PPM channels (12) */
+#define SYN_PPM_SYNC_MIN_US 2700U /**< Minimum sync pulse gap in microseconds (2700 us) */
 
 /** PPM Decoder Instance. */
 typedef struct {

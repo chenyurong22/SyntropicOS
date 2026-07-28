@@ -27,12 +27,12 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_MSP_MAX_PAYLOAD 64U
-#define SYN_MSP_HEADER_CHAR '$'
-#define SYN_MSP_V1_CHAR 'M'
-#define SYN_MSP_REQ_CHAR '<'
-#define SYN_MSP_RESP_CHAR '>'
-#define SYN_MSP_ERR_CHAR '!'
+#define SYN_MSP_MAX_PAYLOAD 64U /**< Maximum MSP v1 payload byte length */
+#define SYN_MSP_HEADER_CHAR '$' /**< MSP preamble start character '$' */
+#define SYN_MSP_V1_CHAR 'M'     /**< MSP v1 protocol identifier 'M' */
+#define SYN_MSP_REQ_CHAR '<'    /**< MSP direction character for request '<' */
+#define SYN_MSP_RESP_CHAR '>'   /**< MSP direction character for response '>' */
+#define SYN_MSP_ERR_CHAR '!'    /**< MSP direction character for error '!' */
 
 /** Common MSP Command IDs. */
 typedef enum {
@@ -55,16 +55,16 @@ typedef struct {
 
 /** MSP Streaming Parser Instance. */
 typedef struct {
-    uint8_t state;
-    uint8_t dir_char;
-    uint8_t cmd;
-    uint8_t payload_len;
-    uint8_t payload_idx;
-    uint8_t payload[SYN_MSP_MAX_PAYLOAD];
-    uint8_t checksum;
-    SYN_MSP_Frame last_frame;
-    uint32_t frames_received;
-    uint32_t checksum_errors;
+    uint8_t state;                        /**< Parser state machine step */
+    uint8_t dir_char;                     /**< Received direction character */
+    uint8_t cmd;                          /**< Received command ID */
+    uint8_t payload_len;                  /**< Expected payload length */
+    uint8_t payload_idx;                  /**< Payload write index */
+    uint8_t payload[SYN_MSP_MAX_PAYLOAD]; /**< Payload assembly buffer */
+    uint8_t checksum;                     /**< Running XOR checksum accumulator */
+    SYN_MSP_Frame last_frame;             /**< Last decoded frame */
+    uint32_t frames_received;             /**< Total valid frames decoded */
+    uint32_t checksum_errors;             /**< Count of checksum mismatch errors */
 } SYN_MSP_Parser;
 
 /**
@@ -89,11 +89,12 @@ SYN_Status syn_msp_parse_byte(SYN_MSP_Parser *parser, uint8_t byte, SYN_MSP_Fram
 /**
  * @brief Encode an MSP response frame into raw serial bytes buffer.
  *
- * @param cmd     Command ID.
- * @param payload Pointer to payload buffer (or NULL if 0 length).
- * @param len     Payload length in bytes.
- * @param buf_out Output buffer (must hold at least `len + 6` bytes).
- * @param out_len Pointer to receive total generated frame length in bytes.
+ * @param cmd      Command ID.
+ * @param payload  Pointer to payload buffer (or NULL if 0 length).
+ * @param len      Payload length in bytes.
+ * @param buf_out  Output buffer (must hold at least `len + 6` bytes).
+ * @param buf_size Capacity of buf_out in bytes.
+ * @param out_len  Pointer to receive total generated frame length in bytes.
  * @return SYN_OK on success.
  */
 SYN_Status syn_msp_encode_response(uint8_t cmd, const uint8_t *payload, uint8_t len,

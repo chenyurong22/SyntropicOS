@@ -26,24 +26,24 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_IGMP_TYPE_MEMBERSHIP_QUERY 0x11U
-#define SYN_IGMP_TYPE_V2_REPORT 0x16U
-#define SYN_IGMP_TYPE_V2_LEAVE 0x17U
+#define SYN_IGMP_TYPE_MEMBERSHIP_QUERY 0x11U /**< IGMP Membership Query message type (0x11) */
+#define SYN_IGMP_TYPE_V2_REPORT 0x16U        /**< IGMPv2 Membership Report message type (0x16) */
+#define SYN_IGMP_TYPE_V2_LEAVE 0x17U         /**< IGMPv2 Leave Group message type (0x17) */
 
-#define SYN_IGMP_MAX_GROUPS 4U
+#define SYN_IGMP_MAX_GROUPS 4U /**< Maximum concurrent multicast groups tracked per engine */
 
 /** Multicast Group Record. */
 typedef struct {
-    uint32_t group_ip;
-    bool joined;
+    uint32_t group_ip; /**< Multicast group IPv4 address */
+    bool joined;       /**< True if currently joined to group */
 } SYN_IGMP_Group;
 
 /** IGMP Engine Context Descriptor. */
 typedef struct {
-    SYN_IGMP_Group groups[SYN_IGMP_MAX_GROUPS];
-    uint32_t reports_sent;
-    uint32_t queries_received;
-    uint32_t leaves_sent;
+    SYN_IGMP_Group groups[SYN_IGMP_MAX_GROUPS]; /**< Multicast groups tracking table */
+    uint32_t reports_sent;                      /**< Total IGMP reports sent */
+    uint32_t queries_received;                  /**< Total IGMP queries received */
+    uint32_t leaves_sent;                       /**< Total IGMP leave messages sent */
 } SYN_IGMP;
 
 /**

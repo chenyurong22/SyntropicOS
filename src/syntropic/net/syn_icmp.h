@@ -25,19 +25,19 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_ICMP_TYPE_ECHO_REPLY 0U
-#define SYN_ICMP_TYPE_UNREACHABLE 3U
-#define SYN_ICMP_TYPE_ECHO_REQUEST 8U
+#define SYN_ICMP_TYPE_ECHO_REPLY 0U   /**< ICMP Type 0: Echo Reply */
+#define SYN_ICMP_TYPE_UNREACHABLE 3U  /**< ICMP Type 3: Destination Unreachable */
+#define SYN_ICMP_TYPE_ECHO_REQUEST 8U /**< ICMP Type 8: Echo Request */
 
-#define SYN_ICMP_HEADER_LEN 8U
+#define SYN_ICMP_HEADER_LEN 8U /**< Standard ICMP header length in bytes (8) */
 
 /** ICMP Engine Context Descriptor. */
 typedef struct {
-    uint32_t echo_requests_rx;
-    uint32_t echo_replies_tx;
-    uint32_t echo_requests_tx;
-    uint32_t echo_replies_rx;
-    uint32_t errors;
+    uint32_t echo_requests_rx; /**< Echo requests received counter */
+    uint32_t echo_replies_tx;  /**< Echo replies transmitted counter */
+    uint32_t echo_requests_tx; /**< Outbound echo requests transmitted counter */
+    uint32_t echo_replies_rx;  /**< Outbound echo replies received counter */
+    uint32_t errors;           /**< Checksum/format error counter */
 } SYN_ICMP;
 
 /**

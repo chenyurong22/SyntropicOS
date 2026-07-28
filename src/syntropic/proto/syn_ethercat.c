@@ -16,12 +16,22 @@
 
 /* ── Inline Helpers ─────────────────────────────────────────────────────── */
 
+/**
+ * @brief Store 16-bit unsigned integer in little-endian byte order.
+ * @param p Pointer to output buffer.
+ * @param val 16-bit integer value.
+ */
 static inline void store16_le(uint8_t *p, uint16_t val)
 {
     p[0] = (uint8_t)(val & 0xFF);
     p[1] = (uint8_t)((val >> 8) & 0xFF);
 }
 
+/**
+ * @brief Store 32-bit unsigned integer in little-endian byte order.
+ * @param p Pointer to output buffer.
+ * @param val 32-bit integer value.
+ */
 static inline void store32_le(uint8_t *p, uint32_t val)
 {
     p[0] = (uint8_t)(val & 0xFF);
@@ -30,6 +40,11 @@ static inline void store32_le(uint8_t *p, uint32_t val)
     p[3] = (uint8_t)((val >> 24) & 0xFF);
 }
 
+/**
+ * @brief Load 16-bit unsigned integer from little-endian byte order.
+ * @param p Pointer to input buffer.
+ * @return 16-bit integer value.
+ */
 static inline uint16_t load16_le(const uint8_t *p)
 {
     return (uint16_t)p[0] | ((uint16_t)p[1] << 8);

@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#define SYN_SHIFTREG_MAX_CHIPS 8
+#define SYN_SHIFTREG_MAX_CHIPS 8 /**< Maximum daisy-chained shift register chips (8) */
 
 /* ── Output Shift Register (e.g. 74HC595, CD4094, TPIC6C596) ───────────── */
 

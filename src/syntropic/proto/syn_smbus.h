@@ -4,7 +4,7 @@
  *
  * Provides non-blocking SMBus packet encoding, decoding, Packet Error Checking (PEC)
  * CRC-8 calculations, transaction protocol builders, and ARP/alert definitions.
- * @ingroup syn_proto
+ * @ingroup syn_protocol
  */
 
 #ifndef SYN_SMBUS_H
@@ -41,6 +41,7 @@ extern "C" {
 
 /* ── SMBus Transaction Protocol Types ────────────────────────────────────── */
 
+/** SMBus Transaction Protocol Types Enum. */
 typedef enum {
     SYN_SMBUS_PROTO_QUICK_READ = 0,    /**< Quick Command (Read bit) */
     SYN_SMBUS_PROTO_QUICK_WRITE,       /**< Quick Command (Write bit) */

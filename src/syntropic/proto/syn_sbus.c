@@ -17,6 +17,12 @@ SYN_Status syn_sbus_init(SYN_SBUS_Parser *parser)
     return SYN_OK;
 }
 
+/**
+ * @brief Decode raw 25-byte SBUS frame buffer into channel outputs.
+ * @param buf Pointer to 25-byte raw SBUS frame buffer.
+ * @param frame Pointer to output SBUS decoded frame structure.
+ * @return SYN_OK on success, SYN_INVALID_PARAM if NULL.
+ */
 SYN_Status syn_sbus_decode_buffer(const uint8_t buf[SYN_SBUS_FRAME_SIZE], SYN_SBUS_Frame *frame)
 {
     if (!buf || !frame) {

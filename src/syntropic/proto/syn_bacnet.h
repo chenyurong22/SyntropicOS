@@ -1,7 +1,7 @@
 /**
  * @file syn_bacnet.h
  * @brief Zero-malloc, cleanroom BACnet MS/TP & APDU protocol stack (ISO 16484-5).
- * @ingroup syn_proto
+ * @ingroup syn_protocol
  *
  * Provides a lightweight, non-blocking BACnet MS/TP (Master-Slave/Token-Passing)
  * frame encoder/decoder, CRC-8 / CRC-16 verifiers, APDU parser (Who-Is, I-Am,
@@ -23,9 +23,9 @@ extern "C" {
 
 /* ── BACnet MS/TP Constants ─────────────────────────────────────────────── */
 
-#define SYN_BACNET_MSTP_PREAMBLE_1 0x55U
-#define SYN_BACNET_MSTP_PREAMBLE_2 0xFFU
-#define SYN_BACNET_BROADCAST_MAC 0xFFU
+#define SYN_BACNET_MSTP_PREAMBLE_1 0x55U /**< First MS/TP preamble byte (0x55) */
+#define SYN_BACNET_MSTP_PREAMBLE_2 0xFFU /**< Second MS/TP preamble byte (0xFF) */
+#define SYN_BACNET_BROADCAST_MAC 0xFFU   /**< Broadcast MAC address (0xFF) */
 
 /** @brief BACnet MS/TP Frame Types (ISO 16484-5 Clause 9.2) */
 typedef enum {
@@ -86,7 +86,7 @@ typedef struct {
 } SYN_BACnet_Object;
 
 #ifndef SYN_BACNET_MAX_OBJECTS
-#define SYN_BACNET_MAX_OBJECTS 16
+#define SYN_BACNET_MAX_OBJECTS 16 /**< Maximum supported BACnet objects per node instance */
 #endif
 
 /** @brief BACnet MS/TP Node Context */

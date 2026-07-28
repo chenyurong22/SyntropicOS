@@ -23,20 +23,20 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#define SYN_AUTOIP_NETMASK 0xFFFF0000UL /* 255.255.0.0 */
-#define SYN_AUTOIP_BASE_IP 0xA9FE0101UL /* 169.254.1.1 */
+#define SYN_AUTOIP_NETMASK 0xFFFF0000UL /**< Link-local network mask 255.255.0.0 */
+#define SYN_AUTOIP_BASE_IP 0xA9FE0101UL /**< Link-local base IP address 169.254.1.1 */
 
 /** AutoIP State Machine Enum. */
 typedef enum {
-    SYN_AUTOIP_STATE_INIT = 0,
-    SYN_AUTOIP_STATE_PROBE,
-    SYN_AUTOIP_STATE_ANNOUNCE,
-    SYN_AUTOIP_STATE_BOUND
+    SYN_AUTOIP_STATE_INIT = 0, /**< Uninitialized state */
+    SYN_AUTOIP_STATE_PROBE,    /**< Sending ARP probes state */
+    SYN_AUTOIP_STATE_ANNOUNCE, /**< Sending ARP announcement state */
+    SYN_AUTOIP_STATE_BOUND     /**< Successfully bound to IP state */
 } SYN_AUTOIP_State;
 
 /** AutoIP Context Descriptor. */
 typedef struct {
-    SYN_AUTOIP_State state;
+    SYN_AUTOIP_State state; /**< Active state machine state */
     uint32_t ip_addr;       /**< Candidate Link-Local IP */
     uint8_t probe_count;    /**< Number of ARP probes sent */
     uint8_t announce_count; /**< Number of ARP announcements sent */

@@ -23,6 +23,11 @@ enum {
     STATE_CRC1
 };
 
+/**
+ * @brief Get CRC extra byte for specified MAVLink message ID.
+ * @param msg_id MAVLink message ID.
+ * @return CRC extra seed byte.
+ */
 static uint8_t get_crc_extra(uint32_t msg_id)
 {
     switch (msg_id) {

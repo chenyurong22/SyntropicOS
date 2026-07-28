@@ -66,59 +66,14 @@ static void stm32_set_pwm_duty(uint16_t duty_0_to_1000)
 
 /* ── Main Entry Point (Bare-Metal HAL Loop) ─────────────────────────────── */
 
+extern int main_bare(void);
+extern int main_sched(void);
+
 int main(void)
 {
-    /* 1. STM32 HAL Hardware Initialization (Clock, GPIO, USART1, ADC, PWM) */
-    /* HAL_Init(); SystemClock_Config(); MX_GPIO_Init(); MX_USART1_UART_Init(); */
-
-    /* 2. Configure Modbus RTU Slave Parameters */
-    SYN_Modbus_Config cfg = {
-        .slave_addr      = MODBUS_SLAVE_ADDR,
-        .uart            = 0, /* UART instance 0 (USART1) */
-        .holding_regs    = s_holding_regs,
-        .holding_count   = HOLDING_REG_COUNT,
-        .input_regs      = s_input_regs,
-        .input_count     = INPUT_REG_COUNT,
-        .coils           = s_coils,
-        .coils_count     = COIL_COUNT,
-        .discrete_inputs = s_discrete_inputs,
-        .discrete_count  = DISCRETE_INPUT_COUNT,
-    };
-
-    /* Initialize Modbus RTU Slave Driver */
-    syn_modbus_init(&s_modbus_slave, &cfg, s_modbus_rx_buf, sizeof(s_modbus_rx_buf));
-
-    /* Initialize default Holding Register values (Setpoints) */
-    s_holding_regs[0] = 500U;  /* Default PWM Duty setpoint: 50.0% (500/1000) */
-    s_holding_regs[1] = 1152;  /* Default Baud Rate Code (115200) */
-
-    uint32_t last_sensor_update_ms = syn_port_get_tick_ms();
-
-    /* 3. Bare-Metal Main Loop (No OS Scheduler / No Protothreads) */
-    while (1) {
-        /* Step A: Poll & Process incoming Modbus RTU frames from UART */
-        syn_modbus_poll(&s_modbus_slave);
-
-        /* Step B: Periodically update Input Registers with fresh sensor data (every 100 ms) */
-        uint32_t now_ms = syn_port_get_tick_ms();
-        if (now_ms - last_sensor_update_ms >= 100u) {
-            last_sensor_update_ms = now_ms;
-
-            s_input_regs[0] = stm32_read_adc_temperature();  /* Input Reg 30001: Temperature */
-            s_input_regs[1] = stm32_read_adc_bus_voltage();  /* Input Reg 30002: Bus Voltage */
-            s_input_regs[2] = (uint16_t)(now_ms / 1000u);    /* Input Reg 30003: System Uptime (s) */
-        }
-
-        /* Step C: Apply Holding Register & Coil settings written by Modbus Master */
-        bool relay_on = (s_coils[0] & 0x01) != 0;
-        stm32_set_relay_state(relay_on);
-
-        uint16_t pwm_setpoint = s_holding_regs[0];
-        if (pwm_setpoint > 1000U) {
-            pwm_setpoint = 1000U; /* Clamp max duty */
-        }
-        stm32_set_pwm_duty(pwm_setpoint);
-    }
-
-    return 0;
+#if defined(USE_BARE_LOOP)
+    return main_bare();
+#else
+    return main_sched();
+#endif
 }

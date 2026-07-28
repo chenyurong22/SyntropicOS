@@ -120,7 +120,7 @@ container-fuzz: container-build
 container-test: container-cov
 
 container-cov: container-build
-	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers cov
+	@"$(CONTAINER_ENGINE)" run --rm --tmpfs /workspace/build:rw,exec -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers cov
 
 container-static: container-build
 	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace:z syntropicos-test make -C tools/containers static

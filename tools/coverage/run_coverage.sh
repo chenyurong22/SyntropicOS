@@ -12,7 +12,11 @@ mkdir -p build/coverage
 rm -rf build/coverage/* coverage.info coverage_html coverage_src.info
 
 echo "=== Running Test Suite with Coverage Instrumentation ==="
-make -f tests/Makefile.unity test-cov
+JOBS=$(nproc 2>/dev/null || true)
+if [ -z "${JOBS}" ]; then
+    JOBS=4
+fi
+make -j"${JOBS}" -f tests/Makefile.unity test-cov
 
 echo "=== Generating HTML Coverage Report via LCOV ==="
 if command -v lcov >/dev/null 2>&1; then

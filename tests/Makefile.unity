@@ -136,6 +136,7 @@ SYN_SRCS := \
 	src/syntropic/net/syn_icmp.c \
 	src/syntropic/net/syn_autoip.c \
 	src/syntropic/net/syn_netcfg.c \
+	src/syntropic/net/syn_igmp.c \
 	src/syntropic/util/syn_nn.c \
 	src/syntropic/util/syn_dsp.c
 

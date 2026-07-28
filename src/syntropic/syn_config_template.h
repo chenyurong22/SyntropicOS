@@ -120,6 +120,7 @@
 #define SYN_USE_ICMP 1           /**< ICMP Echo Ping protocol engine      */
 #define SYN_USE_AUTOIP 1         /**< RFC 3927 AutoIP Link-Local engine   */
 #define SYN_USE_NETCFG 1         /**< Network IP Manager & Link Events    */
+#define SYN_USE_IGMP 1           /**< IGMPv2 Multicast protocol engine    */
 #define SYN_USE_ROUTER 1         /**< Network router / dispatcher         */
 #define SYN_USE_HEARTBEAT 1      /**< Heartbeat / keep-alive service      */
 #define SYN_USE_SNTP 1           /**< SNTP time synchronization client    */

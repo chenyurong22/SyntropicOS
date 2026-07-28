@@ -481,6 +481,10 @@ extern "C" {
 #include "net/syn_netcfg.h"
 #endif
 
+#if !defined(SYN_USE_IGMP) || SYN_USE_IGMP
+#include "net/syn_igmp.h"
+#endif
+
 #if !defined(SYN_USE_NMEA) || SYN_USE_NMEA
 #include "proto/syn_nmea.h"
 #endif

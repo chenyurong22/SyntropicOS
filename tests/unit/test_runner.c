@@ -553,6 +553,10 @@ int main(void)
     extern void test_netcfg_link_events(void);
     extern void test_netcfg_coroutine_pt(void);
     extern void test_netcfg_null_checks(void);
+    extern void test_igmp_init(void);
+    extern void test_igmp_join_and_leave(void);
+    extern void test_igmp_process_query(void);
+    extern void test_igmp_null_checks(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -655,6 +659,10 @@ int main(void)
     RUN_TEST(test_netcfg_link_events);
     RUN_TEST(test_netcfg_coroutine_pt);
     RUN_TEST(test_netcfg_null_checks);
+    RUN_TEST(test_igmp_init);
+    RUN_TEST(test_igmp_join_and_leave);
+    RUN_TEST(test_igmp_process_query);
+    RUN_TEST(test_igmp_null_checks);
 
     return UNITY_END();
 

@@ -101,12 +101,14 @@ int main(void) {
 SyntropicOS ships with hardware and SDK examples across bare-metal C, STM32 HAL, PlatformIO, and Arduino:
 
 - **[`examples/stm32_bacnet_mstp`](examples/stm32_bacnet_mstp)** — STM32 RS485 BACnet MS/TP Smart Thermostat / Sensor node.
+- **[`examples/stm32_ethercat_servo`](examples/stm32_ethercat_servo)** — STM32 HAL EtherCAT (IEEE 802.3 EtherType 0x88A4) Slave node & CiA 402 drive control.
 - **[`examples/stm32_lin_bus`](examples/stm32_lin_bus)** — STM32 HAL LIN 2.1 automotive bus Master schedule table & Slave response node.
 - **[`examples/stm32_mbus_meter`](examples/stm32_mbus_meter)** — STM32 HAL M-Bus (Meter-Bus EN 13757) utility meter reader.
 - **[`examples/stm32_pmbus_power`](examples/stm32_pmbus_power)** — STM32 HAL PMBus (Power Management Bus 1.2/1.3) digital power telemetry.
 - **[`examples/stm32_smbus_battery`](examples/stm32_smbus_battery)** — STM32 HAL SMBus 2.0 Smart Battery System (SBS 1.1) telemetry & alert handler.
 - **[`examples/stm32_modbus_master`](examples/stm32_modbus_master)** — STM32 RS485 Modbus RTU Master querying slave registers.
 - **[`examples/stm32_modbus_tcp`](examples/stm32_modbus_tcp)** — STM32 HAL Modbus TCP Server (port 502) & Client (Master) in a single project.
+
 
 
 

@@ -40,7 +40,7 @@ void test_icmp_build_echo_request(void)
     syn_icmp_init(&icmp);
     syn_eth_init(&eth, MY_MAC, MY_IP);
 
-    uint8_t payload[8] = "PINGTEST";
+    uint8_t payload[8] = {'P', 'I', 'N', 'G', 'T', 'E', 'S', 'T'};
     uint8_t frame[128];
     size_t frame_len = 0;
 

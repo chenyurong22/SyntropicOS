@@ -1,0 +1,16 @@
+/**
+ * @file main.c
+ * @brief STM32 PPM (Pulse-Position Modulation) RC Receiver Example Main Entry.
+ */
+
+extern int main_bare(void);
+extern int main_sched(void);
+
+int main(void)
+{
+#if defined(USE_BARE_LOOP)
+    return main_bare();
+#else
+    return main_sched();
+#endif
+}

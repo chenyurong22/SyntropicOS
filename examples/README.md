@@ -61,11 +61,14 @@ This directory contains MCU HAL and bare-metal C example projects demonstrating 
 - **[`stm32_serial`](stm32_serial)** `[STM32 Bare-Metal]` — Bare-metal serial UART transmit & receive.
 - **[`stm32_json`](stm32_json)** `[STM32 Bare-Metal]` — Zero-malloc JSON parsing & encoding.
 - **[`stm32_ir_remote`](stm32_ir_remote)** `[STM32 Bare-Metal]` — NEC protocol Infrared Remote Control decoder.
+- **[`stm32_ppm`](stm32_ppm)** `[STM32 Bare-Metal]` — Pulse-Position Modulation (PPM) Multi-Channel RC Receiver decoder (`syn_ppm`).
 - **[`PicoBlink`](PicoBlink)** `[Pico RP2040 / Arduino]` — Raspberry Pi Pico bare-metal GPIO blink.
 - **[`PicoDualCore`](PicoDualCore)** / **[`pico_dual_core`](pico_dual_core)** `[Pico RP2040 / Arduino]` — RP2040 SMP dual-core cooperative task execution.
 - **[`esp32_ota`](esp32_ota)** `[ESP32 / Arduino]` — ESP32 Firmware Over-The-Air (OTA) update task.
 
 ### DSP & Motion Control
+- **[`stm32_dshot`](stm32_dshot)** `[STM32 Bare-Metal]` — DShot150/300/600 Digital ESC command encoder & BDShot GCR motor telemetry decoder (`syn_dshot`).
+- **[`stm32_dshot_telemetry`](stm32_dshot_telemetry)** `[STM32 Bare-Metal]` — Bidirectional DShot (BDShot) 20-bit GCR motor telemetry & RPM decoder (`syn_dshot_telemetry`).
 - **[`stm32_stepper`](stm32_stepper)** `[STM32 Bare-Metal]` — Stepper motor trapezoidal speed ramp & position controller.
 - **[`stm32_servo`](stm32_servo)** `[STM32 Bare-Metal]` — RC servo motor 50Hz PWM pulse-width & smooth angle ramp controller.
 - **[`MotionPlanner`](MotionPlanner)** `[Arduino / Portable C]` — Trapezoidal S-curve motor motion planner.

@@ -194,36 +194,52 @@ The maximum number of priority levels defaults to 8 (priority 0–7) and is conf
 #define SYN_SCHED_PRIO_LEVELS 8  // default, increase if needed
 ```
 
-### Deferring (`PT_DEFER`)
+### Deferring (`PT_DEFER`) & Starvation Prevention
 
-Strict priority can cause **starvation**: a high-priority task that yields (`PT_YIELD`) remains immediately eligible, so lower-priority tasks never run. `PT_DEFER` solves this:
+In a cooperative scheduler with strict priority, understanding the exact behavior of yield operations is essential to prevent task starvation.
 
-```c
-static SYN_PT_Status comms_task(SYN_PT *pt, SYN_Task *task)
-{
-    PT_BEGIN(pt);
-    for (;;) {
-        if (has_data()) {
-            process_data();
-            PT_YIELD(pt);           // Stay at this priority
-        } else {
-            PT_DEFER(pt, task);     // No work — let lower priorities run
-        }
-    }
-    PT_END(pt);
-}
-```
+#### Execution Mechanism Comparison
 
-| Macro | Behavior | Use when |
-|---|---|---|
-| `PT_YIELD(pt)` | Yields to same-priority round-robin only | Task has more work soon |
-| `PT_DEFER(pt, task)` | Skipped for one scheduler pass, any priority can run | Task has no immediate work |
-| `PT_WAIT_UNTIL(pt, cond)` | If condition is false, returns `PT_WAITING` — scheduler skips the task for this tick and tries the next candidate | Polling a condition without starving lower priorities |
-| `PT_BLOCK_EVENT(pt, task, grp, mask)` | Blocked until event fires, then auto-cleared | Task waits for external signal |
-| `PT_TASK_DELAY_MS(pt, task, ms)` | Blocked until deadline | Task needs a timed wait |
+| Macro | Task State Set | Round-Robin Effect | Can Lower Priority Run? |
+|---|---|---|---|
+| `PT_YIELD(pt)` | `SYN_TASK_READY` | Advances RR index within **same priority group** | ❌ **No.** If a higher priority task is ready, lower priorities are starved. |
+| `PT_DEFER(pt, task)` | `SYN_TASK_DEFERRED` | **No RR advance.** Skipped for 1 pass; cleared to `READY` at end of tick | ✅ **Yes.** Guarantees 1 pass for lower priority tasks. |
+| `PT_WAIT_UNTIL(pt, cond)` | `SYN_TASK_WAITING` (if false) | Re-scans next candidate **within the same tick** | ✅ **Yes.** Prevents waiting higher priority tasks from blocking work. |
+| `PT_BLOCK_EVENT(pt, ...)` | `SYN_TASK_BLOCKED` | Removed from scan until event flag is set | ✅ **Yes.** Zero CPU overhead while waiting. |
 
-!!! note "Defer Limitation"
-    `PT_DEFER` is per-task. If **multiple** tasks at the same high priority all defer, they alternate deferring — one is always ready, so lower priorities may still starve. Use `PT_BLOCK_EVENT` when a task is genuinely waiting for an external signal.
+#### Detailed Scenario: `PT_YIELD` vs `PT_DEFER`
+
+Consider Task A (Priority 0) and Task B (Priority 1):
+
+1. **Using `PT_YIELD` in Task A**:
+   ```c
+   // Task A (Prio 0)
+   while (1) {
+       check_sensor();
+       PT_YIELD(pt); // Remains SYN_TASK_READY at Prio 0!
+   }
+   ```
+   *Execution*: Scheduler scans Prio 0 $\rightarrow$ Task A is READY $\rightarrow$ Runs Task A $\rightarrow$ Task A yields $\rightarrow$ Scheduler scans Prio 0 again $\rightarrow$ Task A is READY $\rightarrow$ Runs Task A.
+   *Result*: **Task B (Prio 1) NEVER runs (Starved).**
+
+2. **Using `PT_DEFER` in Task A**:
+   ```c
+   // Task A (Prio 0)
+   while (1) {
+       check_sensor();
+       PT_DEFER(pt, task); // Sets state to SYN_TASK_DEFERRED for 1 pass!
+   }
+   ```
+   *Execution*: Scheduler scans Prio 0 $\rightarrow$ Task A is DEFERRED (skipped) $\rightarrow$ Scheduler scans Prio 1 $\rightarrow$ **Task B runs** $\rightarrow$ End of tick clears Task A back to READY $\rightarrow$ Next tick Task A runs again.
+   *Result*: **Task B gets fair CPU execution time.**
+
+!!! warning "Multi-Task Deferral Starvation Trap"
+    `PT_DEFER` is per-task. If **two or more** tasks at Priority 0 both call `PT_DEFER`:
+    - Pass 1: Task A defers $\rightarrow$ Task B runs and defers.
+    - Pass 2: Task A is cleared to READY $\rightarrow$ Task A runs and defers.
+    - Result: Task A and Task B ping-pong deferrals every pass, keeping Priority 0 active continuously and **still starving Priority 1**.
+    - *Fix*: Use `PT_TASK_DELAY_MS` or `PT_BLOCK_EVENT` when waiting for external timing or peripheral interrupts.
+
 
 ### Blocking on Events (`PT_BLOCK_EVENT`)
 
@@ -259,7 +275,78 @@ static SYN_PT_Status uart_task(SYN_PT *pt, SYN_Task *task)
 | `PT_WAIT_EVENT` | Polled every pass | No — prevents sleep | Legacy / simple cases |
 | `PT_BLOCK_EVENT` | Skipped entirely while blocked | Yes | Production event-driven code |
 
+### Yield-Safe Priority Boosting (`syn_task_boost_priority`)
+
+Tasks can temporarily elevate their execution priority during critical hardware transactions (e.g. RS-485 frame bursts, SPI flash writes) without risk of stack variable corruption across yields:
+
+```c
+static SYN_PT_Status sensor_task(SYN_PT *pt, SYN_Task *task)
+{
+    PT_BEGIN(pt);
+    for (;;) {
+        PT_TASK_DELAY_MS(pt, task, 1000);
+
+        // Elevate task from Prio 3 to Prio 0 (highest)
+        syn_task_boost_priority(task, 0);
+
+        send_sensor_request();
+        PT_WAIT_UNTIL(pt, sensor_data_ready()); // Yield safe across ticks!
+        read_sensor_response();
+
+        // Restore back to configured base priority
+        syn_task_restore_priority(task);
+    }
+    PT_END(pt);
+}
+```
+
+- **`syn_task_boost_priority(task, temp_prio)`**: Elevates `task->priority` to `temp_prio`. Clamped so `temp_prio <= base_priority`.
+- **`syn_task_restore_priority(task)`**: Restores `task->priority` back to `task->base_priority`.
+- **`syn_task_set_base_priority(task, new_base_prio)`**: Updates `task->base_priority` and `task->priority` permanently.
+
+### Task Delay Semantics: "At Least" Minimum Wait Guarantees
+
+In a cooperative operating system like SyntropicOS, all delay macros (`PT_TASK_DELAY_MS`, `PT_DELAY_MS`, `PT_DELAY_US`) guarantee a **minimum wait duration** ("at least N ms / N us").
+
+!!! important "Non-Preemptive Delay Guarantee"
+    Delays do **not** guarantee an exact microsecond or millisecond wakeup time. Because execution is strictly cooperative, a task whose delay has expired will resume on the **next scheduler pass after the currently executing task yields**. Actual resumption latency equals `deadline + execution_time_of_running_tasks`.
+
+#### Millisecond vs Microsecond Delays
+
+1. **Millisecond Delays (`PT_TASK_DELAY_MS`)**:
+   - Managed directly by the scheduler top-level loop (`task->delay_until` in ms).
+   - Maximum single delay capacity: **24.8 days** ($2,147,483,647$ ms).
+   - Ideal for periodic tasks, heartbeat timers, and protocol timeouts.
+
+2. **Microsecond Delays (`PT_DELAY_US`)**:
+   - Uses a dedicated, user-supplied persistent target variable (`static uint32_t us_target;`).
+   - Does **not** modify `task->delay_until`, preventing top-level scheduler deadline conflicts.
+   - Evaluated inside the protothread via `PT_WAIT_UNTIL` against `syn_port_get_tick_us()`. Returns `PT_WAITING` while the deadline is pending, allowing lower-priority tasks to run within the same pass.
+
+```c
+static SYN_PT_Status pulse_task(SYN_PT *pt, SYN_Task *task)
+{
+    static uint32_t us_target; // Persistent target for microsecond delay
+
+    PT_BEGIN(pt);
+    for (;;) {
+        syn_gpio_write(LED_PIN, SYN_GPIO_HIGH);
+
+        // 1. Microsecond delay: minimum 50 µs wait (uses us_target, task->delay_until stays 0)
+        PT_DELAY_US(pt, &us_target, 50);
+
+        syn_gpio_write(LED_PIN, SYN_GPIO_LOW);
+
+        // 2. Millisecond delay: minimum 100 ms wait (managed by scheduler in ms)
+        PT_TASK_DELAY_MS(pt, task, 100);
+    }
+    PT_END(pt);
+}
+```
+
+
 **Task states:**
+
 
 | State | Value | Description |
 |---|---|---|

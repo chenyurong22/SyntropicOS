@@ -99,9 +99,22 @@ static void test_active_object_payload(void)
     TEST_ASSERT_EQUAL_INT(42, ao_last_val);
 }
 
+static void test_active_object_empty_poll(void)
+{
+    syn_ao_init(&test_ao_obj, "test_ao_empty", test_ao_table, AO_ST_OFF, mbox_buf, 4);
+
+    SYN_Sched sched;
+    syn_sched_init(&sched, &test_ao_obj.task, 1);
+
+    /* Poll empty mailbox — protothread yields with PT_WAITING */
+    syn_sched_run(&sched);
+    TEST_ASSERT_TRUE(syn_mailbox_empty(&test_ao_obj.mailbox));
+}
+
 void run_ao_tests(void)
 {
     RUN_TEST(test_active_object);
     RUN_TEST(test_active_object_overflow);
     RUN_TEST(test_active_object_payload);
+    RUN_TEST(test_active_object_empty_poll);
 }

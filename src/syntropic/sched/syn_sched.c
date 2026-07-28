@@ -61,6 +61,7 @@ void syn_task_create(SYN_Task *task, const char *name, SYN_TaskFunc func, uint8_
     task->func = func;
     task->name = name;
     task->priority = priority;
+    task->base_priority = priority;
     task->state = (uint8_t)SYN_TASK_READY;
     task->delay_until = 0;
     task->user_data = user_data;
@@ -331,6 +332,13 @@ SYN_NORETURN void syn_sched_run_tickless_ex(SYN_Sched *sched, SYN_Sleep *sleep, 
         /* Compute sleep duration: min of task deadlines and timer expiries */
         uint32_t now = syn_port_get_tick_ms();
         uint32_t task_wake = syn_sched_next_wakeup(sched);
+
+        uint32_t timer_wake = syn_timer_next_expiry(timers, timer_count);
+
+        /* Compute sleep duration: min of task deadlines and timer expiries */
+        uint32_t now = syn_port_get_tick_us();
+        uint32_t task_wake = syn_sched_next_wakeup(sched);
+
         uint32_t timer_wake = syn_timer_next_expiry(timers, timer_count);
 
         /* Pick the earlier deadline */
@@ -395,6 +403,40 @@ size_t syn_sched_alive_count(const SYN_Sched *sched)
         }
     }
     return count;
+}
+
+void syn_task_boost_priority(SYN_Task *task, uint8_t temp_prio)
+{
+    SYN_ASSERT(task != NULL);
+    if (task == NULL) {
+        return;
+    }
+    /* Priority 0 is highest priority level. Boost only accepts higher or equal priority. */
+    if (temp_prio < SYN_SCHED_PRIO_LEVELS && temp_prio <= task->base_priority) {
+        task->priority = temp_prio;
+    }
+}
+
+void syn_task_restore_priority(SYN_Task *task)
+{
+    SYN_ASSERT(task != NULL);
+    if (task == NULL) {
+        return;
+    }
+    task->priority = task->base_priority;
+}
+
+void syn_task_set_base_priority(SYN_Task *task, uint8_t new_prio)
+{
+    SYN_ASSERT(task != NULL);
+    SYN_ASSERT(new_prio < SYN_SCHED_PRIO_LEVELS);
+
+    if (task == NULL || new_prio >= SYN_SCHED_PRIO_LEVELS) {
+        return;
+    }
+
+    task->base_priority = new_prio;
+    task->priority = new_prio;
 }
 
 #endif /* SYN_USE_SCHED */

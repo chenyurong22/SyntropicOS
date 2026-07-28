@@ -232,13 +232,29 @@ typedef enum {
     } while (0)
 
 /**
- * @brief Convenience form for use with the scheduler's SYN_Task.
+ * @brief Convenience form for use with the scheduler's SYN_Task (milliseconds).
  *
  * @param pt    Protothread.
  * @param task  Pointer to the SYN_Task struct.
  * @param ms    Delay duration in milliseconds.
  */
 #define PT_TASK_DELAY_MS(pt, task, ms) PT_DELAY_MS(pt, &(task)->delay_until, ms)
+
+/**
+ * @brief Non-blocking sub-millisecond delay for @p us microseconds.
+ *
+ * Requires a user-supplied persistent `uint32_t` variable (e.g., `static uint32_t us_target;`).
+ * Does not modify `SYN_Task.delay_until` to avoid corrupting the millisecond scheduler timebase.
+ *
+ * @param pt       Protothread.
+ * @param target   Pointer to a uint32_t variable holding the microsecond deadline.
+ * @param us       Delay duration in microseconds.
+ */
+#define PT_DELAY_US(pt, target, us)                                            \
+    do {                                                                       \
+        *(target) = syn_port_get_tick_us() + (uint32_t)(us);                   \
+        PT_WAIT_UNTIL(pt, (int32_t)(syn_port_get_tick_us() - *(target)) >= 0); \
+    } while (0)
 
 /**
  * @brief Defer to all ready tasks, regardless of priority.

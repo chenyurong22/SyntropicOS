@@ -198,6 +198,32 @@ static inline bool syn_task_is_alive(const SYN_Task *task)
  */
 size_t syn_sched_alive_count(const SYN_Sched *sched);
 
+/**
+ * @brief Temporarily boost a task's execution priority.
+ *
+ * Clamps temp_prio <= base_priority (0 = highest priority). Will not
+ * demote a task to a lower priority than its base priority.
+ *
+ * @param task       Task to boost.
+ * @param temp_prio  Temporary elevated priority.
+ */
+void syn_task_boost_priority(SYN_Task *task, uint8_t temp_prio);
+
+/**
+ * @brief Restore a task's priority back to its configured base priority.
+ *
+ * @param task  Task to restore.
+ */
+void syn_task_restore_priority(SYN_Task *task);
+
+/**
+ * @brief Dynamically set a task's base priority and active priority.
+ *
+ * @param task      Task to modify.
+ * @param new_prio  New base priority.
+ */
+void syn_task_set_base_priority(SYN_Task *task, uint8_t new_prio);
+
 #ifdef __cplusplus
 }
 #endif

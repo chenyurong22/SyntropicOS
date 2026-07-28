@@ -21,11 +21,15 @@ extern "C" {
 /* ── Tick source ────────────────────────────────────────────────────────── */
 
 extern uint32_t mock_tick_ms;
+extern uint32_t mock_tick_us;
 extern volatile uint32_t mock_hpclock_lsb;
 extern uint32_t mock_hpclock_freq_hz;
 
 /** Advance the mock system tick by @p ms milliseconds. */
 void mock_tick_advance(uint32_t ms);
+
+/** Advance the mock system tick by @p us microseconds. */
+void mock_tick_advance_us(uint32_t us);
 
 /* ── GPIO ───────────────────────────────────────────────────────────────── */
 

@@ -66,7 +66,8 @@ typedef struct SYN_Task {
     SYN_PT pt;                  /**< Protothread continuation (2 bytes)      */
     SYN_TaskFunc func;          /**< The task's protothread function          */
     const char *name;           /**< Human-readable name (for debug/logging)  */
-    uint8_t priority;           /**< 0 = highest priority                     */
+    uint8_t priority;           /**< Active priority (0 = highest)            */
+    uint8_t base_priority;      /**< Configured base priority                 */
     uint8_t state;              /**< SYN_TaskState                           */
     uint32_t delay_until;       /**< Tick deadline for PT_TASK_DELAY_MS       */
     void *user_data;            /**< Optional pointer to task-private state   */

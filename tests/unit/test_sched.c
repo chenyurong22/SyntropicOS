@@ -875,6 +875,121 @@ static void test_waiting_delayed_no_inversion(void)
     TEST_ASSERT_EQUAL_INT(1, run_log[1]); /* A */
 }
 
+static void test_task_priority_boost_and_restore(void)
+{
+    SYN_Task tasks[2];
+    SYN_Sched sched;
+    static int id_a = 1, id_b = 2;
+
+    syn_task_create(&tasks[0], "a", yield_task, 3, &id_a); /* Low priority 3 */
+    syn_task_create(&tasks[1], "b", yield_task, 1, &id_b); /* High priority 1 */
+    syn_sched_init(&sched, tasks, 2);
+
+    TEST_ASSERT_EQUAL_UINT8(3, tasks[0].priority);
+    TEST_ASSERT_EQUAL_UINT8(3, tasks[0].base_priority);
+    TEST_ASSERT_EQUAL_UINT8(1, tasks[1].priority);
+
+    log_reset();
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(2, run_log[0]); /* Task B (prio 1) runs first */
+
+    /* Boost Task A from prio 3 to prio 0 (highest) */
+    syn_task_boost_priority(&tasks[0], 0);
+    TEST_ASSERT_EQUAL_UINT8(0, tasks[0].priority);
+    TEST_ASSERT_EQUAL_UINT8(3, tasks[0].base_priority); /* Base priority unchanged */
+
+    log_reset();
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(1, run_log[0]); /* Task A now preempts Task B */
+
+    /* Attempt invalid boost (try to demote to prio 5) — should be rejected */
+    syn_task_boost_priority(&tasks[0], 5);
+    TEST_ASSERT_EQUAL_UINT8(0, tasks[0].priority); /* Stays at boosted 0 */
+
+    /* Restore Task A back to base priority 3 */
+    syn_task_restore_priority(&tasks[0]);
+    TEST_ASSERT_EQUAL_UINT8(3, tasks[0].priority);
+
+    log_reset();
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(2, run_log[0]); /* Task B runs again */
+
+    /* Dynamically change base priority */
+    syn_task_set_base_priority(&tasks[0], 0);
+    TEST_ASSERT_EQUAL_UINT8(0, tasks[0].priority);
+    TEST_ASSERT_EQUAL_UINT8(0, tasks[0].base_priority);
+}
+
+/**
+ * Two high-priority tasks (A1, A2 at pri 0) both deferring.
+ * Tracing the ping-pong deferral behavior.
+ */
+static void test_two_deferring_high_pri_tasks_starve_lower(void)
+{
+    mock_tick_ms = 0;
+    log_reset();
+
+    SYN_Task tasks[3];
+    SYN_Sched sched;
+    static int id_a1 = 1, id_a2 = 2, id_b = 3;
+
+    syn_task_create(&tasks[0], "a1", defer_task, 0, &id_a1);
+    syn_task_create(&tasks[1], "a2", defer_task, 0, &id_a2);
+    syn_task_create(&tasks[2], "b", yield_task, 1, &id_b);
+    syn_sched_init(&sched, tasks, 3);
+
+    for (int i = 0; i < 6; i++) {
+        syn_sched_run(&sched);
+    }
+
+    /* A1 runs (defers A1), A2 runs (clears A1, defers A2), A1 runs (clears A2, defers A1)... */
+    /* Log: A1(1), A2(2), A1(1), A2(2), A1(1), A2(2) */
+    /* Task B (3) never runs! */
+    TEST_ASSERT_EQUAL_INT(1, run_log[0]);
+    TEST_ASSERT_EQUAL_INT(2, run_log[1]);
+    TEST_ASSERT_EQUAL_INT(1, run_log[2]);
+    TEST_ASSERT_EQUAL_INT(2, run_log[3]);
+}
+
+static SYN_PT_Status us_delay_task_func(SYN_PT *pt, SYN_Task *task)
+{
+    (void)task;
+    static uint32_t us_target;
+    PT_BEGIN(pt);
+    run_log[run_log_idx++] = 1;
+    PT_DELAY_US(pt, &us_target, 50); /* 50 microsecond delay */
+    run_log[run_log_idx++] = 2;
+    PT_END(pt);
+}
+
+static void test_pt_delay_us(void)
+{
+    mock_tick_us = 0;
+    log_reset();
+
+    SYN_Task tasks[1];
+    SYN_Sched sched;
+
+    syn_task_create(&tasks[0], "us_task", us_delay_task_func, 0, NULL);
+    syn_sched_init(&sched, tasks, 1);
+
+    /* Step 1: Task runs, logs 1, sets us_target = 50us, returns PT_WAITING */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(1, run_log_idx);
+    TEST_ASSERT_EQUAL_INT(1, run_log[0]);
+
+    /* Step 2: Advance by 20us (less than 50us) — task returns PT_WAITING */
+    mock_tick_advance_us(20);
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(1, run_log_idx);
+
+    /* Step 3: Advance by 35us more (total 55us >= 50us) — task completes and logs 2 */
+    mock_tick_advance_us(35);
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(2, run_log_idx);
+    TEST_ASSERT_EQUAL_INT(2, run_log[1]);
+}
+
 void run_sched_tests(void)
 {
     RUN_TEST(test_scheduler);
@@ -902,4 +1017,7 @@ void run_sched_tests(void)
     RUN_TEST(test_waiting_state_lifecycle);
     RUN_TEST(test_waiting_same_priority_fairness);
     RUN_TEST(test_waiting_delayed_no_inversion);
+    RUN_TEST(test_task_priority_boost_and_restore);
+    RUN_TEST(test_two_deferring_high_pri_tasks_starve_lower);
+    RUN_TEST(test_pt_delay_us);
 }

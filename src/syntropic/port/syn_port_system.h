@@ -44,6 +44,17 @@ void syn_port_exit_critical(void);
 uint32_t syn_port_get_tick_ms(void);
 
 /**
+ * @brief Return the current system tick in microseconds.
+ *
+ * Microseconds since system start (or last wrap). Monotonically
+ * increasing 32-bit counter. Has weak fallback to ms * 1000U if no
+ * hardware microsecond timer is configured.
+ *
+ * @return Microseconds since start.
+ */
+uint32_t syn_port_get_tick_us(void);
+
+/**
  * @brief Blocking delay for the specified number of milliseconds.
  *
  * The implementation may busy-wait or yield to an RTOS. The delay

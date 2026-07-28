@@ -18,6 +18,7 @@
 /* ── Tick source ────────────────────────────────────────────────────────── */
 
 uint32_t mock_tick_ms = 0;
+uint32_t mock_tick_us = 0;
 volatile uint32_t mock_hpclock_lsb = 0;
 
 volatile uint32_t *syn_port_hpclock_lsb_ptr(void)
@@ -35,16 +36,30 @@ uint32_t syn_port_hpclock_freq_hz(void)
 void mock_tick_advance(uint32_t ms)
 {
     mock_tick_ms += ms;
+    mock_tick_us += ms * 1000U;
+}
+
+void mock_tick_advance_us(uint32_t us)
+{
+    mock_tick_us += us;
+    mock_tick_ms = mock_tick_us / 1000U;
 }
 
 uint32_t syn_port_get_tick_ms(void)
 {
     return mock_tick_ms;
 }
+
+uint32_t syn_port_get_tick_us(void)
+{
+    return mock_tick_us;
+}
+
 void syn_port_delay_ms(uint32_t ms)
 {
-    mock_tick_ms += ms;
+    mock_tick_advance(ms);
 }
+
 void syn_port_enter_critical(void)
 { /* no-op on host */
 }
@@ -851,7 +866,9 @@ SYN_WEAK SYN_Socket syn_port_sock_accept(SYN_Socket listener, uint32_t timeout_m
 void mock_port_reset(void)
 {
     mock_tick_ms = 0;
+    mock_tick_us = 0;
     mock_hpclock_lsb = 0;
+
     memset(mock_gpio_states, 0, sizeof(mock_gpio_states));
     memset(mock_gpio_modes, 0, sizeof(mock_gpio_modes));
     for (int i = 0; i < 32; i++) {

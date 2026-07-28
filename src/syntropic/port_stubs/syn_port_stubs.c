@@ -144,6 +144,12 @@ SYN_WEAK uint32_t syn_port_get_tick_ms(void)
     return 0;
 }
 
+SYN_WEAK uint32_t syn_port_get_tick_us(void)
+{
+    /* Default weak fallback: ms * 1000U */
+    return syn_port_get_tick_ms() * 1000U;
+}
+
 SYN_WEAK void syn_port_delay_ms(uint32_t ms)
 {
     (void)ms;

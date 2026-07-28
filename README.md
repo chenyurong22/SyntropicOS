@@ -34,10 +34,11 @@ flowchart TD
     
     subgraph Modules
         IO["Input/Output (Buttons, Encoders, LEDs)"]
-        Comm["Communication (COBS, Router, Modbus, M-Bus)"]
+        Comm["Communication (COBS, Router, Modbus, DALI, BACnet, M-Bus)"]
         Storage["Storage (Settings, LittleFS, VFS)"]
         Display["Display (Canvas 1bpp/16bpp, IMGUI)"]
-        DSP["DSP & Control (PID, Biquad, FFT, FOC)"]
+        DSP["DSP & Control (PID, Biquad, FFT, FOC, TinyML)"]
+
     end
     
     Modules --> Kernel["Cooperative Kernel (syn_pt + syn_sched)"]

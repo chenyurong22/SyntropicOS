@@ -17,6 +17,18 @@
 #include "syntropic/port/syn_port_gpio.h"
 #include "syntropic/port/syn_port_system.h"
 #include "syntropic/port/syn_port_uart.h"
+#include "syntropic/util/syn_assert.h"
+
+/* ── Assert Handler Fallback ────────────────────────────────────────────── */
+
+SYN_WEAK SYN_NORETURN void syn_assert_failed(const char *file, int line)
+{
+    (void)file;
+    (void)line;
+    __disable_irq();
+    for (;;) {
+    }
+}
 
 /* ── STM32 HAL Headers ─────────────────────────────────────────────────── */
 /* Adjust the include based on your target microcontroller family. */

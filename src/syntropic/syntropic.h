@@ -449,6 +449,18 @@ extern "C" {
 #include "proto/syn_msp.h"
 #endif
 
+#if !defined(SYN_USE_MAVLINK) || SYN_USE_MAVLINK
+#include "proto/syn_mavlink.h"
+#endif
+
+#if !defined(SYN_USE_BLACKBOX) || SYN_USE_BLACKBOX
+#include "log/syn_blackbox.h"
+#endif
+
+#if !defined(SYN_USE_USB_CDC) || SYN_USE_USB_CDC
+#include "drivers/syn_usb_cdc.h"
+#endif
+
 #if !defined(SYN_USE_NMEA) || SYN_USE_NMEA
 #include "proto/syn_nmea.h"
 #endif

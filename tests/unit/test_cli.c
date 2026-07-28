@@ -622,6 +622,17 @@ static void test_cli_null_handler(void)
     TEST_ASSERT_EQUAL_INT(0, led_handler_called);
 }
 
+/* ── Test: refresh prompt ────────────────────────────────────────────── */
+
+static void test_cli_refresh_prompt(void)
+{
+    SYN_CLI cli;
+    syn_cli_init(&cli, NULL, 0, "> ");
+    clear_output();
+    syn_cli_refresh_prompt(&cli);
+    TEST_ASSERT_TRUE(cli_output_pos > 0);
+}
+
 /* ── Test: Errors command — severity out of range (????) ─────────────── */
 
 static void test_cli_errors_unknown_severity(void)
@@ -704,4 +715,5 @@ void run_cli_tests(void)
     RUN_TEST(test_cli_null_handler);
     RUN_TEST(test_cli_errors_unknown_severity);
     RUN_TEST(test_cli_tasks_unknown_state);
+    RUN_TEST(test_cli_refresh_prompt);
 }

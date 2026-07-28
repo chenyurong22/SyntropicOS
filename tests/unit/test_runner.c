@@ -390,6 +390,10 @@ int main(void)
     /* Random Utilities */
     run_random_tests();
 
+    /* CLI Shell */
+    void run_cli_tests(void);
+    run_cli_tests();
+
     /* DMA Driver Engine */
     run_dma_tests();
 
@@ -508,6 +512,17 @@ int main(void)
     extern void test_msp_init(void);
     extern void test_msp_encode_and_parse_response(void);
     extern void test_msp_null_and_error_handling(void);
+    extern void test_mavlink_init(void);
+    extern void test_mavlink_encode_and_parse_attitude(void);
+    extern void test_mavlink_null_and_crc_error(void);
+    extern void test_blackbox_init(void);
+    extern void test_blackbox_varint(void);
+    extern void test_blackbox_encode_intra_and_delta(void);
+    extern void test_blackbox_null_checks(void);
+    extern void test_usb_cdc_init(void);
+    extern void test_usb_cdc_setup_requests(void);
+    extern void test_usb_cdc_read_write(void);
+    extern void test_usb_cdc_null_checks(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -569,6 +584,17 @@ int main(void)
     RUN_TEST(test_msp_init);
     RUN_TEST(test_msp_encode_and_parse_response);
     RUN_TEST(test_msp_null_and_error_handling);
+    RUN_TEST(test_mavlink_init);
+    RUN_TEST(test_mavlink_encode_and_parse_attitude);
+    RUN_TEST(test_mavlink_null_and_crc_error);
+    RUN_TEST(test_blackbox_init);
+    RUN_TEST(test_blackbox_varint);
+    RUN_TEST(test_blackbox_encode_intra_and_delta);
+    RUN_TEST(test_blackbox_null_checks);
+    RUN_TEST(test_usb_cdc_init);
+    RUN_TEST(test_usb_cdc_setup_requests);
+    RUN_TEST(test_usb_cdc_read_write);
+    RUN_TEST(test_usb_cdc_null_checks);
 
     return UNITY_END();
 }

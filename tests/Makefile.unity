@@ -128,6 +128,9 @@ SYN_SRCS := \
 	src/syntropic/output/syn_dshot_telemetry.c \
 	src/syntropic/control/syn_flight_pid.c \
 	src/syntropic/proto/syn_msp.c \
+	src/syntropic/proto/syn_mavlink.c \
+	src/syntropic/log/syn_blackbox.c \
+	src/syntropic/drivers/syn_usb_cdc.c \
 	src/syntropic/util/syn_nn.c \
 	src/syntropic/util/syn_dsp.c
 

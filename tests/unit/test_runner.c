@@ -502,7 +502,9 @@ int main(void)
     extern void test_flight_init(void);
     extern void test_flight_hover(void);
     extern void test_flight_roll_correction(void);
+    extern void test_flight_angle_mode(void);
     extern void test_flight_null_and_bounds(void);
+    extern void test_crsf_parse_link_stats(void);
     extern void test_msp_init(void);
     extern void test_msp_encode_and_parse_response(void);
     extern void test_msp_null_and_error_handling(void);
@@ -543,6 +545,7 @@ int main(void)
     RUN_TEST(test_crsf_init);
     RUN_TEST(test_crsf_crc8_calculation);
     RUN_TEST(test_crsf_parse_rc_channels);
+    RUN_TEST(test_crsf_parse_link_stats);
     RUN_TEST(test_crsf_raw_to_us_scaling);
     RUN_TEST(test_crsf_null_and_error_handling);
     RUN_TEST(test_ibus_init);
@@ -561,6 +564,7 @@ int main(void)
     RUN_TEST(test_flight_init);
     RUN_TEST(test_flight_hover);
     RUN_TEST(test_flight_roll_correction);
+    RUN_TEST(test_flight_angle_mode);
     RUN_TEST(test_flight_null_and_bounds);
     RUN_TEST(test_msp_init);
     RUN_TEST(test_msp_encode_and_parse_response);

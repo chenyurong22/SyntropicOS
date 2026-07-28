@@ -54,6 +54,35 @@ void test_crsf_parse_rc_channels(void)
     TEST_ASSERT_EQUAL_UINT16(992, parser.last_channels.channels[0]);
 }
 
+void test_crsf_parse_link_stats(void)
+{
+    SYN_CRSF_Parser parser;
+    syn_crsf_init(&parser);
+
+    /* Construct 14-byte CRSF Link Statistics packet */
+    uint8_t pkt[14] = {0};
+    pkt[0] = 0xC8; /* Addr */
+    pkt[1] = 12;   /* Payload len: 1 type + 10 stats + 1 crc */
+    pkt[2] = 0x14; /* Link Statistics frame type */
+
+    pkt[3] = 90;             /* Uplink RSSI 1 */
+    pkt[4] = 85;             /* Uplink RSSI 2 */
+    pkt[5] = 99;             /* Uplink Quality % */
+    pkt[6] = (uint8_t)(-10); /* Uplink SNR */
+
+    pkt[13] = syn_crsf_calc_crc(&pkt[2], 11);
+
+    SYN_CRSF_FrameType type;
+    for (int i = 0; i < 13; i++) {
+        syn_crsf_parse_byte(&parser, pkt[i], &type);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_crsf_parse_byte(&parser, pkt[13], &type));
+    TEST_ASSERT_EQUAL_INT(SYN_CRSF_TYPE_LINK_STATISTICS, type);
+    TEST_ASSERT_EQUAL_UINT8(90, parser.last_link_stats.uplink_rssi1);
+    TEST_ASSERT_EQUAL_UINT8(99, parser.last_link_stats.uplink_quality);
+    TEST_ASSERT_EQUAL_INT8(-10, parser.last_link_stats.uplink_snr);
+}
+
 void test_crsf_raw_to_us_scaling(void)
 {
     TEST_ASSERT_EQUAL_UINT16(988, syn_crsf_raw_to_us(100));   /* Under-range */

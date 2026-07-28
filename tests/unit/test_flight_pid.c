@@ -63,6 +63,33 @@ void test_flight_roll_correction(void)
     TEST_ASSERT_TRUE(motors.m2 > motors.m4);
 }
 
+void test_flight_angle_mode(void)
+{
+    SYN_Flight_Controller fc;
+    syn_flight_init(&fc);
+
+    /* Drone is tilted right (+10 deg angle disturbance) */
+    SYN_Flight_IMU imu = {.gyro_roll = 0,
+                          .gyro_pitch = 0,
+                          .gyro_yaw = 0,
+                          .angle_roll = Q16_FROM_FLOAT(10.0f),
+                          .angle_pitch = 0};
+
+    SYN_Flight_Commands cmd = {
+        .throttle_us = 1500,
+        .roll_target = 0, /* Level target */
+        .pitch_target = 0,
+        .yaw_target = 0,
+        .angle_mode = true /* Self-leveling angle mode */
+    };
+
+    SYN_Flight_MotorOutputs motors;
+    syn_flight_update(&fc, &imu, &cmd, 10, &motors);
+
+    /* Self-leveling should drive correction */
+    TEST_ASSERT_TRUE(motors.m1 != motors.m3);
+}
+
 void test_flight_null_and_bounds(void)
 {
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_flight_init(NULL));

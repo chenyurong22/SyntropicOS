@@ -55,16 +55,16 @@ typedef struct {
 
 /** MSP Streaming Parser Instance. */
 typedef struct {
-    uint8_t       state;
-    uint8_t       dir_char;
-    uint8_t       cmd;
-    uint8_t       payload_len;
-    uint8_t       payload_idx;
-    uint8_t       payload[SYN_MSP_MAX_PAYLOAD];
-    uint8_t       checksum;
+    uint8_t state;
+    uint8_t dir_char;
+    uint8_t cmd;
+    uint8_t payload_len;
+    uint8_t payload_idx;
+    uint8_t payload[SYN_MSP_MAX_PAYLOAD];
+    uint8_t checksum;
     SYN_MSP_Frame last_frame;
-    uint32_t      frames_received;
-    uint32_t      checksum_errors;
+    uint32_t frames_received;
+    uint32_t checksum_errors;
 } SYN_MSP_Parser;
 
 /**

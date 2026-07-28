@@ -503,6 +503,9 @@ int main(void)
     extern void test_flight_hover(void);
     extern void test_flight_roll_correction(void);
     extern void test_flight_null_and_bounds(void);
+    extern void test_msp_init(void);
+    extern void test_msp_encode_and_parse_response(void);
+    extern void test_msp_null_and_error_handling(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -559,6 +562,9 @@ int main(void)
     RUN_TEST(test_flight_hover);
     RUN_TEST(test_flight_roll_correction);
     RUN_TEST(test_flight_null_and_bounds);
+    RUN_TEST(test_msp_init);
+    RUN_TEST(test_msp_encode_and_parse_response);
+    RUN_TEST(test_msp_null_and_error_handling);
 
     return UNITY_END();
 }

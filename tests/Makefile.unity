@@ -127,6 +127,7 @@ SYN_SRCS := \
 	src/syntropic/control/syn_rc_failsafe.c \
 	src/syntropic/output/syn_dshot_telemetry.c \
 	src/syntropic/control/syn_flight_pid.c \
+	src/syntropic/proto/syn_msp.c \
 	src/syntropic/util/syn_nn.c \
 	src/syntropic/util/syn_dsp.c
 

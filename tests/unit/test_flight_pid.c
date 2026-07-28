@@ -57,7 +57,8 @@ void test_flight_roll_correction(void)
     SYN_Flight_MotorOutputs motors;
     syn_flight_update(&fc, &imu, &cmd, 1, &motors);
 
-    /* Drone rolls right (+50 deg/s disturbance) -> Right motors (M1, M2) increase thrust to push back left */
+    /* Drone rolls right (+50 deg/s disturbance) -> Right motors (M1, M2) increase thrust to push
+     * back left */
     TEST_ASSERT_TRUE(motors.m1 > motors.m3);
     TEST_ASSERT_TRUE(motors.m2 > motors.m4);
 }

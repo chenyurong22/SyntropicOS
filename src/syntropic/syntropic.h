@@ -445,6 +445,10 @@ extern "C" {
 #include "control/syn_flight_pid.h"
 #endif
 
+#if !defined(SYN_USE_MSP) || SYN_USE_MSP
+#include "proto/syn_msp.h"
+#endif
+
 #if !defined(SYN_USE_NMEA) || SYN_USE_NMEA
 #include "proto/syn_nmea.h"
 #endif

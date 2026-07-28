@@ -9,6 +9,16 @@
 #include <string.h>
 
 static const uint8_t MAC[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01};
+static uint32_t g_link_event_count = 0;
+static SYN_NETCFG_LinkState g_last_link_state = SYN_NETCFG_LINK_UP;
+
+static void dummy_link_callback(SYN_NETCFG *netcfg, SYN_NETCFG_LinkState state, void *user_data)
+{
+    (void)netcfg;
+    (void)user_data;
+    g_link_event_count++;
+    g_last_link_state = state;
+}
 
 void test_netcfg_init_static(void)
 {
@@ -44,6 +54,32 @@ void test_netcfg_autoip_fallback(void)
     TEST_ASSERT_EQUAL_UINT32(0xFFFF0000UL, eth.netmask);
 }
 
+void test_netcfg_link_events(void)
+{
+    SYN_NETCFG netcfg;
+    SYN_ETH eth;
+    syn_eth_init(&eth, MAC, 0);
+    syn_netcfg_init(&netcfg, SYN_NETCFG_MODE_STATIC, MAC);
+    syn_netcfg_set_static(&netcfg, &eth, 0xC0A80164, 0xFFFFFF00, 0xC0A80101);
+
+    g_link_event_count = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_netcfg_set_link_callback(&netcfg, dummy_link_callback, NULL));
+
+    /* Cable Unplug (LINK_DOWN) */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_netcfg_set_link_state(&netcfg, &eth, SYN_NETCFG_LINK_DOWN));
+    TEST_ASSERT_EQUAL_UINT32(1, g_link_event_count);
+    TEST_ASSERT_EQUAL_INT(SYN_NETCFG_LINK_DOWN, g_last_link_state);
+    TEST_ASSERT_FALSE(netcfg.is_bound);
+    TEST_ASSERT_EQUAL_UINT32(0, eth.ip_addr);
+
+    /* Cable Plug-In (LINK_UP) */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_netcfg_set_link_state(&netcfg, &eth, SYN_NETCFG_LINK_UP));
+    TEST_ASSERT_EQUAL_UINT32(2, g_link_event_count);
+    TEST_ASSERT_EQUAL_INT(SYN_NETCFG_LINK_UP, g_last_link_state);
+    TEST_ASSERT_TRUE(netcfg.is_bound);
+    TEST_ASSERT_EQUAL_UINT32(0xC0A80164, eth.ip_addr);
+}
+
 static SYN_PT_Status netcfg_coroutine_task(SYN_PT *pt, SYN_NETCFG *netcfg)
 {
     PT_BEGIN(pt);
@@ -73,4 +109,6 @@ void test_netcfg_null_checks(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_init(NULL, 0, NULL));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_set_static(NULL, NULL, 0, 0, 0));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_trigger_autoip_fallback(NULL, NULL, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_set_link_callback(NULL, NULL, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_set_link_state(NULL, NULL, 0));
 }

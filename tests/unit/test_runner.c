@@ -550,6 +550,7 @@ int main(void)
     extern void test_autoip_null_checks(void);
     extern void test_netcfg_init_static(void);
     extern void test_netcfg_autoip_fallback(void);
+    extern void test_netcfg_link_events(void);
     extern void test_netcfg_coroutine_pt(void);
     extern void test_netcfg_null_checks(void);
 
@@ -651,8 +652,11 @@ int main(void)
     RUN_TEST(test_autoip_null_checks);
     RUN_TEST(test_netcfg_init_static);
     RUN_TEST(test_netcfg_autoip_fallback);
+    RUN_TEST(test_netcfg_link_events);
     RUN_TEST(test_netcfg_coroutine_pt);
     RUN_TEST(test_netcfg_null_checks);
+
+    return UNITY_END();
 
     return UNITY_END();
 }

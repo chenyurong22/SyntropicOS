@@ -66,10 +66,12 @@ extern "C" {
  * All fields are considered private. Use the API functions below.
  */
 typedef struct {
-    SYN_RingBuf rb;    /**< Underlying ring buffer (composition)   */
-    size_t threshold;  /**< Readable when count >= this (0 = any)  */
-    uint8_t delimiter; /**< Delimiter byte for line mode           */
-    bool delim_en;     /**< true if delimiter mode is active       */
+    SYN_RingBuf rb;          /**< Underlying ring buffer (composition)   */
+    size_t threshold;        /**< Readable when count >= this (0 = any)  */
+    uint8_t delimiter;       /**< Delimiter byte for line mode           */
+    bool delim_en;           /**< true if delimiter mode is active       */
+    bool overflowing;        /**< true if discarding tail after overflow */
+    uint32_t overflow_count; /**< Total stream overflow events           */
 } SYN_Stream;
 
 /* ── Init / config ──────────────────────────────────────────────────────── */
@@ -104,8 +106,13 @@ void syn_stream_set_threshold(SYN_Stream *s, size_t n);
  *
  * Delimiter mode takes precedence over threshold mode.
  *
+ * @note **Overflow & Resynchronization**: If an oversized packet fills the stream
+ * buffer without a delimiter, the stream automatically flushes the corrupted packet,
+ * enters a resync state, and discards trailing bytes until the delimiter arrives.
+ * This guarantees protothreads on `PT_STREAM_WAIT` wake ONLY on 100% complete frames.
+ *
  * @param s      Stream instance.
- * @param delim  Delimiter byte (e.g. '\\n').
+ * @param delim  Delimiter byte (e.g. '\n').
  */
 void syn_stream_set_delimiter(SYN_Stream *s, uint8_t delim);
 

@@ -273,6 +273,46 @@ void test_stream_clear_delimiter(void)
     TEST_ASSERT_TRUE(syn_stream_readable(&s_stream));
 }
 
+void test_stream_delimiter_overflow_resync(void)
+{
+    stream_setup();
+    syn_stream_set_delimiter(&s_stream, '\n');
+
+    /* Buffer capacity is sizeof(s_buf) - 1 = 31 bytes */
+    /* Fill buffer with 31 non-delimiter bytes */
+    uint8_t garbage[31];
+    memset(garbage, 'A', sizeof(garbage));
+    syn_stream_write(&s_stream, garbage, 31);
+
+    TEST_ASSERT_FALSE(syn_stream_readable(&s_stream));
+    TEST_ASSERT_EQUAL(31, syn_stream_count(&s_stream));
+
+    /* Push 32nd byte (without delimiter) -> triggers overflow flush & resync state */
+    TEST_ASSERT_FALSE(syn_stream_put(&s_stream, 'B'));
+    TEST_ASSERT_EQUAL(0, syn_stream_count(&s_stream));
+    TEST_ASSERT_EQUAL(1, s_stream.overflow_count);
+    TEST_ASSERT_TRUE(s_stream.overflowing);
+
+    /* Push more bytes while in resync state -> dropped */
+    TEST_ASSERT_FALSE(syn_stream_put(&s_stream, 'C'));
+    TEST_ASSERT_EQUAL(0, syn_stream_count(&s_stream));
+
+    /* Trailing delimiter for broken frame arrives -> completes resync */
+    TEST_ASSERT_FALSE(syn_stream_put(&s_stream, '\n'));
+    TEST_ASSERT_FALSE(s_stream.overflowing);
+    TEST_ASSERT_EQUAL(0, syn_stream_count(&s_stream));
+
+    /* Next fresh frame accumulates cleanly */
+    const uint8_t valid_frame[] = "OK\n";
+    syn_stream_write(&s_stream, valid_frame, 3);
+    TEST_ASSERT_TRUE(syn_stream_readable(&s_stream));
+
+    uint8_t line[32];
+    size_t n = syn_stream_read_line(&s_stream, line, sizeof(line));
+    TEST_ASSERT_EQUAL(3, n);
+    TEST_ASSERT_EQUAL_MEMORY("OK\n", line, 3);
+}
+
 /* ── Test runner ────────────────────────────────────────────────────────── */
 
 void run_stream_tests(void)
@@ -294,4 +334,5 @@ void run_stream_tests(void)
     RUN_TEST(test_stream_flush);
     RUN_TEST(test_stream_free);
     RUN_TEST(test_stream_clear_delimiter);
+    RUN_TEST(test_stream_delimiter_overflow_resync);
 }

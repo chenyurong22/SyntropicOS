@@ -41,6 +41,8 @@ void syn_stream_init(SYN_Stream *s, uint8_t *buf, size_t size)
     s->threshold = 0;
     s->delimiter = 0;
     s->delim_en = false;
+    s->overflowing = false;
+    s->overflow_count = 0;
 }
 
 void syn_stream_set_threshold(SYN_Stream *s, size_t n)
@@ -52,23 +54,53 @@ void syn_stream_set_delimiter(SYN_Stream *s, uint8_t delim)
 {
     s->delimiter = delim;
     s->delim_en = true;
+    s->overflowing = false;
 }
 
 void syn_stream_clear_delimiter(SYN_Stream *s)
 {
     s->delim_en = false;
+    s->overflowing = false;
 }
 
 /* ── Producer ──────────────────────────────────────────────────────────── */
 
 size_t syn_stream_write(SYN_Stream *s, const uint8_t *data, size_t len)
 {
-    return syn_ringbuf_write(&s->rb, data, len);
+    if (!s || !data || len == 0) {
+        return 0;
+    }
+    size_t written = 0;
+    for (size_t i = 0; i < len; i++) {
+        if (syn_stream_put(s, data[i])) {
+            written++;
+        }
+    }
+    return written;
 }
 
 bool syn_stream_put(SYN_Stream *s, uint8_t byte)
 {
-    return syn_ringbuf_put(&s->rb, byte);
+    if (!s) {
+        return false;
+    }
+
+    if (s->delim_en && s->overflowing) {
+        /* Discard tail bytes until trailing delimiter arrives to complete resync */
+        if (byte == s->delimiter) {
+            s->overflowing = false;
+        }
+        return false;
+    }
+
+    bool ok = syn_ringbuf_put(&s->rb, byte);
+    if (!ok && s->delim_en) {
+        /* Buffer full without delimiter: flush corrupted frame & enter resync state */
+        syn_ringbuf_reset(&s->rb);
+        s->overflow_count++;
+        s->overflowing = (byte != s->delimiter);
+    }
+    return ok;
 }
 
 /* ── Consumer ──────────────────────────────────────────────────────────── */

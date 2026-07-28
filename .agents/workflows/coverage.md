@@ -1,15 +1,24 @@
 ---
-description: Code Coverage Measurement & LCOV Report Workflow
+description: Code & Documentation Coverage Workflow
 ---
 
-# SyntropicOS Code Coverage Workflow
+# SyntropicOS Code & Documentation Coverage Workflow
 
-Follow this sequence to measure line and branch coverage across the unit test suite and generate an HTML report:
+Measure line/branch code coverage, verify API documentation completeness, and ensure new/modified modules and features have full documentation coverage.
 
-## Step 0: Run Instrumented Coverage Analysis
-Execute the containerized or host LCOV coverage build:
+## Step 0: Run Instrumented Code Coverage Analysis
+Execute the containerized LCOV coverage build:
 - **Containerized Coverage Report**: `make container-cov`
-- **Host Coverage Report**: `make cov`
 
 ## Step 1: Inspect HTML Report Artifacts
-Review the generated report in `coverage_html/index.html` to identify untested functions, branch branches, or edge cases.
+Review `coverage_html/index.html` to identify untested functions, unreached branches, or edge cases.
+
+## Step 2: Doxygen API Documentation Coverage
+Verify API documentation completeness and check for missing symbol docs:
+- **Doxygen Coverage Check**: `make container-dox`
+
+## Step 3: Module & Feature Documentation Audit
+Audit markdown documentation (`docs/`, `docs/modules/`, `README.md`, `mkdocs.yml`) for feature coverage:
+- **New Module Coverage**: Verify every new or modified source file (`src/syntropic/*`, `src/port/*`) has matching documentation in `docs/modules/`.
+- **API Reference Sync**: Ensure all newly exposed public APIs are documented with signatures, parameters, return values, and usage notes.
+- **Example Coverage**: Verify new features or drivers have corresponding example sketches in `examples/`.

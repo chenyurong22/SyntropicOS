@@ -146,3 +146,83 @@ void test_eth_null_checks(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_arp_lookup(NULL, 0, NULL));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_arp_update(NULL, 0, NULL));
 }
+
+void test_eth_runt_and_oversized_frames(void)
+{
+    SYN_ETH eth;
+    syn_eth_init(&eth, MY_MAC, MY_IP);
+
+    uint8_t runt[13] = {0};
+    uint8_t tx[128];
+    size_t tx_len = 0;
+
+    /* Runt frame (< 14 bytes) must return SYN_INVALID_PARAM */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_process_frame(&eth, runt, 13, tx, &tx_len));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_process_frame(&eth, runt, 5, tx, &tx_len));
+
+    /* Building frame exceeding 1514 bytes maximum length must fail */
+    uint8_t large_payload[1510];
+    uint8_t large_out[1600];
+    size_t out_len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_eth_build_frame(&eth, PEER_MAC, SYN_ETHTYPE_IPV4, large_payload, 1510,
+                                              large_out, &out_len));
+}
+
+void test_eth_mac_filtering(void)
+{
+    SYN_ETH eth;
+    syn_eth_init(&eth, MY_MAC, MY_IP);
+
+    /* Construct frame destined for alien MAC 02:99:88:77:66:55 */
+    uint8_t alien_frame[60] = {0x02, 0x99, 0x88, 0x77, 0x66, 0x55};
+    memcpy(&alien_frame[6], PEER_MAC, 6);
+    alien_frame[12] = 0x08;
+    alien_frame[13] = 0x06;
+
+    uint8_t tx[128];
+    size_t tx_len = 999;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, alien_frame, 60, tx, &tx_len));
+    TEST_ASSERT_EQUAL_INT(0, tx_len); /* Dropped by MAC filter, no reply generated */
+}
+
+void test_eth_arp_cache_eviction_overflow(void)
+{
+    SYN_ETH eth;
+    syn_eth_init(&eth, MY_MAC, MY_IP);
+
+    /* Fill all 8 ARP entries + 2 overflow entries */
+    for (uint32_t i = 1; i <= 10; i++) {
+        uint32_t test_ip = 0x0A000000 | i; /* 10.0.0.i */
+        uint8_t test_mac[6] = {0x02, 0x00, 0x00, 0x00, 0x00, (uint8_t)i};
+        TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_arp_update(&eth, test_ip, test_mac));
+    }
+
+    /* Entry 10 should have overwritten Entry 0 (10.0.0.10) */
+    uint8_t mac_out[6];
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_arp_lookup(&eth, 0x0A00000A, mac_out));
+    TEST_ASSERT_EQUAL_UINT8(10, mac_out[5]);
+}
+
+void test_eth_multiprotocol_interleaving(void)
+{
+    SYN_ETH eth;
+    syn_eth_init(&eth, MY_MAC, MY_IP);
+
+    uint8_t frame_arp[60] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    memcpy(&frame_arp[6], PEER_MAC, 6);
+    frame_arp[12] = 0x08;
+    frame_arp[13] = 0x06;
+
+    uint8_t frame_ecat[60] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01};
+    memcpy(&frame_ecat[6], PEER_MAC, 6);
+    frame_ecat[12] = 0x88;
+    frame_ecat[13] = 0xA4; /* EtherCAT */
+
+    uint8_t tx[128];
+    size_t tx_len = 0;
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, frame_arp, 60, tx, &tx_len));
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, frame_ecat, 60, tx, &tx_len));
+    TEST_ASSERT_EQUAL_UINT32(2, eth.frames_rx);
+}

@@ -389,22 +389,22 @@ In a normal `syn_sched_run_forever()` loop, the CPU busy-loops when no tasks are
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│                  syn_sched_run_tickless()               │
+│                syn_sched_run_tickless()                │
 │                                                        │
-│  ┌──► Run all ready tasks (syn_sched_run)              │
-│  │                                                     │
-│  │    Any tasks ready NOW?                             │
-│  │    ├─ Yes → loop back, run them                     │
-│  │    └─ No  → compute next wakeup deadline            │
-│  │             │                                       │
-│  │             ├─ Deadline exists → sleep until it      │
-│  │             │   syn_port_sleep_until(wake_tick)      │
-│  │             │                                       │
-│  │             └─ No deadlines  → light sleep           │
-│  │                 syn_sleep_enter(sleep)               │
-│  │                                                     │
-│  │    ◄── CPU wakes (timer alarm OR any interrupt) ──► │
-│  └────────────────────────────────────────────────────  │
+│  +---> Run all ready tasks (syn_sched_run)             │
+│  |                                                     │
+│  |    Any tasks ready NOW?                             │
+│  |    |- Yes -> loop back, run them                    │
+│  |    \- No  -> compute next wakeup deadline           │
+│  |             |                                       │
+│  |             |- Deadline exists -> sleep until it    │
+│  |             |   syn_port_sleep_until(wake_tick)     │
+│  |             |                                       │
+│  |             \- No deadlines  -> light sleep         │
+│  |                 syn_sleep_enter(sleep)              │
+│  |                                                     │
+│  |    <--- CPU wakes (timer alarm OR interrupt) --->   │
+│  +───────────────────────────────────────────────────  │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -554,10 +554,10 @@ Enable `SYN_USE_MULTICORE` to add Asymmetric Multiprocessing support. Each core 
 ```
          Core 0                         Core 1
    ┌──────────────────┐          ┌──────────────────┐
-   │  SYN_Sched sched0│          │  SYN_Sched sched1│
-   │  tasks0[N]       │          │  tasks1[M]       │
+   │ SYN_Sched sched0 │          │ SYN_Sched sched1 │
+   │ tasks0[N]        │          │ tasks1[M]        │
    │                  │          │                  │
-   │  run_forever()   │◄────────►│  run_forever()   │
+   │ run_forever()    │<-------->│ run_forever()    │
    │                  │ Mailbox  │                  │
    └──────────────────┘          └──────────────────┘
 ```

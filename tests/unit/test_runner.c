@@ -468,6 +468,7 @@ int main(void)
     extern void test_bldc_6step_invalid_hall_fault(void);
     extern void test_bldc_6step_direction_and_stop(void);
     extern void test_bldc_6step_speed_calculation(void);
+    extern void test_bldc_6step_null_params_and_edge_cases(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -489,6 +490,7 @@ int main(void)
     RUN_TEST(test_bldc_6step_invalid_hall_fault);
     RUN_TEST(test_bldc_6step_direction_and_stop);
     RUN_TEST(test_bldc_6step_speed_calculation);
+    RUN_TEST(test_bldc_6step_null_params_and_edge_cases);
 
     return UNITY_END();
 }

@@ -8,7 +8,7 @@ SyntropicOS provides a comprehensive suite of communication protocols ranging fr
 
 | Layer | Module | Header | Description |
 |---|---|---|---|
-| **Ethernet** | Ethernet II & ARP | `net/syn_eth.h` | Zero-heap Ethernet II framing, MAC filtering, & 8-entry ARP table cache |
+| **Ethernet** | Ethernet II & ARP | `net/syn_eth.h` | Zero-heap Ethernet II framing, MAC filtering, & configurable ARP table cache (`SYN_ETH_ARP_CACHE_SIZE`, default 8) |
 | **Ethernet** | HAL Contract | `port/syn_port_eth.h` | Hardware HAL contract driving STM32 RMII, W5500 SPI, or ESP32 ETH |
 | **IP Address** | DHCP Client | `net/syn_dhcp.h` | RFC 2131 BOOTP/DHCP state machine (`DISCOVER` $\rightarrow$ `ACK`) & option parser |
 | **IP Address** | AutoIP (RFC 3927) | `net/syn_autoip.h` | Link-Local (`169.254.x.x`) IP selection, ARP probing, & collision recovery |
@@ -172,7 +172,7 @@ SyntropicOS provides non-blocking state-machine drivers for both Modbus RTU Slav
 SyntropicOS provides a standalone, zero-heap Ethernet II and IP networking stack engineered for embedded microcontrollers.
 
 ### Sub-Modules
-- **Ethernet II & ARP (`syn_eth.h`)**: Raw Ethernet II framing, MAC address filtering, and 8-entry static ARP table cache.
+- **Ethernet II & ARP (`syn_eth.h`)**: Raw Ethernet II framing, MAC address filtering, and configurable static ARP table cache (`SYN_ETH_ARP_CACHE_SIZE`, defaults to 8 entries).
 - **DHCP Client (`syn_dhcp.h`)**: RFC 2131 BOOTP/DHCP client state machine (`DISCOVER` $\rightarrow$ `OFFER` $\rightarrow$ `REQUEST` $\rightarrow$ `ACK`) over UDP ports 67/68.
 - **ICMP Protocol Engine (`syn_icmp.h`)**: RFC 792 ICMP Echo Request / Reply (Ping) engine with RFC 1071 Ones-Complement Internet Checksum.
 - **RFC 3927 AutoIP (`syn_autoip.h`)**: Link-Local `169.254.x.x` address selection, ARP probing, and collision recovery.

@@ -463,6 +463,11 @@ int main(void)
     extern void test_nn_edge_cases_and_null_checks(void);
     extern void test_dsp_dct2_null_params(void);
     extern void test_dsp_dct2_dc_constant(void);
+    extern void test_bldc_6step_init_defaults(void);
+    extern void test_bldc_6step_hall_commutation_cw(void);
+    extern void test_bldc_6step_invalid_hall_fault(void);
+    extern void test_bldc_6step_direction_and_stop(void);
+    extern void test_bldc_6step_speed_calculation(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -479,6 +484,11 @@ int main(void)
     RUN_TEST(test_nn_edge_cases_and_null_checks);
     RUN_TEST(test_dsp_dct2_null_params);
     RUN_TEST(test_dsp_dct2_dc_constant);
+    RUN_TEST(test_bldc_6step_init_defaults);
+    RUN_TEST(test_bldc_6step_hall_commutation_cw);
+    RUN_TEST(test_bldc_6step_invalid_hall_fault);
+    RUN_TEST(test_bldc_6step_direction_and_stop);
+    RUN_TEST(test_bldc_6step_speed_calculation);
 
     return UNITY_END();
 }

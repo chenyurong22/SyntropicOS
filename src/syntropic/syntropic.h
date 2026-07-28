@@ -359,6 +359,10 @@ extern "C" {
 #include "motor/syn_dc_motor.h"
 #endif
 
+#if !defined(SYN_USE_BLDC_6STEP) || SYN_USE_BLDC_6STEP
+#include "motor/syn_bldc_6step.h"
+#endif
+
 #if !defined(SYN_USE_MOTOR_CTRL) || SYN_USE_MOTOR_CTRL
 #include "motor/syn_motor_ctrl.h"
 #endif

@@ -101,6 +101,12 @@ uint32_t syn_port_get_tick_ms(void)
     return millis();
 }
 
+uint32_t syn_port_get_tick_us(void)
+{
+    return micros();
+}
+
+
 void syn_port_delay_ms(uint32_t ms)
 {
     delay(ms);

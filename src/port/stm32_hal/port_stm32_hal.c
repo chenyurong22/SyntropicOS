@@ -80,6 +80,21 @@ uint32_t syn_port_get_tick_ms(void)
     return HAL_GetTick();
 }
 
+uint32_t syn_port_get_tick_us(void)
+{
+    uint32_t ms = HAL_GetTick();
+    uint32_t load = SysTick->LOAD;
+    if (load > 0) {
+        uint32_t val = SysTick->VAL;
+        uint32_t elapsed_cycles = load - val;
+        uint32_t cycles_per_us = SystemCoreClock / 1000000U;
+        if (cycles_per_us > 0) {
+            return (ms * 1000U) + (elapsed_cycles / cycles_per_us);
+        }
+    }
+    return ms * 1000U;
+}
+
 void syn_port_delay_ms(uint32_t ms)
 {
     HAL_Delay(ms);

@@ -45,6 +45,11 @@ uint32_t syn_port_get_tick_ms(void)
     return to_ms_since_boot(get_absolute_time());
 }
 
+uint32_t syn_port_get_tick_us(void)
+{
+    return time_us_32();
+}
+
 void syn_port_delay_ms(uint32_t ms)
 {
     sleep_ms(ms);

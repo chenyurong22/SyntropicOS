@@ -44,6 +44,12 @@ uint32_t syn_port_get_tick_ms(void)
     return (uint32_t)(esp_timer_get_time() / 1000);
 }
 
+uint32_t syn_port_get_tick_us(void)
+{
+    // Returns microsecond ticks since boot directly from esp_timer hardware
+    return (uint32_t)esp_timer_get_time();
+}
+
 void syn_port_delay_ms(uint32_t ms)
 {
     vTaskDelay(pdMS_TO_TICKS(ms));

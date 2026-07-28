@@ -328,6 +328,19 @@ uint32_t syn_port_get_tick_ms(void)
     return systick_ms;
 }
 
+uint32_t syn_port_get_tick_us(void)
+{
+    uint32_t ms = systick_ms;
+    uint32_t load = SYSTICK_LOAD;
+    if (load > 0) {
+        uint32_t val = SYSTICK_VAL;
+        uint32_t elapsed_cycles = load - val;
+        uint32_t cycles_per_us = 168U; /* 168 MHz System Clock */
+        return (ms * 1000U) + (elapsed_cycles / cycles_per_us);
+    }
+    return ms * 1000U;
+}
+
 void syn_port_delay_ms(uint32_t ms)
 {
     uint32_t start = systick_ms;

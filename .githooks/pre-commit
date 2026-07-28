@@ -1,0 +1,17 @@
+#!/bin/sh
+# Pre-commit hook for SyntropicOS
+# Automatically runs clang-format auto-fix before allowing commit
+
+echo "=== [SyntropicOS Pre-Commit] Running Code Formatting Check ==="
+
+if command -v clang-format >/dev/null 2>&1; then
+    make format FIX=1
+else
+    make container-format FIX=1
+fi
+
+# Re-stage any modified C/H files
+git add -u
+
+echo "=== [SyntropicOS Pre-Commit] Code Formatting Applied ==="
+exit 0

@@ -144,9 +144,22 @@ SYN_WEAK uint32_t syn_port_get_tick_ms(void)
     return 0;
 }
 
+#if !defined(SYN_USE_HPCLOCK) || SYN_USE_HPCLOCK
+#include "../drivers/syn_hpclock.h"
+#endif
+
 SYN_WEAK uint32_t syn_port_get_tick_us(void)
 {
-    /* Default weak fallback: ms * 1000U */
+#if !defined(SYN_USE_HPCLOCK) || SYN_USE_HPCLOCK
+    uint32_t freq_hz = syn_port_hpclock_freq_hz();
+    if (freq_hz != 0) {
+        SYN_HPTimestamp ts;
+        SYN_HPCLOCK_CAPTURE(ts);
+        uint64_t ticks = syn_hpclock_resolve(&ts);
+        return (uint32_t)(ticks * 1000000ULL / freq_hz);
+    }
+#endif
+    /* Fallback if hpclock is disabled or unconfigured */
     return syn_port_get_tick_ms() * 1000U;
 }
 

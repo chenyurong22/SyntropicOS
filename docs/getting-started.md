@@ -124,7 +124,10 @@ Edit `syn_config.h` to enable or disable modules:
 /* Communication */
 #define SYN_USE_COBS       1
 #define SYN_USE_MODBUS     1
+#define SYN_USE_DALI       1
+#define SYN_USE_BACNET     1
 ```
+
 
 ### Tuning Parameters
 

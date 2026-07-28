@@ -8,9 +8,10 @@ SyntropicOS provides header-only foundation macros, ISR-safe data structures, bi
 
 | Feature | Specification |
 |---|---|
-| **RAM Cost** | Zero heap allocation. All structures (`SYN_RingBuf`, `SYN_Stream`, `SYN_PingPong`) are caller-owned. |
-| **ISR Safety** | SPSC (Single-Producer / Single-Consumer) ring buffers and streams are **lock-free and ISR-safe**. |
+| **RAM Cost** | Zero heap allocation. All structures (`SYN_RingBuf`, `SYN_SPSC_Queue`, `SYN_Stream`, `SYN_PingPong`) are caller-owned. |
+| **ISR Safety** | SPSC (Single-Producer / Single-Consumer) ring buffers and queues are **lock-free and ISR-safe**. |
 | **Asserts** | Runtime checks strippable in production via `#define SYN_DISABLE_ASSERT`. |
+
 
 ---
 
@@ -84,3 +85,37 @@ void serialize_packet(uint8_t *dest, uint16_t id, uint32_t val) {
     offset += syn_pack_u32_be(&dest[offset], val);
 }
 ```
+
+---
+
+## 3. Lock-Free SPSC Ring Buffer & Queue (`util/syn_spsc_queue.h` & `util/syn_ringbuf.h`)
+
+SyntropicOS provides single-producer single-consumer lock-free ring buffers for ISR-to-thread communication.
+
+### Usage Example
+```c
+#include <syntropic/util/syn_spsc_queue.h>
+
+static uint8_t queue_buf[256];
+static SYN_SPSC_Queue rx_queue;
+
+void setup_queue(void) {
+    syn_spsc_queue_init(&rx_queue, queue_buf, sizeof(queue_buf));
+}
+
+// In USART RX ISR:
+void USART1_IRQHandler(void) {
+    uint8_t byte = (uint8_t)USART1->DR;
+    syn_spsc_queue_push(&rx_queue, byte);
+}
+
+// In main task loop:
+void process_rx(void) {
+    uint8_t byte;
+    while (syn_spsc_queue_pop(&rx_queue, &byte) == SYN_OK) {
+        // Feed protocol state machine (Modbus, COBS, BACnet, DALI)
+        syn_modbus_feed(&mb_slave, byte);
+    }
+}
+```
+

@@ -8,6 +8,12 @@ SyntropicOS provides a comprehensive suite of communication protocols ranging fr
 
 | Layer | Module | Header | Description |
 |---|---|---|---|
+| **Ethernet** | Ethernet II & ARP | `net/syn_eth.h` | Zero-heap Ethernet II framing, MAC filtering, & 8-entry ARP table cache |
+| **Ethernet** | HAL Contract | `port/syn_port_eth.h` | Hardware HAL contract driving STM32 RMII, W5500 SPI, or ESP32 ETH |
+| **IP Address** | DHCP Client | `net/syn_dhcp.h` | RFC 2131 BOOTP/DHCP state machine (`DISCOVER` $\rightarrow$ `ACK`) & option parser |
+| **IP Address** | AutoIP (RFC 3927) | `net/syn_autoip.h` | Link-Local (`169.254.x.x`) IP selection, ARP probing, & collision recovery |
+| **IP Manager** | Netcfg Manager | `net/syn_netcfg.h` | Unified Static / DHCP / AutoIP fallback & Link Up/Down state machine |
+| **ICMP** | ICMP Engine | `net/syn_icmp.h` | RFC 792 ICMP Echo Request/Reply (Ping) & Ones-Complement Checksum |
 | **Framing** | COBS | `proto/syn_cobs.h` | Consistent Overhead Byte Stuffing (`0x00` packet delimiter) |
 | **Routing** | Router | `net/syn_router.h` | Addressed packet dispatch (Node ID), type routing, & ACKs |
 | **Industrial** | Modbus | `proto/syn_modbus.h` | Modbus RTU & Modbus TCP Master/Slave support |
@@ -158,4 +164,39 @@ SyntropicOS provides non-blocking state-machine drivers for both Modbus RTU Slav
 ### Features
 - **Non-blocking State Machine**: Processing occurs without thread blocking via periodic polling (`syn_modbus_process` / `syn_modbus_master_process`).
 - **Inter-Frame Silence (t3.5)**: Timing gap detection handles partial frame arrival cleanly over UART DMA / ring buffers.
+
+---
+
+## 6. Zero-Heap Ethernet & IP Protocol Suite (`syn_eth`, `syn_dhcp`, `syn_icmp`, `syn_autoip`, `syn_netcfg`)
+
+SyntropicOS provides a standalone, zero-heap Ethernet II and IP networking stack engineered for embedded microcontrollers.
+
+### Sub-Modules
+- **Ethernet II & ARP (`syn_eth.h`)**: Raw Ethernet II framing, MAC address filtering, and 8-entry static ARP table cache.
+- **DHCP Client (`syn_dhcp.h`)**: RFC 2131 BOOTP/DHCP client state machine (`DISCOVER` $\rightarrow$ `OFFER` $\rightarrow$ `REQUEST` $\rightarrow$ `ACK`) over UDP ports 67/68.
+- **ICMP Protocol Engine (`syn_icmp.h`)**: RFC 792 ICMP Echo Request / Reply (Ping) engine with RFC 1071 Ones-Complement Internet Checksum.
+- **RFC 3927 AutoIP (`syn_autoip.h`)**: Link-Local `169.254.x.x` address selection, ARP probing, and collision recovery.
+- **Network IP Manager (`syn_netcfg.h`)**: Unified IP configuration manager supporting Static IP, DHCP, automatic AutoIP fallback, and physical Link Up / Link Down state transitions.
+
+```c
+#include <syntropic/syntropic.h>
+
+static SYN_ETH eth;
+static SYN_NETCFG netcfg;
+
+void on_link_change(SYN_NETCFG *cfg, SYN_NETCFG_LinkState state, void *user_data) {
+    if (state == SYN_NETCFG_LINK_UP) {
+        printf("Ethernet Cable Plugged In!\n");
+    } else {
+        printf("Ethernet Cable Unplugged!\n");
+    }
+}
+
+void app_init(const uint8_t mac[6]) {
+    syn_eth_init(&eth, mac, 0);
+    syn_netcfg_init(&netcfg, SYN_NETCFG_MODE_AUTO, mac); // Auto mode: DHCP with AutoIP fallback
+    syn_netcfg_set_link_callback(&netcfg, on_link_change, NULL);
+}
+```
+
 

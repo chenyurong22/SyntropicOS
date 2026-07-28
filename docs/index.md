@@ -39,12 +39,14 @@ Quick-jump to specific feature guides and API references:
 - **[Software PWM (`syn_soft_pwm`)](modules/io.md#4-software-pwm-driver)**: Timerless PWM generation on arbitrary GPIO pins.
 
 ### 📡 Communications & Protocol Stacks ([Read Comm Docs →](modules/communication.md))
+- **[Ethernet & IP Protocol Suite (`syn_eth` / `syn_dhcp` / `syn_icmp` / `syn_autoip` / `syn_netcfg`)](modules/communication.md#6-zero-heap-ethernet--ip-protocol-suite-syn_eth-syn_dhcp-syn_icmp-syn_autoip-syn_netcfg)**: Zero-heap Ethernet II, ARP, DHCP client, ICMP Echo ping, RFC 3927 AutoIP fallback, and Link Up/Down state machine.
 - **[COBS Framing (`syn_cobs`)](modules/communication.md#1-cobs--packet-router-pipeline)**: Zero-overhead `0x00`-delimited packet framing.
 - **[Packet Router (`syn_router`)](modules/communication.md#1-cobs--packet-router-pipeline)**: Addressed packet dispatch (Master/Slave Node IDs) with ACKs.
 - **[Industrial Modbus (`syn_modbus`)](modules/communication.md)**: Modbus RTU & Modbus TCP Master/Slave stacks.
 - **[Building Automation (`syn_bacnet` / `syn_dali`)](modules/communication.md)**: BACnet MS/TP (ISO 16484-5) & DALI Lighting (IEC 62386) protocol engines.
 - **[M-Bus Metering (`syn_mbus`)](modules/communication.md#2-m-bus-protocol)**: EN 13757 European utility meter bus decoder.
 - **[Automotive ISO-TP & J1939](modules/communication.md)**: CAN bus multi-frame transport and heavy vehicle PGN/SPN decoder.
+
 
 
 ### 💾 Storage & Filesystems ([Read Storage Docs →](modules/storage.md))

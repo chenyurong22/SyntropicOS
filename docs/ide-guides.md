@@ -26,7 +26,7 @@ Step-by-step setup guides for integrating SyntropicOS into standard microcontrol
 ## 2. VS Code (PlatformIO & CMake + Cortex-Debug)
 
 ### PlatformIO Integration
-In your project's `platformio.ini`:
+SyntropicOS is a native PlatformIO library (`library.json`). Include it directly via `lib_deps` in your `platformio.ini`:
 
 ```ini
 [env:stm32f407]
@@ -35,8 +35,13 @@ board = disco_f407vg
 framework = stm32cube
 build_flags =
     -std=c99
-    -Isrc/
-    -Ilib/SyntropicOS/src
+lib_deps =
+    SyntropicOS
+```
+
+Or reference the Git repository directly:
+
+```ini
 lib_deps =
     https://github.com/outlookhazy/SyntropicOS.git
 ```
@@ -116,10 +121,15 @@ lib_deps =
 ## 5. Arduino IDE (v1.8 / v2.x)
 
 ### Library Installation
-1. **ZIP Library / Submodule**:
-   - Download SyntropicOS as a ZIP or clone into your Arduino sketchbook `libraries/` directory (`Arduino/libraries/SyntropicOS`).
-2. **Header Inclusion**:
-   - Include the main header in your `.ino` sketch:
+SyntropicOS is packaged as a standard Arduino Library (`library.properties`).
+
+1. **Installation Methods**:
+   - **Library Manager**: Search for `SyntropicOS` in **Sketch** $\rightarrow$ **Include Library** $\rightarrow$ **Manage Libraries...**
+   - **Add .ZIP Library**: Download repository release ZIP $\rightarrow$ **Sketch** $\rightarrow$ **Include Library** $\rightarrow$ **Add .ZIP Library...**
+   - **Manual Placement**: Extract into your sketchbook `libraries/` directory (`Arduino/libraries/SyntropicOS`).
+
+2. **Header Inclusion & Sketch Usage**:
+   - Include `<syntropic/syntropic.h>` in your `.ino` sketch:
      ```cpp
      #include <syntropic/syntropic.h>
 
@@ -132,3 +142,4 @@ lib_deps =
          delay(500);
      }
      ```
+

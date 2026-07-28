@@ -1,6 +1,7 @@
 # Cross-Module System Integration
 
-SyntropicOS modules are architected to seamlessly compose with each other. When multiple modules are enabled in `syn_config.h`, cross-module integrations automatically hook together without requiring verbose glue code.
+SyntropicOS modules compose directly with each other. When multiple modules are enabled in `syn_config.h`, cross-module integrations automatically hook together without requiring verbose glue code.
+
 
 ---
 

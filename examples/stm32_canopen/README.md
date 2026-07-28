@@ -11,7 +11,8 @@ This example demonstrates how to integrate SyntropicOS CANopen DS301 slave proto
   - NMT State Machine: Bootup (0x700 + NodeID), Pre-Operational, Operational, and Stopped states.
   - Heartbeat Producer: Periodic heartbeat broadcast (COB-ID `0x700 + NodeID`).
   - Emergency (EMCY) Alarms: Automatic emergency code reporting (COB-ID `0x080 + NodeID`).
-- **Seamless STM32 HAL CAN Integration**: Interrupt-driven frame ingestion via `HAL_CAN_RxFifo0MsgPendingCallback`.
+- **STM32 HAL CAN Integration**: Interrupt-driven frame ingestion via `HAL_CAN_RxFifo0MsgPendingCallback`.
+
 
 ## Hardware Setup
 - Connect STM32 CAN1 (e.g. PB8/PB9 or PA11/PA12) to a 3.3V CAN transceiver (SN65HVD230 / VP230).

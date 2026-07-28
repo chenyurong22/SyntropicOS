@@ -11,7 +11,8 @@ This example demonstrates how to integrate SyntropicOS NMEA 2000 marine CAN prot
   - PGN 127508: Battery Status (Voltage in 0.01V, Current in 0.1A, Temperature).
   - PGN 130310: Environmental Parameters (Water Temp, Air Temp, Atmospheric Pressure).
 - **Fast-Packet Protocol Reassembly**: Handles multi-frame NMEA 2000 payloads up to 223 bytes without dynamic heap memory (`SYN_N2K_FastPacketRx`).
-- **Seamless STM32 HAL CAN Integration**: Interrupt-driven frame ingestion via `HAL_CAN_RxFifo0MsgPendingCallback`.
+- **STM32 HAL CAN Integration**: Interrupt-driven frame ingestion via `HAL_CAN_RxFifo0MsgPendingCallback`.
+
 
 ## Hardware Setup
 - Connect STM32 CAN1 (e.g. PB8/PB9 or PA11/PA12) to a 3.3V CAN transceiver (SN65HVD230 / VP230).

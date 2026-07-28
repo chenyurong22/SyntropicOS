@@ -50,19 +50,20 @@ flowchart TD
 
 ## Quick Navigation & Documentation Index
 
-- 📖 **[Documentation Hub](docs/index.md)** — Complete repository documentation index.
-- 🚀 **[Getting Started Guide](docs/getting-started.md)** — CMake, Makefile, and C99 bare-metal setup.
-- 🔌 **[Arduino Compatibility Guide](docs/arduino.md)** — Arduino Library Manager installation & IDE setup.
-- 🔧 **[MCU Porting Guide](docs/porting-guide.md)** — Implementing custom HAL ports (`syn_port_*`).
-- 🧪 **[Testing & Containerization Guide](docs/testing.md)** — Unity unit tests, QEMU emulation, sanitizers, and integration daemons.
+- 📖 **[Documentation Hub](https://outlookhazy.github.io/SyntropicOS/)** — Complete online documentation & API reference.
+- 🚀 **[Getting Started Guide](https://outlookhazy.github.io/SyntropicOS/getting-started/)** — CMake, Makefile, and C99 bare-metal setup.
+- 🔌 **[Arduino Compatibility Guide](https://outlookhazy.github.io/SyntropicOS/arduino/)** — Arduino Library Manager installation & IDE setup.
+- 🔧 **[MCU Porting Guide](https://outlookhazy.github.io/SyntropicOS/porting-guide/)** — Implementing custom HAL ports (`syn_port_*`).
+- 🧪 **[Testing & Containerization Guide](https://outlookhazy.github.io/SyntropicOS/testing/)** — Unity unit tests, QEMU emulation, sanitizers, and integration daemons.
 
 ### Module Guides
-- ⚡ **[Core & Multitasking](docs/modules/multitasking.md)** — Protothreads, Task Scheduler, Active Objects, Workqueues.
-- 🎛️ **[Input / Output](docs/modules/io.md)** — Debounced Buttons, Tap Gestures, Combos, Rotary Encoders, LEDs, Soft PWM.
-- 📡 **[Communication Protocols](docs/modules/communication.md)** — COBS Framing, Addressed Router, Modbus RTU/TCP, DALI, BACnet MS/TP, M-Bus, ISO-TP, J1939, NMEA 2000.
-- 💾 **[Storage & Filesystems](docs/modules/storage.md)** — Persistent Settings Manager, Wear-Leveled Flash, LittleFS, FAT.
-- 🖥️ **[Display & Embedded UI](docs/modules/display.md)** — Framebuffer Canvas, 2D Graphics, Zero-Heap IMGUI.
-- 🔬 **[Diagnostics & Debug](docs/modules/debug.md)** — Lightweight Event Tracer (`syn_trace`), Task CPU Profiler (`syn_profiler`), Serial CLI.
+- ⚡ **[Core & Multitasking](https://outlookhazy.github.io/SyntropicOS/modules/multitasking/)** — Protothreads, Task Scheduler, Active Objects, Workqueues.
+- 🎛️ **[Input / Output](https://outlookhazy.github.io/SyntropicOS/modules/io/)** — Debounced Buttons, Tap Gestures, Combos, Rotary Encoders, LEDs, Soft PWM.
+- 📡 **[Communication Protocols](https://outlookhazy.github.io/SyntropicOS/modules/communication/)** — COBS Framing, Addressed Router, Modbus RTU/TCP, DALI, BACnet MS/TP, M-Bus, ISO-TP, J1939, NMEA 2000.
+- 💾 **[Storage & Filesystems](https://outlookhazy.github.io/SyntropicOS/modules/storage/)** — Persistent Settings Manager, Wear-Leveled Flash, LittleFS, FAT.
+- 🖥️ **[Display & Embedded UI](https://outlookhazy.github.io/SyntropicOS/modules/display/)** — Framebuffer Canvas, 2D Graphics, Zero-Heap IMGUI.
+- 🔬 **[Diagnostics & Debug](https://outlookhazy.github.io/SyntropicOS/modules/debug/)** — Lightweight Event Tracer (`syn_trace`), Task CPU Profiler (`syn_profiler`), Serial CLI.
+
 
 ---
 

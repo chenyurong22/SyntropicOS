@@ -100,23 +100,29 @@
 
 /* ── Communication / Protocols ──────────────────────────────────────────── */
 
-#define SYN_USE_COBS 1      /**< COBS packet framing                 */
-#define SYN_USE_ETHERCAT 1  /**< EtherCAT bare-metal protocol stack  */
-#define SYN_USE_LIN 1       /**< LIN bus 2.1/2.2a & ISO 17987 stack  */
-#define SYN_USE_DALI 1      /**< DALI / IEC 62386 lighting stack    */
-#define SYN_USE_SMBUS 1     /**< SMBus 1.1/2.0/3.0 protocol engine   */
-#define SYN_USE_PMBUS 1     /**< PMBus 1.2/1.3 protocol & linear fmt */
-#define SYN_USE_MBUS 1      /**< M-Bus (EN 13757-2/3) protocol engine */
-#define SYN_USE_MODBUS 1    /**< Modbus RTU slave (requires: CRC)    */
-#define SYN_USE_MQTT 1      /**< MQTT 3.1.1 client                   */
-#define SYN_USE_HTTP 1      /**< HTTP client                         */
-#define SYN_USE_HTTPD 1     /**< HTTP server (embedded web server)   */
-#define SYN_USE_WEBSOCKET 1 /**< WebSocket client                    */
-#define SYN_USE_COAP 1      /**< CoAP protocol client                */
-#define SYN_USE_DNS 1       /**< DNS resolver                        */
-#define SYN_USE_ROUTER 1    /**< Network router / dispatcher         */
-#define SYN_USE_HEARTBEAT 1 /**< Heartbeat / keep-alive service      */
-#define SYN_USE_SNTP 1      /**< SNTP time synchronization client    */
+#define SYN_USE_COBS 1           /**< COBS packet framing                 */
+#define SYN_USE_ETHERCAT 1       /**< EtherCAT bare-metal protocol stack  */
+#define SYN_USE_LIN 1            /**< LIN bus 2.1/2.2a & ISO 17987 stack  */
+#define SYN_USE_DALI 1           /**< DALI / IEC 62386 lighting stack    */
+#define SYN_USE_SMBUS 1          /**< SMBus 1.1/2.0/3.0 protocol engine   */
+#define SYN_USE_PMBUS 1          /**< PMBus 1.2/1.3 protocol & linear fmt */
+#define SYN_USE_MBUS 1           /**< M-Bus (EN 13757-2/3) protocol engine */
+#define SYN_USE_MODBUS 1         /**< Modbus RTU slave (requires: CRC)    */
+#define SYN_USE_MQTT 1           /**< MQTT 3.1.1 client                   */
+#define SYN_USE_HTTP 1           /**< HTTP client                         */
+#define SYN_USE_HTTPD 1          /**< HTTP server (embedded web server)   */
+#define SYN_USE_WEBSOCKET 1      /**< WebSocket client                    */
+#define SYN_USE_COAP 1           /**< CoAP protocol client                */
+#define SYN_USE_DNS 1            /**< DNS resolver                        */
+#define SYN_USE_ETH 1            /**< Zero-heap Ethernet II & ARP engine  */
+#define SYN_ETH_ARP_CACHE_SIZE 8 /**< ARP table cache size (entries)      */
+#define SYN_USE_DHCP 1           /**< DHCP client protocol engine         */
+#define SYN_USE_ICMP 1           /**< ICMP Echo Ping protocol engine      */
+#define SYN_USE_AUTOIP 1         /**< RFC 3927 AutoIP Link-Local engine   */
+#define SYN_USE_NETCFG 1         /**< Network IP Manager & Link Events    */
+#define SYN_USE_ROUTER 1         /**< Network router / dispatcher         */
+#define SYN_USE_HEARTBEAT 1      /**< Heartbeat / keep-alive service      */
+#define SYN_USE_SNTP 1           /**< SNTP time synchronization client    */
 #define SYN_USE_WG \
     1 /**< WireGuard VPN client (requires: BLAKE2S, CHACHA20POLY1305, X25519, SNTP) */
 #define SYN_WG_MTU 1420         /**< WireGuard tunnel MTU (inner payload) */

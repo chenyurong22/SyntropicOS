@@ -8,11 +8,11 @@ Rather than using vendor-locked modem MQTT commands, this example bridges the mo
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    SyntropicOS Application                   │
+│                   SyntropicOS Application                   │
 │                                                             │
-│   ┌───────────────┐     ┌───────────────────────────────┐   │
-│   │ syn_mqtt_task │ ──> │ syn_port_socket (SIM800 Driver)│   │
-│   └───────────────┘     └───────────────────────────────┘   │
+│   ┌───────────────┐     ┌────────────────────────────────┐  │
+│   │ syn_mqtt_task │ --> │ syn_port_socket (SIM800 Driver)│  │
+│   └───────────────┘     └────────────────────────────────┘  │
 │                                         │                   │
 │                                 ┌───────────────┐           │
 │                                 │ syn_at_parser │           │
@@ -21,8 +21,8 @@ Rather than using vendor-locked modem MQTT commands, this example bridges the mo
 │                                 ┌───────────────┐           │
 │                                 │  STM32 USART  │           │
 │                                 └───────────────┘           │
-└─────────────────────────────────────────┼───────────────────┘
-                                          ▼
+└─────────────────────────────────────────┬───────────────────┘
+                                          v
                                    SIM800 Cellular Modem
 ```
 

@@ -20,8 +20,8 @@ Connect a USB-to-serial adapter to USART1 at **115200 baud** to interact with th
 ```
 STM32F103C8 "Blue Pill"
 ├── PC13 ── On-board LED (active-low, heartbeat)
-├── PA9 ─── USART1 TX ──→ USB-serial adapter RX
-└── PA10 ── USART1 RX ←── USB-serial adapter TX
+├── PA9 ─── USART1 TX --> USB-serial adapter RX
+└── PA10 ── USART1 RX <-- USB-serial adapter TX
 ```
 
 Connect a USB-to-serial adapter (e.g. CP2102, FTDI, CH340) to PA9/PA10.  

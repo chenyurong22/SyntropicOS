@@ -498,7 +498,7 @@ When using software timers alongside tickless idle, the basic `syn_sched_run_tic
 `syn_sched_run_tickless_ex()` solves this by combining both:
 
 ```
-                       syn_sched_run_tickless_ex()
+                             syn_sched_run_tickless_ex()
 ┌────────────────────────────────────────────────────────────┐
 │  1. Run scheduler (syn_sched_run)                          │
 │  2. Service software timers (syn_timer_service)            │

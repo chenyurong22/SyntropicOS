@@ -17,7 +17,7 @@ Demonstrates non-blocking LIN 2.0 / 2.1 automotive single-wire bus master and sl
 |  STM32 Micro     |                    |  LIN Transceiver  |
 |  (e.g., STM32F4) |                    |  (e.g., TJA1021)  |
 |                  |                    |                   |
-|   USART1_TX (PA9) ---------------------> TXD               |
+|   USART1_TX (PA9) --------------------> TXD               |
 |  USART1_RX (PA10)<--------------------- RXD               |
 |   GPIO_NSLP (PA8)---------------------> NSLP / EN         |
 |                  |                    |                   |

@@ -20,7 +20,7 @@ Demonstrates interactive Command Line Interface (CLI) shell integration over STM
 |  STM32 Micro     |                    |  USB-to-UART /    |
 |  (e.g., STM32F4) |                    |  Serial Console   |
 |                  |                    |                   |
-|   USART1_TX (PA9) ---------------------> RXD               |
+|   USART1_TX (PA9) --------------------> RXD               |
 |  USART1_RX (PA10)<--------------------- TXD               |
 |  GPIO_LED  (PA5) ---------------------> Onboard LED       |
 |                  |                    |                   |

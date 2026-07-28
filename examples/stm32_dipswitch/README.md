@@ -16,14 +16,14 @@ Demonstrates 8-position DIP switch hardware reading (`SYN_DipSwitch`), bitmask v
 |  STM32 Micro       |                    |  8-Position DIP     |
 |  (e.g., STM32F4)   |                    |  Switch Module      |
 |                    |                    |                     |
-|   GPIO_DS1 (PA0)  <-------------------- Position 1 (Bit 0)   |
-|   GPIO_DS2 (PA1)  <-------------------- Position 2 (Bit 1)   |
-|   GPIO_DS3 (PA2)  <-------------------- Position 3 (Bit 2)   |
-|   GPIO_DS4 (PA3)  <-------------------- Position 4 (Bit 3)   |
-|   GPIO_DS5 (PA4)  <-------------------- Position 5 (Bit 4)   |
-|   GPIO_DS6 (PA5)  <-------------------- Position 6 (Bit 5)   |
-|   GPIO_DS7 (PA6)  <-------------------- Position 7 (Bit 6)   |
-|   GPIO_DS8 (PA7)  <-------------------- Position 8 (Bit 7)   |
+|   GPIO_DS1 (PA0)  <---------------------> Position 1 (Bit 0)  |
+|   GPIO_DS2 (PA1)  <---------------------> Position 2 (Bit 1)  |
+|   GPIO_DS3 (PA2)  <---------------------> Position 3 (Bit 2)  |
+|   GPIO_DS4 (PA3)  <---------------------> Position 4 (Bit 3)  |
+|   GPIO_DS5 (PA4)  <---------------------> Position 5 (Bit 4)  |
+|   GPIO_DS6 (PA5)  <---------------------> Position 6 (Bit 5)  |
+|   GPIO_DS7 (PA6)  <---------------------> Position 7 (Bit 6)  |
+|   GPIO_DS8 (PA7)  <---------------------> Position 8 (Bit 7)  |
 |                    |                    |                     |
 |                GND ---------------------> Common Switch GND   |
 +--------------------+                    +---------------------+

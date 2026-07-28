@@ -18,7 +18,7 @@ Demonstrates non-blocking SMBus smart battery telemetry reading (SBS 1.1), Packe
 |  (e.g., STM32F4) |                    | (e.g., BQ40z50)   |
 |                  |                    |                   |
 |    I2C1_SCL (PB6) ---------------------> SMBC (10k pullup)|
-|    I2C1_SDA (PB7) <-------------------> SMBD (10k pullup)|
+|    I2C1_SDA (PB7) <--------------------> SMBD (10k pullup)|
 |   GPIO_ALERT(PB5) <-------------------  SMBALERT#         |
 |                  |                    |                   |
 |              GND ---------------------> GND               |

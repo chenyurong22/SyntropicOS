@@ -16,8 +16,8 @@ Demonstrates non-blocking M-Bus utility meter communication (water, gas, heat, e
 |  STM32 Micro     |                    |  M-Bus Master IC  |
 |  (e.g., STM32F4) |                    |  (e.g., TSS721A)  |
 |                  |                    |                   |
-|   USART2_TX (PA2) ---------------------> TXD               |
-|   USART2_RX (PA3) <--------------------- RXD               |
+|   USART2_TX (PA2) --------------------> TXD               |
+|   USART2_RX (PA3) <-------------------- RXD               |
 |                  |                    |                   |
 |              GND ---------------------> GND               |
 +------------------+                    |    M-BUS LINE     |

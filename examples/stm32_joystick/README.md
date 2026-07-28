@@ -17,8 +17,8 @@ Demonstrates dual-axis analog joystick ADC sampling (`SYN_Joystick`), deadband n
 |  STM32 Micro       |                    |  Analog Joystick    |
 |  (e.g., STM32F4)   |                    |  (e.g., HW-504)     |
 |                    |                    |                     |
-|  ADC1_IN0 (PA0)   <-------------------- VRX (X-Axis Analog)  |
-|  ADC1_IN1 (PA1)   <-------------------- VRY (Y-Axis Analog)  |
+|  ADC1_IN0 (PA0)   <-------------------- VRX (X-Axis Analog)   |
+|  ADC1_IN1 (PA1)   <-------------------- VRY (Y-Axis Analog)   |
 |  GPIO_SW  (PA2)   <-------------------- SW  (Button Switch)   |
 |                    |                    |                     |
 |                GND ---------------------> GND                 |

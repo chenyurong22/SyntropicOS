@@ -18,7 +18,7 @@ Demonstrates non-blocking PMBus digital power supply telemetry reading, voltage 
 |  (e.g., STM32F4) |                    |  (e.g., TPS544B)  |
 |                  |                    |                   |
 |    I2C1_SCL (PB6) ---------------------> SCL (10k pullup) |
-|    I2C1_SDA (PB7) <-------------------> SDA (10k pullup) |
+|    I2C1_SDA (PB7) <--------------------> SDA (10k pullup) |
 |     GPIO_SMBALERT --------------------> SMBALERT / CONTROL|
 |                  |                    |                   |
 |              GND ---------------------> GND               |

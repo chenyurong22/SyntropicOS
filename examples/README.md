@@ -37,8 +37,10 @@ This directory contains bare-metal C and MCU HAL example projects demonstrating 
 - **[`stm32_touch_key`](stm32_touch_key)** — 4-channel capacitive touch sensing key pad & baseline calibration.
 - **[`stm32_dipswitch`](stm32_dipswitch)** — 8-position DIP switch address reader & baud rate selector.
 - **[`stm32_soft_pwm`](stm32_soft_pwm)** — Multi-channel software PWM LED dimmer & motor driver.
-- **[`stm32_smart_led`](stm32_smart_led)** — Status LED heartbeat & WS2812B Smart RGB LED rainbow strip animator.
+- **[`stm32_led`](stm32_led)** — GPIO status LED heartbeat, blinking, and error patterns.
+- **[`stm32_smart_led`](stm32_smart_led)** — WS2812B / Neopixel Smart RGB LED strip rainbow animator.
 - **[`stm32_button`](stm32_button)** — Multi-tap button gesture & combo handler.
+
 
 
 

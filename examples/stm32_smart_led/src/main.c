@@ -1,27 +1,22 @@
 /**
  * @file main.c
- * @brief SyntropicOS Standard LED & WS2812B Smart LED STM32 HAL Example.
+ * @brief SyntropicOS WS2812B Smart Addressable RGB LED STM32 HAL Example.
  *
- * Demonstrates non-blocking GPIO status LED heartbeat (`syn_led_toggle`),
- * WS2812B addressable RGB LED strip pixel buffer setup (`syn_smartled_init`),
- * HSV color wheel animation (`syn_smartled_set_pixel_hsv`), and master brightness
- * control (`syn_smartled_set_brightness`) using STM32 HAL drivers.
+ * Demonstrates WS2812B addressable RGB LED strip pixel buffer setup (`syn_smartled_init`),
+ * HSV color wheel animation (`syn_smartled_set_pixel_hsv`), color fills (`syn_smartled_fill_rgb`),
+ * and master brightness control (`syn_smartled_set_brightness`) using STM32 HAL drivers.
  */
 
 #include "syntropic/syntropic.h"
 #include "stm32f4xx_hal.h" /* Replace with target header (stm32f1xx_hal.h / stm32g4xx_hal.h) */
 
-/* Hardware Pin Definitions */
-#define STATUS_LED_PORT GPIOA
-#define STATUS_LED_PIN  GPIO_PIN_0
-
+/* Pin Definitions for WS2812B Data Output */
 #define SMARTLED_DATA_PORT GPIOA
 #define SMARTLED_DATA_PIN  GPIO_PIN_8
 
 #define NUM_SMART_LEDS 8
 
-/* SyntropicOS Driver Instances */
-static SYN_LED status_led;
+/* SyntropicOS Driver Handle & Buffer */
 static SYN_SmartLED smart_led_strip;
 static SYN_SmartLEDColor pixel_buffer[NUM_SMART_LEDS];
 
@@ -29,14 +24,12 @@ static SYN_SmartLEDColor pixel_buffer[NUM_SMART_LEDS];
 typedef struct {
     uint8_t  hue_offset;
     uint8_t  master_brightness;
-    uint32_t last_led_toggle_tick;
     uint32_t last_anim_tick;
 } Animation_State;
 
 static Animation_State anim = {
     .hue_offset = 0,
     .master_brightness = 128, /* 50% Master Brightness */
-    .last_led_toggle_tick = 0,
     .last_anim_tick = 0
 };
 
@@ -52,14 +45,11 @@ static void flush_smartled_hardware_buffer(const SYN_SmartLED *strip)
 }
 
 /**
- * @brief Initialize Standard LED and WS2812B Smart LED Strip.
+ * @brief Initialize WS2812B Smart LED Strip.
  */
 void smartled_app_init(void)
 {
-    /* 1. Initialize Standard Status GPIO LED (Active High) */
-    syn_led_init(&status_led, (SYN_GPIO_Pin)STATUS_LED_PIN, SYN_LED_ACTIVE_HIGH);
-
-    /* 2. Initialize 8-Pixel WS2812B Smart LED Strip (GRB Color Order) */
+    /* Initialize 8-Pixel WS2812B Smart LED Strip (GRB Color Order) */
     syn_smartled_init(&smart_led_strip, (SYN_GPIO_Pin)SMARTLED_DATA_PIN,
                       NUM_SMART_LEDS, pixel_buffer, SYN_SMARTLED_ORDER_GRB);
 
@@ -72,23 +62,12 @@ void smartled_app_init(void)
 }
 
 /**
- * @brief Periodic 20ms Task (50Hz frame rate for Smart LED & 1Hz Status LED heartbeat).
+ * @brief Periodic 20ms Task (50Hz frame rate for Smart LED rainbow animation).
  */
 void smartled_app_task_20ms(void)
 {
     uint32_t now = syn_port_get_tick_ms();
 
-    /* 1. Status LED Heartbeat (Toggle every 500ms -> 1Hz) */
-    if ((now - anim.last_led_toggle_tick) >= 500U) {
-        anim.last_led_toggle_tick = now;
-        syn_led_toggle(&status_led);
-
-        /* Write GPIO physical output state */
-        HAL_GPIO_WritePin(STATUS_LED_PORT, STATUS_LED_PIN,
-                          status_led.is_on ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    }
-
-    /* 2. WS2812B HSV Rainbow Animation Frame (50Hz) */
     if ((now - anim.last_anim_tick) >= 20U) {
         anim.last_anim_tick = now;
 

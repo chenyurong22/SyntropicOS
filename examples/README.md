@@ -33,7 +33,9 @@ This directory contains bare-metal C and MCU HAL example projects demonstrating 
 - **[`SerialCLI`](SerialCLI)** — Generic serial command-line interpreter over UART.
 - **[`stm32_encoder_button`](stm32_encoder_button)** — EC11 Rotary Encoder & push-button debounced menu controller.
 - **[`stm32_joystick`](stm32_joystick)** — Dual-axis analog joystick ADC sampler & 8-way D-Pad decoder.
+- **[`stm32_keypad`](stm32_keypad)** — 4x4 Matrix keypad scanner & PIN security entry.
 - **[`stm32_button`](stm32_button)** — Multi-tap button gesture & combo handler.
+
 
 - **[`stm32_spsc_usart`](stm32_spsc_usart)** — Single-Producer Single-Consumer lock-free ring queue for USART RX ISR.
 - **[`stm32_ringbuf_usart`](stm32_ringbuf_usart)** — Non-blocking ring buffer USART RX ingestion.

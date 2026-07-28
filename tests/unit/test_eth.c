@@ -13,6 +13,25 @@ static const uint8_t PEER_MAC[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x02};
 static const uint32_t MY_IP = 0xC0A80164;   /* 192.168.1.100 */
 static const uint32_t PEER_IP = 0xC0A801C8; /* 192.168.1.200 */
 
+void test_eth_generate_mac(void)
+{
+    uint8_t uid[12] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C};
+    uint8_t mac1[6];
+    uint8_t mac2[6];
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_generate_mac(uid, 12, mac1));
+    TEST_ASSERT_EQUAL_UINT8(0x02, mac1[0]); /* Bit 1 set -> Locally Administered MAC */
+
+    /* Deterministic: Same UID produces exact same MAC */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_generate_mac(uid, 12, mac2));
+    TEST_ASSERT_EQUAL_INT(0, memcmp(mac1, mac2, 6));
+
+    /* Different UID produces different MAC */
+    uid[0] = 0xFF;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_generate_mac(uid, 12, mac2));
+    TEST_ASSERT_NOT_EQUAL(0, memcmp(mac1, mac2, 6));
+}
+
 void test_eth_init(void)
 {
     SYN_ETH eth;

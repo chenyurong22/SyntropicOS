@@ -71,6 +71,16 @@ typedef struct {
 } SYN_ETH;
 
 /**
+ * @brief Generate a deterministic Locally Administered MAC address from MCU Unique ID.
+ *
+ * @param uid_bytes Pointer to hardware unique ID bytes (e.g. STM32 96-bit UID).
+ * @param uid_len   Length of unique ID in bytes.
+ * @param mac_out   Output buffer to receive generated 6-byte MAC address.
+ * @return SYN_OK on success.
+ */
+SYN_Status syn_eth_generate_mac(const void *uid_bytes, size_t uid_len, uint8_t mac_out[6]);
+
+/**
  * @brief Initialize Native Ethernet Engine.
  *
  * @param eth     Pointer to Ethernet instance.

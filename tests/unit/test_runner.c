@@ -625,10 +625,15 @@ int main(void)
     RUN_TEST(test_blackbox_varint);
     RUN_TEST(test_blackbox_encode_intra_and_delta);
     RUN_TEST(test_blackbox_null_checks);
+    extern void test_usb_cdc_null_checks(void);
+    extern void test_eth_generate_mac(void);
+    extern void test_eth_init(void);
+
     RUN_TEST(test_usb_cdc_init);
     RUN_TEST(test_usb_cdc_setup_requests);
     RUN_TEST(test_usb_cdc_read_write);
     RUN_TEST(test_usb_cdc_null_checks);
+    RUN_TEST(test_eth_generate_mac);
     RUN_TEST(test_eth_init);
     RUN_TEST(test_eth_arp_cache);
     RUN_TEST(test_eth_build_frame);

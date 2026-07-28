@@ -5,9 +5,29 @@
 
 #include "syntropic/net/syn_eth.h"
 
+#include "syntropic/util/syn_crc.h"
+
 #include <string.h>
 
 static const uint8_t MAC_BROADCAST[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+SYN_Status syn_eth_generate_mac(const void *uid_bytes, size_t uid_len, uint8_t mac_out[6])
+{
+    if (!uid_bytes || uid_len == 0 || !mac_out) {
+        return SYN_INVALID_PARAM;
+    }
+
+    uint32_t hash = syn_crc32(uid_bytes, uid_len);
+
+    mac_out[0] = 0x02; /* Locally Administered Unicast MAC */
+    mac_out[1] = (uint8_t)(hash >> 24);
+    mac_out[2] = (uint8_t)(hash >> 16);
+    mac_out[3] = (uint8_t)(hash >> 8);
+    mac_out[4] = (uint8_t)(hash);
+    mac_out[5] = (uint8_t)((hash >> 24) ^ (hash & 0xFF));
+
+    return SYN_OK;
+}
 
 SYN_Status syn_eth_init(SYN_ETH *eth, const uint8_t mac_addr[6], uint32_t ip_addr)
 {

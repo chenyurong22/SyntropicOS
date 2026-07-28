@@ -385,6 +385,11 @@ extern "C" {
 #include "proto/syn_dali.h"
 #endif
 
+#if !defined(SYN_USE_BACNET) || SYN_USE_BACNET
+#include "proto/syn_bacnet.h"
+#endif
+
+
 #if !defined(SYN_USE_SMBUS) || SYN_USE_SMBUS
 #include "proto/syn_smbus.h"
 #endif

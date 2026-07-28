@@ -116,6 +116,8 @@ void run_dmx512_tests(void);
 void run_isotp_tests(void);
 void run_lin_tests(void);
 void run_dali_tests(void);
+void run_bacnet_tests(void);
+
 void run_ir_tests(void);
 void run_j1939_tests(void);
 void run_n2k_tests(void);
@@ -268,6 +270,8 @@ int main(void)
     run_cobs_tests();
     run_lin_tests();
     run_dali_tests();
+    run_bacnet_tests();
+
     run_ir_tests();
 
     /* Storage / Config */

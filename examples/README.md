@@ -35,7 +35,9 @@ This directory contains bare-metal C and MCU HAL example projects demonstrating 
 - **[`stm32_joystick`](stm32_joystick)** — Dual-axis analog joystick ADC sampler & 8-way D-Pad decoder.
 - **[`stm32_keypad`](stm32_keypad)** — 4x4 Matrix keypad scanner & PIN security entry.
 - **[`stm32_touch_key`](stm32_touch_key)** — 4-channel capacitive touch sensing key pad & baseline calibration.
+- **[`stm32_dipswitch`](stm32_dipswitch)** — 8-position DIP switch address reader & baud rate selector.
 - **[`stm32_button`](stm32_button)** — Multi-tap button gesture & combo handler.
+
 
 
 

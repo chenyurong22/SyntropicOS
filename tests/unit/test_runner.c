@@ -523,6 +523,12 @@ int main(void)
     extern void test_usb_cdc_setup_requests(void);
     extern void test_usb_cdc_read_write(void);
     extern void test_usb_cdc_null_checks(void);
+    extern void test_eth_init(void);
+    extern void test_eth_arp_cache(void);
+    extern void test_eth_build_frame(void);
+    extern void test_eth_process_arp_request(void);
+    extern void test_eth_coroutine_pt(void);
+    extern void test_eth_null_checks(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -595,6 +601,12 @@ int main(void)
     RUN_TEST(test_usb_cdc_setup_requests);
     RUN_TEST(test_usb_cdc_read_write);
     RUN_TEST(test_usb_cdc_null_checks);
+    RUN_TEST(test_eth_init);
+    RUN_TEST(test_eth_arp_cache);
+    RUN_TEST(test_eth_build_frame);
+    RUN_TEST(test_eth_process_arp_request);
+    RUN_TEST(test_eth_coroutine_pt);
+    RUN_TEST(test_eth_null_checks);
 
     return UNITY_END();
 }

@@ -461,6 +461,10 @@ extern "C" {
 #include "drivers/syn_usb_cdc.h"
 #endif
 
+#if !defined(SYN_USE_ETH) || SYN_USE_ETH
+#include "net/syn_eth.h"
+#endif
+
 #if !defined(SYN_USE_NMEA) || SYN_USE_NMEA
 #include "proto/syn_nmea.h"
 #endif

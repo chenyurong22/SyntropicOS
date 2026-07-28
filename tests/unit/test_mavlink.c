@@ -55,7 +55,7 @@ void test_mavlink_null_and_crc_error(void)
     syn_mavlink_init(&parser);
 
     /* Corrupt packet (12 bytes: 10 header + 2 bad CRC bytes) */
-    uint8_t buf[12] = { 0xFD, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0xFF, 0xFF };
+    uint8_t buf[12] = {0xFD, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0xFF, 0xFF};
     SYN_Status status = SYN_BUSY;
     for (int i = 0; i < 11; i++) {
         status = syn_mavlink_parse_byte(&parser, buf[i], NULL);

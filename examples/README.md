@@ -36,7 +36,9 @@ This directory contains bare-metal C and MCU HAL example projects demonstrating 
 - **[`stm32_keypad`](stm32_keypad)** — 4x4 Matrix keypad scanner & PIN security entry.
 - **[`stm32_touch_key`](stm32_touch_key)** — 4-channel capacitive touch sensing key pad & baseline calibration.
 - **[`stm32_dipswitch`](stm32_dipswitch)** — 8-position DIP switch address reader & baud rate selector.
+- **[`stm32_soft_pwm`](stm32_soft_pwm)** — Multi-channel software PWM LED dimmer & motor driver.
 - **[`stm32_button`](stm32_button)** — Multi-tap button gesture & combo handler.
+
 
 
 

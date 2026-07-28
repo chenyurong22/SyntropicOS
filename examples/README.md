@@ -65,11 +65,13 @@ This directory contains bare-metal C and MCU HAL example projects demonstrating 
 
 ### DSP & Motion Control
 - **[`stm32_stepper`](stm32_stepper)** — Stepper motor trapezoidal speed ramp & position controller.
+- **[`stm32_servo`](stm32_servo)** — RC servo motor 50Hz PWM pulse-width & smooth angle ramp controller.
 - **[`MotionPlanner`](MotionPlanner)** — Trapezoidal S-curve motor motion planner.
 - **[`MotorFSM`](MotorFSM)** — Finite state machine controlling a DC motor ramp profile.
 - **[`PID_TempControl`](PID_TempControl)** — Closed-loop integer PID temperature controller.
 - **[`BiquadFilter`](BiquadFilter)** — Audio & sensor digital biquad IIR filtering.
 - **[`FftSpectrumAnalyzer`](FftSpectrumAnalyzer)** — Real-time FFT spectral decomposition.
+
 
 
 ### IoT & Network Protocol Stacks

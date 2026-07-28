@@ -71,5 +71,7 @@ Quick-jump to specific feature guides and API references:
 ## Getting Started & Platform Guides
 
 - **[Getting Started Guide](getting-started.md)** — Step-by-step setup for C99 CMake & Makefile projects.
+- **[IDE Integration & Setup Guides](ide-guides.md)** — Step-by-step setup for STM32CubeIDE, VS Code, Keil MDK, IAR, and Arduino.
 - **[Arduino Compatibility Guide](arduino.md)** — Installing via Library Manager and working with Multi-Tab sketch examples.
 - **[Porting & System Integration](porting-guide.md)** — Implementing custom GPIO, UART, and timer tick ports.
+

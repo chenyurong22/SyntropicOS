@@ -55,9 +55,11 @@ flowchart TD
 
 - 📖 **[Documentation Hub](https://outlookhazy.github.io/SyntropicOS/)** — Complete online documentation & API reference.
 - 🚀 **[Getting Started Guide](https://outlookhazy.github.io/SyntropicOS/getting-started/)** — CMake, Makefile, and C99 bare-metal setup.
+- 🛠️ **[IDE Integration Guides](https://outlookhazy.github.io/SyntropicOS/ide-guides/)** — STM32CubeIDE, VS Code, Keil MDK, IAR, and Arduino IDE setup.
 - 🔌 **[Arduino Compatibility Guide](https://outlookhazy.github.io/SyntropicOS/arduino/)** — Arduino Library Manager installation & IDE setup.
 - 🔧 **[MCU Porting Guide](https://outlookhazy.github.io/SyntropicOS/porting-guide/)** — Implementing custom HAL ports (`syn_port_*`).
 - 🧪 **[Testing & Containerization Guide](https://outlookhazy.github.io/SyntropicOS/testing/)** — Unity unit tests, QEMU emulation, sanitizers, and integration daemons.
+
 
 ### Module Guides
 - ⚡ **[Core & Multitasking](https://outlookhazy.github.io/SyntropicOS/modules/multitasking/)** — Protothreads, Task Scheduler, Active Objects, Workqueues.

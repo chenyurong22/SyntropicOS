@@ -465,6 +465,10 @@ extern "C" {
 #include "net/syn_eth.h"
 #endif
 
+#if !defined(SYN_USE_DHCP) || SYN_USE_DHCP
+#include "net/syn_dhcp.h"
+#endif
+
 #if !defined(SYN_USE_NMEA) || SYN_USE_NMEA
 #include "proto/syn_nmea.h"
 #endif

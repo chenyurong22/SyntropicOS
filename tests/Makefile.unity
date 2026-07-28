@@ -132,6 +132,7 @@ SYN_SRCS := \
 	src/syntropic/log/syn_blackbox.c \
 	src/syntropic/drivers/syn_usb_cdc.c \
 	src/syntropic/net/syn_eth.c \
+	src/syntropic/net/syn_dhcp.c \
 	src/syntropic/util/syn_nn.c \
 	src/syntropic/util/syn_dsp.c
 

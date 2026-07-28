@@ -1,0 +1,156 @@
+/**
+ * @file test_dhcp.c
+ * @brief Unit tests for Zero-Heap Native DHCP Client Protocol Engine.
+ */
+
+#include "syntropic/net/syn_dhcp.h"
+#include "unity/unity.h"
+
+#include <string.h>
+
+static const uint8_t MAC[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01};
+static const uint32_t XID = 0x87654321UL;
+
+void test_dhcp_init(void)
+{
+    SYN_DHCP dhcp;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_init(&dhcp, XID));
+    TEST_ASSERT_EQUAL_INT(SYN_DHCP_STATE_INIT, dhcp.state);
+    TEST_ASSERT_EQUAL_UINT32(XID, dhcp.xid);
+}
+
+void test_dhcp_build_discover(void)
+{
+    SYN_DHCP dhcp;
+    syn_dhcp_init(&dhcp, XID);
+
+    uint8_t buf[300];
+    size_t len = 0;
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_build_discover(&dhcp, MAC, buf, &len));
+    TEST_ASSERT_EQUAL_INT(SYN_DHCP_STATE_DISCOVER, dhcp.state);
+    TEST_ASSERT_EQUAL_UINT32(1, dhcp.discovers_sent);
+    TEST_ASSERT_GREATER_OR_EQUAL(244, len);
+
+    /* Verify BOOTP Header */
+    TEST_ASSERT_EQUAL_UINT8(1, buf[0]); /* op = Boot Request */
+    TEST_ASSERT_EQUAL_UINT8(1, buf[1]); /* htype = Ethernet */
+    TEST_ASSERT_EQUAL_UINT8(6, buf[2]); /* hlen = 6 */
+
+    /* Verify Magic Cookie (0x63, 0x82, 0x53, 0x63) */
+    TEST_ASSERT_EQUAL_UINT8(0x63, buf[236]);
+    TEST_ASSERT_EQUAL_UINT8(0x82, buf[237]);
+    TEST_ASSERT_EQUAL_UINT8(0x53, buf[238]);
+    TEST_ASSERT_EQUAL_UINT8(0x63, buf[239]);
+
+    /* Verify Option 53 = DHCPDISCOVER (1) */
+    TEST_ASSERT_EQUAL_UINT8(53, buf[240]);
+    TEST_ASSERT_EQUAL_UINT8(1, buf[241]);
+    TEST_ASSERT_EQUAL_UINT8(1, buf[242]);
+}
+
+void test_dhcp_process_offer_and_ack(void)
+{
+    SYN_DHCP dhcp;
+    SYN_ETH eth;
+    syn_eth_init(&eth, MAC, 0);
+    syn_dhcp_init(&dhcp, XID);
+
+    /* Construct DHCPOFFER payload */
+    uint8_t offer_pkt[300] = {0};
+    offer_pkt[0] = 2; /* Boot Reply */
+    offer_pkt[1] = 1;
+    offer_pkt[2] = 6;
+    /* XID */
+    offer_pkt[4] = (uint8_t)(XID >> 24);
+    offer_pkt[5] = (uint8_t)(XID >> 16);
+    offer_pkt[6] = (uint8_t)(XID >> 8);
+    offer_pkt[7] = (uint8_t)(XID);
+    /* yiaddr = 192.168.1.150 (0xC0A80196) */
+    offer_pkt[16] = 192;
+    offer_pkt[17] = 168;
+    offer_pkt[18] = 1;
+    offer_pkt[19] = 150;
+    /* Magic Cookie */
+    offer_pkt[236] = 0x63;
+    offer_pkt[237] = 0x82;
+    offer_pkt[238] = 0x53;
+    offer_pkt[239] = 0x63;
+
+    /* Options: Option 53 = DHCPOFFER (2), Option 1 = Netmask (255.255.255.0), Option 3 = Gateway
+     * (192.168.1.1), Option 255 = END */
+    size_t idx = 240;
+    offer_pkt[idx++] = 53;
+    offer_pkt[idx++] = 1;
+    offer_pkt[idx++] = SYN_DHCP_OFFER;
+    offer_pkt[idx++] = 1;
+    offer_pkt[idx++] = 4;
+    offer_pkt[idx++] = 255;
+    offer_pkt[idx++] = 255;
+    offer_pkt[idx++] = 255;
+    offer_pkt[idx++] = 0;
+    offer_pkt[idx++] = 3;
+    offer_pkt[idx++] = 4;
+    offer_pkt[idx++] = 192;
+    offer_pkt[idx++] = 168;
+    offer_pkt[idx++] = 1;
+    offer_pkt[idx++] = 1;
+    offer_pkt[idx++] = 255;
+
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, &eth, offer_pkt, idx));
+    TEST_ASSERT_EQUAL_INT(SYN_DHCP_STATE_OFFER, dhcp.state);
+    TEST_ASSERT_EQUAL_UINT32(0xC0A80196, dhcp.offered_ip);
+
+    /* Build DHCPREQUEST */
+    uint8_t req_buf[300];
+    size_t req_len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_build_request(&dhcp, MAC, req_buf, &req_len));
+    TEST_ASSERT_EQUAL_INT(SYN_DHCP_STATE_REQUEST, dhcp.state);
+
+    /* Construct DHCPACK payload */
+    uint8_t ack_pkt[300] = {0};
+    memcpy(ack_pkt, offer_pkt, idx);
+    ack_pkt[242] = SYN_DHCP_ACK; /* Option 53 = DHCPACK (5) */
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_process_packet(&dhcp, &eth, ack_pkt, idx));
+    TEST_ASSERT_EQUAL_INT(SYN_DHCP_STATE_BOUND, dhcp.state);
+    TEST_ASSERT_EQUAL_UINT32(1, dhcp.acks_received);
+
+    /* Verify Ethernet interface IP address updated automatically */
+    TEST_ASSERT_EQUAL_UINT32(0xC0A80196, eth.ip_addr);
+    TEST_ASSERT_EQUAL_UINT32(0xFFFFFF00, eth.netmask);
+    TEST_ASSERT_EQUAL_UINT32(0xC0A80101, eth.gateway);
+}
+
+static SYN_PT_Status dhcp_coroutine_task(SYN_PT *pt, SYN_DHCP *dhcp)
+{
+    PT_BEGIN(pt);
+    PT_DHCP_WAIT_BOUND(pt, dhcp);
+    PT_END(pt);
+}
+
+void test_dhcp_coroutine_pt(void)
+{
+    SYN_DHCP dhcp;
+    syn_dhcp_init(&dhcp, XID);
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+
+    /* First step: DHCP state != BOUND -> coroutine yields (PT_WAITING) */
+    TEST_ASSERT_EQUAL_INT(PT_WAITING, dhcp_coroutine_task(&pt, &dhcp));
+
+    /* Simulate binding completion */
+    dhcp.state = SYN_DHCP_STATE_BOUND;
+
+    /* Second step: DHCP state == BOUND -> coroutine completes (PT_EXITED) */
+    TEST_ASSERT_EQUAL_INT(PT_EXITED, dhcp_coroutine_task(&pt, &dhcp));
+}
+
+void test_dhcp_null_checks(void)
+{
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_init(NULL, 0));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_build_discover(NULL, NULL, NULL, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_build_request(NULL, NULL, NULL, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_process_packet(NULL, NULL, NULL, 0));
+}

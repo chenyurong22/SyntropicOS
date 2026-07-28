@@ -533,6 +533,11 @@ int main(void)
     extern void test_eth_mac_filtering(void);
     extern void test_eth_arp_cache_eviction_overflow(void);
     extern void test_eth_multiprotocol_interleaving(void);
+    extern void test_dhcp_init(void);
+    extern void test_dhcp_build_discover(void);
+    extern void test_dhcp_process_offer_and_ack(void);
+    extern void test_dhcp_coroutine_pt(void);
+    extern void test_dhcp_null_checks(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -615,6 +620,11 @@ int main(void)
     RUN_TEST(test_eth_mac_filtering);
     RUN_TEST(test_eth_arp_cache_eviction_overflow);
     RUN_TEST(test_eth_multiprotocol_interleaving);
+    RUN_TEST(test_dhcp_init);
+    RUN_TEST(test_dhcp_build_discover);
+    RUN_TEST(test_dhcp_process_offer_and_ack);
+    RUN_TEST(test_dhcp_coroutine_pt);
+    RUN_TEST(test_dhcp_null_checks);
 
     return UNITY_END();
 }

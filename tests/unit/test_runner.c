@@ -666,6 +666,8 @@ int main(void)
     RUN_TEST(test_netcfg_null_checks);
     extern void test_igmp_group_overflow_and_leaving_unjoined(void);
     extern void test_igmp_non_igmp_packets(void);
+    extern void run_bacnet_tests(void);
+    extern void run_modbus_master_tests(void);
 
     RUN_TEST(test_igmp_init);
     RUN_TEST(test_igmp_join_and_leave);
@@ -673,6 +675,9 @@ int main(void)
     RUN_TEST(test_igmp_null_checks);
     RUN_TEST(test_igmp_group_overflow_and_leaving_unjoined);
     RUN_TEST(test_igmp_non_igmp_packets);
+
+    run_bacnet_tests();
+    run_modbus_master_tests();
 
     return UNITY_END();
 

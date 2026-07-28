@@ -74,6 +74,78 @@ static void test_bacnet_node_who_is_process(void)
     TEST_ASSERT_EQUAL_UINT8(SYN_BACNET_SERVICE_UNCONFIRMED_I_AM, tx_frame.payload[1]);
 }
 
+static void test_bacnet_poll_for_master(void)
+{
+    SYN_BACnet_Node node;
+    syn_bacnet_node_init(&node, 10, 100);
+
+    SYN_BACnet_MSTP_Frame req = {.frame_type = SYN_BACNET_MSTP_FRAME_POLL_FOR_MASTER,
+                                 .destination_mac = 10,
+                                 .source_mac = 2,
+                                 .data_len = 0};
+
+    SYN_BACnet_MSTP_Frame tx_frame;
+    bool has_tx = false;
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_bacnet_node_process(&node, &req, &tx_frame, &has_tx));
+    TEST_ASSERT_TRUE(has_tx);
+    TEST_ASSERT_EQUAL_UINT8(SYN_BACNET_MSTP_FRAME_REPLY_TO_POLL_FOR_MASTER, tx_frame.frame_type);
+    TEST_ASSERT_EQUAL_UINT8(2, tx_frame.destination_mac);
+    TEST_ASSERT_EQUAL_UINT8(10, tx_frame.source_mac);
+}
+
+static void test_bacnet_read_property(void)
+{
+    SYN_BACnet_Node node;
+    syn_bacnet_node_init(&node, 7, 700);
+    syn_bacnet_add_object(&node, SYN_BACNET_OBJ_ANALOG_INPUT, 1, 42.0f, "TempSensor");
+
+    /* Object 0 present_value read */
+    node.objects[0].present_value = 42.0f;
+
+    SYN_BACnet_MSTP_Frame req = {.frame_type = SYN_BACNET_MSTP_FRAME_DATA_EXPECTING_REPLY,
+                                 .destination_mac = 7,
+                                 .source_mac = 3,
+                                 .data_len = 2,
+                                 .payload = {0x00, SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY}};
+
+    SYN_BACnet_MSTP_Frame tx_frame;
+    bool has_tx = false;
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_bacnet_node_process(&node, &req, &tx_frame, &has_tx));
+    TEST_ASSERT_TRUE(has_tx);
+    TEST_ASSERT_EQUAL_UINT8(3, tx_frame.destination_mac);
+    TEST_ASSERT_EQUAL_UINT8(SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY, tx_frame.payload[2]);
+
+    float val = 0.0f;
+    memcpy(&val, &tx_frame.payload[4], sizeof(float));
+    TEST_ASSERT_EQUAL_FLOAT(42.0f, val);
+}
+
+static void test_bacnet_edge_cases_and_nulls(void)
+{
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_bacnet_node_init(NULL, 1, 1));
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_bacnet_add_object(NULL, 0, 0, 0.0f, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_bacnet_node_process(NULL, NULL, NULL, NULL));
+
+    SYN_BACnet_Node node;
+    syn_bacnet_node_init(&node, 5, 50);
+
+    /* Mismatched destination MAC -> ignored */
+    SYN_BACnet_MSTP_Frame req_mismatch = {.destination_mac = 99};
+    SYN_BACnet_MSTP_Frame tx_frame;
+    bool has_tx = false;
+    TEST_ASSERT_EQUAL_INT(SYN_OK,
+                          syn_bacnet_node_process(&node, &req_mismatch, &tx_frame, &has_tx));
+    TEST_ASSERT_FALSE(has_tx);
+
+    /* Token frame -> ignored */
+    SYN_BACnet_MSTP_Frame req_token = {.frame_type = SYN_BACNET_MSTP_FRAME_TOKEN,
+                                       .destination_mac = 5};
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_bacnet_node_process(&node, &req_token, &tx_frame, &has_tx));
+    TEST_ASSERT_FALSE(has_tx);
+}
+
 void run_bacnet_tests(void)
 {
     RUN_TEST(test_bacnet_crc8);
@@ -81,4 +153,7 @@ void run_bacnet_tests(void)
     RUN_TEST(test_bacnet_mstp_frame_roundtrip);
     RUN_TEST(test_bacnet_node_init_and_objects);
     RUN_TEST(test_bacnet_node_who_is_process);
+    RUN_TEST(test_bacnet_poll_for_master);
+    RUN_TEST(test_bacnet_read_property);
+    RUN_TEST(test_bacnet_edge_cases_and_nulls);
 }

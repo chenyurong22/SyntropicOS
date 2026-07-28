@@ -365,6 +365,112 @@ static void test_modbus_master_queue(void)
     TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_IDLE, master.state);
 }
 
+static void test_modbus_master_queue_fc_variants(void)
+{
+    SYN_ModbusMaster master;
+    syn_modbus_master_init(&master, 500);
+
+    SYN_ModbusMasterQueue q;
+    syn_modbus_master_queue_init(&q, 2);
+
+    /* READ_INPUT */
+    SYN_ModbusMasterQuery q1 = {
+        .slave_addr = 1, .func_code = SYN_MB_FC_READ_INPUT, .start_addr = 0, .count = 1};
+    syn_modbus_master_queue_push(&q, &q1);
+    syn_modbus_master_queue_step(&master, &q, 0);
+    TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_WAITING_RESPONSE, master.state);
+
+    uint8_t r1[7] = {1, 4, 2, 0, 99, 0, 0};
+    uint16_t crc = syn_crc16_modbus(r1, 5);
+    r1[5] = (uint8_t)(crc & 0xFF);
+    r1[6] = (uint8_t)(crc >> 8);
+    for (int i = 0; i < 7; i++)
+        syn_modbus_master_feed(&master, r1[i]);
+    syn_modbus_master_queue_step(&master, &q, 10);
+    TEST_ASSERT_EQUAL(0, q.count);
+
+    /* WRITE_SINGLE */
+    syn_modbus_master_init(&master, 500);
+    SYN_ModbusMasterQuery q2 = {
+        .slave_addr = 1, .func_code = SYN_MB_FC_WRITE_SINGLE, .start_addr = 0, .write_value = 123};
+    syn_modbus_master_queue_push(&q, &q2);
+    syn_modbus_master_queue_step(&master, &q, 0);
+    TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_WAITING_RESPONSE, master.state);
+
+    uint8_t r2[8] = {1, 6, 0, 0, 0, 123, 0, 0};
+    crc = syn_crc16_modbus(r2, 6);
+    r2[6] = (uint8_t)(crc & 0xFF);
+    r2[7] = (uint8_t)(crc >> 8);
+    for (int i = 0; i < 8; i++)
+        syn_modbus_master_feed(&master, r2[i]);
+    syn_modbus_master_queue_step(&master, &q, 10);
+    TEST_ASSERT_EQUAL(0, q.count);
+
+    /* READ_COILS */
+    syn_modbus_master_init(&master, 500);
+    SYN_ModbusMasterQuery q3 = {
+        .slave_addr = 1, .func_code = SYN_MB_FC_READ_COILS, .start_addr = 0, .count = 8};
+    syn_modbus_master_queue_push(&q, &q3);
+    syn_modbus_master_queue_step(&master, &q, 0);
+    TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_WAITING_RESPONSE, master.state);
+
+    uint8_t r3[6] = {1, 1, 1, 0x01, 0, 0};
+    crc = syn_crc16_modbus(r3, 4);
+    r3[4] = (uint8_t)(crc & 0xFF);
+    r3[5] = (uint8_t)(crc >> 8);
+    for (int i = 0; i < 6; i++)
+        syn_modbus_master_feed(&master, r3[i]);
+    syn_modbus_master_queue_step(&master, &q, 10);
+    TEST_ASSERT_EQUAL(0, q.count);
+
+    /* READ_DISCRETE_INPUTS */
+    syn_modbus_master_init(&master, 500);
+    SYN_ModbusMasterQuery q4 = {
+        .slave_addr = 1, .func_code = SYN_MB_FC_READ_DISCRETE_INPUTS, .start_addr = 0, .count = 8};
+    syn_modbus_master_queue_push(&q, &q4);
+    syn_modbus_master_queue_step(&master, &q, 0);
+    TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_WAITING_RESPONSE, master.state);
+
+    uint8_t r4[6] = {1, 2, 1, 0x01, 0, 0};
+    crc = syn_crc16_modbus(r4, 4);
+    r4[4] = (uint8_t)(crc & 0xFF);
+    r4[5] = (uint8_t)(crc >> 8);
+    for (int i = 0; i < 6; i++)
+        syn_modbus_master_feed(&master, r4[i]);
+    syn_modbus_master_queue_step(&master, &q, 10);
+    TEST_ASSERT_EQUAL(0, q.count);
+}
+
+static void test_modbus_master_queue_retries(void)
+{
+    SYN_ModbusMaster master;
+    syn_modbus_master_init(&master, 100); /* 100ms timeout */
+
+    SYN_ModbusMasterQueue q;
+    syn_modbus_master_queue_init(&q, 1); /* 1 retry */
+
+    SYN_ModbusMasterQuery qry = {
+        .slave_addr = 1, .func_code = SYN_MB_FC_READ_HOLDING, .start_addr = 0, .count = 1};
+    syn_modbus_master_queue_push(&q, &qry);
+
+    syn_modbus_master_queue_step(&master, &q, 1000);
+    TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_WAITING_RESPONSE, master.state);
+
+    /* Timeout at 1150ms -> increments retry_count to 1, sets state to IDLE */
+    syn_modbus_master_queue_step(&master, &q, 1150);
+    TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_IDLE, master.state);
+    TEST_ASSERT_EQUAL(1, q.retry_count);
+
+    /* Step again at 1150ms -> re-transmits query, sets state to WAITING_RESPONSE */
+    syn_modbus_master_queue_step(&master, &q, 1150);
+    TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_WAITING_RESPONSE, master.state);
+
+    /* Timeout second time at 1300ms -> retry count exhausted, query popped, returns to IDLE */
+    syn_modbus_master_queue_step(&master, &q, 1300);
+    TEST_ASSERT_EQUAL(0, q.count);
+    TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_IDLE, master.state);
+}
+
 void run_modbus_master_tests(void)
 {
     RUN_TEST(test_modbus_master_read_holding);
@@ -374,4 +480,6 @@ void run_modbus_master_tests(void)
     RUN_TEST(test_modbus_master_process_edge_cases);
     RUN_TEST(test_modbus_master_new_queries);
     RUN_TEST(test_modbus_master_queue);
+    RUN_TEST(test_modbus_master_queue_fc_variants);
+    RUN_TEST(test_modbus_master_queue_retries);
 }

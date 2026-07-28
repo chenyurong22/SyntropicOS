@@ -54,6 +54,7 @@ static SYN_Status send_request(SYN_ModbusMaster *m, uint8_t slave_addr, uint8_t 
     m->rx_len = 0;
     m->read_count = 0;
     m->exception_code = 0;
+    m->request_tick_ms = 0;
 
     m->buf[0] = slave_addr;
     m->buf[1] = fc;

@@ -437,6 +437,14 @@ extern "C" {
 #include "control/syn_rc_failsafe.h"
 #endif
 
+#if !defined(SYN_USE_DSHOT_TELEMETRY) || SYN_USE_DSHOT_TELEMETRY
+#include "output/syn_dshot_telemetry.h"
+#endif
+
+#if !defined(SYN_USE_FLIGHT_PID) || SYN_USE_FLIGHT_PID
+#include "control/syn_flight_pid.h"
+#endif
+
 #if !defined(SYN_USE_NMEA) || SYN_USE_NMEA
 #include "proto/syn_nmea.h"
 #endif

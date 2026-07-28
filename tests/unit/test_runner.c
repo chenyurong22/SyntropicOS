@@ -497,6 +497,12 @@ int main(void)
     extern void test_rc_failsafe_init(void);
     extern void test_rc_failsafe_timeout_trigger(void);
     extern void test_rc_failsafe_null_and_error(void);
+    extern void test_dshot_gcr_decode(void);
+    extern void test_dshot_telemetry_erpm_parsing(void);
+    extern void test_flight_init(void);
+    extern void test_flight_hover(void);
+    extern void test_flight_roll_correction(void);
+    extern void test_flight_null_and_bounds(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -547,6 +553,12 @@ int main(void)
     RUN_TEST(test_rc_failsafe_init);
     RUN_TEST(test_rc_failsafe_timeout_trigger);
     RUN_TEST(test_rc_failsafe_null_and_error);
+    RUN_TEST(test_dshot_gcr_decode);
+    RUN_TEST(test_dshot_telemetry_erpm_parsing);
+    RUN_TEST(test_flight_init);
+    RUN_TEST(test_flight_hover);
+    RUN_TEST(test_flight_roll_correction);
+    RUN_TEST(test_flight_null_and_bounds);
 
     return UNITY_END();
 }

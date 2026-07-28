@@ -28,6 +28,9 @@ SyntropicOS is a zero-overhead, production-grade C99 framework designed for deep
 
 ## System Architecture
 
+> [!NOTE]
+> *If the Mermaid architecture diagram below fails to render on first load, please refresh your browser (GitHub's client-side Mermaid renderer occasionally takes a coffee break).*
+
 ```mermaid
 flowchart TD
     App["Application Logic & Callbacks"] --> Modules["SyntropicOS Non-Blocking State Machine Modules"]

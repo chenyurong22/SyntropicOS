@@ -31,6 +31,7 @@ This directory contains bare-metal C and MCU HAL example projects demonstrating 
 ### Microcontroller Peripheral HAL & CLI Shell
 - **[`stm32_cli_shell`](stm32_cli_shell)** — Interactive USART CLI Shell (`led`, `status`, `temp`).
 - **[`SerialCLI`](SerialCLI)** — Generic serial command-line interpreter over UART.
+- **[`stm32_rtc`](stm32_rtc)** — Real-Time Clock (RTC) perpetual calendar & USART protocol reader/setter.
 - **[`stm32_encoder_button`](stm32_encoder_button)** — EC11 Rotary Encoder & push-button debounced menu controller.
 - **[`stm32_joystick`](stm32_joystick)** — Dual-axis analog joystick ADC sampler & 8-way D-Pad decoder.
 - **[`stm32_keypad`](stm32_keypad)** — 4x4 Matrix keypad scanner & PIN security entry.
@@ -41,6 +42,7 @@ This directory contains bare-metal C and MCU HAL example projects demonstrating 
 - **[`stm32_smart_led`](stm32_smart_led)** — WS2812B / Neopixel Smart RGB LED strip rainbow animator.
 - **[`stm32_buzzer`](stm32_buzzer)** — Piezo buzzer audio tone, chime arpeggio, and siren alarm.
 - **[`stm32_button`](stm32_button)** — Multi-tap button gesture & combo handler.
+
 
 
 

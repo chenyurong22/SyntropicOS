@@ -98,36 +98,20 @@ int main(void) {
 
 ## Example Projects Directory ([`examples/`](examples/))
 
-SyntropicOS ships with hardware and SDK examples across bare-metal C, STM32 HAL, PlatformIO, and Arduino:
+SyntropicOS includes over 50 complete hardware and SDK examples across bare-metal C, STM32 HAL, PlatformIO, and Arduino. See **[`examples/README.md`](examples/README.md)** for the full categorized directory.
 
-- **[`examples/stm32_bacnet_mstp`](examples/stm32_bacnet_mstp)** — STM32 RS485 BACnet MS/TP Smart Thermostat / Sensor node.
-- **[`examples/stm32_cli_shell`](examples/stm32_cli_shell)** — STM32 HAL USART interactive CLI shell (`led`, `status`, `temp`).
-- **[`examples/stm32_encoder_button`](examples/stm32_encoder_button)** — STM32 HAL EC11 rotary encoder & push-button menu controller.
-- **[`examples/stm32_ethercat_servo`](examples/stm32_ethercat_servo)** — STM32 HAL EtherCAT (IEEE 802.3 EtherType 0x88A4) Slave node & CiA 402 drive control.
-- **[`examples/stm32_lin_bus`](examples/stm32_lin_bus)** — STM32 HAL LIN 2.1 automotive bus Master schedule table & Slave response node.
-- **[`examples/stm32_mbus_meter`](examples/stm32_mbus_meter)** — STM32 HAL M-Bus (Meter-Bus EN 13757) utility meter reader.
-- **[`examples/stm32_pmbus_power`](examples/stm32_pmbus_power)** — STM32 HAL PMBus (Power Management Bus 1.2/1.3) digital power telemetry.
-- **[`examples/stm32_smbus_battery`](examples/stm32_smbus_battery)** — STM32 HAL SMBus 2.0 Smart Battery System (SBS 1.1) telemetry & alert handler.
-- **[`examples/stm32_modbus_master`](examples/stm32_modbus_master)** — STM32 RS485 Modbus RTU Master querying slave registers.
-- **[`examples/stm32_modbus_tcp`](examples/stm32_modbus_tcp)** — STM32 HAL Modbus TCP Server (port 502) & Client (Master) in a single project.
+### Featured Example Highlights
+- **Industrial Automation**: **[`examples/stm32_modbus_tcp`](examples/stm32_modbus_tcp)** — Dual Modbus TCP Server (port 502) & Client running in a single project.
+- **Motion Control & EtherCAT**: **[`examples/stm32_ethercat_servo`](examples/stm32_ethercat_servo)** — EtherCAT Slave node & CiA 402 drive control.
+- **Automotive Fieldbus**: **[`examples/stm32_canopen`](examples/stm32_canopen)** — CANopen (CiA 301) SDO/PDO dictionary node.
+- **Smart Energy**: **[`examples/stm32_mbus_meter`](examples/stm32_mbus_meter)** — M-Bus (EN 13757) utility meter reader.
+- **Power Management**: **[`examples/stm32_pmbus_power`](examples/stm32_pmbus_power)** — PMBus 1.2/1.3 digital power telemetry & Linear11/16 decoder.
+- **Embedded Shell & UI**: **[`examples/stm32_cli_shell`](examples/stm32_cli_shell)** — Interactive USART CLI shell (`led`, `status`, `temp`).
+- **Rotary Input & Debounce**: **[`examples/stm32_encoder_button`](examples/stm32_encoder_button)** — EC11 rotary encoder & push-button gesture controller.
+- **Closed-Loop Control**: **[`examples/PID_TempControl`](examples/PID_TempControl)** — Non-blocking integer PID temperature controller.
 
+👉 *Explore all 50+ example projects in the **[Examples Directory](examples/README.md)**.*
 
-
-
-
-
-
-
-- **[`examples/stm32_dali_lighting`](examples/stm32_dali_lighting)** — STM32 DALI (IEC 62386) LED Dimmer / Control Gear node.
-- **[`examples/stm32_crypto_usart`](examples/stm32_crypto_usart)** — STM32 USART receiver with SHA-256 digest & AES-128 encryption.
-- **[`examples/stm32_spsc_usart`](examples/stm32_spsc_usart)** — STM32 USART RX interrupt ingestion using `syn_spsc_queue`.
-- **[`examples/stm32_ringbuf_usart`](examples/stm32_ringbuf_usart)** — STM32 USART RX interrupt ring buffer processing.
-- **[`examples/stm32_uart_mcu_comm`](examples/stm32_uart_mcu_comm)** — STM32 HAL single-byte UART interrupt Master/Slave packet router.
-
-- **[`examples/ButtonEvents`](examples/ButtonEvents)** — Multi-click tap gestures, long-press, and chorded button combos.
-- **[`examples/SensorLogger`](examples/SensorLogger)** — Dual-channel ADC sampling, EMA filtering, and Serial CLI.
-- **[`examples/MotorFSM`](examples/MotorFSM)** — Finite state machine controlling a DC motor ramp profile.
-- **[`examples/PID_TempControl`](examples/PID_TempControl)** — Closed-loop integer PID temperature controller.
 
 ---
 

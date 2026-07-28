@@ -97,7 +97,7 @@ SYN_Status syn_msp_parse_byte(SYN_MSP_Parser *parser, uint8_t byte, SYN_MSP_Fram
  * @return SYN_OK on success.
  */
 SYN_Status syn_msp_encode_response(uint8_t cmd, const uint8_t *payload, uint8_t len,
-                                   uint8_t *buf_out, size_t *out_len);
+                                   uint8_t *buf_out, size_t buf_size, size_t *out_len);
 
 #ifdef __cplusplus
 }

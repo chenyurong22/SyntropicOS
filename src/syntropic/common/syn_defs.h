@@ -41,6 +41,7 @@ typedef enum {
     SYN_TIMEOUT = -3,         /**< Operation timed out */
     SYN_INVALID_PARAM = -4,   /**< Invalid parameter passed */
     SYN_NOT_IMPLEMENTED = -5, /**< Function not implemented by port */
+    SYN_NOT_FOUND = -6,       /**< Requested item not found */
 } SYN_Status;
 
 /* ── GPIO types ─────────────────────────────────────────────────────────── */

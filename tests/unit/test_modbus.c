@@ -2095,6 +2095,62 @@ static void test_modbus_tight_loop_streaming(void)
     TEST_ASSERT_EQUAL_INT(9, mock_uart_tx_len);
 }
 
+static void test_modbus_truncated_frame_protection(void)
+{
+    static uint16_t holding[8] = {10, 20, 30, 40, 50, 60, 70, 80};
+    static uint8_t mb_buf[256];
+    mock_port_reset();
+
+    SYN_Modbus mb;
+    SYN_Modbus_Config cfg = {
+        .slave_addr = 1,
+        .holding_regs = holding,
+        .holding_count = 8,
+    };
+    syn_modbus_init(&mb, &cfg, mb_buf, sizeof(mb_buf));
+
+    /* Truncated FC 0x17 (Read/Write Multiple) < 13 bytes */
+    mb.buf[0] = 1;
+    mb.buf[1] = SYN_MB_FC_READ_WRITE_MULTIPLE;
+    mb.buf[2] = 0;
+    mb.buf[3] = 0;
+    mb.buf[4] = 0;
+    mb.buf[5] = 1;
+    uint16_t crc = syn_crc16_modbus(mb.buf, 6);
+    mb.buf[6] = (uint8_t)(crc & 0xFF);
+    mb.buf[7] = (uint8_t)(crc >> 8);
+    mb.rx_len = 8;
+    TEST_ASSERT_TRUE(syn_modbus_process(&mb));
+    TEST_ASSERT_EQUAL_HEX8(0x97, mock_uart_tx_buf[1]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_MB_EX_ILLEGAL_VALUE, mock_uart_tx_buf[2]);
+
+    /* Truncated FC 0x16 (Mask Write Register) < 10 bytes */
+    mock_port_reset();
+    mb.buf[0] = 1;
+    mb.buf[1] = SYN_MB_FC_MASK_WRITE_REGISTER;
+    mb.buf[2] = 0;
+    mb.buf[3] = 0;
+    crc = syn_crc16_modbus(mb.buf, 4);
+    mb.buf[4] = (uint8_t)(crc & 0xFF);
+    mb.buf[5] = (uint8_t)(crc >> 8);
+    mb.rx_len = 6;
+    TEST_ASSERT_TRUE(syn_modbus_process(&mb));
+    TEST_ASSERT_EQUAL_HEX8(0x96, mock_uart_tx_buf[1]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_MB_EX_ILLEGAL_VALUE, mock_uart_tx_buf[2]);
+
+    /* Truncated FC 0x08 (Diagnostics) < 6 bytes */
+    mock_port_reset();
+    mb.buf[0] = 1;
+    mb.buf[1] = SYN_MB_FC_DIAGNOSTICS;
+    crc = syn_crc16_modbus(mb.buf, 2);
+    mb.buf[2] = (uint8_t)(crc & 0xFF);
+    mb.buf[3] = (uint8_t)(crc >> 8);
+    mb.rx_len = 4;
+    TEST_ASSERT_TRUE(syn_modbus_process(&mb));
+    TEST_ASSERT_EQUAL_HEX8(0x88, mock_uart_tx_buf[1]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_MB_EX_ILLEGAL_VALUE, mock_uart_tx_buf[2]);
+}
+
 void run_modbus_tests(void)
 {
     RUN_TEST(test_modbus_basic);
@@ -2112,4 +2168,5 @@ void run_modbus_tests(void)
     RUN_TEST(test_modbus_new_function_codes);
     RUN_TEST(test_modbus_100_percent_coverage);
     RUN_TEST(test_modbus_tight_loop_streaming);
+    RUN_TEST(test_modbus_truncated_frame_protection);
 }

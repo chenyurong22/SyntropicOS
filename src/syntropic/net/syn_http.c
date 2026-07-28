@@ -289,6 +289,22 @@ SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
                 c->buf_used += (size_t)n;
                 c->work_buf[c->buf_used] = '\0';
                 c->header_timeout_ms = syn_port_get_tick_ms();
+
+                const char *end = strstr((const char *)c->work_buf, "\r\n\r\n");
+                if (end != NULL) {
+                    c->body_start = (size_t)(end - (const char *)c->work_buf) + 4;
+                    break;
+                }
+
+                if (c->buf_used >= c->work_buf_size - 1) {
+                    syn_port_sock_close(c->sock);
+                    c->sock = SYN_SOCKET_INVALID;
+                    c->state = SYN_HTTP_STATE_ERROR;
+                    c->status = SYN_ERROR;
+                    PT_EXIT(pt);
+                }
+                /* Yield after each recv to keep scheduler responsive */
+                PT_DEFER(pt, task);
             } else if (n == 0) {
                 syn_port_sock_close(c->sock);
                 c->sock = SYN_SOCKET_INVALID;
@@ -305,20 +321,6 @@ SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
                 }
                 PT_DEFER(pt, task);
                 continue;
-            }
-
-            const char *end = strstr((const char *)c->work_buf, "\r\n\r\n");
-            if (end != NULL) {
-                c->body_start = (size_t)(end - (const char *)c->work_buf) + 4;
-                break;
-            }
-
-            if (c->buf_used >= c->work_buf_size - 1) {
-                syn_port_sock_close(c->sock);
-                c->sock = SYN_SOCKET_INVALID;
-                c->state = SYN_HTTP_STATE_ERROR;
-                c->status = SYN_ERROR;
-                PT_EXIT(pt);
             }
         }
 

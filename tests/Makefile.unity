@@ -67,6 +67,8 @@ SYN_SRCS := \
 	src/syntropic/net/syn_http.c src/syntropic/net/syn_httpd.c \
 	src/syntropic/net/syn_transport_tcp.c \
 	src/syntropic/net/syn_websocket.c \
+	src/syntropic/net/syn_tcp.c \
+	src/syntropic/net/syn_udp.c \
 	src/syntropic/net/syn_dns.c \
 	src/syntropic/net/syn_mqtt.c \
 	src/syntropic/util/syn_json_write.c src/syntropic/util/syn_json_read.c \
@@ -134,6 +136,7 @@ SYN_SRCS := \
 	src/syntropic/net/syn_eth.c \
 	src/syntropic/net/syn_dhcp.c \
 	src/syntropic/net/syn_icmp.c \
+	src/syntropic/net/syn_transport_udp.c \
 	src/syntropic/net/syn_autoip.c \
 	src/syntropic/net/syn_netcfg.c \
 	src/syntropic/net/syn_igmp.c \

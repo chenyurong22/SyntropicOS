@@ -131,6 +131,28 @@ SYN_Status syn_eth_arp_lookup(SYN_ETH *eth, uint32_t ip, uint8_t mac_out[6]);
 
 SYN_Status syn_eth_arp_update(SYN_ETH *eth, uint32_t ip, const uint8_t mac[6]);
 
+/* ── Protocol engine injection ──────────────────────────────────────────── */
+
+/**
+ * @brief Weak hook — override to inject an ICMP engine into the Ethernet dispatcher.
+ *
+ * When syn_eth_process_frame receives an IPv4/ICMP packet (protocol 1),
+ * it calls this to obtain the ICMP instance. Return NULL to silently drop.
+ *
+ * @return Pointer to SYN_ICMP instance, or NULL.
+ */
+struct SYN_ICMP *syn_eth_get_icmp_instance(void);
+
+/**
+ * @brief Weak hook — override to inject a TCP engine into the Ethernet dispatcher.
+ *
+ * When syn_eth_process_frame receives an IPv4/TCP packet (protocol 6),
+ * it calls this to obtain the TCP instance. Return NULL to silently drop.
+ *
+ * @return Pointer to SYN_TCP instance, or NULL.
+ */
+struct SYN_TCP *syn_eth_get_tcp_instance(void);
+
 /* ── Protothread Coroutine Integration ──────────────────────────────────── */
 
 #include "port/syn_port_eth.h"

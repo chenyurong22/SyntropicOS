@@ -79,12 +79,27 @@ void syn_pubsub_publish(SYN_PubSubBroker *broker, uint16_t topic, const void *pa
     }
     SYN_ASSERT(broker != NULL);
 
-    size_t count = broker->count;
-    for (size_t i = 0; i < count && i < broker->count; i++) {
-        if (broker->subs[i].handler != NULL &&
-            (broker->subs[i].topic == topic || broker->subs[i].topic == SYN_PUBSUB_TOPIC_ALL)) {
-            broker->subs[i].handler(topic, payload, len, broker->subs[i].ctx);
+    size_t i = 0;
+    while (i < broker->count) {
+        /* Snapshot key fields before dispatch — handler may mutate the table */
+        SYN_PubSubHandler h = broker->subs[i].handler;
+        uint16_t top = broker->subs[i].topic;
+        void *ctx = broker->subs[i].ctx;
+
+        if (h != NULL && (top == topic || top == SYN_PUBSUB_TOPIC_ALL)) {
+            h(topic, payload, len, ctx);
+            /*
+             * If the handler unsubscribed itself, the slot at [i] now holds
+             * the element that was swapped in from the tail.  Do NOT advance i
+             * so that the newly-placed element is evaluated on the next iteration.
+             * We detect the swap by checking whether subs[i] changed.
+             */
+            if (broker->count > i && (broker->subs[i].handler != h ||
+                                      broker->subs[i].topic != top || broker->subs[i].ctx != ctx)) {
+                continue; /* re-evaluate position i without incrementing */
+            }
         }
+        i++;
     }
 }
 

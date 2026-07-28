@@ -228,8 +228,15 @@ static void handle_read_exception_status(SYN_Modbus *mb)
  * @brief Handle Modbus read/write multiple registers (FC 0x17).
  * @param mb Modbus instance.
  */
-static void handle_read_write_multiple(SYN_Modbus *mb)
+static void handle_read_write_multiple(SYN_Modbus *mb, uint16_t frame_len)
 {
+    /* Minimum: addr(1) func(1) read_addr(2) read_count(2) write_addr(2) write_count(2)
+     *          write_bytes(1) CRC(2) = 13 bytes */
+    if (frame_len < 13) {
+        send_exception(mb, SYN_MB_FC_READ_WRITE_MULTIPLE, SYN_MB_EX_ILLEGAL_VALUE);
+        return;
+    }
+
     uint16_t read_addr = read_u16(&mb->buf[2]);
     uint16_t read_count = read_u16(&mb->buf[4]);
     uint16_t write_addr = read_u16(&mb->buf[6]);
@@ -644,8 +651,13 @@ static void handle_write_multiple_coils(SYN_Modbus *mb, uint16_t frame_len)
 /**
  * @brief Handle Diagnostics (FC 0x08).
  */
-static void handle_diagnostics(SYN_Modbus *mb)
+static void handle_diagnostics(SYN_Modbus *mb, uint16_t frame_len)
 {
+    /* Minimum: addr(1) func(1) subfunc(2) data(2) CRC(2) = 8; subfunc at [2..3] needs >= 6 */
+    if (frame_len < 6) {
+        send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_VALUE);
+        return;
+    }
     uint16_t subfunc = read_u16(&mb->buf[2]);
     if (subfunc == 0x0000U) { /* Return Query Data (Echo) */
         send_response(mb, 6);
@@ -709,10 +721,16 @@ static void handle_report_server_id(SYN_Modbus *mb)
 /**
  * @brief Handle Mask Write Register (FC 0x16).
  */
-static void handle_mask_write_register(SYN_Modbus *mb)
+static void handle_mask_write_register(SYN_Modbus *mb, uint16_t frame_len)
 {
     if (mb->cfg.holding_regs == NULL) {
         send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_ADDR);
+        return;
+    }
+
+    /* Minimum: addr(1) func(1) ref_addr(2) and_mask(2) or_mask(2) CRC(2) = 10 bytes */
+    if (frame_len < 10) {
+        send_exception(mb, mb->buf[1], SYN_MB_EX_ILLEGAL_VALUE);
         return;
     }
 
@@ -856,7 +874,7 @@ bool syn_modbus_process(SYN_Modbus *mb)
     case SYN_MB_FC_DIAGNOSTICS:
         if (is_broadcast)
             break;
-        handle_diagnostics(mb);
+        handle_diagnostics(mb, len);
         return true;
 
     case SYN_MB_FC_GET_COMM_EVENT_CNT:
@@ -899,11 +917,11 @@ bool syn_modbus_process(SYN_Modbus *mb)
         return !is_broadcast;
 
     case SYN_MB_FC_MASK_WRITE_REGISTER:
-        handle_mask_write_register(mb);
+        handle_mask_write_register(mb, len);
         return !is_broadcast;
 
     case SYN_MB_FC_READ_WRITE_MULTIPLE:
-        handle_read_write_multiple(mb);
+        handle_read_write_multiple(mb, len);
         mb->comm_event_counter++;
         return !is_broadcast;
 

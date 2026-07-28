@@ -252,6 +252,14 @@ extern uint32_t mock_barrier_count;
 /** Set true to make syn_port_random_fill fail, triggering fallback. */
 extern bool mock_random_skip;
 
+/* ── Ethernet (PHY tx/rx) ────────────────────────────────────────────────── */
+
+#define MOCK_ETH_TX_BUF_SIZE 2048
+
+extern uint8_t mock_eth_tx_buf[MOCK_ETH_TX_BUF_SIZE]; /**< Last frame passed to syn_port_eth_tx */
+extern size_t mock_eth_tx_len;                        /**< Length of last transmitted frame     */
+extern int mock_eth_tx_count;                         /**< Total calls to syn_port_eth_tx       */
+
 /* ── UDP mock ───────────────────────────────────────────────────────────── */
 
 #define MOCK_UDP_MAX_PACKETS 4

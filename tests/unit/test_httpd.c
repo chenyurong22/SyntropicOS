@@ -283,14 +283,14 @@ void test_httpd_unknown_method_fallback(void)
 {
     setup_server();
 
-    /* "PATCH" doesn't match GET/POST/PUT/DELETE → falls back to GET */
+    /* "PATCH" is not GET/POST/PUT/DELETE — must NOT fall back to GET.
+     * The "/" GET route should NOT be dispatched. */
     const char *request = "PATCH / HTTP/1.1\r\nHost: test\r\n\r\n";
     mock_sock_set_response(request, strlen(request));
 
     syn_httpd_step(&srv);
-    /* PATCH falls back to GET method, so "/" GET route should match */
-    TEST_ASSERT_TRUE(handler_called);
-    TEST_ASSERT_EQUAL(SYN_HTTP_GET, last_method);
+    /* PATCH is unknown — no route match, handler must not be called */
+    TEST_ASSERT_FALSE(handler_called);
 }
 
 /** Content-Length header — exercises parse_uint and body_buffered path */

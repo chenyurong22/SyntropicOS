@@ -79,7 +79,13 @@ static SYN_Status sntp_parse_packet(SYN_SNTP *sntp, const uint8_t *pkt, size_t l
         if (ntp_elapsed_s >= 5) {
             int64_t expected_ms = (int64_t)ntp_elapsed_s * 1000LL;
             int64_t diff_ms = (int64_t)tick_elapsed_ms - expected_ms;
-            int16_t raw_ppm = (int16_t)((diff_ms * 1000000LL) / expected_ms);
+            int64_t ppm64 = (diff_ms * 1000000LL) / expected_ms;
+            /* Clamp to int16_t range before cast to avoid silent wrap */
+            if (ppm64 > 32767)
+                ppm64 = 32767;
+            if (ppm64 < -32767)
+                ppm64 = -32767;
+            int16_t raw_ppm = (int16_t)ppm64;
 
             /* Apply SyntropicOS Exponential Moving Average Filter (SYN_FilterEMA) */
             sntp->drift_ppm = (int32_t)syn_filter_ema_update(&sntp->drift_filter, raw_ppm);

@@ -58,6 +58,7 @@ typedef enum {
 
 /* ── SMBus Packet Structure ──────────────────────────────────────────────── */
 
+/** @brief SMBus transaction packet structure. */
 typedef struct {
     uint8_t slave_addr;                  /**< 7-bit slave address */
     uint8_t command;                     /**< Command code byte */

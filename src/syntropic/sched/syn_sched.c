@@ -332,13 +332,6 @@ SYN_NORETURN void syn_sched_run_tickless_ex(SYN_Sched *sched, SYN_Sleep *sleep, 
         /* Compute sleep duration: min of task deadlines and timer expiries */
         uint32_t now = syn_port_get_tick_ms();
         uint32_t task_wake = syn_sched_next_wakeup(sched);
-
-        uint32_t timer_wake = syn_timer_next_expiry(timers, timer_count);
-
-        /* Compute sleep duration: min of task deadlines and timer expiries */
-        uint32_t now = syn_port_get_tick_us();
-        uint32_t task_wake = syn_sched_next_wakeup(sched);
-
         uint32_t timer_wake = syn_timer_next_expiry(timers, timer_count);
 
         /* Pick the earlier deadline */

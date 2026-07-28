@@ -4,7 +4,7 @@
  *
  * Provides stick input response shaping for drones/RC models:
  * - Deadband filtering: Ignores micro-stick jitter around neutral center (1500 us +/- deadband).
- * - Exponential curve: $y = (1 - \text{expo}) \cdot x + \text{expo} \cdot x^3$ (softens center
+ * - Exponential curve: y = (1 - expo) * x + expo * x^3 (softens center
  * stick precision).
  * - Dual Rate: Scales output range (0..100%).
  *

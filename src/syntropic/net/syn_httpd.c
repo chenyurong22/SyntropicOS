@@ -65,7 +65,7 @@ static SYN_HttpMethod parse_method(const char *str, size_t len)
         return SYN_HTTP_PUT;
     if (len == 6 && memcmp(str, "DELETE", 6) == 0)
         return SYN_HTTP_DELETE;
-    return SYN_HTTP_GET; /* default fallback */
+    return (SYN_HttpMethod)0xFF; /* Unrecognised — will produce 404/405 */
 }
 
 static inline uint32_t parse_uint(const char *s)

@@ -262,8 +262,6 @@ void syn_fwupdate_abort(SYN_FwUpdate *upd)
     upd->error = true;
 }
 
-#endif /* SYN_USE_BOOT */
-
 #if defined(SYN_FW_USE_HMAC) && SYN_FW_USE_HMAC
 
 void syn_fwupdate_set_key(SYN_FwUpdate *upd, const void *key, size_t key_len)
@@ -275,3 +273,5 @@ void syn_fwupdate_set_key(SYN_FwUpdate *upd, const void *key, size_t key_len)
 }
 
 #endif /* SYN_FW_USE_HMAC */
+
+#endif /* SYN_USE_BOOT */

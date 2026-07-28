@@ -194,31 +194,34 @@ SYN_ModbusMaster_State syn_modbus_master_process(SYN_ModbusMaster *m, uint32_t c
 
 /* ── Modbus Master Polling & Transaction Queue ──────────────────────────── */
 
+/** @brief Modbus Master transaction response callback function pointer type. */
 typedef void (*SYN_ModbusMasterCallback)(uint8_t slave_addr, uint8_t func_code,
                                          const uint16_t *data, uint16_t count, SYN_Status status,
                                          void *user_ctx);
 
+/** @brief Modbus Master query descriptor. */
 typedef struct {
-    uint8_t slave_addr;
-    uint8_t func_code;
-    uint16_t start_addr;
-    uint16_t count;
-    uint16_t write_value;
-    SYN_ModbusMasterCallback callback;
-    void *user_ctx;
+    uint8_t slave_addr;                /**< Target slave device address. */
+    uint8_t func_code;                 /**< Modbus function code. */
+    uint16_t start_addr;               /**< Starting register/coil address. */
+    uint16_t count;                    /**< Number of registers/coils. */
+    uint16_t write_value;              /**< Value for single-write requests. */
+    SYN_ModbusMasterCallback callback; /**< Asynchronous response callback. */
+    void *user_ctx;                    /**< User context pointer passed to callback. */
 } SYN_ModbusMasterQuery;
 
 #ifndef SYN_MODBUS_QUEUE_SIZE
 #define SYN_MODBUS_QUEUE_SIZE 16
 #endif
 
+/** @brief Modbus Master transaction queue manager. */
 typedef struct {
-    SYN_ModbusMasterQuery queries[SYN_MODBUS_QUEUE_SIZE];
-    uint8_t head;
-    uint8_t tail;
-    uint8_t count;
-    uint8_t max_retries;
-    uint8_t retry_count;
+    SYN_ModbusMasterQuery queries[SYN_MODBUS_QUEUE_SIZE]; /**< Fixed-size query buffer. */
+    uint8_t head;                                         /**< Queue head index. */
+    uint8_t tail;                                         /**< Queue tail index. */
+    uint8_t count;                                        /**< Number of queued queries. */
+    uint8_t max_retries;                                  /**< Maximum retries per query. */
+    uint8_t retry_count;                                  /**< Current retry attempt counter. */
 } SYN_ModbusMasterQueue;
 
 /**

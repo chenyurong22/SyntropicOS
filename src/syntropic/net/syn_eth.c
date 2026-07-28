@@ -5,9 +5,30 @@
 
 #include "syntropic/net/syn_eth.h"
 
+#include "syntropic/net/syn_icmp.h"
+#include "syntropic/net/syn_tcp.h"
+#include "syntropic/net/syn_transport_udp.h"
+#include "syntropic/net/syn_udp.h"
+#include "syntropic/port/syn_port_system.h"
 #include "syntropic/util/syn_crc.h"
 
 #include <string.h>
+
+SYN_WEAK SYN_UDP *syn_transport_udp_get_instance(void)
+{
+    return NULL;
+}
+
+/** Weak hook so callers can inject ICMP and TCP engine instances. */
+SYN_WEAK struct SYN_ICMP *syn_eth_get_icmp_instance(void)
+{
+    return NULL;
+}
+
+SYN_WEAK struct SYN_TCP *syn_eth_get_tcp_instance(void)
+{
+    return NULL;
+}
 
 static const uint8_t MAC_BROADCAST[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -46,10 +67,13 @@ SYN_Status syn_eth_arp_update(SYN_ETH *eth, uint32_t ip, const uint8_t mac[6])
         return SYN_INVALID_PARAM;
     }
 
+    uint32_t now = syn_port_get_tick_ms();
+
     /* Search for existing entry to update */
     for (size_t i = 0; i < SYN_ETH_ARP_CACHE_SIZE; i++) {
         if (eth->arp_cache[i].valid && eth->arp_cache[i].ip == ip) {
             memcpy(eth->arp_cache[i].mac, mac, 6);
+            eth->arp_cache[i].last_seen_ms = now;
             return SYN_OK;
         }
     }
@@ -60,14 +84,22 @@ SYN_Status syn_eth_arp_update(SYN_ETH *eth, uint32_t ip, const uint8_t mac[6])
             eth->arp_cache[i].ip = ip;
             memcpy(eth->arp_cache[i].mac, mac, 6);
             eth->arp_cache[i].valid = true;
+            eth->arp_cache[i].last_seen_ms = now;
             return SYN_OK;
         }
     }
 
-    /* Cache full: overwrite entry 0 */
-    eth->arp_cache[0].ip = ip;
-    memcpy(eth->arp_cache[0].mac, mac, 6);
-    eth->arp_cache[0].valid = true;
+    /* Cache full: evict the least-recently-used entry */
+    size_t lru_idx = 0;
+    for (size_t i = 1; i < SYN_ETH_ARP_CACHE_SIZE; i++) {
+        if ((int32_t)(eth->arp_cache[i].last_seen_ms - eth->arp_cache[lru_idx].last_seen_ms) < 0) {
+            lru_idx = i;
+        }
+    }
+    eth->arp_cache[lru_idx].ip = ip;
+    memcpy(eth->arp_cache[lru_idx].mac, mac, 6);
+    eth->arp_cache[lru_idx].valid = true;
+    eth->arp_cache[lru_idx].last_seen_ms = now;
 
     return SYN_OK;
 }
@@ -81,11 +113,13 @@ SYN_Status syn_eth_arp_lookup(SYN_ETH *eth, uint32_t ip, uint8_t mac_out[6])
     for (size_t i = 0; i < SYN_ETH_ARP_CACHE_SIZE; i++) {
         if (eth->arp_cache[i].valid && eth->arp_cache[i].ip == ip) {
             memcpy(mac_out, eth->arp_cache[i].mac, 6);
+            /* Refresh LRU timestamp on each successful lookup */
+            eth->arp_cache[i].last_seen_ms = syn_port_get_tick_ms();
             return SYN_OK;
         }
     }
 
-    return SYN_ERROR;
+    return SYN_NOT_FOUND;
 }
 
 SYN_Status syn_eth_build_frame(SYN_ETH *eth, const uint8_t dst_mac[6], uint16_t ethertype,
@@ -139,8 +173,6 @@ SYN_Status syn_eth_process_frame(SYN_ETH *eth, const uint8_t *frame, size_t len,
     eth->frames_rx++;
 
     const uint8_t *dst_mac = &frame[0];
-    const uint8_t *src_mac = &frame[6];
-    (void)src_mac;
     uint16_t ethertype = ((uint16_t)frame[12] << 8) | frame[13];
 
     /* MAC Filter: drop frames not addressed to us or broadcast */
@@ -196,6 +228,25 @@ SYN_Status syn_eth_process_frame(SYN_ETH *eth, const uint8_t *frame, size_t len,
                 }
             } else if (oper == SYN_ARP_OP_REPLY) {
                 eth->arp_replies++;
+            }
+        }
+    } else if (ethertype == SYN_ETHTYPE_IPV4 && len >= 34) {
+        uint8_t ip_proto = frame[23];
+
+        if (ip_proto == 17) { /* UDP */
+            SYN_UDP *udp_inst = syn_transport_udp_get_instance();
+            if (udp_inst) {
+                syn_udp_process_packet(udp_inst, frame, len);
+            }
+        } else if (ip_proto == 1 && tx_buf && tx_len) { /* ICMP */
+            SYN_ICMP *icmp_inst = (SYN_ICMP *)syn_eth_get_icmp_instance();
+            if (icmp_inst) {
+                syn_icmp_process_packet(icmp_inst, frame, len, tx_buf, tx_len);
+            }
+        } else if (ip_proto == 6 && tx_buf && tx_len) { /* TCP */
+            SYN_TCP *tcp_inst = (SYN_TCP *)syn_eth_get_tcp_instance();
+            if (tcp_inst) {
+                syn_tcp_process_packet(tcp_inst, frame, len, tx_buf, tx_len);
             }
         }
     }

@@ -164,6 +164,11 @@ void syn_cli_process_char(SYN_CLI *cli, char ch);
  */
 void syn_cli_process_line(SYN_CLI *cli, const char *line);
 
+/**
+ * @brief Print the CLI prompt to the output UART.
+ *
+ * @param cli CLI instance.
+ */
 void syn_cli_print_prompt(SYN_CLI *cli);
 
 /**

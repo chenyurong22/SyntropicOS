@@ -42,17 +42,17 @@ typedef struct {
 SYN_Status syn_ppm_init(SYN_PPM_Decoder *ppm);
 
 /**
- * @brief Process high-resolution measured pulse width ($\mu s$) from Timer Input Capture interrupt.
+ * @brief Process high-resolution measured pulse width (us) from Timer Input Capture interrupt.
  *
  * @param ppm      Pointer to decoder struct.
- * @param pulse_us Measured pulse width in microseconds ($\mu s$).
+ * @param pulse_us Measured pulse width in microseconds (us).
  * @return SYN_OK when a complete multi-channel PPM frame is finished, SYN_BUSY during channel
  * reception.
  */
 SYN_Status syn_ppm_process_pulse(SYN_PPM_Decoder *ppm, uint16_t pulse_us);
 
 /**
- * @brief Get pulse width ($\mu s$) for specified 0-indexed channel.
+ * @brief Get pulse width (us) for specified 0-indexed channel.
  *
  * @param ppm        Pointer to decoder struct.
  * @param channel_idx 0-indexed channel index (0..11).

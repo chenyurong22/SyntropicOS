@@ -19,6 +19,7 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
+/** Maximum supported failsafe RC channels. */
 #define SYN_RC_FAILSAFE_MAX_CHANNELS 16U
 
 /** Failsafe Channel Mode. */

@@ -4,7 +4,7 @@
  *
  * Architecture:
  * - Cascaded Dual-Loop Control:
- *   - Outer Angle Loop: Desired angle ($\text{deg}$) -> Gyro Rate Setpoint ($\text{deg/s}$).
+ *   - Outer Angle Loop: Desired angle (deg) -> Gyro Rate Setpoint (deg/s).
  *   - Inner Rate Loop:  Gyro Rate Error -> Motor Axis Torque Output (Roll, Pitch, Yaw).
  * - Quadcopter X-Configuration Motor Mixer:
  *   - Motor 1 (Front-Right, CCW): Throttle - Roll + Pitch + Yaw

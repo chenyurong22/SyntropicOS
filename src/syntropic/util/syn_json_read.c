@@ -102,7 +102,9 @@ static char *skip_value(char *p, const char *end)
         p++;
         while (p < end) {
             if (*p == '\\') {
-                p += 2;
+                p++;
+                if (p < end)
+                    p++;
                 continue;
             }
             if (*p == '"')

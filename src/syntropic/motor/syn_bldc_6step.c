@@ -19,10 +19,11 @@
  *   0b100(4) | Step 6  | OFF (Z) | LOW (L) | PWM (H)
  */
 
+/** @brief 3-phase gate driving state pattern per commutation step. */
 typedef struct {
-    SYN_BLDC_GateState u;
-    SYN_BLDC_GateState v;
-    SYN_BLDC_GateState w;
+    SYN_BLDC_GateState u; /**< Phase U gate state. */
+    SYN_BLDC_GateState v; /**< Phase V gate state. */
+    SYN_BLDC_GateState w; /**< Phase W gate state. */
 } PhaseGatePattern;
 
 static const PhaseGatePattern s_step_table_cw[7] = {

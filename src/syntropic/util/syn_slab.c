@@ -100,6 +100,11 @@ SYN_Status syn_slab_free(SYN_SlabAllocator *slab, void *ptr)
                 return SYN_INVALID_PARAM; /* Misaligned pointer */
             }
 
+            /* Guard against double-free: free_count must not exceed total */
+            if (sc->free_count >= sc->total_blocks) {
+                return SYN_INVALID_PARAM; /* Already fully free — double-free detected */
+            }
+
             *(void **)ptr = sc->freelist;
             sc->freelist = ptr;
             sc->free_count++;

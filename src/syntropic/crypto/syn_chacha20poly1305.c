@@ -20,11 +20,21 @@
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
+/**
+ * @brief Load 32-bit little-endian word from buffer.
+ * @param p Pointer to source byte buffer.
+ * @return Decoded 32-bit word.
+ */
 static inline uint32_t load32_le(const uint8_t *p)
 {
     return syn_peek_u32_le(p, 0);
 }
 
+/**
+ * @brief Store 32-bit little-endian word to buffer.
+ * @param p Pointer to destination byte buffer.
+ * @param v Value to encode.
+ */
 static inline void store32_le(uint8_t *p, uint32_t v)
 {
     syn_poke_u32_le(v, p, 0);

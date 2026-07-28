@@ -97,19 +97,21 @@ typedef struct {
     SYN_CANOpenPDOMap tpdo[4]; /**< Transmit PDO Mappings 1..4 */
 } SYN_CANOpenNodeConfig;
 
+/** @brief SDO transfer state machine state. */
 typedef enum {
-    SYN_CANOPEN_SDO_IDLE = 0,
-    SYN_CANOPEN_SDO_SEG_DOWNLOAD,
-    SYN_CANOPEN_SDO_SEG_UPLOAD,
+    SYN_CANOPEN_SDO_IDLE = 0,     /**< SDO channel idle. */
+    SYN_CANOPEN_SDO_SEG_DOWNLOAD, /**< Segmented download (write) in progress. */
+    SYN_CANOPEN_SDO_SEG_UPLOAD,   /**< Segmented upload (read) in progress. */
 } SYN_CANOpenSDOState;
 
+/** @brief Active SDO transfer session tracking. */
 typedef struct {
-    SYN_CANOpenSDOState state;
-    uint16_t index;
-    uint8_t subindex;
-    uint8_t toggle;
-    size_t total_bytes;
-    size_t transferred_bytes;
+    SYN_CANOpenSDOState state; /**< Session state. */
+    uint16_t index;            /**< Object dictionary index. */
+    uint8_t subindex;          /**< Object dictionary subindex. */
+    uint8_t toggle;            /**< Segment toggle bit. */
+    size_t total_bytes;        /**< Total transfer byte length. */
+    size_t transferred_bytes;  /**< Bytes transferred so far. */
 } SYN_CANOpenSDOSession;
 
 /**

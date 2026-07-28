@@ -261,11 +261,12 @@ size_t syn_j1939_encode_dm2(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *
 #define SYN_J1939_MAX_LOGGED_DTCS 16
 #endif
 
+/** @brief J1939 active and previously active DTC log container. */
 typedef struct {
-    SYN_J1939_DTC active_dtcs[SYN_J1939_MAX_LOGGED_DTCS];
-    size_t active_count;
-    SYN_J1939_DTC prev_dtcs[SYN_J1939_MAX_LOGGED_DTCS];
-    size_t prev_count;
+    SYN_J1939_DTC active_dtcs[SYN_J1939_MAX_LOGGED_DTCS]; /**< Currently active DTC array (DM1). */
+    size_t active_count;                                  /**< Count of active DTCs. */
+    SYN_J1939_DTC prev_dtcs[SYN_J1939_MAX_LOGGED_DTCS];   /**< Previously active DTC array (DM2). */
+    size_t prev_count;                                    /**< Count of previously active DTCs. */
 } SYN_J1939_DTCLog;
 
 /**

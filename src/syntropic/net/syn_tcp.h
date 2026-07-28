@@ -1,0 +1,129 @@
+/**
+ * @file syn_tcp.h
+ * @brief Zero-Alloc Native TCP State Machine & Segment Engine.
+ * @ingroup syn_net
+ */
+
+#ifndef SYN_TCP_H
+#define SYN_TCP_H
+
+#include "syntropic/common/syn_defs.h"
+#include "syntropic/net/syn_eth.h"
+#include "syntropic/pt/syn_pt.h"
+#include "syntropic/sched/syn_task.h"
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* ── Constants ─────────────────────────────────────────────────────────── */
+
+#ifndef SYN_TCP_MAX_CONNS
+#define SYN_TCP_MAX_CONNS 1
+#endif
+
+#ifndef SYN_TCP_BUF_SIZE
+#define SYN_TCP_BUF_SIZE 512
+#endif
+
+/** TCP Header Flags */
+#define SYN_TCP_FLAG_FIN 0x01
+#define SYN_TCP_FLAG_SYN 0x02
+#define SYN_TCP_FLAG_RST 0x04
+#define SYN_TCP_FLAG_PSH 0x08
+#define SYN_TCP_FLAG_ACK 0x10
+
+/* ── States ────────────────────────────────────────────────────────────── */
+
+typedef enum {
+    SYN_TCP_CLOSED = 0,
+    SYN_TCP_LISTEN = 1,
+    SYN_TCP_SYN_RCVD = 2,
+    SYN_TCP_ESTABLISHED = 3,
+    SYN_TCP_FIN_WAIT = 4,
+    SYN_TCP_CLOSE_WAIT = 5,
+} SYN_TcpState;
+
+/* ── TCP Header Format ─────────────────────────────────────────────────── */
+
+/** @brief TCP packet header structure. */
+typedef struct {
+    uint16_t src_port;   /**< Source port number. */
+    uint16_t dst_port;   /**< Destination port number. */
+    uint32_t seq_num;    /**< Sequence number. */
+    uint32_t ack_num;    /**< Acknowledgment number. */
+    uint8_t data_offset; /**< Header length in 32-bit words (top 4 bits). */
+    uint8_t flags;       /**< Control flags (SYN, ACK, FIN, RST, PSH, URG). */
+    uint16_t window;     /**< Receive window size. */
+    uint16_t checksum;   /**< Checksum value over pseudo-header and payload. */
+    uint16_t urgent_ptr; /**< Urgent pointer. */
+} SYN_TcpHeader;
+
+/* ── TCP Connection Block ──────────────────────────────────────────────── */
+
+/** @brief Single TCP socket connection control block. */
+typedef struct SYN_TcpConn {
+    SYN_TcpState state;    /**< Connection state machine state. */
+    uint32_t local_ip;     /**< Local IPv4 address. */
+    uint32_t remote_ip;    /**< Remote peer IPv4 address. */
+    uint16_t local_port;   /**< Local port. */
+    uint16_t remote_port;  /**< Remote peer port. */
+    uint8_t remote_mac[6]; /**< Remote peer Ethernet MAC address. */
+
+    uint32_t seq_nxt; /**< Next sequence number to send. */
+    uint32_t ack_nxt; /**< Expected next sequence number to receive. */
+
+    uint8_t rx_buf[SYN_TCP_BUF_SIZE]; /**< Receive data buffer. */
+    uint16_t rx_len;                  /**< Length of buffered receive bytes. */
+
+    uint8_t tx_buf[SYN_TCP_BUF_SIZE]; /**< Transmit data buffer. */
+    uint16_t tx_len;                  /**< Length of buffered transmit bytes. */
+
+    SYN_Task *blocked_task; /**< Task currently blocked waiting on TCP data. */
+} SYN_TcpConn;
+
+/* ── TCP Stack Container ───────────────────────────────────────────────── */
+
+/** @brief Top-level TCP stack instance container. */
+typedef struct {
+    SYN_ETH *eth;                         /**< Associated Ethernet interface instance. */
+    SYN_TcpConn conns[SYN_TCP_MAX_CONNS]; /**< Array of managed TCP connections. */
+} SYN_TCP;
+
+/* ── Functions ─────────────────────────────────────────────────────────── */
+
+SYN_Status syn_tcp_init(SYN_TCP *tcp, SYN_ETH *eth);
+
+SYN_Status syn_tcp_listen(SYN_TCP *tcp, uint16_t port);
+
+SYN_Status syn_tcp_process_packet(SYN_TCP *tcp, const uint8_t *ip_packet, size_t len,
+                                  uint8_t *tx_out, size_t *tx_len);
+
+uint16_t syn_tcp_checksum(uint32_t src_ip, uint32_t dst_ip, const uint8_t *tcp_seg, size_t len);
+
+/* ── Task Blocking Macros ───────────────────────────────────────────────── */
+
+#define PT_TCP_BLOCK_READ(pt, task, conn, buf, max_len, bytes_read)                               \
+    do {                                                                                          \
+        (conn)->blocked_task = (task);                                                            \
+        PT_BLOCK_CONDITION(pt, task, (conn)->rx_len > 0 || (conn)->state != SYN_TCP_ESTABLISHED); \
+        if ((conn)->rx_len > 0) {                                                                 \
+            size_t _n = ((conn)->rx_len < (max_len)) ? (conn)->rx_len : (max_len);                \
+            memcpy((buf), (conn)->rx_buf, _n);                                                    \
+            memmove((conn)->rx_buf, (conn)->rx_buf + _n, (conn)->rx_len - _n);                    \
+            (conn)->rx_len -= _n;                                                                 \
+            *(bytes_read) = _n;                                                                   \
+        } else {                                                                                  \
+            *(bytes_read) = 0;                                                                    \
+        }                                                                                         \
+    } while (0)
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* SYN_TCP_H */

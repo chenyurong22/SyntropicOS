@@ -78,12 +78,12 @@ SYN_Status syn_sbus_parse_byte(SYN_SBUS_Parser *parser, uint8_t byte, SYN_SBUS_F
 SYN_Status syn_sbus_decode_buffer(const uint8_t buf[SYN_SBUS_FRAME_SIZE], SYN_SBUS_Frame *frame);
 
 /**
- * @brief Convert raw 11-bit SBUS channel value to pulse width in microseconds ($\mu s$).
+ * @brief Convert raw 11-bit SBUS channel value to pulse width in microseconds (us).
  *
  * Standard mapping:
- * - 172 raw  -> 1000 $\mu s$
- * - 992 raw  -> 1500 $\mu s$
- * - 1811 raw -> 2000 $\mu s$
+ * - 172 raw  -> 1000 us
+ * - 992 raw  -> 1500 us
+ * - 1811 raw -> 2000 us
  *
  * @param raw_val 11-bit raw SBUS channel value (172..1811).
  * @return Pulse width in microseconds (clamped 1000..2000 us).

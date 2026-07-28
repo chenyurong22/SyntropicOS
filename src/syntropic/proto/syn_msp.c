@@ -112,13 +112,19 @@ SYN_Status syn_msp_parse_byte(SYN_MSP_Parser *parser, uint8_t byte, SYN_MSP_Fram
 }
 
 SYN_Status syn_msp_encode_response(uint8_t cmd, const uint8_t *payload, uint8_t len,
-                                   uint8_t *buf_out, size_t *out_len)
+                                   uint8_t *buf_out, size_t buf_size, size_t *out_len)
 {
     if (!buf_out || !out_len) {
         return SYN_INVALID_PARAM;
     }
 
-    uint8_t idx = 0;
+    /* Minimum required: 5 header bytes + len payload bytes + 1 checksum */
+    size_t required = (size_t)5 + len + 1;
+    if (buf_size < required) {
+        return SYN_INVALID_PARAM;
+    }
+
+    size_t idx = 0;
     buf_out[idx++] = SYN_MSP_HEADER_CHAR;
     buf_out[idx++] = SYN_MSP_V1_CHAR;
     buf_out[idx++] = SYN_MSP_RESP_CHAR;

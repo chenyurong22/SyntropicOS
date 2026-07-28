@@ -19,8 +19,8 @@ void test_msp_encode_and_parse_response(void)
     uint8_t buf[32];
     size_t out_len = 0;
 
-    TEST_ASSERT_EQUAL_INT(SYN_OK,
-                          syn_msp_encode_response(SYN_MSP_STATUS, payload, 4, buf, &out_len));
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_msp_encode_response(SYN_MSP_STATUS, payload, 4, buf, sizeof(buf), &out_len));
     TEST_ASSERT_EQUAL_INT(10, out_len); /* $M> + size(4) + cmd(101) + 4 payload + checksum */
 
     SYN_MSP_Parser parser;
@@ -47,7 +47,14 @@ void test_msp_null_and_error_handling(void)
 {
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_msp_init(NULL));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_msp_parse_byte(NULL, '$', NULL));
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_msp_encode_response(101, NULL, 0, NULL, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_msp_encode_response(101, NULL, 0, NULL, 0, NULL));
+
+    /* Regression: buf_size too small for the frame must return SYN_INVALID_PARAM */
+    uint8_t small_buf[4];
+    size_t dummy_len = 0;
+    TEST_ASSERT_EQUAL_INT(
+        SYN_INVALID_PARAM,
+        syn_msp_encode_response(101, NULL, 4, small_buf, sizeof(small_buf), &dummy_len));
 
     SYN_MSP_Parser parser;
     syn_msp_init(&parser);

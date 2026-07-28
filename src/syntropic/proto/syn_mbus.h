@@ -80,6 +80,7 @@ typedef enum {
 
 /* ── M-Bus Decoded Frame Structure ──────────────────────────────────────── */
 
+/** @brief M-Bus decoded frame structure. */
 typedef struct {
     SYN_MBUS_FrameType type;               /**< Frame format classification */
     uint8_t c_field;                       /**< Control field byte */

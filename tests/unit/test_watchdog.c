@@ -92,8 +92,30 @@ static void test_watchdog_table_full_and_errlog(void)
     TEST_ASSERT_TRUE(syn_errlog_count(&errlog) > 0);
 }
 
+/** Regression: double-unregister must not underflow wdt->count. */
+static void test_watchdog_double_unregister(void)
+{
+    mock_tick_ms = 0;
+
+    SYN_Watchdog wdt;
+    SYN_WDT_Entry entries[2];
+    syn_watchdog_init(&wdt, entries, 2, NULL, NULL);
+
+    int8_t id = syn_watchdog_register(&wdt, "a", 100);
+    TEST_ASSERT_TRUE(id >= 0);
+    TEST_ASSERT_EQUAL_UINT8(1, wdt.count);
+
+    syn_watchdog_unregister(&wdt, id);
+    TEST_ASSERT_EQUAL_UINT8(0, wdt.count);
+
+    /* Second call on the same (now inactive) id must be a no-op */
+    syn_watchdog_unregister(&wdt, id);
+    TEST_ASSERT_EQUAL_UINT8(0, wdt.count); /* Must NOT wrap to 255 */
+}
+
 void run_watchdog_tests(void)
 {
     RUN_TEST(test_watchdog);
     RUN_TEST(test_watchdog_table_full_and_errlog);
+    RUN_TEST(test_watchdog_double_unregister);
 }

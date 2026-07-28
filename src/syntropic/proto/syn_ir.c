@@ -16,6 +16,7 @@
 
 /* ── Protocol Descriptors ────────────────────────────────────────────────── */
 
+/** @brief Internal infrared protocol timing descriptor. */
 typedef struct {
     SYN_IR_Protocol proto;
     const char *name;

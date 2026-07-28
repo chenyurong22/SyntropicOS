@@ -84,6 +84,38 @@ SYN_Status syn_port_random_fill(void *buf, size_t len)
     return (n == len) ? SYN_OK : SYN_ERROR;
 }
 
+/* ── Ethernet (PHY tx/rx) ────────────────────────────────────────────────── */
+
+uint8_t mock_eth_tx_buf[MOCK_ETH_TX_BUF_SIZE];
+size_t mock_eth_tx_len = 0;
+int mock_eth_tx_count = 0;
+
+SYN_Status syn_port_eth_init(const uint8_t mac_addr[6])
+{
+    (void)mac_addr;
+    return SYN_OK;
+}
+
+SYN_Status syn_port_eth_tx(const void *frame, size_t len)
+{
+    if (frame && len > 0) {
+        size_t copy = (len < MOCK_ETH_TX_BUF_SIZE) ? len : MOCK_ETH_TX_BUF_SIZE;
+        memcpy(mock_eth_tx_buf, frame, copy);
+        mock_eth_tx_len = copy;
+        mock_eth_tx_count++;
+    }
+    return SYN_OK;
+}
+
+SYN_Status syn_port_eth_rx(void *buf, size_t max_len, size_t *out_len)
+{
+    (void)buf;
+    (void)max_len;
+    if (out_len)
+        *out_len = 0;
+    return SYN_BUSY; /* No frames available by default */
+}
+
 MockUdpPacket mock_udp_rx_queue[MOCK_UDP_MAX_PACKETS];
 int mock_udp_rx_count = 0;
 int mock_udp_rx_pos = 0;
@@ -795,14 +827,13 @@ void mock_udp_set_response(const void *data, size_t len, const SYN_SockAddr *fro
     mock_udp_inject_packet(data, len, from);
 }
 
-SYN_WEAK SYN_Socket syn_port_udp_open(uint16_t port)
+SYN_Socket syn_port_udp_open(uint16_t port)
 {
     (void)port;
     return mock_udp_open_ok ? 20 : SYN_SOCKET_INVALID;
 }
 
-SYN_WEAK int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len,
-                                 const SYN_SockAddr *to)
+int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len, const SYN_SockAddr *to)
 {
     (void)sock;
     if (mock_udp_sendto_fail)
@@ -818,8 +849,8 @@ SYN_WEAK int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len,
     return (int)len;
 }
 
-SYN_WEAK int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len, SYN_SockAddr *from,
-                                   uint32_t timeout_ms)
+int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len, SYN_SockAddr *from,
+                          uint32_t timeout_ms)
 {
     (void)sock;
     (void)timeout_ms;

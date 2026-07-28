@@ -98,12 +98,12 @@ SYN_Status syn_crsf_init(SYN_CRSF_Parser *parser);
 SYN_Status syn_crsf_parse_byte(SYN_CRSF_Parser *parser, uint8_t byte, SYN_CRSF_FrameType *type_out);
 
 /**
- * @brief Convert raw 11-bit CRSF channel value to pulse width in microseconds ($\mu s$).
+ * @brief Convert raw 11-bit CRSF channel value to pulse width in microseconds (us).
  *
  * Standard scaling:
- * - 170 raw  -> 988 $\mu s$
- * - 992 raw  -> 1500 $\mu s$
- * - 1908 raw -> 2012 $\mu s$
+ * - 170 raw  -> 988 us
+ * - 992 raw  -> 1500 us
+ * - 1908 raw -> 2012 us
  *
  * @param raw_val 11-bit raw value (170..1908).
  * @return Pulse width in microseconds (clamped 988..2012 us).

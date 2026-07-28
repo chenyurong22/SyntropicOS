@@ -126,6 +126,54 @@ void test_pubsub_wildcard(void)
     TEST_ASSERT_EQUAL(1, callback2_calls);
 }
 
+/*
+ * Regression: a handler that unsubscribes itself during syn_pubsub_publish
+ * previously caused the subscriber swapped into that slot to be skipped.
+ * Verify all remaining subscribers still receive the event.
+ */
+static SYN_PubSubBroker *g_self_unsub_broker;
+static int self_unsub_calls = 0;
+static int after_unsub_calls = 0;
+
+static void handler_self_unsub(uint16_t topic, const void *payload, size_t len, void *ctx)
+{
+    (void)payload;
+    (void)len;
+    (void)ctx;
+    self_unsub_calls++;
+    /* Unsubscribe self — triggers swap-with-last */
+    syn_pubsub_unsubscribe(g_self_unsub_broker, topic, handler_self_unsub);
+}
+
+static void handler_after_unsub(uint16_t topic, const void *payload, size_t len, void *ctx)
+{
+    (void)topic;
+    (void)payload;
+    (void)len;
+    (void)ctx;
+    after_unsub_calls++;
+}
+
+void test_pubsub_unsubscribe_during_publish(void)
+{
+    pubsub_setUp();
+    g_self_unsub_broker = &broker;
+    self_unsub_calls = 0;
+    after_unsub_calls = 0;
+
+    /* Subscribe self-unsubscribing handler first, then the one that must still fire */
+    syn_pubsub_subscribe(&broker, 99, handler_self_unsub, NULL);
+    syn_pubsub_subscribe(&broker, 99, handler_after_unsub, NULL);
+
+    syn_pubsub_publish(&broker, 99, NULL, 0);
+
+    /* Both must have been called exactly once */
+    TEST_ASSERT_EQUAL_INT(1, self_unsub_calls);
+    TEST_ASSERT_EQUAL_INT(1, after_unsub_calls);
+    /* Only handler_after_unsub remains */
+    TEST_ASSERT_EQUAL_INT(1, (int)broker.count);
+}
+
 void run_pubsub_tests(void)
 {
     RUN_TEST(test_pubsub_subscribe);
@@ -133,4 +181,5 @@ void run_pubsub_tests(void)
     RUN_TEST(test_pubsub_publish_multiple);
     RUN_TEST(test_pubsub_unsubscribe);
     RUN_TEST(test_pubsub_wildcard);
+    RUN_TEST(test_pubsub_unsubscribe_during_publish);
 }

@@ -33,6 +33,11 @@ SYN_Status syn_flight_init(SYN_Flight_Controller *fc)
     return SYN_OK;
 }
 
+/**
+ * @brief Clamp pulse width value to 1000..2000 us servo range.
+ * @param val Input pulse width value.
+ * @return Clamped pulse width in us.
+ */
 static uint16_t clamp_us(int32_t val)
 {
     if (val < 1000) {

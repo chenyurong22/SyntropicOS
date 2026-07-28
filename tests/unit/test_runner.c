@@ -642,6 +642,14 @@ int main(void)
     RUN_TEST(test_eth_null_checks);
     RUN_TEST(test_eth_runt_and_oversized_frames);
     RUN_TEST(test_eth_mac_filtering);
+    extern void test_eth_arp_lookup_returns_not_found(void);
+    extern void test_eth_arp_cache_lru_eviction(void);
+    extern void test_eth_dispatch_icmp(void);
+    extern void test_eth_dispatch_tcp(void);
+    RUN_TEST(test_eth_arp_lookup_returns_not_found);
+    RUN_TEST(test_eth_arp_cache_lru_eviction);
+    RUN_TEST(test_eth_dispatch_icmp);
+    RUN_TEST(test_eth_dispatch_tcp);
     RUN_TEST(test_eth_arp_cache_eviction_overflow);
     RUN_TEST(test_eth_multiprotocol_interleaving);
     RUN_TEST(test_dhcp_init);
@@ -669,6 +677,8 @@ int main(void)
     extern void run_bacnet_tests(void);
     extern void run_modbus_master_tests(void);
     extern void run_lut_tests(void);
+    extern void run_tcp_tests(void);
+    extern void run_udp_tests(void);
 
     RUN_TEST(test_igmp_init);
     RUN_TEST(test_igmp_join_and_leave);
@@ -677,6 +687,8 @@ int main(void)
     RUN_TEST(test_igmp_group_overflow_and_leaving_unjoined);
     RUN_TEST(test_igmp_non_igmp_packets);
 
+    run_tcp_tests();
+    run_udp_tests();
     run_bacnet_tests();
     run_modbus_master_tests();
     run_lut_tests();

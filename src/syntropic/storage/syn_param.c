@@ -183,11 +183,7 @@ SYN_Status syn_param_load(const SYN_ParamStore *store, void *data)
 
     SYN_ParamSlotHeader hdr;
     if (read_slot(store, store->active_sector, store->active_slot, &hdr, data)) {
-        /* Verify CRC with actual data */
-        uint16_t crc = syn_crc16_ccitt(data, store->data_size);
-        if (crc == hdr.crc) {
-            return SYN_OK;
-        }
+        return SYN_OK;
     }
 
     return SYN_ERROR;

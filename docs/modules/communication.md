@@ -9,6 +9,9 @@ SyntropicOS provides a comprehensive suite of communication protocols ranging fr
 | Layer | Module | Header | Description |
 |---|---|---|---|
 | **Ethernet** | Ethernet II & ARP | `net/syn_eth.h` | Zero-heap Ethernet II framing, MAC filtering, & configurable ARP table cache (`SYN_ETH_ARP_CACHE_SIZE`, default 8) |
+| **Transport** | Native TCP Engine | `net/syn_tcp.h` | Zero-alloc IPv4 TCP state machine, 3-way handshake (`SYN`, `SYN-ACK`, `ACK`), & `PT_TCP_BLOCK_READ` macro |
+| **Transport** | Native UDP Engine | `net/syn_udp.h` | Zero-alloc IPv4 UDP demuxing engine, targeted port waking, & `PT_UDP_BLOCK_READ` macro |
+| **Transport** | UDP Transport Bridge | `net/syn_transport_udp.h` | Dual-stack socket bridge connecting `syn_port_udp_*` platform abstraction to native `syn_udp` |
 | **Ethernet** | HAL Contract | `port/syn_port_eth.h` | Hardware HAL contract driving STM32 RMII, W5500 SPI, or ESP32 ETH |
 | **IP Address** | DHCP Client | `net/syn_dhcp.h` | RFC 2131 BOOTP/DHCP state machine (`DISCOVER` → `ACK`) & option parser |
 | **IP Address** | AutoIP (RFC 3927) | `net/syn_autoip.h` | Link-Local (`169.254.x.x`) IP selection, ARP probing, & collision recovery |
@@ -173,6 +176,9 @@ SyntropicOS provides a standalone, zero-heap Ethernet II and IP networking stack
 
 ### Sub-Modules
 - **Ethernet II & ARP (`syn_eth.h`)**: Raw Ethernet II framing, MAC address filtering, and configurable static ARP table cache (`SYN_ETH_ARP_CACHE_SIZE`, defaults to 8 entries).
+- **Native TCP Engine (`syn_tcp.h`)**: Zero-alloc IPv4 TCP state machine (`LISTEN`, `SYN_RCVD`, `ESTABLISHED`, `FIN_WAIT`), 3-way handshake (`SYN` → `SYN-ACK` → `ACK`), sequence/ACK tracking, and non-blocking `PT_TCP_BLOCK_READ` protothread task macro.
+- **Native UDP Engine (`syn_udp.h`)**: Zero-alloc IPv4 UDP demuxing stack, 8-byte header construction, pseudo-header checksum (`syn_udp_checksum`), targeted destination port waking (`syn_task_resume`), and `PT_UDP_BLOCK_READ` protothread macro.
+- **UDP Transport Bridge (`syn_transport_udp.h`)**: Dual-stack transport bridge connecting `syn_port_udp_*` platform abstraction layer directly to `syn_udp` for seamless execution across software MACRAW, WIZnet hardware sockets, or POSIX/OS sockets.
 - **DHCP Client (`syn_dhcp.h`)**: RFC 2131 BOOTP/DHCP client state machine (`DISCOVER` → `OFFER` → `REQUEST` → `ACK`) over UDP ports 67/68.
 - **ICMP Protocol Engine (`syn_icmp.h`)**: RFC 792 ICMP Echo Request / Reply (Ping) engine with RFC 1071 Ones-Complement Internet Checksum.
 - **RFC 3927 AutoIP (`syn_autoip.h`)**: Link-Local `169.254.x.x` address selection, ARP probing, and collision recovery.

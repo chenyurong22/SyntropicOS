@@ -173,6 +173,11 @@ SYN_Status syn_nn_softmax_q7(const q7_t *inputs, q7_t *outputs, size_t num_input
         return SYN_INVALID_PARAM;
     }
 
+    /* Stack buffer is fixed at 64 entries — reject larger inputs */
+    if (num_inputs > 64) {
+        return SYN_INVALID_PARAM;
+    }
+
     /* Find max input for numerical stability */
     q7_t max_val = inputs[0];
     for (size_t i = 1; i < num_inputs; i++) {
@@ -184,9 +189,8 @@ SYN_Status syn_nn_softmax_q7(const q7_t *inputs, q7_t *outputs, size_t num_input
     /* Compute exp(x - max) approximation in Q16.16 */
     double sum = 0.0;
     double exp_vals[64];
-    size_t count = (num_inputs < 64) ? num_inputs : 64;
 
-    for (size_t i = 0; i < count; i++) {
+    for (size_t i = 0; i < num_inputs; i++) {
         double diff = (double)(inputs[i] - max_val) / 128.0;
         exp_vals[i] = exp(diff);
         sum += exp_vals[i];
@@ -197,7 +201,7 @@ SYN_Status syn_nn_softmax_q7(const q7_t *inputs, q7_t *outputs, size_t num_input
     }
 
     /* Normalize so sum equals 127 in Q7 (+1.0) */
-    for (size_t i = 0; i < count; i++) {
+    for (size_t i = 0; i < num_inputs; i++) {
         double prob = exp_vals[i] / sum;
         outputs[i] = Q7_FROM_FLOAT((float)prob);
     }

@@ -68,6 +68,10 @@ void syn_watchdog_unregister(SYN_Watchdog *wdt, int8_t id)
     SYN_ASSERT(wdt != NULL);
     SYN_ASSERT(id >= 0 && (uint8_t)id < wdt->capacity);
 
+    if (!wdt->entries[id].active) {
+        return; /* Already unregistered — guard against count underflow */
+    }
+
     wdt->entries[id].active = false;
     wdt->count--;
 }

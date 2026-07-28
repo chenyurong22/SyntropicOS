@@ -38,7 +38,7 @@ typedef struct {
 } FAT_Volume;
 
 static FAT_Volume g_vol;
-SYN_SD g_sd;
+static SYN_SD g_sd;
 
 /* ── Open file context pool ─────────────────────────────────────────────── */
 

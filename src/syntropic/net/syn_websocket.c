@@ -111,7 +111,8 @@ static void sha1_update(SYN_SHA1_Ctx *ctx, const uint8_t *data, uint32_t len)
     if ((j + len) > 63) {
         memcpy(&ctx->buffer[j], data, (i = 64 - j));
         sha1_transform(ctx->state, ctx->buffer);
-        /* Inner loop removed: unreachable for WebSocket key sizes */
+        for (; i + 63 < len; i += 64)
+            sha1_transform(ctx->state, &data[i]);
         j = 0;
     } else {
         i = 0;
@@ -305,90 +306,90 @@ SYN_PT_Status syn_websocket_task(SYN_PT *pt, SYN_Task *task)
     PT_BEGIN(pt);
 
     for (;;) {
-        if (ws->state == SYN_WS_STATE_CONNECTED) {
-            /* Try to read multiple bytes (non-blocking) */
-            uint8_t buf[64];
-            int n = syn_port_sock_recv(ws->sock, buf, sizeof(buf), 0);
-            if (n > 0) {
-                for (int i = 0; i < n; i++) {
-                    uint8_t b = buf[i];
-                    /* Process byte using internal state machine */
-                    if (ws->rx_state == 0) {
-                        /* FIN + Opcode */
-                        ws->opcode = b & 0x0F;
-                        ws->rx_state = 1;
-                    } else if (ws->rx_state == 1) {
-                        /* Mask + Length */
-                        ws->masked = (b & 0x80) != 0;
-                        uint8_t l = b & 0x7F;
-                        if (l < 126) {
-                            ws->payload_len = l;
-                            ws->rx_state = ws->masked ? 2 : 3;
-                            ws->bytes_read = 0;
-                        } else if (l == 126) {
-                            /* 2 byte length */
-                            ws->payload_len = 0;
-                            ws->rx_state = 4; /* state 4/5: length accumulation */
-                        } else {
-                            /* Too large, close */
+        PT_BLOCK_CONDITION(pt, task, ws->state == SYN_WS_STATE_CONNECTED);
+
+        /* Try to read multiple bytes (non-blocking) */
+        uint8_t buf[64];
+        int n = syn_port_sock_recv(ws->sock, buf, sizeof(buf), 0);
+        if (n > 0) {
+            for (int i = 0; i < n; i++) {
+                uint8_t b = buf[i];
+                /* Process byte using internal state machine */
+                if (ws->rx_state == 0) {
+                    /* FIN + Opcode */
+                    ws->opcode = b & 0x0F;
+                    ws->rx_state = 1;
+                } else if (ws->rx_state == 1) {
+                    /* Mask + Length */
+                    ws->masked = (b & 0x80) != 0;
+                    uint8_t l = b & 0x7F;
+                    if (l < 126) {
+                        ws->payload_len = l;
+                        ws->rx_state = ws->masked ? 2 : 3;
+                        ws->bytes_read = 0;
+                    } else if (l == 126) {
+                        /* 2 byte length */
+                        ws->payload_len = 0;
+                        ws->rx_state = 4; /* state 4/5: length accumulation */
+                    } else {
+                        /* Too large, close */
+                        syn_port_sock_close(ws->sock);
+                        ws->state = SYN_WS_STATE_CLOSED;
+                        break;
+                    }
+                } else if (ws->rx_state == 4) {
+                    ws->payload_len = (uint32_t)b << 8;
+                    ws->rx_state = 5;
+                } else if (ws->rx_state == 5) {
+                    ws->payload_len |= b;
+                    ws->rx_state = ws->masked ? 2 : 3;
+                    ws->bytes_read = 0;
+                } else if (ws->rx_state == 2) {
+                    /* Read Masking Key */
+                    ws->mask_key[ws->bytes_read++] = b;
+                    if (ws->bytes_read == 4) {
+                        ws->rx_state = 3;
+                        ws->bytes_read = 0;
+                    }
+                } else if (ws->rx_state == 3) {
+                    /* Read Payload */
+                    if (ws->bytes_read < sizeof(ws->rx_buf)) {
+                        ws->rx_buf[ws->bytes_read] = b;
+                        if (ws->masked) {
+                            ws->rx_buf[ws->bytes_read] ^= ws->mask_key[ws->bytes_read % 4];
+                        }
+                    }
+                    ws->bytes_read++;
+                    if (ws->bytes_read == ws->payload_len) {
+                        /* Finished reading frame */
+                        if (ws->opcode == 0x08) {
+                            /* CLOSE frame */
                             syn_port_sock_close(ws->sock);
                             ws->state = SYN_WS_STATE_CLOSED;
                             break;
-                        }
-                    } else if (ws->rx_state == 4) {
-                        ws->payload_len = (uint32_t)b << 8;
-                        ws->rx_state = 5;
-                    } else if (ws->rx_state == 5) {
-                        ws->payload_len |= b;
-                        ws->rx_state = ws->masked ? 2 : 3;
-                        ws->bytes_read = 0;
-                    } else if (ws->rx_state == 2) {
-                        /* Read Masking Key */
-                        ws->mask_key[ws->bytes_read++] = b;
-                        if (ws->bytes_read == 4) {
-                            ws->rx_state = 3;
-                            ws->bytes_read = 0;
-                        }
-                    } else if (ws->rx_state == 3) {
-                        /* Read Payload */
-                        if (ws->bytes_read < sizeof(ws->rx_buf)) {
-                            ws->rx_buf[ws->bytes_read] = b;
-                            if (ws->masked) {
-                                ws->rx_buf[ws->bytes_read] ^= ws->mask_key[ws->bytes_read % 4];
+                        } else if (ws->opcode == 0x09) {
+                            /* PING, reply with PONG */
+                            syn_websocket_send(ws, 0x0A, ws->rx_buf,
+                                               ws->payload_len < sizeof(ws->rx_buf)
+                                                   ? ws->payload_len
+                                                   : sizeof(ws->rx_buf));
+                        } else if (ws->opcode == 0x01 || ws->opcode == 0x02) {
+                            /* Text/Binary message */
+                            if (ws->on_message != NULL) {
+                                size_t act_len = ws->payload_len < sizeof(ws->rx_buf)
+                                                     ? ws->payload_len
+                                                     : sizeof(ws->rx_buf);
+                                ws->on_message(ws->rx_buf, act_len, ws->opcode, ws->ctx);
                             }
                         }
-                        ws->bytes_read++;
-                        if (ws->bytes_read == ws->payload_len) {
-                            /* Finished reading frame */
-                            if (ws->opcode == 0x08) {
-                                /* CLOSE frame */
-                                syn_port_sock_close(ws->sock);
-                                ws->state = SYN_WS_STATE_CLOSED;
-                                break;
-                            } else if (ws->opcode == 0x09) {
-                                /* PING, reply with PONG */
-                                syn_websocket_send(ws, 0x0A, ws->rx_buf,
-                                                   ws->payload_len < sizeof(ws->rx_buf)
-                                                       ? ws->payload_len
-                                                       : sizeof(ws->rx_buf));
-                            } else if (ws->opcode == 0x01 || ws->opcode == 0x02) {
-                                /* Text/Binary message */
-                                if (ws->on_message != NULL) {
-                                    size_t act_len = ws->payload_len < sizeof(ws->rx_buf)
-                                                         ? ws->payload_len
-                                                         : sizeof(ws->rx_buf);
-                                    ws->on_message(ws->rx_buf, act_len, ws->opcode, ws->ctx);
-                                }
-                            }
-                            ws->rx_state = 0;
-                        }
+                        ws->rx_state = 0;
                     }
                 }
-            } else if (n == 0) {
-                /* Connection closed by peer */
-                syn_port_sock_close(ws->sock);
-                ws->state = SYN_WS_STATE_CLOSED;
             }
+        } else if (n == 0) {
+            /* Connection closed by peer */
+            syn_port_sock_close(ws->sock);
+            ws->state = SYN_WS_STATE_CLOSED;
         }
         PT_DEFER(pt, task);
     }

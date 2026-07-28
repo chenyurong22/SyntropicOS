@@ -11,7 +11,7 @@ Welcome to the SyntropicOS C API Reference. This directory provides direct acces
 | **Standards Compliance** | Pure C99, compatible with GCC, Clang, IAR, Keil, and MSVC. |
 | **Heap Allocation** | **0 Bytes**. No `malloc()`, `free()`, or dynamic memory pools. |
 | **Concurrency Model** | Cooperative stackless coroutines (`syn_pt`). RAM footprint = **2 bytes/thread**. |
-| **Reentrancy & Safety** | Lock-free SPSC data structures for safe ISR $\leftrightarrow$ Task communication. |
+| **Reentrancy & Safety** | Lock-free SPSC data structures for safe ISR ↔ Task communication. |
 
 ---
 

@@ -219,7 +219,7 @@ Consider Task A (Priority 0) and Task B (Priority 1):
        PT_YIELD(pt); // Remains SYN_TASK_READY at Prio 0!
    }
    ```
-   *Execution*: Scheduler scans Prio 0 $\rightarrow$ Task A is READY $\rightarrow$ Runs Task A $\rightarrow$ Task A yields $\rightarrow$ Scheduler scans Prio 0 again $\rightarrow$ Task A is READY $\rightarrow$ Runs Task A.
+   *Execution*: Scheduler scans Prio 0 → Task A is READY → Runs Task A → Task A yields → Scheduler scans Prio 0 again → Task A is READY → Runs Task A.
    *Result*: **Task B (Prio 1) NEVER runs (Starved).**
 
 2. **Using `PT_DEFER` in Task A**:
@@ -230,13 +230,11 @@ Consider Task A (Priority 0) and Task B (Priority 1):
        PT_DEFER(pt, task); // Sets state to SYN_TASK_DEFERRED for 1 pass!
    }
    ```
-   *Execution*: Scheduler scans Prio 0 $\rightarrow$ Task A is DEFERRED (skipped) $\rightarrow$ Scheduler scans Prio 1 $\rightarrow$ **Task B runs** $\rightarrow$ End of tick clears Task A back to READY $\rightarrow$ Next tick Task A runs again.
+   *Execution*: Scheduler scans Prio 0 → Task A is DEFERRED (skipped) → Scheduler scans Prio 1 → **Task B runs** → End of tick clears Task A back to READY → Next tick Task A runs again.
    *Result*: **Task B gets fair CPU execution time.**
 
-!!! warning "Multi-Task Deferral Starvation Trap"
-    `PT_DEFER` is per-task. If **two or more** tasks at Priority 0 both call `PT_DEFER`:
-    - Pass 1: Task A defers $\rightarrow$ Task B runs and defers.
-    - Pass 2: Task A is cleared to READY $\rightarrow$ Task A runs and defers.
+    - Pass 1: Task A defers → Task B runs and defers.
+    - Pass 2: Task A is cleared to READY → Task A runs and defers.
     - Result: Task A and Task B ping-pong deferrals every pass, keeping Priority 0 active continuously and **still starving Priority 1**.
     - *Fix*: Use `PT_TASK_DELAY_MS` or `PT_BLOCK_EVENT` when waiting for external timing or peripheral interrupts.
 

@@ -19,7 +19,7 @@ SyntropicOS provides header-only foundation macros, ISR-safe data structures, bi
 
 `SYN_Stream` wraps an SPSC ring buffer with protothread-aware readability conditions. It supports 3 operational modes:
 - **Default Mode**: De-blocks when any byte is available.
-- **Threshold Mode**: De-blocks when $\ge N$ bytes arrive (packet-oriented protocols).
+- **Threshold Mode**: De-blocks when ≥ N bytes arrive (packet-oriented protocols).
 - **Delimiter Mode**: De-blocks when a specific delimiter byte (e.g. `\n` or `0x00`) arrives. If an oversized frame fills the buffer without a delimiter, `SYN_Stream` automatically flushes the corrupted frame, enters a resync state, and discards trailing bytes until the delimiter arrives. This guarantees protothreads on `PT_STREAM_WAIT` wake ONLY on 100% complete, un-truncated frames.
 
 ### Stream Data Flow

@@ -10,7 +10,7 @@ SyntropicOS provides a comprehensive suite of communication protocols ranging fr
 |---|---|---|---|
 | **Ethernet** | Ethernet II & ARP | `net/syn_eth.h` | Zero-heap Ethernet II framing, MAC filtering, & configurable ARP table cache (`SYN_ETH_ARP_CACHE_SIZE`, default 8) |
 | **Ethernet** | HAL Contract | `port/syn_port_eth.h` | Hardware HAL contract driving STM32 RMII, W5500 SPI, or ESP32 ETH |
-| **IP Address** | DHCP Client | `net/syn_dhcp.h` | RFC 2131 BOOTP/DHCP state machine (`DISCOVER` $\rightarrow$ `ACK`) & option parser |
+| **IP Address** | DHCP Client | `net/syn_dhcp.h` | RFC 2131 BOOTP/DHCP state machine (`DISCOVER` → `ACK`) & option parser |
 | **IP Address** | AutoIP (RFC 3927) | `net/syn_autoip.h` | Link-Local (`169.254.x.x`) IP selection, ARP probing, & collision recovery |
 | **IP Manager** | Netcfg Manager | `net/syn_netcfg.h` | Unified Static / DHCP / AutoIP fallback & Link Up/Down state machine |
 | **ICMP** | ICMP Engine | `net/syn_icmp.h` | RFC 792 ICMP Echo Request/Reply (Ping) & Ones-Complement Checksum |
@@ -153,7 +153,7 @@ The DALI (Digital Addressable Lighting Interface / IEC 62386-101/102) engine imp
 ### Features
 - **Manchester Encoding/Decoding**: Bi-phase bit encoding/decoding helper functions.
 - **Forward & Backward Frames**: 16-bit Master Forward Frame decoding (`syn_dali_decode_forward`) and 8-bit Slave Backward Frame encoding (`syn_dali_encode_backward`).
-- **Direct Arc Power Control (DAPC)**: Manages logarithmic/linear arc dimming levels ($0..254$), min/max bounds, power-on levels, and system failure levels.
+- **Direct Arc Power Control (DAPC)**: Manages logarithmic/linear arc dimming levels (0..254), min/max bounds, power-on levels, and system failure levels.
 
 ---
 
@@ -173,7 +173,7 @@ SyntropicOS provides a standalone, zero-heap Ethernet II and IP networking stack
 
 ### Sub-Modules
 - **Ethernet II & ARP (`syn_eth.h`)**: Raw Ethernet II framing, MAC address filtering, and configurable static ARP table cache (`SYN_ETH_ARP_CACHE_SIZE`, defaults to 8 entries).
-- **DHCP Client (`syn_dhcp.h`)**: RFC 2131 BOOTP/DHCP client state machine (`DISCOVER` $\rightarrow$ `OFFER` $\rightarrow$ `REQUEST` $\rightarrow$ `ACK`) over UDP ports 67/68.
+- **DHCP Client (`syn_dhcp.h`)**: RFC 2131 BOOTP/DHCP client state machine (`DISCOVER` → `OFFER` → `REQUEST` → `ACK`) over UDP ports 67/68.
 - **ICMP Protocol Engine (`syn_icmp.h`)**: RFC 792 ICMP Echo Request / Reply (Ping) engine with RFC 1071 Ones-Complement Internet Checksum.
 - **RFC 3927 AutoIP (`syn_autoip.h`)**: Link-Local `169.254.x.x` address selection, ARP probing, and collision recovery.
 - **Network IP Manager (`syn_netcfg.h`)**: Unified IP configuration manager supporting Static IP, DHCP, automatic AutoIP fallback, and physical Link Up / Link Down state transitions.

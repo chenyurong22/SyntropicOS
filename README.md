@@ -103,7 +103,9 @@ SyntropicOS ships with hardware and SDK examples across bare-metal C, STM32 HAL,
 - **[`examples/stm32_bacnet_mstp`](examples/stm32_bacnet_mstp)** — STM32 RS485 BACnet MS/TP Smart Thermostat / Sensor node.
 - **[`examples/stm32_lin_bus`](examples/stm32_lin_bus)** — STM32 HAL LIN 2.1 automotive bus Master schedule table & Slave response node.
 - **[`examples/stm32_mbus_meter`](examples/stm32_mbus_meter)** — STM32 HAL M-Bus (Meter-Bus EN 13757) utility meter reader.
+- **[`examples/stm32_pmbus_power`](examples/stm32_pmbus_power)** — STM32 HAL PMBus (Power Management Bus 1.2/1.3) digital power telemetry.
 - **[`examples/stm32_modbus_master`](examples/stm32_modbus_master)** — STM32 RS485 Modbus RTU Master querying slave registers.
+
 
 
 - **[`examples/stm32_dali_lighting`](examples/stm32_dali_lighting)** — STM32 DALI (IEC 62386) LED Dimmer / Control Gear node.

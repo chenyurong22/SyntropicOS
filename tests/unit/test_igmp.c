@@ -95,3 +95,53 @@ void test_igmp_null_checks(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
                           syn_igmp_process_packet(NULL, NULL, NULL, 0, NULL, NULL));
 }
+
+void test_igmp_group_overflow_and_leaving_unjoined(void)
+{
+    SYN_IGMP igmp;
+    SYN_ETH eth;
+    syn_igmp_init(&igmp);
+    syn_eth_init(&eth, MAC, MY_IP);
+
+    uint8_t frame[60];
+    size_t len = 0;
+
+    /* Fill all 4 group slots */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_igmp_join_group(&igmp, &eth, 0xE0000001, frame, &len));
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_igmp_join_group(&igmp, &eth, 0xE0000002, frame, &len));
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_igmp_join_group(&igmp, &eth, 0xE0000003, frame, &len));
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_igmp_join_group(&igmp, &eth, 0xE0000004, frame, &len));
+
+    /* Join 5th group (causes replacement of slot 0) */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_igmp_join_group(&igmp, &eth, 0xE0000005, frame, &len));
+    TEST_ASSERT_EQUAL_UINT32(0xE0000005, igmp.groups[0].group_ip);
+
+    /* Leave a group that was never joined */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_igmp_leave_group(&igmp, &eth, 0xE0000099, frame, &len));
+}
+
+void test_igmp_non_igmp_packets(void)
+{
+    SYN_IGMP igmp;
+    SYN_ETH eth;
+    syn_igmp_init(&igmp);
+    syn_eth_init(&eth, MAC, MY_IP);
+
+    uint8_t short_pkt[30] = {0};
+    size_t tx_len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_igmp_process_packet(&igmp, &eth, short_pkt, 30, NULL, &tx_len));
+
+    /* ARP packet (ethertype != 0x0800) */
+    uint8_t arp_pkt[60] = {0};
+    arp_pkt[12] = 0x08;
+    arp_pkt[13] = 0x06;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_igmp_process_packet(&igmp, &eth, arp_pkt, 60, NULL, &tx_len));
+
+    /* UDP packet (proto = 17 != 2) */
+    uint8_t udp_pkt[60] = {0};
+    udp_pkt[12] = 0x08;
+    udp_pkt[13] = 0x00;
+    udp_pkt[23] = 17;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_igmp_process_packet(&igmp, &eth, udp_pkt, 60, NULL, &tx_len));
+}

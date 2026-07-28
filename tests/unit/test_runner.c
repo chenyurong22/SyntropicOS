@@ -664,10 +664,15 @@ int main(void)
     RUN_TEST(test_netcfg_link_events);
     RUN_TEST(test_netcfg_coroutine_pt);
     RUN_TEST(test_netcfg_null_checks);
+    extern void test_igmp_group_overflow_and_leaving_unjoined(void);
+    extern void test_igmp_non_igmp_packets(void);
+
     RUN_TEST(test_igmp_init);
     RUN_TEST(test_igmp_join_and_leave);
     RUN_TEST(test_igmp_process_query);
     RUN_TEST(test_igmp_null_checks);
+    RUN_TEST(test_igmp_group_overflow_and_leaving_unjoined);
+    RUN_TEST(test_igmp_non_igmp_packets);
 
     return UNITY_END();
 

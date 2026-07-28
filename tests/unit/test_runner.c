@@ -481,6 +481,22 @@ int main(void)
     extern void test_ppm_init(void);
     extern void test_ppm_process_frame(void);
     extern void test_ppm_null_and_clamping(void);
+    extern void test_crsf_init(void);
+    extern void test_crsf_crc8_calculation(void);
+    extern void test_crsf_parse_rc_channels(void);
+    extern void test_crsf_raw_to_us_scaling(void);
+    extern void test_crsf_null_and_error_handling(void);
+    extern void test_ibus_init(void);
+    extern void test_ibus_checksum_calculation(void);
+    extern void test_ibus_streaming_parser(void);
+    extern void test_ibus_null_and_error_handling(void);
+    extern void test_rc_curve_linear_no_deadband(void);
+    extern void test_rc_curve_deadband(void);
+    extern void test_rc_curve_expo_and_dual_rate(void);
+    extern void test_rc_curve_null_config(void);
+    extern void test_rc_failsafe_init(void);
+    extern void test_rc_failsafe_timeout_trigger(void);
+    extern void test_rc_failsafe_null_and_error(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -515,6 +531,22 @@ int main(void)
     RUN_TEST(test_ppm_init);
     RUN_TEST(test_ppm_process_frame);
     RUN_TEST(test_ppm_null_and_clamping);
+    RUN_TEST(test_crsf_init);
+    RUN_TEST(test_crsf_crc8_calculation);
+    RUN_TEST(test_crsf_parse_rc_channels);
+    RUN_TEST(test_crsf_raw_to_us_scaling);
+    RUN_TEST(test_crsf_null_and_error_handling);
+    RUN_TEST(test_ibus_init);
+    RUN_TEST(test_ibus_checksum_calculation);
+    RUN_TEST(test_ibus_streaming_parser);
+    RUN_TEST(test_ibus_null_and_error_handling);
+    RUN_TEST(test_rc_curve_linear_no_deadband);
+    RUN_TEST(test_rc_curve_deadband);
+    RUN_TEST(test_rc_curve_expo_and_dual_rate);
+    RUN_TEST(test_rc_curve_null_config);
+    RUN_TEST(test_rc_failsafe_init);
+    RUN_TEST(test_rc_failsafe_timeout_trigger);
+    RUN_TEST(test_rc_failsafe_null_and_error);
 
     return UNITY_END();
 }

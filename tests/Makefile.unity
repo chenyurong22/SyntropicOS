@@ -121,6 +121,10 @@ SYN_SRCS := \
 	src/syntropic/proto/syn_sbus.c \
 	src/syntropic/output/syn_dshot.c \
 	src/syntropic/input/syn_ppm.c \
+	src/syntropic/proto/syn_crsf.c \
+	src/syntropic/proto/syn_ibus.c \
+	src/syntropic/control/syn_rc_curve.c \
+	src/syntropic/control/syn_rc_failsafe.c \
 	src/syntropic/util/syn_nn.c \
 	src/syntropic/util/syn_dsp.c
 

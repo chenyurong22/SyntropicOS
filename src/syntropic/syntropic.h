@@ -421,6 +421,22 @@ extern "C" {
 #include "input/syn_ppm.h"
 #endif
 
+#if !defined(SYN_USE_CRSF) || SYN_USE_CRSF
+#include "proto/syn_crsf.h"
+#endif
+
+#if !defined(SYN_USE_IBUS) || SYN_USE_IBUS
+#include "proto/syn_ibus.h"
+#endif
+
+#if !defined(SYN_USE_RC_CURVE) || SYN_USE_RC_CURVE
+#include "control/syn_rc_curve.h"
+#endif
+
+#if !defined(SYN_USE_RC_FAILSAFE) || SYN_USE_RC_FAILSAFE
+#include "control/syn_rc_failsafe.h"
+#endif
+
 #if !defined(SYN_USE_NMEA) || SYN_USE_NMEA
 #include "proto/syn_nmea.h"
 #endif

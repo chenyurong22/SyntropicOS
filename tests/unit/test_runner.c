@@ -469,6 +469,18 @@ int main(void)
     extern void test_bldc_6step_direction_and_stop(void);
     extern void test_bldc_6step_speed_calculation(void);
     extern void test_bldc_6step_null_params_and_edge_cases(void);
+    extern void test_sbus_init(void);
+    extern void test_sbus_decode_buffer(void);
+    extern void test_sbus_streaming_parser(void);
+    extern void test_sbus_raw_to_us_scaling(void);
+    extern void test_sbus_null_and_error_handling(void);
+    extern void test_dshot_crc_calculation(void);
+    extern void test_dshot_encode(void);
+    extern void test_dshot_us_to_throttle(void);
+    extern void test_dshot_null_and_clamping(void);
+    extern void test_ppm_init(void);
+    extern void test_ppm_process_frame(void);
+    extern void test_ppm_null_and_clamping(void);
 
     RUN_TEST(test_q7_math_boundaries_and_saturation);
     RUN_TEST(test_q15_math_boundaries_and_saturation);
@@ -491,6 +503,18 @@ int main(void)
     RUN_TEST(test_bldc_6step_direction_and_stop);
     RUN_TEST(test_bldc_6step_speed_calculation);
     RUN_TEST(test_bldc_6step_null_params_and_edge_cases);
+    RUN_TEST(test_sbus_init);
+    RUN_TEST(test_sbus_decode_buffer);
+    RUN_TEST(test_sbus_streaming_parser);
+    RUN_TEST(test_sbus_raw_to_us_scaling);
+    RUN_TEST(test_sbus_null_and_error_handling);
+    RUN_TEST(test_dshot_crc_calculation);
+    RUN_TEST(test_dshot_encode);
+    RUN_TEST(test_dshot_us_to_throttle);
+    RUN_TEST(test_dshot_null_and_clamping);
+    RUN_TEST(test_ppm_init);
+    RUN_TEST(test_ppm_process_frame);
+    RUN_TEST(test_ppm_null_and_clamping);
 
     return UNITY_END();
 }

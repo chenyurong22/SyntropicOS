@@ -409,6 +409,18 @@ extern "C" {
 #include "proto/syn_modbus.h"
 #endif
 
+#if !defined(SYN_USE_SBUS) || SYN_USE_SBUS
+#include "proto/syn_sbus.h"
+#endif
+
+#if !defined(SYN_USE_DSHOT) || SYN_USE_DSHOT
+#include "output/syn_dshot.h"
+#endif
+
+#if !defined(SYN_USE_PPM) || SYN_USE_PPM
+#include "input/syn_ppm.h"
+#endif
+
 #if !defined(SYN_USE_NMEA) || SYN_USE_NMEA
 #include "proto/syn_nmea.h"
 #endif

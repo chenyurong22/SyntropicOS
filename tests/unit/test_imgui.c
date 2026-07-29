@@ -1652,13 +1652,18 @@ static void test_imgui_slider_and_progress_bar_bounds_clamping(void)
     syn_imgui_slider(&ctx, "sl", &val, 10, 90, 10, 10, 80, 20);
 
     /* 3. Slider encoder delta clamping below min & above max */
-    ctx.touch_down = false;
-    ctx.active_id = 1234;
-    ctx.enc_delta = -100;
-    syn_imgui_slider(&ctx, "sl", &val, 10, 90, 10, 10, 80, 20);
+    val = 50;
+    syn_imgui_begin(&ctx, &canvas, false, false, -100, false, 0, 0);
+    ctx.focused_id = 1;
+    ctx.active_id = 1;
+    syn_imgui_slider(&ctx, "sl", &val, 10, 90, 0, 0, 80, 20);
+    TEST_ASSERT_EQUAL_INT32(10, val);
 
-    ctx.enc_delta = 100;
-    syn_imgui_slider(&ctx, "sl", &val, 10, 90, 10, 10, 80, 20);
+    syn_imgui_begin(&ctx, &canvas, false, false, 100, false, 0, 0);
+    ctx.focused_id = 1;
+    ctx.active_id = 1;
+    syn_imgui_slider(&ctx, "sl", &val, 10, 90, 0, 0, 80, 20);
+    TEST_ASSERT_EQUAL_INT32(90, val);
     syn_imgui_end(&ctx);
 }
 

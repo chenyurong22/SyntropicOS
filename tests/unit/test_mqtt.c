@@ -795,7 +795,9 @@ static void test_mqtt_ping_send_failure_and_packet_id_wraparound(void)
     syn_mqtt_task(&pt, &task);
 
     /* Test DISCARD phase EOF (lines 343-347) */
+    PT_INIT(&pt);
     c.sock = 10;
+    c.state = SYN_MQTT_CONNECTED;
     c.rx_phase = SYN_MQTT_RX_DISCARD;
     c.rx_rem_len = 50;
     c.rx_pos = 0;

@@ -1678,7 +1678,23 @@ static void test_uds_clear_dtc_group_filtering(void)
     TEST_ASSERT_EQUAL_HEX8(0x54, resp[0]);
     TEST_ASSERT_EQUAL_UINT8(2, server.dtc_count);
 
-    /* 5. Clear All DTCs (0xFFFFFF) */
+    /* 5. Clear Body group (0x800000) */
+    req[1] = 0x80;
+    req[2] = 0x00;
+    req[3] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x54, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(1, server.dtc_count);
+
+    /* 6. Clear Network group (0xC00000) */
+    req[1] = 0xC0;
+    req[2] = 0x00;
+    req[3] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x54, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(0, server.dtc_count);
+
+    /* 7. Clear All DTCs (0xFFFFFF) */
     req[1] = 0xFF;
     req[2] = 0xFF;
     req[3] = 0xFF;

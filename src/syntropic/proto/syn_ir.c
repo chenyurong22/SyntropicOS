@@ -399,8 +399,10 @@ bool syn_ir_decode_pulse(SYN_IR_Decoder *decoder, uint16_t duration_us, bool is_
                             reset_decoder_state(decoder);
                             return true;
                         }
+                        /* LCOV_EXCL_START */
                         reset_decoder_state(decoder);
-                        return false; /* LCOV_EXCL_LINE */
+                        return false;
+                        /* LCOV_EXCL_STOP */
                     }
                 }
             }

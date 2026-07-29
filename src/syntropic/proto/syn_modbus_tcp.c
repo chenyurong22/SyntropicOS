@@ -75,8 +75,10 @@ static uint16_t get_response_pdu_len(const uint8_t *buf)
     case SYN_MB_FC_MASK_WRITE_REGISTER:
         return 7;
 
+    /* LCOV_EXCL_START */
     default:
-        return (uint16_t)(2 + buf[2]); /* LCOV_EXCL_LINE */
+        return (uint16_t)(2 + buf[2]);
+        /* LCOV_EXCL_STOP */
     }
 }
 

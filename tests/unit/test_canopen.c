@@ -595,13 +595,32 @@ static void test_canopen_uncovered_edge_cases(void)
     TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
     TEST_ASSERT_EQUAL(0x80U, tx_buf[0]);
 
-    /* 9. SDO Expedited upload request with type mismatch (line 325) */
-    /* 0x2001:0x01 is uint16_t (2 bytes). Send SDO upload initiate with e=1, s=1, n=3 (indicating 1
-     * byte size) */
-    uint8_t sdo_up_typemismatch[8] = {0x4BU, 0x01U, 0x20U, 0x01U, 0, 0, 0, 0};
-    syn_canopen_process_rx(&node, 0x605U, sdo_up_typemismatch, 8);
-    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
-    TEST_ASSERT_EQUAL(0x4BU, tx_buf[0]);
+    /* 9. SDO Expedited upload size mismatch (line 325) */
+    SYN_CANOpenODEntry od_large = {0x3000, 0x01, SYN_CANOPEN_TYPE_U32, SYN_CANOPEN_ACCESS_RO,
+                                   NULL,   8};
+    SYN_CANOpenNodeConfig cfg_large;
+    memset(&cfg_large, 0, sizeof(cfg_large));
+    cfg_large.node_id = 5;
+    SYN_CANOpenNode node_large;
+    syn_canopen_init(&node_large, &cfg_large, &od_large, 1);
+    syn_canopen_process_rx(&node_large, 0x000U, NULL, 0); /* Enter OPERATIONAL */
+
+    uint8_t sdo_up_large[8] = {0x40U, 0x00U, 0x30U, 0x01U, 0, 0, 0, 0};
+    syn_canopen_process_rx(&node_large, 0x605U, sdo_up_large, 8);
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node_large, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x41U, tx_buf[0]);
+
+    /* 10. syn_canopen_tpdo_trigger with invalid OD map failure (line 501) */
+    SYN_CANOpenNodeConfig cfg_bad_tpdo;
+    memset(&cfg_bad_tpdo, 0, sizeof(cfg_bad_tpdo));
+    cfg_bad_tpdo.node_id = 5;
+    cfg_bad_tpdo.tpdo[0].enabled = 1;
+    cfg_bad_tpdo.tpdo[0].cob_id = 0x185;
+    cfg_bad_tpdo.tpdo[0].od_index = 0x9999;
+    cfg_bad_tpdo.tpdo[0].od_subindex = 0x01;
+    SYN_CANOpenNode node_bad_tpdo;
+    syn_canopen_init(&node_bad_tpdo, &cfg_bad_tpdo, NULL, 0);
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_tpdo_trigger(&node_bad_tpdo, 0));
 }
 
 void run_canopen_tests(void)

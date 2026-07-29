@@ -1209,17 +1209,31 @@ static void test_http_long_redirect_and_header_write_failures(void)
     TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
 
     /* 5. URL host clamping (lines 165 & 172) */
-    const char *long_url1 = "http://"
+    mock_port_reset();
+    reset_accum();
+    const char *resp_red1 = "HTTP/1.1 301 Moved Permanently\r\n"
+                            "Location: "
+                            "http://"
                             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                            "aaaaaaaaaa.com:8080/path";
-    syn_http_client_init(&client, "GET", long_url1, 80, "/", NULL, NULL, 0, NULL, 0,
+                            "aaaaaaaaaa.com:8080/path\r\n"
+                            "Content-Length: 0\r\n\r\n";
+    mock_sock_set_response(resp_red1, strlen(resp_red1));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
+    run_client_task(&client);
 
-    const char *long_url2 =
-        "http://"
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com/path";
-    syn_http_client_init(&client, "GET", long_url2, 80, "/", NULL, NULL, 0, NULL, 0,
+    mock_port_reset();
+    reset_accum();
+    const char *resp_red2 = "HTTP/1.1 301 Moved Permanently\r\n"
+                            "Location: "
+                            "http://"
+                            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                            "aaaaaaaaaa.com/path\r\n"
+                            "Content-Length: 0\r\n\r\n";
+    mock_sock_set_response(resp_red2, strlen(resp_red2));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
+    run_client_task(&client);
 
     /* 6. sock_write_str CRLF fail (line 139) */
     mock_port_reset();

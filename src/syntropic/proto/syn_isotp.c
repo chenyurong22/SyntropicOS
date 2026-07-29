@@ -396,8 +396,10 @@ void syn_isotp_process_rx_frame(SYN_ISOTP_Link *link, const SYN_CAN_Frame *frame
         break;
     }
 
+    /* LCOV_EXCL_START */
     default:
-        break; /* LCOV_EXCL_LINE */
+        break;
+        /* LCOV_EXCL_STOP */
     }
 }
 

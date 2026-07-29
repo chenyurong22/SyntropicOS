@@ -365,6 +365,13 @@ static void test_canvas_corner_cases(void)
 
     /* 6. arc radius <= 0 (line 620) */
     syn_canvas_arc(&c, 10, 10, 0, 0, 90, 1);
+
+    /* 7. rect_round & rect_round_fill zero dimensions (lines 392 & 418) */
+    syn_canvas_rect_round(&c, 0, 0, 0, 10, 2, 1);
+    syn_canvas_rect_round_fill(&c, 0, 0, 10, 0, 2, 1);
+
+    /* 8. flush_partial with NULL flush_fn (line 584) */
+    syn_canvas_flush_partial(&c, 0, 10);
 }
 
 void run_canvas_tests(void)

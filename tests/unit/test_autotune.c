@@ -735,6 +735,7 @@ static void test_autotune_calc_relay_gains_zero_tu_and_default_state(void)
     SYN_AutoTune at;
     SYN_AutoTune_Config cfg = {.mode = SYN_ATUNE_MODE_AUTO};
     syn_autotune_init(&at, &ctrl, &cfg);
+    ctrl.cfg.pid_scale = 0;
     at.state = (SYN_AutoTune_State)99;
     TEST_ASSERT_EQUAL((SYN_AutoTune_State)99, syn_autotune_update(&at));
 }

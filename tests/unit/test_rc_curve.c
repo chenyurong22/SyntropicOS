@@ -41,6 +41,15 @@ void test_rc_curve_expo_and_dual_rate(void)
     TEST_ASSERT_EQUAL_UINT16(1500, syn_rc_curve_apply(1500, &cfg));
     TEST_ASSERT_INT_WITHIN(1, 1100, syn_rc_curve_apply(1000, &cfg));
     TEST_ASSERT_INT_WITHIN(1, 1900, syn_rc_curve_apply(2000, &cfg));
+
+    /* Negative offset inside and outside deadband */
+    SYN_RCCurve_Config cfg_db = {.deadband_us = 50, .expo = 0, .dual_rate = Q16_ONE};
+    TEST_ASSERT_EQUAL_UINT16(1500, syn_rc_curve_apply(1470, &cfg_db));
+    TEST_ASSERT_INT_WITHIN(5, 1444, syn_rc_curve_apply(1400, &cfg_db));
+
+    /* Deadband >= 500 us (span <= 0 branch, line 46) */
+    SYN_RCCurve_Config cfg_large_db = {.deadband_us = 500};
+    TEST_ASSERT_EQUAL_UINT16(1500, syn_rc_curve_apply(1800, &cfg_large_db));
 }
 
 void test_rc_curve_null_config(void)

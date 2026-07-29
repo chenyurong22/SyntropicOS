@@ -140,9 +140,32 @@ static void test_menu_back_while_editing(void)
     TEST_ASSERT_EQUAL_INT(0, mnu_bright3);
 }
 
+static void test_menu_max_depth(void)
+{
+    static const SYN_MenuItem d8_items[] = {SYN_MENU_CALLBACK("Leaf", mnu_cb, NULL)};
+    static const SYN_MenuItem d7_items[] = {SYN_MENU_SUBMENU("L8", d8_items)};
+    static const SYN_MenuItem d6_items[] = {SYN_MENU_SUBMENU("L7", d7_items)};
+    static const SYN_MenuItem d5_items[] = {SYN_MENU_SUBMENU("L6", d6_items)};
+    static const SYN_MenuItem d4_items[] = {SYN_MENU_SUBMENU("L5", d5_items)};
+    static const SYN_MenuItem d3_items[] = {SYN_MENU_SUBMENU("L4", d4_items)};
+    static const SYN_MenuItem d2_items[] = {SYN_MENU_SUBMENU("L3", d3_items)};
+    static const SYN_MenuItem d1_items[] = {SYN_MENU_SUBMENU("L2", d2_items)};
+    SYN_MENU_ROOT(root_nest, d1_items);
+
+    SYN_Menu menu;
+    syn_menu_init(&menu, &root_nest, mnu_render, NULL);
+
+    /* Push through 8 levels of submenus until capped at MAX_DEPTH - 1 (7) */
+    for (int i = 0; i < 10; i++) {
+        syn_menu_enter(&menu);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_MENU_MAX_DEPTH - 1, menu.depth);
+}
+
 void run_menu_tests(void)
 {
     RUN_TEST(test_menu);
     RUN_TEST(test_menu_up_wrap);
     RUN_TEST(test_menu_back_while_editing);
+    RUN_TEST(test_menu_max_depth);
 }

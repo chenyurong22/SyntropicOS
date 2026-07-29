@@ -370,6 +370,15 @@ void test_smbus_alert_and_host_notify(void)
         SYN_OK, syn_smbus_decode_packet(&decoded, rx_alert, 2, SYN_SMBUS_PROTO_RECEIVE_BYTE, true));
     TEST_ASSERT_EQUAL_HEX8(0x5A << 1, decoded.data[0]);
     TEST_ASSERT_TRUE(decoded.pec_valid);
+
+    /* Test SYN_SMBUS_PROTO_READ_WORD with data_len >= 4 (lines 230-232) */
+    uint8_t word_rx4[4] = {0x11, 0x22, 0x33, 0x44};
+    SYN_SMBUS_Packet word_pkt;
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_smbus_decode_packet(&word_pkt, word_rx4, 4, SYN_SMBUS_PROTO_READ_WORD, false));
+    TEST_ASSERT_EQUAL_INT(2, word_pkt.length);
+    TEST_ASSERT_EQUAL_HEX8(0x33, word_pkt.data[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x44, word_pkt.data[1]);
 }
 
 void run_smbus_tests(void)

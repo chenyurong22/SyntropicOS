@@ -179,6 +179,20 @@ void test_udp_extended_edge_cases(void)
     tcp_pkt[23] = 6;
     TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_udp_process_packet(&s_udp, tcp_pkt, sizeof(tcp_pkt)));
 
+    /* Invalid UDP header length (udp_len = 50 > pkt len) */
+    uint8_t bad_udplen_pkt[64] = {0};
+    syn_poke_u16(0x0800, bad_udplen_pkt, 12);
+    bad_udplen_pkt[23] = 17;
+    syn_poke_u16(50, bad_udplen_pkt, 38); /* udp_len 50 > 64 - 34 = 30 */
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR,
+                          syn_udp_process_packet(&s_udp, bad_udplen_pkt, sizeof(bad_udplen_pkt)));
+
+    /* syn_udp_sendto with high IP values triggering checksum fold (line 197) */
+    uint8_t tx[128];
+    size_t tx_l = 0;
+    TEST_ASSERT_EQUAL(
+        4, syn_udp_sendto(&s_udp, 1234, 0xFFFFFFFF, 5678, (const uint8_t *)"test", 4, tx, &tx_l));
+
     /* Unbound destination port */
     uint8_t unbound_pkt[64] = {0};
     syn_poke_u16(0x0800, unbound_pkt, 12);

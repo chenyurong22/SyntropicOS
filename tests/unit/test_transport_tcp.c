@@ -184,6 +184,19 @@ static void test_transport_tcp_recv_outbuf_too_small(void)
     TEST_ASSERT_FALSE(ok);
 }
 
+/** send/recv with invalid socket handle — exercises lines 31 and 66 */
+static void test_transport_tcp_invalid_socket(void)
+{
+    SYN_Transport t;
+    SYN_TransportTcp tcp;
+    syn_transport_tcp_init(&t, &tcp, SYN_SOCKET_INVALID);
+
+    uint8_t dummy[4] = {1, 2, 3, 4};
+    size_t out_len = 0;
+    TEST_ASSERT_FALSE(syn_transport_send(&t, dummy, 4));
+    TEST_ASSERT_FALSE(syn_transport_recv(&t, dummy, sizeof(dummy), &out_len));
+}
+
 void run_transport_tcp_tests(void)
 {
     RUN_TEST(test_transport_tcp_send);
@@ -194,4 +207,5 @@ void run_transport_tcp_tests(void)
     RUN_TEST(test_transport_tcp_recv_oversized);
     RUN_TEST(test_transport_tcp_recv_empty_packet);
     RUN_TEST(test_transport_tcp_recv_outbuf_too_small);
+    RUN_TEST(test_transport_tcp_invalid_socket);
 }

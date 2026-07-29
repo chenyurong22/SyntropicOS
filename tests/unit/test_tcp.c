@@ -301,6 +301,12 @@ static void test_tcp_null_params_and_non_tcp_proto(void)
         TEST_ASSERT_EQUAL(SYN_OK, syn_tcp_listen(&full_tcp, p));
     }
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_tcp_listen(&full_tcp, 9999));
+
+    /* Process packet for unmanaged port / listening port without match */
+    frame[36] = 0x00;
+    frame[37] = 80; /* Managed port 80, but state CLOSED (no match) */
+    TEST_ASSERT_EQUAL(SYN_ERROR,
+                      syn_tcp_process_packet(&full_tcp, frame, sizeof(frame), tx_out, &tx_len));
 }
 
 void run_tcp_tests(void)

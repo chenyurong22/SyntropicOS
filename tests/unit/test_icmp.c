@@ -127,8 +127,8 @@ void test_icmp_process_packet_invalid_headers(void)
     udp_pkt[23] = 17;   /* UDP */
     TEST_ASSERT_EQUAL(SYN_OK, syn_icmp_process_packet(&icmp, udp_pkt, sizeof(udp_pkt), NULL, NULL));
 
-    /* 4. Truncated ICMP header (packet length shorter than 14 + 20 + 8) */
-    uint8_t short_icmp[30] = {0};
+    /* 4. Truncated ICMP header (packet length shorter than 14 + 20 + 4, e.g. 35 bytes) */
+    uint8_t short_icmp[35] = {0};
     short_icmp[12] = 0x08;
     short_icmp[13] = 0x00;
     short_icmp[14] = 0x45;

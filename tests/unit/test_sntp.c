@@ -451,6 +451,17 @@ static void test_sntp_uncovered_edge_cases(void)
     build_ntp_response(pkt, 1015, 0);
     mock_udp_set_response(pkt, sizeof(pkt), &server);
     syn_sntp_query(&sntp);
+
+    /* 4. Short packet response < 48 bytes (line 55) */
+    uint8_t short_sntp_pkt[20] = {0};
+    mock_udp_set_response(short_sntp_pkt, sizeof(short_sntp_pkt), &server);
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_sntp_query(&sntp));
+
+    /* 5. Send request failure in sntp query (line 224) */
+    mock_udp_sendto_fail = true;
+    syn_sntp_init(&sntp, &server, 1);
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_sntp_query(&sntp));
+    mock_udp_sendto_fail = false;
 }
 
 void run_sntp_tests(void)

@@ -473,6 +473,17 @@ static void test_coap_serialization_overflow_and_socket_failures(void)
         alive = syn_sched_run(&sched);
     }
     TEST_ASSERT_EQUAL(SYN_ERROR, req.status);
+
+    /* 9. CoAP task timeout (retries exhausted, line 304) */
+    mock_udp_sendto_fail = false;
+    syn_coap_request_init(&req, &server_addr, &msg, 1, 1); /* 1ms timeout, 1 retry */
+    syn_task_create(&task, "coap_timeout", syn_coap_request_task, 0, &req);
+    syn_sched_init(&sched, &task, 1);
+    alive = true;
+    while (alive) {
+        alive = syn_sched_run(&sched);
+    }
+    TEST_ASSERT_EQUAL(SYN_TIMEOUT, req.status);
 }
 
 void run_coap_tests(void)

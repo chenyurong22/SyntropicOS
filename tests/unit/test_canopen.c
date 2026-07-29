@@ -523,6 +523,57 @@ static void test_canopen_sdo_segmented_download_invalid_data(void)
     TEST_ASSERT_EQUAL(0x80U, tx_buf[0]); /* Abort response */
 }
 
+static void test_canopen_uncovered_edge_cases(void)
+{
+    SYN_CANOpenNode node;
+    SYN_CANOpenNodeConfig cfg = {.node_id = 5, .heartbeat_ms = 0};
+    syn_canopen_init(&node, &cfg, test_od, sizeof(test_od) / sizeof(test_od[0]));
+
+    uint32_t tx_id;
+    uint8_t tx_buf[8], tx_len;
+    syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len);
+
+    /* 1. OD read on Write-Only object -> SYN_ERROR */
+    uint8_t buf[4];
+    size_t out_len = 0;
+    TEST_ASSERT_EQUAL(SYN_ERROR,
+                      syn_canopen_od_read(&node, 0x2002U, 0x00U, buf, sizeof(buf), &out_len));
+
+    /* 2. OD write on Read-Only object -> SYN_ERROR */
+    uint32_t val = 0;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_canopen_od_write(&node, 0x1000U, 0x00U, &val, sizeof(val)));
+
+    /* 3. Expedited download size mismatch (write 1 byte to 2-byte entry 0x2001:0x01) -> SDO Abort
+     */
+    uint8_t sdo_exp_bad_len[8] = {0x2FU, 0x01U, 0x20U, 0x01U, 0x55U, 0x00U, 0x00U, 0x00U};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, sdo_exp_bad_len, 8));
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]); /* Abort response */
+
+    /* 4. SDO Upload Request on Write-Only object (0x2002:0x00) -> SDO Abort WRITE_ONLY */
+    uint8_t sdo_up_wo[8] = {0x40U, 0x02U, 0x20U, 0x00U, 0, 0, 0, 0};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, sdo_up_wo, 8));
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]);
+
+    /* 5. Segmented download payload overflow -> SDO Abort TYPE_MISMATCH */
+    uint8_t dn_init[8] = {0x20U, 0x01U, 0x20U, 0x01U, 2, 0, 0, 0};
+    syn_canopen_process_rx(&node, 0x605U, dn_init, 8);
+    syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len);
+    /* Send segment with 7 bytes when only 2 bytes exist in OD entry size */
+    uint8_t seg_overflow[8] = {0x00U, 1, 2, 3, 4, 5, 6, 7};
+    syn_canopen_process_rx(&node, 0x605U, seg_overflow, 8);
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]);
+
+    /* 6. NULL check in syn_canopen_send_emcy */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_send_emcy(NULL, 0x1000, 0x01));
+
+    /* 7. Unknown COB-ID */
+    uint8_t dummy[8] = {0};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x123U, dummy, 8));
+}
+
 void run_canopen_tests(void)
 {
     RUN_TEST(test_canopen_init_and_bootup);
@@ -536,4 +587,5 @@ void run_canopen_tests(void)
     RUN_TEST(test_canopen_sdo_segmented_transfer);
     RUN_TEST(test_canopen_sdo_segmented_toggle_bit_mismatch);
     RUN_TEST(test_canopen_sdo_segmented_download_invalid_data);
+    RUN_TEST(test_canopen_uncovered_edge_cases);
 }

@@ -227,12 +227,49 @@ static void test_n2k_encode_decode_null_checks(void)
 {
     SYN_CAN_Frame f;
     SYN_N2K_CogSogRapid cs;
+    SYN_N2K_VesselHeading h;
+    SYN_N2K_BatteryStatus b;
+    SYN_N2K_DcDetailedStatus dc;
+    SYN_N2K_EnvParams env;
+
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_cog_sog_rapid(0x10, NULL, &f));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_cog_sog_rapid(0x10, &cs, NULL));
-
-    f.dlc = 4; /* < 6 */
+    f.dlc = 4;
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_decode_cog_sog_rapid(&f, &cs));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_decode_cog_sog_rapid(NULL, &cs));
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_heading(0x10, NULL, &f));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_heading(0x10, &h, NULL));
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_battery(0x10, NULL, &f));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_battery(0x10, &b, NULL));
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_dc_detailed(0x10, NULL, &f));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_dc_detailed(0x10, &dc, NULL));
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_environment(0x10, NULL, &f));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_environment(0x10, &env, NULL));
+}
+
+static void test_n2k_fastpacket_single_frame_short(void)
+{
+    SYN_N2K_FastPacketRx rx;
+    memset(&rx, 0, sizeof(rx));
+
+    uint32_t target_pgn = 129029U;
+    uint32_t can_id = syn_j1939_id_pack(6, target_pgn, 0x10, SYN_J1939_ADDR_GLOBAL);
+
+    /* Single frame fast packet with total_bytes = 4 (<= 6) */
+    SYN_CAN_Frame f = {.id = can_id, .dlc = 8, .extended = true};
+    f.data[0] = 0x00; /* seq_id 0, frame 0 */
+    f.data[1] = 4;    /* total 4 bytes */
+    memcpy(&f.data[2], "PING", 4);
+
+    const uint8_t *payload = NULL;
+    size_t len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_n2k_fastpacket_process(&rx, &f, target_pgn, &payload, &len));
+    TEST_ASSERT_EQUAL_INT(4, len);
+    TEST_ASSERT_EQUAL_MEMORY("PING", payload, 4);
 }
 
 void run_n2k_tests(void)
@@ -245,4 +282,5 @@ void run_n2k_tests(void)
     RUN_TEST(test_n2k_fast_packet_single_frame_and_sequence_error);
     RUN_TEST(test_n2k_fastpacket_invalid_id_pgn_and_overflow);
     RUN_TEST(test_n2k_encode_decode_null_checks);
+    RUN_TEST(test_n2k_fastpacket_single_frame_short);
 }

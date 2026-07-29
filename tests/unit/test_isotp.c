@@ -425,6 +425,9 @@ static void test_isotp_canfd_multi_frame(void)
         syn_isotp_process_rx_frame(&sender, &fc_stmin);
         TEST_ASSERT_EQUAL_UINT8(0xF5, sender.tx_st_min);
 
+        SYN_CAN_Frame cf_frame;
+        TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&sender, &cf_frame));
+
         /* FC with STmin out of valid bounds (0x85) */
         sender.tx_state = SYN_ISOTP_TX_WAIT_FC;
         SYN_CAN_Frame fc_invalid = {.id = 0x7E8, .dlc = 8, .data = {0x30, 0, 0x85, 0, 0, 0, 0, 0}};

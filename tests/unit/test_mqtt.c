@@ -730,6 +730,62 @@ static void test_mqtt_topic_and_client_id_null_or_empty(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_mqtt_publish(&c, "", "msg", 3, 0, false));
 }
 
+static void test_mqtt_tx_buffer_overflow_in_connect(void)
+{
+    mock_port_reset();
+    SYN_MqttClient c;
+    uint8_t rx[32];
+    uint8_t small_tx[8];
+    syn_mqtt_init(&c, "broker", 1883, "very_long_client_id_name", NULL, NULL, 60, rx, sizeof(rx),
+                  small_tx, sizeof(small_tx));
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &c};
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
+}
+
+static void test_mqtt_rx_phase_disconnect_handling(void)
+{
+    mock_port_reset();
+    SYN_MqttClient c;
+    uint8_t rx[32], tx[128];
+    syn_mqtt_init(&c, "broker", 1883, "client", NULL, NULL, 60, rx, sizeof(rx), tx, sizeof(tx));
+    c.state = SYN_MQTT_CONNECTED;
+    c.sock = 10;
+    c.rx_phase = SYN_MQTT_RX_REMAINING_LEN;
+    mock_sock_connected = false;
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &c};
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
+}
+
+static void test_mqtt_ping_send_failure_and_packet_id_wraparound(void)
+{
+    mock_port_reset();
+    SYN_MqttClient c;
+    uint8_t rx[32], tx[128];
+    syn_mqtt_init(&c, "broker", 1883, "client", NULL, NULL, 60, rx, sizeof(rx), tx, sizeof(tx));
+    c.state = SYN_MQTT_CONNECTED;
+    c.sock = 10;
+    mock_sock_send_fail_after_bytes = 0;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_mqtt_ping(&c));
+    mock_sock_send_fail_after_bytes = -1;
+
+    /* Packet ID wraparound in publish & subscribe (lines 403 & 452) */
+    c.next_packet_id = 65535;
+    mock_sock_connected = true;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_mqtt_publish(&c, "test", "msg", 3, 1, false));
+    TEST_ASSERT_EQUAL(1, c.pending_puback_id);
+
+    c.next_packet_id = 65535;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_mqtt_subscribe(&c, "test", 1));
+}
+
 void run_mqtt_tests(void)
 {
     RUN_TEST(test_mqtt_connect);
@@ -748,4 +804,7 @@ void run_mqtt_tests(void)
     RUN_TEST(test_mqtt_mid_packet_rx_stalling_timeout);
     RUN_TEST(test_mqtt_connection_closed_during_payload_discard);
     RUN_TEST(test_mqtt_topic_and_client_id_null_or_empty);
+    RUN_TEST(test_mqtt_tx_buffer_overflow_in_connect);
+    RUN_TEST(test_mqtt_rx_phase_disconnect_handling);
+    RUN_TEST(test_mqtt_ping_send_failure_and_packet_id_wraparound);
 }

@@ -9,6 +9,7 @@
 #include "syn_settings.h"
 #include "syn_vfs.h"
 
+#include <stdio.h>
 #include <string.h>
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
@@ -51,7 +52,10 @@ SYN_Status syn_settings_init(SYN_Settings *s, uint32_t flash_base, uint8_t secto
     } else {
         /* Flash is blank or corrupt — apply defaults and write them */
         memcpy(data, defaults, data_size);
-        syn_param_save(&s->store, data);
+        SYN_Status save_st = syn_param_save(&s->store, data);
+        if (save_st != SYN_OK) {
+            return save_st;
+        }
     }
 
     s->checksum = compute_crc(data, data_size);

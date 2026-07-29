@@ -398,6 +398,83 @@ static void test_coap_malformed_parsing(void)
     TEST_ASSERT_EQUAL_INT(0, msg.payload_len);
 }
 
+static void test_coap_serialization_overflow_and_socket_failures(void)
+{
+    SYN_CoapMsg msg;
+    memset(&msg, 0, sizeof(msg));
+    msg.type = COAP_TYPE_CON;
+    msg.code = COAP_CODE_GET;
+    msg.token_len = 2;
+
+    uint8_t buf[32];
+
+    /* 1. max_buf_len < 4 + token_len -> returns 0 */
+    TEST_ASSERT_EQUAL(0, syn_coap_serialize(&msg, NULL, 0, buf, 5));
+
+    /* 2. Unsorted options array (Option 20, Option 5) */
+    SYN_CoapOption opts[2];
+    opts[0].num = 20;
+    opts[0].val = (const uint8_t *)"a";
+    opts[0].len = 1;
+    opts[1].num = 5;
+    opts[1].val = (const uint8_t *)"b";
+    opts[1].len = 1;
+    TEST_ASSERT_TRUE(syn_coap_serialize(&msg, opts, 2, buf, sizeof(buf)) > 0);
+
+    /* 3. Option header overflow -> returns 0 */
+    TEST_ASSERT_EQUAL(0, syn_coap_serialize(&msg, opts, 2, buf, 7));
+
+    /* 4. Payload marker overflow -> returns 0 */
+    msg.payload = (const uint8_t *)"payload";
+    msg.payload_len = 7;
+    TEST_ASSERT_EQUAL(0, syn_coap_serialize(&msg, NULL, 0, buf, 8));
+
+    /* 5. Truncated buffer for option delta 13 */
+    SYN_CoapOption parsed_opts[4];
+    size_t opt_cnt = 0;
+    uint8_t trunc_delta13[] = {0x40, 0x01, 0x12, 0x34, 0xD1}; /* delta 13 byte missing */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&msg, parsed_opts, 4, &opt_cnt, trunc_delta13,
+                                                sizeof(trunc_delta13)));
+
+    /* 6. Truncated buffer for option len 13 */
+    uint8_t trunc_len13[] = {0x40, 0x01, 0x12, 0x34, 0x1D}; /* len 13 byte missing */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_coap_parse(&msg, parsed_opts, 4, &opt_cnt, trunc_len13,
+                                                sizeof(trunc_len13)));
+
+    /* 7. Socket open failure in syn_coap_request_task */
+    mock_udp_open_ok = false;
+    SYN_SockAddr server_addr = {.ip = {127, 0, 0, 1}, .port = 5683};
+    SYN_CoapRequest req;
+    syn_coap_request_init(&req, &server_addr, &msg, 100, 1);
+    SYN_Sched sched;
+    SYN_Task task;
+    syn_task_create(&task, "coap_fail", syn_coap_request_task, 0, &req);
+    syn_sched_init(&sched, &task, 1);
+    bool alive = true;
+    while (alive) {
+        alive = syn_sched_run(&sched);
+    }
+    TEST_ASSERT_EQUAL(SYN_ERROR, req.status);
+    mock_udp_open_ok = true;
+
+    /* 8. Serialization failure (tx_len == 0) in syn_coap_request_task (line 260) */
+    SYN_CoapMsg invalid_msg;
+    memset(&invalid_msg, 0, sizeof(invalid_msg));
+    invalid_msg.type = COAP_TYPE_CON;
+    invalid_msg.code = COAP_CODE_GET;
+    invalid_msg.payload = (const uint8_t *)"overflow";
+    invalid_msg.payload_len = 1000; /* Overflow tx_buf (128 bytes) */
+
+    syn_coap_request_init(&req, &server_addr, &invalid_msg, 100, 1);
+    syn_task_create(&task, "coap_ser_fail", syn_coap_request_task, 0, &req);
+    syn_sched_init(&sched, &task, 1);
+    alive = true;
+    while (alive) {
+        alive = syn_sched_run(&sched);
+    }
+    TEST_ASSERT_EQUAL(SYN_ERROR, req.status);
+}
+
 void run_coap_tests(void)
 {
     RUN_TEST(test_coap_serialization);
@@ -406,4 +483,5 @@ void run_coap_tests(void)
     RUN_TEST(test_coap_serialization_boundaries);
     RUN_TEST(test_coap_request_task_failures);
     RUN_TEST(test_coap_malformed_parsing);
+    RUN_TEST(test_coap_serialization_overflow_and_socket_failures);
 }

@@ -700,6 +700,38 @@ static void test_httpd_bad_request_malformed_headers(void)
     TEST_ASSERT_EQUAL(SYN_HTTPD_IDLE, srv.state);
 }
 
+static void test_httpd_uncovered_edge_cases(void)
+{
+    setup_server();
+
+    /* 1. Header parsing line 160: no next_line in header loop */
+    srv.state = SYN_HTTPD_DISPATCHING;
+    const char req1[] = "GET / HTTP/1.1\r\nContent-Length: 5";
+    memcpy(srv.work_buf, req1, sizeof(req1));
+    srv.rx_total = sizeof(req1) - 1;
+    syn_httpd_step(&srv);
+
+    /* 2. recv returning -1 in SYN_HTTPD_READING_HEADERS -> SYN_TIMEOUT (line 366) */
+    setup_server();
+    srv.running = true;
+    srv.state = SYN_HTTPD_READING_HEADERS;
+    srv.client = 1;
+    srv.rx_total = 0;
+    mock_sock_eof_on_empty = false;
+    TEST_ASSERT_EQUAL(SYN_TIMEOUT, syn_httpd_step(&srv));
+
+    /* 3. NULL checks: syn_httpd_body(NULL, ...) */
+    syn_httpd_body(NULL, "data", 4);
+
+    /* 4. Malformed request line no space (line 115) */
+    setup_server();
+    srv.state = SYN_HTTPD_DISPATCHING;
+    const char req2[] = "GET_NO_SPACE\r\n\r\n";
+    memcpy(srv.work_buf, req2, sizeof(req2));
+    srv.rx_total = sizeof(req2) - 1;
+    syn_httpd_step(&srv);
+}
+
 void run_httpd_tests(void)
 {
     RUN_TEST(test_httpd_get_root);
@@ -736,4 +768,5 @@ void run_httpd_tests(void)
     RUN_TEST(test_httpd_invalid_state_and_null_status);
     RUN_TEST(test_httpd_connection_upgrade_handler);
     RUN_TEST(test_httpd_bad_request_malformed_headers);
+    RUN_TEST(test_httpd_uncovered_edge_cases);
 }

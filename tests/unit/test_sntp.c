@@ -409,6 +409,50 @@ static void test_sntp_task_send_fail(void)
 
 /* ── Runner ─────────────────────────────────────────────────────────────── */
 
+static void test_sntp_uncovered_edge_cases(void)
+{
+    SYN_SNTP sntp;
+    SYN_SockAddr server = {.ip = {1, 2, 3, 4}, .port = 123};
+    syn_sntp_init(&sntp, &server, 3600);
+
+    /* 1. Truncated NTP response (len < 48) -> line 55 */
+    uint8_t short_pkt[20];
+    memset(short_pkt, 0, sizeof(short_pkt));
+    short_pkt[0] = 0x24;
+    short_pkt[1] = 2;
+    mock_udp_set_response(short_pkt, sizeof(short_pkt), &server);
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_sntp_query(&sntp));
+
+    /* 2. ntp_s < SYN_SNTP_EPOCH_OFFSET (line 69) */
+    uint8_t old_epoch_pkt[SYN_SNTP_PACKET_SIZE];
+    memset(old_epoch_pkt, 0, sizeof(old_epoch_pkt));
+    old_epoch_pkt[0] = 0x24;
+    old_epoch_pkt[1] = 2;
+    /* ntp_s = 0x00000001 (less than SYN_SNTP_EPOCH_OFFSET 2208988800UL) */
+    old_epoch_pkt[43] = 1;
+    mock_udp_set_response(old_epoch_pkt, sizeof(old_epoch_pkt), &server);
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_sntp_query(&sntp));
+
+    /* 3. Extreme positive & negative drift PPM clamping (lines 85 & 87) */
+    uint8_t pkt[SYN_SNTP_PACKET_SIZE];
+    build_ntp_response(pkt, 1000, 0);
+    mock_udp_set_response(pkt, sizeof(pkt), &server);
+    syn_sntp_query(&sntp);
+
+    /* Huge positive drift: 5s elapsed NTP time, 10s elapsed local tick time -> +1000000 PPM */
+    mock_tick_advance(10000);
+    build_ntp_response(pkt, 1005, 0);
+    mock_udp_set_response(pkt, sizeof(pkt), &server);
+    syn_sntp_query(&sntp);
+    TEST_ASSERT_TRUE(sntp.drift_ppm > 0);
+
+    /* Huge negative drift: 10s elapsed NTP time, 5s elapsed local tick time -> -500000 PPM */
+    mock_tick_advance(5000);
+    build_ntp_response(pkt, 1015, 0);
+    mock_udp_set_response(pkt, sizeof(pkt), &server);
+    syn_sntp_query(&sntp);
+}
+
 void run_sntp_tests(void)
 {
     RUN_TEST(test_sntp_init);
@@ -427,4 +471,5 @@ void run_sntp_tests(void)
     RUN_TEST(test_sntp_task_fail_and_retry);
     RUN_TEST(test_sntp_task_timeout_and_retry);
     RUN_TEST(test_sntp_task_send_fail);
+    RUN_TEST(test_sntp_uncovered_edge_cases);
 }

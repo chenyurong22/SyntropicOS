@@ -202,6 +202,39 @@ void test_udp_extended_edge_cases(void)
 
     /* unbind NULL check */
     syn_udp_unbind(NULL);
+
+    /* Unbind socket with blocked task attached */
+    SYN_UdpSocket blocked_sock;
+    memset(&blocked_sock, 0, sizeof(blocked_sock));
+    SYN_Task dummy_t;
+    memset(&dummy_t, 0, sizeof(dummy_t));
+    dummy_t.state = SYN_TASK_BLOCKED;
+    blocked_sock.blocked_task = &dummy_t;
+    syn_udp_unbind(&blocked_sock);
+    TEST_ASSERT_EQUAL(SYN_TASK_READY, dummy_t.state);
+
+    /* Max capacity sockets test */
+    SYN_UDP max_udp;
+    syn_udp_init(&max_udp, NULL);
+    for (uint16_t port = 1000; port < 1000 + SYN_UDP_MAX_SOCKETS; port++) {
+        TEST_ASSERT_NOT_NULL(syn_udp_bind(&max_udp, port));
+    }
+    TEST_ASSERT_NULL(syn_udp_bind(&max_udp, 9999));
+
+    /* Null parameter checks for sendto */
+    TEST_ASSERT_EQUAL_INT(-1, syn_udp_sendto(NULL, 0, 0, 0, NULL, 0, NULL, NULL));
+}
+
+void test_transport_udp_all_functions(void)
+{
+    init_udp_fixture();
+
+    /* Test getter and setter for global native UDP instance */
+    syn_transport_udp_set_instance(NULL);
+    TEST_ASSERT_NULL(syn_transport_udp_get_instance());
+
+    syn_transport_udp_set_instance(&s_udp);
+    TEST_ASSERT_EQUAL_PTR(&s_udp, syn_transport_udp_get_instance());
 }
 
 void run_udp_tests(void)
@@ -211,4 +244,5 @@ void run_udp_tests(void)
     RUN_TEST(test_udp_sendto_framing);
     RUN_TEST(test_udp_transport_bridge_transmits);
     RUN_TEST(test_udp_extended_edge_cases);
+    RUN_TEST(test_transport_udp_all_functions);
 }

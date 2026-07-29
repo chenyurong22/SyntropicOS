@@ -78,6 +78,13 @@ void test_netcfg_link_events(void)
     TEST_ASSERT_EQUAL_INT(SYN_NETCFG_LINK_UP, g_last_link_state);
     TEST_ASSERT_TRUE(netcfg.is_bound);
     TEST_ASSERT_EQUAL_UINT32(0xC0A80164, eth.ip_addr);
+
+    /* Test LINK_UP event in AUTO mode */
+    SYN_NETCFG auto_netcfg;
+    syn_netcfg_init(&auto_netcfg, SYN_NETCFG_MODE_AUTO, MAC);
+    TEST_ASSERT_EQUAL_INT(SYN_OK,
+                          syn_netcfg_set_link_state(&auto_netcfg, &eth, SYN_NETCFG_LINK_UP));
+    TEST_ASSERT_FALSE(auto_netcfg.is_bound);
 }
 
 static SYN_PT_Status netcfg_coroutine_task(SYN_PT *pt, SYN_NETCFG *netcfg)

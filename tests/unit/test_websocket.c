@@ -395,6 +395,35 @@ static void test_websocket_send_too_large(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_websocket_send(&ws, 0x01, NULL, 0x10000));
 }
 
+static void test_websocket_uncovered_edge_cases(void)
+{
+    mock_port_reset();
+    mock_sock_connected = true;
+
+    /* 1. Header line without \n (line 215) */
+    const char *no_newline_headers = "Sec-WebSocket-Key: key_no_newline";
+    SYN_HttpdResponse resp;
+    resp.sock = 11;
+    resp.buf = (uint8_t *)no_newline_headers;
+    resp.buf_size = strlen(no_newline_headers);
+    resp.headers_sent = false;
+    resp.upgraded = false;
+
+    SYN_HttpdRequest req;
+    memset(&req, 0, sizeof(req));
+    req.path = "/chat";
+    req.method = SYN_HTTP_GET;
+    req.headers = no_newline_headers;
+
+    SYN_WebsocketSession ws;
+    SYN_Status st = syn_websocket_upgrade(&req, &resp, &ws, on_ws_message, NULL);
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+
+    /* 2. send when not connected (line 275) */
+    ws.state = SYN_WS_STATE_CLOSED;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_websocket_send(&ws, 0x01, "test", 4));
+}
+
 void run_websocket_tests(void)
 {
     RUN_TEST(test_websocket_upgrade);
@@ -411,4 +440,5 @@ void run_websocket_tests(void)
     RUN_TEST(test_websocket_recv_peer_disconnect);
     RUN_TEST(test_websocket_recv_too_large);
     RUN_TEST(test_websocket_send_too_large);
+    RUN_TEST(test_websocket_uncovered_edge_cases);
 }

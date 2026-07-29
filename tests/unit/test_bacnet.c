@@ -194,6 +194,47 @@ static void test_bacnet_mstp_decode_error_cases(void)
     TEST_ASSERT_FALSE(syn_bacnet_mstp_decode_frame(bad_data_crc, 12, &frame));
 }
 
+static void test_bacnet_uncovered_edge_cases(void)
+{
+    SYN_BACnet_Node node;
+    syn_bacnet_node_init(&node, 10, 100);
+
+    SYN_BACnet_MSTP_Frame tx_frame;
+    bool has_tx = false;
+
+    /* 1. Poll for master frame addressed to someone else */
+    SYN_BACnet_MSTP_Frame req_poll_other = {.frame_type = SYN_BACNET_MSTP_FRAME_POLL_FOR_MASTER,
+                                            .destination_mac = 99,
+                                            .source_mac = 2,
+                                            .data_len = 0};
+    TEST_ASSERT_EQUAL_INT(SYN_OK,
+                          syn_bacnet_node_process(&node, &req_poll_other, &tx_frame, &has_tx));
+    TEST_ASSERT_FALSE(has_tx);
+
+    /* 2. Short APDU payload (data_len < 2) */
+    SYN_BACnet_MSTP_Frame req_short = {.frame_type = SYN_BACNET_MSTP_FRAME_DATA_NOT_EXPECTING_REPLY,
+                                       .destination_mac = 10,
+                                       .source_mac = 2,
+                                       .data_len = 1,
+                                       .payload = {0x10}};
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_bacnet_node_process(&node, &req_short, &tx_frame, &has_tx));
+    TEST_ASSERT_FALSE(has_tx);
+
+    /* 3. ReadProperty request when no objects exist (object_count == 0) */
+    SYN_BACnet_Node empty_node;
+    memset(&empty_node, 0, sizeof(empty_node));
+    empty_node.mac_address = 10;
+    SYN_BACnet_MSTP_Frame req_read = {
+        .frame_type = SYN_BACNET_MSTP_FRAME_DATA_EXPECTING_REPLY,
+        .destination_mac = 10,
+        .source_mac = 3,
+        .data_len = 2,
+        .payload = {0x00, SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY}};
+    TEST_ASSERT_EQUAL_INT(SYN_OK,
+                          syn_bacnet_node_process(&empty_node, &req_read, &tx_frame, &has_tx));
+    TEST_ASSERT_FALSE(has_tx);
+}
+
 void run_bacnet_tests(void)
 {
     RUN_TEST(test_bacnet_crc8);
@@ -206,4 +247,5 @@ void run_bacnet_tests(void)
     RUN_TEST(test_bacnet_edge_cases_and_nulls);
     RUN_TEST(test_bacnet_add_object_max_capacity);
     RUN_TEST(test_bacnet_mstp_decode_error_cases);
+    RUN_TEST(test_bacnet_uncovered_edge_cases);
 }

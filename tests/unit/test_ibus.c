@@ -52,6 +52,13 @@ void test_ibus_streaming_parser(void)
     TEST_ASSERT_EQUAL_INT(SYN_OK, status);
     TEST_ASSERT_EQUAL_UINT32(1, parser.frames_received);
     TEST_ASSERT_EQUAL_UINT16(1500, frame.channels[0]);
+
+    /* Test parsing complete 32-byte frame with NULL frame output pointer */
+    for (int i = 0; i < 32; i++) {
+        status = syn_ibus_parse_byte(&parser, buf[i], NULL);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_OK, status);
+    TEST_ASSERT_EQUAL_UINT32(2, parser.frames_received);
 }
 
 void test_ibus_null_and_error_handling(void)

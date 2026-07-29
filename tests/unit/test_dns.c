@@ -502,6 +502,51 @@ static void test_dns_resolve_null_params(void)
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, res.status);
 }
 
+static void test_dns_mdns_init_open_failure_and_truncated_records(void)
+{
+    /* 1. syn_mdns_init open failure (line 235) */
+    mock_port_reset();
+    mock_udp_open_ok = false;
+    SYN_Mdns mdns;
+    uint8_t ip[4] = {192, 168, 1, 100};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_mdns_init(&mdns, "mydev", ip));
+    mock_udp_open_ok = true;
+
+    /* 2. Truncated A record payload in parse_response (line 131) */
+    uint8_t trunc_a[] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+                         /* Question: "a.com" */
+                         1, 'a', 3, 'c', 'o', 'm', 0, 0x00, 0x01, 0x00, 0x01,
+                         /* Answer: Type A, rdlen 4, but only 2 bytes payload */
+                         0xC0, 0x0C, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x3C, 0x00, 0x04, 1,
+                         2};
+    mock_udp_set_response(trunc_a, sizeof(trunc_a), NULL);
+    SYN_SockAddr resolved;
+    SYN_DnsResolver r;
+    r.dns_server = NULL;
+    r.hostname = "a.com";
+    r.addr_out = &resolved;
+    r.timeout_ms = 10;
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &r};
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 10;
+    }
+    TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
+
+    /* 3. mDNS QNAME "local" string mismatch (line 281) */
+    SYN_Mdns mdns2;
+    syn_mdns_init(&mdns2, "mydev", ip);
+    SYN_SockAddr from = {.port = 5353};
+    /* Query with label "other" instead of "local" */
+    uint8_t bad_local[] = {0,   0,   0,   0, 0,   1,   0,   0,   0,   0, 0, 0, 5, 'm', 'y',
+                           'd', 'e', 'v', 5, 'o', 't', 'h', 'e', 'r', 0, 0, 1, 0, 1};
+    mock_udp_set_response(bad_local, sizeof(bad_local), &from);
+    PT_INIT(&pt);
+    task.user_data = &mdns2;
+    syn_mdns_task(&pt, &task);
+}
+
 void run_dns_tests(void)
 {
     RUN_TEST(test_dns_resolve);
@@ -522,4 +567,5 @@ void run_dns_tests(void)
     RUN_TEST(test_dns_mdns_match_qname_local_boundary_mismatches);
     RUN_TEST(test_dns_mdns_invalid_qtype);
     RUN_TEST(test_dns_resolve_null_params);
+    RUN_TEST(test_dns_mdns_init_open_failure_and_truncated_records);
 }

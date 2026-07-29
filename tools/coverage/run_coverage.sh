@@ -6,26 +6,28 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 cd "${ROOT_DIR}"
 
-echo "=== Preparing Coverage Environment ==="
-mkdir -p build/cov
+echo "=== Cleaning previous build artifacts & coverage data ==="
+make -f tests/Makefile.unity clean || true
+rm -rf build/coverage coverage.info coverage_html coverage_src.info || true
+mkdir -p build/coverage
 
 echo "=== Running Test Suite with Coverage Instrumentation ==="
-JOBS=$(nproc 2>/dev/null || echo 4)
-make -j"${JOBS}" -f tests/Makefile.unity test-cov BUILD_DIR=build/cov
+JOBS=$(nproc 2>/dev/null || true)
+if [ -z "${JOBS}" ]; then
+    JOBS=4
+fi
+make -j"${JOBS}" -f tests/Makefile.unity test-cov
 
-echo "=== Generating HTML Coverage Report ==="
-mkdir -p coverage_html
+echo "=== Generating HTML Coverage Report via LCOV ==="
 if command -v lcov >/dev/null 2>&1; then
-    lcov --capture --directory build/cov --output-file build/cov/coverage.info --quiet || lcov --capture --directory . --output-file build/cov/coverage.info --quiet
-    lcov --extract build/cov/coverage.info "*/src/*" --output-file build/cov/coverage_src.info --quiet
-    genhtml build/cov/coverage_src.info --output-directory build/cov/html --title "SyntropicOS Coverage" --quiet
-    cp -r build/cov/html/* coverage_html/ 2>/dev/null || true
-    echo "=== Coverage HTML report generated in coverage_html/index.html ==="
+    lcov --capture --directory . --output-file build/coverage/coverage.info --quiet
+    lcov --extract build/coverage/coverage.info "*/src/*" --output-file build/coverage/coverage_src.info --quiet
+    genhtml build/coverage/coverage_src.info --output-directory build/coverage/html --title "SyntropicOS Coverage" --quiet
+    echo "=== Coverage HTML report generated in build/coverage/html/index.html ==="
 elif command -v gcovr >/dev/null 2>&1; then
-    mkdir -p build/cov/html
-    gcovr -r . --html --html-details -o build/cov/html/index.html -e "tests/.*" -e "tools/.*"
-    cp -r build/cov/html/* coverage_html/ 2>/dev/null || true
-    echo "=== Coverage HTML report generated via gcovr in coverage_html/index.html ==="
+    mkdir -p build/coverage/html
+    gcovr -r . --html --html-details -o build/coverage/html/index.html -e "tests/.*" -e "tools/.*"
+    echo "=== Coverage HTML report generated via gcovr in build/coverage/html/index.html ==="
 else
     echo "Notice: Neither lcov nor gcovr found. Run via container: make -C tools/containers container-cov"
 fi

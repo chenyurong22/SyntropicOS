@@ -1140,6 +1140,52 @@ static void test_http_connect_fail_branch(void)
     TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
 }
 
+static void test_http_content_length_crlf_write_fail(void)
+{
+    mock_port_reset();
+    reset_accum();
+
+    uint8_t payload[] = "123";
+    mock_sock_send_fail_after_bytes = 35;
+
+    SYN_HttpClient client;
+    syn_http_client_init(&client, "POST", "example.com", 80, "/", "text/plain", payload, 3, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    SYN_Status st = run_client_task(&client);
+    TEST_ASSERT_EQUAL(SYN_ERROR, st);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+}
+
+static void test_http_long_redirect_and_header_write_failures(void)
+{
+    mock_port_reset();
+    reset_accum();
+
+    /* 1. Long host redirect without port (line 172) */
+    const char *redirect_resp =
+        "HTTP/1.1 301 Moved Permanently\r\n"
+        "Location: "
+        "http://verylongdomainnameexceedingsixtyfourcharacterslimitfortestingpurposes.example.com/"
+        "page\r\n"
+        "\r\n";
+    mock_sock_set_response(redirect_resp, strlen(redirect_resp));
+    SYN_HttpClient client;
+    syn_http_client_init(&client, "GET", "orig.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    run_client_task(&client);
+
+    /* 2. Write fails at various header positions */
+    for (size_t fail_byte = 1; fail_byte <= 30; fail_byte += 5) {
+        mock_port_reset();
+        mock_sock_send_fail_after_bytes = fail_byte;
+        syn_http_client_init(&client, "POST", "example.com", 80, "/test", "text/plain",
+                             (const uint8_t *)"body", 4, NULL, 0, body_accumulate, NULL, work_buf,
+                             sizeof(work_buf));
+        run_client_task(&client);
+        TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+    }
+}
+
 void run_http_tests(void)
 {
     RUN_TEST(test_http_get_200);
@@ -1167,5 +1213,7 @@ void run_http_tests(void)
     RUN_TEST(test_http_send_fail_after_method_write);
     RUN_TEST(test_http_custom_headers_write_fail);
     RUN_TEST(test_http_content_length_write_fail);
+    RUN_TEST(test_http_content_length_crlf_write_fail);
     RUN_TEST(test_http_connect_fail_branch);
+    RUN_TEST(test_http_long_redirect_and_header_write_failures);
 }

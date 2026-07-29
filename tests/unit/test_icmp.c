@@ -155,4 +155,38 @@ void test_icmp_process_packet_invalid_headers(void)
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_icmp_build_echo_request(&icmp, &eth, PEER_IP, PEER_MAC, 1, 1,
                                                   huge_payload, 1500, huge_frame, &huge_len));
+
+    /* 7. Short Echo Request frame (< 60 bytes) to test reply padding to 60 bytes */
+    uint8_t short_req[42] = {0};
+    short_req[0] = 0x02;
+    short_req[1] = 0x00;
+    short_req[2] = 0x00;
+    short_req[3] = 0x00;
+    short_req[4] = 0x00;
+    short_req[5] = 0x01;
+    short_req[6] = 0x02;
+    short_req[7] = 0x00;
+    short_req[8] = 0x00;
+    short_req[9] = 0x00;
+    short_req[10] = 0x00;
+    short_req[11] = 0x02;
+    short_req[12] = 0x08;
+    short_req[13] = 0x00;
+    short_req[14] = 0x45;
+    short_req[23] = 1; /* ICMP */
+    short_req[34] = SYN_ICMP_TYPE_ECHO_REQUEST;
+    uint8_t short_reply[128];
+    size_t short_reply_len = 0;
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_icmp_process_packet(&icmp, short_req, 42, short_reply, &short_reply_len));
+    TEST_ASSERT_EQUAL(60, short_reply_len);
+
+    /* 8. Oversized Echo Request frame (> 1514 bytes) */
+    uint8_t over_req[1600] = {0};
+    memcpy(over_req, short_req, 42);
+    uint8_t over_reply[1600];
+    size_t over_reply_len = 0;
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_icmp_process_packet(&icmp, over_req, 1520, over_reply, &over_reply_len));
+    TEST_ASSERT_EQUAL(1514, over_reply_len);
 }

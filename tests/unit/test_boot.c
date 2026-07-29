@@ -133,8 +133,14 @@ static void test_boot_log_events_with_errlog(void)
 
 static void test_boot_null_checks(void)
 {
+    SYN_Boot uninit_boot;
+    memset(&uninit_boot, 0, sizeof(uninit_boot));
+
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_boot_init(NULL, NULL, 0));
-    syn_boot_mark_healthy(NULL);
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_boot_mark_healthy(NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_boot_mark_healthy(&uninit_boot));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_boot_clear_safe_mode(NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_boot_clear_safe_mode(&uninit_boot));
     syn_boot_set_reset_reason(NULL, SYN_RESET_POWER_ON);
     syn_boot_set_errlog(NULL, NULL);
     syn_boot_log_events(NULL);

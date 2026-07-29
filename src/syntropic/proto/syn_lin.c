@@ -51,9 +51,6 @@ uint8_t syn_lin_calc_checksum(uint8_t pid, const uint8_t *data, uint8_t len,
 
     if (mode == SYN_LIN_CHECKSUM_ENHANCED) {
         sum += pid;
-        if (sum > 0xFF) {
-            sum -= 0xFF;
-        }
     }
 
     for (uint8_t i = 0; i < len; i++) {

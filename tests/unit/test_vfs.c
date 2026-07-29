@@ -409,6 +409,24 @@ static void test_vfs_duplicate_mount_and_unmount_nonexistent(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_vfs_unmount("/nonexistent"));
 }
 
+static void test_vfs_unmount_shift_and_null_checks(void)
+{
+    syn_vfs_init();
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/m1", &mock_full_ops, NULL));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/m2", &mock_full_ops, NULL));
+
+    /* Unmount /m1 to trigger shift loop j = i .. g_mount_count - 1 */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_unmount("/m1"));
+
+    /* Test stat and rename missing ops */
+    SYN_VfsDirEnt ent;
+    TEST_ASSERT_EQUAL_INT(-1, syn_vfs_stat("/m2/file.txt", &ent));
+    TEST_ASSERT_EQUAL_INT(-1, syn_vfs_rename("/m2/file1", "/m2/file2"));
+    TEST_ASSERT_EQUAL_INT(-1, syn_vfs_rename("/m2/file1", "/nonexistent/file2"));
+
+    syn_vfs_init();
+}
+
 void run_vfs_tests(void)
 {
     RUN_TEST(test_vfs_basic);
@@ -416,4 +434,5 @@ void run_vfs_tests(void)
     RUN_TEST(test_vfs_edge_cases);
     RUN_TEST(test_vfs_unmount_stat_rename);
     RUN_TEST(test_vfs_duplicate_mount_and_unmount_nonexistent);
+    RUN_TEST(test_vfs_unmount_shift_and_null_checks);
 }

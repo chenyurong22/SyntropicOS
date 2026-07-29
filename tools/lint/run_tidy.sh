@@ -11,7 +11,7 @@ if ! command -v clang-tidy >/dev/null 2>&1; then
     exit 0
 fi
 
-JOBS=${JOBS:-$(nproc 2>/dev/null || echo 4)}
+JOBS=$(nproc 2>/dev/null || echo 4)
 CFLAGS="-std=c99 -D_DEFAULT_SOURCE -I. -Isrc -Itests/unit -Itests/unit/mocks -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_USE_TICKLESS=1"
 
 FILES=$(find src/syntropic -name "*.c" ! -path "*/port_stubs/*")

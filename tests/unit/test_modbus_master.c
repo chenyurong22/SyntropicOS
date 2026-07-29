@@ -512,6 +512,21 @@ static void test_modbus_master_queue_null_and_full_checks(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_modbus_master_queue_push(&q, &q_item));
 }
 
+static void test_modbus_master_busy_state_checks(void)
+{
+    SYN_ModbusMaster m;
+    syn_modbus_master_init(&m, 500);
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_modbus_master_read_holding(&m, 1, 0, 1));
+    TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_WAITING_RESPONSE, m.state);
+
+    uint8_t coils = 0x01;
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_modbus_master_write_multiple_coils(&m, 1, 0, 1, &coils));
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_modbus_master_mask_write_register(&m, 1, 0, 0xFFFF, 0x0000));
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_modbus_master_read_fifo_queue(&m, 1, 0));
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_modbus_master_report_server_id(&m, 1));
+}
+
 void run_modbus_master_tests(void)
 {
     RUN_TEST(test_modbus_master_read_holding);
@@ -525,4 +540,5 @@ void run_modbus_master_tests(void)
     RUN_TEST(test_modbus_master_queue_retries);
     RUN_TEST(test_modbus_master_parameter_bounds);
     RUN_TEST(test_modbus_master_queue_null_and_full_checks);
+    RUN_TEST(test_modbus_master_busy_state_checks);
 }

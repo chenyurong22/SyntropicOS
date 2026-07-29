@@ -57,6 +57,16 @@ void test_sbus_streaming_parser(void)
     TEST_ASSERT_EQUAL_INT(SYN_OK, status);
     TEST_ASSERT_EQUAL_UINT32(1, parser.frames_received);
     TEST_ASSERT_EQUAL_UINT16(1708, frame.channels[0]);
+
+    /* Test parsing frame with failsafe flag and NULL frame output pointer */
+    buf[23] = 0x0C; /* Frame loss + Failsafe */
+    for (int i = 0; i < 24; i++) {
+        syn_sbus_parse_byte(&parser, buf[i], NULL);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_sbus_parse_byte(&parser, buf[24], NULL));
+    TEST_ASSERT_EQUAL_UINT32(2, parser.frames_received);
+    TEST_ASSERT_EQUAL_UINT32(1, parser.frame_loss_count);
+    TEST_ASSERT_EQUAL_UINT32(1, parser.failsafe_count);
 }
 
 void test_sbus_raw_to_us_scaling(void)

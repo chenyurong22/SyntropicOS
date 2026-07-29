@@ -104,8 +104,27 @@ static void test_power_errlog(void)
     TEST_ASSERT_TRUE(syn_errlog_count(&errlog) > 0);
 }
 
+static void test_power_inverted_thresholds(void)
+{
+    static SYN_ADC pwr_adc;
+    SYN_ADC_Config pwr_adc_cfg = {.channel = 0, .oversample = 1, .cal_scale = 1};
+    syn_adc_init(&pwr_adc, &pwr_adc_cfg);
+
+    SYN_Power pwr;
+    /* Inverted thresholds: brownout_mv > restore_mv (lines 34-35) */
+    SYN_Power_Config pcfg = {
+        .adc = &pwr_adc,
+        .brownout_mv = 3200,
+        .restore_mv = 3000,
+    };
+    syn_power_init(&pwr, &pcfg);
+    syn_power_update(&pwr);
+    TEST_ASSERT_TRUE(syn_power_is_brownout(&pwr));
+}
+
 void run_power_tests(void)
 {
     RUN_TEST(test_power);
     RUN_TEST(test_power_errlog);
+    RUN_TEST(test_power_inverted_thresholds);
 }

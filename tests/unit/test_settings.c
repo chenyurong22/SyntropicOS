@@ -419,6 +419,76 @@ static void test_settings_vfs_import_no_save(void)
     TEST_ASSERT_EQUAL_INT32(5555, settings2.velocity);
 }
 
+static void test_settings_dual_bank_bank_b_only_valid(void)
+{
+    mock_port_reset();
+    TestSettings data;
+    SYN_DualBankSettings db;
+
+    /* Initialize Bank B with valid saved settings */
+    SYN_Settings store_b;
+    syn_settings_init(&store_b, 2048, 2, &data, sizeof(data), &defaults);
+    data.velocity = 999;
+    syn_settings_save(&store_b);
+
+    /* Set mock_flash_fail_at = 12296 (inside sector 12288 data area) so Bank A erase fails during init */
+    mock_flash_fail_at = 12296;
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_dual_bank_init(&db, 12288, 2048, 2,
+                                                          &data, sizeof(data), &defaults));
+    TEST_ASSERT_EQUAL(1, db.active_bank);
+    TEST_ASSERT_EQUAL_INT32(999, data.velocity);
+    mock_port_reset();
+}
+
+static void test_settings_dual_bank_neither_bank_valid(void)
+{
+    mock_port_reset();
+    TestSettings data;
+    SYN_DualBankSettings db;
+
+    /* Set mock_flash_fail_at = 12296 (fails Bank A erase) and mock_flash_write_fail_next = true (fails Bank B write) */
+    mock_flash_fail_at = 12296;
+    mock_flash_write_fail_next = true;
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_dual_bank_init(&db, 12288, 2048, 2,
+                                                          &data, sizeof(data), &defaults));
+    TEST_ASSERT_EQUAL(0, db.active_bank);
+    TEST_ASSERT_EQUAL_INT32(500, data.velocity);
+    mock_port_reset();
+}
+
+static void test_settings_init_load_fail(void)
+{
+    mock_port_reset();
+    TestSettings data;
+    SYN_Settings store;
+
+    /* Write valid magic (0x5041) but invalid data_size to slot 0 */
+    SYN_ParamSlotHeader hdr = { .magic = 0x5041, .data_size = sizeof(data), .seq = 1, .crc = 0xFFFF };
+    syn_port_flash_write(FLASH_BASE, &hdr, sizeof(hdr));
+
+    /* syn_param_init returns SYN_OK (hdr.magic matches, hdr.data_size matches),
+     * but syn_param_load fails because CRC (0xFFFF) doesn't match!
+     * Hits line 50 of syn_settings.c (st != SYN_OK inside if (st == SYN_OK)). */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_init(&store, FLASH_BASE, 2, &data, sizeof(data), &defaults));
+    TEST_ASSERT_EQUAL_INT32(500, data.velocity);
+    mock_port_reset();
+}
+
+static void test_settings_vfs_short_read_write_error(void)
+{
+    mock_port_reset();
+    TestSettings data;
+    SYN_Settings store;
+    syn_settings_init(&store, FLASH_BASE, 2, &data, sizeof(data), &defaults);
+
+    /* Export to unmounted path returns SYN_ERROR (lines 161 & 179) */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_settings_export_vfs(&store, "/invalid/file.bin"));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_settings_import_vfs(&store, "/invalid/file.bin", false));
+    mock_port_reset();
+}
+
 void run_settings_tests(void)
 {
     RUN_TEST(test_settings_init_blank_flash);
@@ -437,4 +507,8 @@ void run_settings_tests(void)
     RUN_TEST(test_settings_dual_bank_ping_pong);
     RUN_TEST(test_settings_null_and_invalid_param_checks);
     RUN_TEST(test_settings_vfs_import_no_save);
+    RUN_TEST(test_settings_dual_bank_bank_b_only_valid);
+    RUN_TEST(test_settings_dual_bank_neither_bank_valid);
+    RUN_TEST(test_settings_init_load_fail);
+    RUN_TEST(test_settings_vfs_short_read_write_error);
 }

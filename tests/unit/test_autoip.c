@@ -114,4 +114,13 @@ void test_autoip_null_checks(void)
     TEST_ASSERT_EQUAL(SYN_BUSY, syn_autoip_process_arp(&autoip, NULL, conflict_arp, 60));
     TEST_ASSERT_EQUAL_UINT8(1, autoip.collisions);
     TEST_ASSERT_EQUAL_INT(SYN_AUTOIP_STATE_INIT, autoip.state);
+
+    /* ARP Conflict with octet4 = 254 -> rollover to 1 */
+    autoip.ip_addr = 0xA9FE01FE; /* 169.254.1.254 */
+    conflict_arp[28] = 0xA9;
+    conflict_arp[29] = 0xFE;
+    conflict_arp[30] = 0x01;
+    conflict_arp[31] = 0xFE;
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_autoip_process_arp(&autoip, NULL, conflict_arp, 60));
+    TEST_ASSERT_EQUAL_UINT32(0xA9FE0101, autoip.ip_addr);
 }

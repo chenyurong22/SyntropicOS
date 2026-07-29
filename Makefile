@@ -1,8 +1,6 @@
 # SyntropicOS Top-Level Convenience Makefile
 # Forwards targets to tools/containers/Makefile
 
-JOBS ?= $(shell nproc 2>/dev/null || echo 4)
-
 .PHONY: help clean test format lint misra stack size complexity san qemu renode fuzz cov static dox integration install-hooks container-build container-test container-format container-lint container-misra container-stack container-size container-complexity container-san container-qemu container-renode container-fuzz container-cov container-static container-dox container-integration
 
 install-hooks:

@@ -238,6 +238,25 @@ static void test_devicenet_error_branches_and_nulls(void)
         syn_devicenet_on_can_rx(NULL, exp_req_id, tx_data, 4, &tx_can_id, tx_data, &tx_len));
 }
 
+static void test_devicenet_polled_io_output_overflow(void)
+{
+    syn_devicenet_init(&g_dnet, 6, SYN_DEVICENET_BAUD_500K);
+    syn_devicenet_set_assembly(&g_dnet, g_in_buf, 4, g_out_buf, 4);
+    g_dnet.state = SYN_DEVICENET_STATE_ONLINE;
+
+    uint32_t poll_cmd_id = 0x400 | (6 << 3) | 5;
+    uint32_t tx_can_id = 0;
+    uint8_t tx_data[8] = {0};
+    uint8_t tx_len = 0;
+
+    /* Send 6 bytes of polled output data when output_len is 4 */
+    uint8_t long_poll_cmd[6] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+    TEST_ASSERT_TRUE(syn_devicenet_on_can_rx(&g_dnet, poll_cmd_id, long_poll_cmd, 6, &tx_can_id,
+                                             tx_data, &tx_len));
+    TEST_ASSERT_EQUAL_HEX8(0xAA, g_out_buf[0]);
+    TEST_ASSERT_EQUAL_HEX8(0xDD, g_out_buf[3]); /* Only 4 bytes copied */
+}
+
 void run_devicenet_tests(void)
 {
     RUN_TEST(test_devicenet_init_and_config);
@@ -245,4 +264,5 @@ void run_devicenet_tests(void)
     RUN_TEST(test_devicenet_dup_mac_collision);
     RUN_TEST(test_devicenet_explicit_and_polled_messaging);
     RUN_TEST(test_devicenet_error_branches_and_nulls);
+    RUN_TEST(test_devicenet_polled_io_output_overflow);
 }

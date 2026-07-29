@@ -139,6 +139,20 @@ static void test_coredump_save_null(void)
 
 /* ── Runner ─────────────────────────────────────────────────────────────── */
 
+static void test_coredump_read_flash_fail(void)
+{
+    mock_port_reset();
+    SYN_FaultContext ctx;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.pc = 0x08003000;
+    syn_coredump_save(&ctx);
+
+    mock_flash_fail_at = SYN_COREDUMP_FLASH_ADDR;
+    SYN_CoreDump dump;
+    TEST_ASSERT_FALSE(syn_coredump_read(&dump));
+    mock_port_reset();
+}
+
 void run_coredump_tests(void)
 {
     RUN_TEST(test_coredump_save_and_read);
@@ -147,4 +161,5 @@ void run_coredump_tests(void)
     RUN_TEST(test_coredump_corrupt_magic);
     RUN_TEST(test_coredump_clear);
     RUN_TEST(test_coredump_save_null);
+    RUN_TEST(test_coredump_read_flash_fail);
 }

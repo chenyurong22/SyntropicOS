@@ -197,6 +197,25 @@ void test_dhcp_extended_option_parsing(void)
     /* Test XID mismatch */
     offer_pkt[4] = 0xFF;
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_process_packet(&dhcp, NULL, offer_pkt, idx));
+
+    /* Truncated options tests */
+    uint8_t trunc_pkt[250] = {0};
+    trunc_pkt[4] = (uint8_t)(XID >> 24);
+    trunc_pkt[5] = (uint8_t)(XID >> 16);
+    trunc_pkt[6] = (uint8_t)(XID >> 8);
+    trunc_pkt[7] = (uint8_t)(XID);
+    trunc_pkt[236] = 0x63;
+    trunc_pkt[237] = 0x82;
+    trunc_pkt[238] = 0x53;
+    trunc_pkt[239] = 0x63;
+    trunc_pkt[240] = 53; /* MSG_TYPE option */
+    trunc_pkt[241] = 1;  /* len 1 */
+    trunc_pkt[242] = 2;  /* OFFER */
+    trunc_pkt[243] = 50; /* missing length byte at end of 244 bytes */
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, trunc_pkt, 244));
+
+    trunc_pkt[244] = 10; /* opt_len 10 > 0 remaining bytes */
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, trunc_pkt, 245));
 }
 
 void test_dhcp_null_checks(void)

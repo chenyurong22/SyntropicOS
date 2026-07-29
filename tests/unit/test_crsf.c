@@ -52,6 +52,13 @@ void test_crsf_parse_rc_channels(void)
     TEST_ASSERT_EQUAL_INT(SYN_OK, status);
     TEST_ASSERT_EQUAL_INT(SYN_CRSF_TYPE_RC_CHANNELS, type);
     TEST_ASSERT_EQUAL_UINT16(992, parser.last_channels.channels[0]);
+
+    /* Test parsing with NULL type_out pointer */
+    for (int i = 0; i < 25; i++) {
+        syn_crsf_parse_byte(&parser, pkt[i], NULL);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_crsf_parse_byte(&parser, pkt[25], NULL));
+    TEST_ASSERT_EQUAL_UINT32(2, parser.packets_received);
 }
 
 void test_crsf_parse_link_stats(void)

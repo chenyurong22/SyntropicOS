@@ -257,26 +257,50 @@ static void test_tcp_fin_close_handshake(void)
 
 static void test_tcp_null_params_and_non_tcp_proto(void)
 {
-    SYN_TCP tcp;
+    SYN_TCP local_tcp;
     uint8_t frame[64] = {0};
     uint8_t tx_out[64];
     size_t tx_len = 0;
 
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_tcp_init(NULL, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_tcp_listen(NULL, 0));
+
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_tcp_process_packet(NULL, frame, sizeof(frame), tx_out, &tx_len));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
-                      syn_tcp_process_packet(&tcp, NULL, sizeof(frame), tx_out, &tx_len));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_tcp_process_packet(&tcp, frame, 50, tx_out, &tx_len));
+                      syn_tcp_process_packet(&local_tcp, NULL, sizeof(frame), tx_out, &tx_len));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
-                      syn_tcp_process_packet(&tcp, frame, sizeof(frame), NULL, &tx_len));
+                      syn_tcp_process_packet(&local_tcp, frame, 50, tx_out, &tx_len));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
-                      syn_tcp_process_packet(&tcp, frame, sizeof(frame), tx_out, NULL));
+                      syn_tcp_process_packet(&local_tcp, frame, sizeof(frame), NULL, &tx_len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_tcp_process_packet(&local_tcp, frame, sizeof(frame), tx_out, NULL));
 
     /* Non-TCP frame (proto != 6) */
     memset(frame, 0, sizeof(frame));
     frame[23] = 17; /* UDP */
     TEST_ASSERT_EQUAL(SYN_ERROR,
-                      syn_tcp_process_packet(&tcp, frame, sizeof(frame), tx_out, &tx_len));
+                      syn_tcp_process_packet(&local_tcp, frame, sizeof(frame), tx_out, &tx_len));
+
+    /* Unhandled TCP port -> SYN_ERROR */
+    frame[23] = 6;
+    frame[36] = 0x1F;
+    frame[37] = 0x90; /* Dst Port 8080 */
+    TEST_ASSERT_EQUAL(SYN_ERROR,
+                      syn_tcp_process_packet(&local_tcp, frame, sizeof(frame), tx_out, &tx_len));
+
+    /* Test odd-length checksum calculation */
+    uint8_t odd_data[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
+    uint16_t csum = syn_tcp_checksum(0xC0A80101, 0xC0A80102, odd_data, 5);
+    TEST_ASSERT_NOT_EQUAL(0, csum);
+
+    /* Test max capacity listeners */
+    SYN_TCP full_tcp;
+    syn_tcp_init(&full_tcp, NULL);
+    for (uint16_t p = 1000; p < 1000 + SYN_TCP_MAX_CONNS; p++) {
+        TEST_ASSERT_EQUAL(SYN_OK, syn_tcp_listen(&full_tcp, p));
+    }
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_tcp_listen(&full_tcp, 9999));
 }
 
 void run_tcp_tests(void)

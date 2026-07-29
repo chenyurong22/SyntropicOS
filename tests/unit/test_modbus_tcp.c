@@ -189,6 +189,11 @@ void test_modbus_tcp_additional_edge_cases(void)
                                              1, 1, pdu, 0, req_adu, sizeof(req_adu), &req_len));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_modbus_tcp_build_client_adu(1, 1, pdu, 4, req_adu, 5, &req_len));
+
+    /* 4. Unit ID match */
+    uint8_t ff_unit_adu[12] = {0, 3, 0, 0, 0, 6, 1, 6, 0, 0, 0x12, 0x34};
+    TEST_ASSERT_TRUE(
+        syn_modbus_tcp_process_slave(&mb, ff_unit_adu, 12, resp_adu, sizeof(resp_adu), &resp_len));
 }
 
 void run_modbus_tcp_tests(void)

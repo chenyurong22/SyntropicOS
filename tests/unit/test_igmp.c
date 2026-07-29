@@ -144,4 +144,23 @@ void test_igmp_non_igmp_packets(void)
     udp_pkt[13] = 0x00;
     udp_pkt[23] = 17;
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_igmp_process_packet(&igmp, &eth, udp_pkt, 60, NULL, &tx_len));
+
+    /* Join group with group_ip = 0 -> SYN_INVALID_PARAM */
+    uint8_t frame[60];
+    size_t len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_igmp_join_group(&igmp, &eth, 0, frame, &len));
+
+    /* Process query when no groups are joined -> returns SYN_OK with tx_len = 0 */
+    uint8_t query_pkt[60] = {0};
+    query_pkt[12] = 0x08;
+    query_pkt[13] = 0x00;
+    query_pkt[23] = 2;
+    query_pkt[34] = SYN_IGMP_TYPE_MEMBERSHIP_QUERY;
+    uint8_t reply_frame[60];
+    size_t reply_len = 0;
+    SYN_IGMP empty_igmp;
+    syn_igmp_init(&empty_igmp);
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_igmp_process_packet(&empty_igmp, &eth, query_pkt, 60, reply_frame, &reply_len));
+    TEST_ASSERT_EQUAL(0, reply_len);
 }

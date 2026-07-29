@@ -442,13 +442,57 @@ static void test_fwupdate_sector_erase_fail(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 }
 
-static void test_fwupdate_abort_inactive_returns_early(void)
+static void test_fwupdate_parameter_and_state_guards(void)
 {
+    mock_port_reset();
+    static uint8_t pbuf[64];
     SYN_FwUpdate upd;
+
+    /* Write/finish when inactive or len==0 (lines 111, 113, 164) */
     memset(&upd, 0, sizeof(upd));
     upd.active = false;
-    syn_fwupdate_abort(&upd);
-    TEST_ASSERT_FALSE(upd.active);
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_fwupdate_write(&upd, pbuf, 10));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_fwupdate_finish(&upd, 0, NULL, 0));
+
+    syn_fwupdate_begin(&upd, SLOT_A_ADDR, SLOT_SIZE, pbuf, sizeof(pbuf));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_fwupdate_write(&upd, NULL, 0));
+
+    /* 3. Flash write error on final header in syn_fwupdate_finish (lines 235-237) */
+    uint8_t fw[32] = {0};
+    syn_fwupdate_write(&upd, fw, sizeof(fw));
+    uint32_t crc = syn_crc32(fw, sizeof(fw));
+    mock_flash_fail_at = SLOT_A_ADDR;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_fwupdate_finish(&upd, crc, NULL, 0x00010000));
+
+    /* 4. Flush page flash write failure (lines 47-49) */
+    mock_port_reset();
+    syn_fwupdate_begin(&upd, SLOT_A_ADDR, SLOT_SIZE, pbuf, sizeof(pbuf));
+    uint8_t fw64[64] = {0};
+    mock_flash_write_fail_next = true;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_fwupdate_write(&upd, fw64, sizeof(fw64)));
+    mock_port_reset();
+}
+
+static void test_fwboot_testing_priority_and_confirm_failures(void)
+{
+    mock_port_reset();
+    write_test_header(SLOT_A_ADDR, SYN_FW_STATE_TESTING, 0x00010000);
+
+    SYN_FwBootManager mgr;
+    syn_fwboot_init(&mgr, SLOT_A_ADDR, SLOT_B_ADDR);
+
+    /* Priority 1: TESTING slot selection (lines 94-97) */
+    TEST_ASSERT_EQUAL(SYN_FW_SLOT_A, syn_fwboot_select(&mgr, false));
+
+    /* Confirm failure when already confirmed (line 136) */
+    write_test_header(SLOT_A_ADDR, SYN_FW_STATE_CONFIRMED, 0x00010000);
+    syn_fwboot_init(&mgr, SLOT_A_ADDR, SLOT_B_ADDR);
+    syn_fwboot_select(&mgr, false);
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_fwboot_confirm(&mgr));
+
+    /* Confirm failure when active_slot == NONE (line 131) */
+    mgr.active_slot = SYN_FW_SLOT_NONE;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_fwboot_confirm(&mgr));
 }
 
 void run_fwupdate_tests(void)
@@ -478,5 +522,6 @@ void run_fwupdate_tests(void)
     RUN_TEST(test_fwupdate_finish_flush_fail);
     RUN_TEST(test_fwupdate_finish_erase_fail);
     RUN_TEST(test_fwupdate_sector_erase_fail);
-    RUN_TEST(test_fwupdate_abort_inactive_returns_early);
+    RUN_TEST(test_fwupdate_parameter_and_state_guards);
+    RUN_TEST(test_fwboot_testing_priority_and_confirm_failures);
 }

@@ -68,6 +68,9 @@ static void test_errlog(void)
     syn_errlog_enable(&elog, true);
     syn_errlog_clear(&elog);
     TEST_ASSERT_EQUAL_INT(0, syn_errlog_count(&elog));
+
+    /* Out of bounds read returns false (lines 56-57) */
+    TEST_ASSERT_FALSE(syn_errlog_read(&elog, 0, &e));
 }
 
 void run_errlog_tests(void)

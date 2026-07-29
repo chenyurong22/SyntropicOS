@@ -215,6 +215,13 @@ static void test_dlt645_additional_error_cases(void)
     bad_eof[14] = syn_dlt645_calc_checksum(bad_eof, 14);
     TEST_ASSERT_EQUAL_INT(SYN_ERROR,
                           syn_dlt645_parse(bad_eof, sizeof(bad_eof), SYN_DLT645_VER_2007, &frame));
+
+    /* 5. Preambles leaving rem < 12 */
+    uint8_t only_preambles[14] = {0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE,
+                                  0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE};
+    TEST_ASSERT_EQUAL_INT(
+        SYN_INVALID_PARAM,
+        syn_dlt645_parse(only_preambles, sizeof(only_preambles), SYN_DLT645_VER_2007, &frame));
 }
 
 void run_dlt645_tests(void)

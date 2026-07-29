@@ -160,6 +160,68 @@ static void test_param_flash_erase_error_returns_failure(void)
     mock_flash_fail_at = -1;
 }
 
+static void test_param_scan_crc_mismatch(void)
+{
+    mock_port_reset();
+    SYN_ParamStore store;
+    TestParams p = {.brightness = 100, .offset = 20, .mode = 1};
+
+    syn_param_init(&store, 0, 2, sizeof(p));
+    syn_param_save(&store, &p);
+
+    /* Corrupt header CRC field in flash */
+    SYN_ParamSlotHeader *hdr = (SYN_ParamSlotHeader *)mock_flash;
+    hdr->crc ^= 0x1234;
+
+    /* Re-init store. Init scans slots using data=NULL (verify_slot_crc, line 107) */
+    SYN_ParamStore store2;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_init(&store2, 0, 2, sizeof(p)));
+}
+
+static void test_param_save_write_errors(void)
+{
+    mock_port_reset();
+    SYN_ParamStore store;
+    TestParams p = {.brightness = 100, .offset = 20, .mode = 1};
+    syn_param_init(&store, 0, 2, sizeof(p));
+
+    /* 1. Header write error (line 239) */
+    mock_flash_write_fail_next = true;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_save(&store, &p));
+    mock_port_reset();
+
+    /* 2. First write succeeds, data write error (line 244) */
+    syn_param_init(&store, 0, 2, sizeof(p));
+    syn_param_save(&store, &p); /* next_seq becomes 2 */
+
+    /* Advance slot to wrap sector */
+    uint16_t slots = store.slots_per_sector;
+    for (uint16_t i = 1; i < slots; i++) {
+        syn_param_save(&store, &p);
+    }
+    /* Next save wraps sector and erases sector 1. Make erase fail (line 218) */
+    mock_flash_fail_at = 1024;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_save(&store, &p));
+
+    /* 3. Header write succeeds, data write error (line 244) */
+    mock_port_reset();
+    syn_param_init(&store, 0, 2, sizeof(p));
+    syn_param_save(&store, &p); /* first write at slot 0 (addr 0) */
+    /* Second write goes to slot 1 (hdr at addr 24, data at addr 32). Set fail at 32 */
+    mock_flash_fail_at = 32;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_save(&store, &p));
+
+    /* 4. Read slot data flash read failure (line 96) */
+    mock_port_reset();
+    syn_param_init(&store, 0, 2, sizeof(p));
+    syn_param_save(&store, &p);
+    mock_flash_fail_at = 8;
+    TestParams loaded;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_load(&store, &loaded));
+
+    mock_port_reset();
+}
+
 void run_param_tests(void)
 {
     RUN_TEST(test_param_store);
@@ -168,4 +230,6 @@ void run_param_tests(void)
     RUN_TEST(test_param_load_crc_corrupted_slot);
     RUN_TEST(test_param_corrupt_header_data_size);
     RUN_TEST(test_param_flash_erase_error_returns_failure);
+    RUN_TEST(test_param_scan_crc_mismatch);
+    RUN_TEST(test_param_save_write_errors);
 }

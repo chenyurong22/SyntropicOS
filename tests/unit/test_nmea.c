@@ -196,6 +196,21 @@ static void test_nmea_checksum_null_and_short_stars(void)
     TEST_ASSERT_DOUBLE_WITHIN(0.0001, 0.0, syn_nmea_parse_coord("12", 'N')); /* Length < 4 */
 }
 
+static void test_nmea_uncovered_edge_cases(void)
+{
+    /* 1. Valid sentence with lowercase hex checksum */
+    const char *valid_lc = "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6a";
+    TEST_ASSERT_TRUE(syn_nmea_validate(valid_lc));
+
+    /* 2. get_type on short talker (<3 chars) */
+    const char *short_talker = "$AB*07";
+    TEST_ASSERT_EQUAL(SYN_NMEA_SENTENCE_UNKNOWN, syn_nmea_get_type(short_talker));
+
+    /* 3. Non-hex char in checksum */
+    const char *non_hex = "$GPGGA*ZZ";
+    TEST_ASSERT_FALSE(syn_nmea_validate(non_hex));
+}
+
 void run_nmea_tests(void)
 {
     RUN_TEST(test_nmea_checksum_and_validate);
@@ -207,4 +222,5 @@ void run_nmea_tests(void)
     RUN_TEST(test_nmea_edge_cases);
     RUN_TEST(test_nmea_lowercase_checksum_and_overflow);
     RUN_TEST(test_nmea_checksum_null_and_short_stars);
+    RUN_TEST(test_nmea_uncovered_edge_cases);
 }

@@ -2277,6 +2277,59 @@ static void test_modbus_write_multiple_short_frame_exception(void)
     TEST_ASSERT_EQUAL(SYN_MB_EX_ILLEGAL_VALUE, mock_uart_tx_buf[2]);
 }
 
+static void test_modbus_fc17_on_write_rejection_and_broadcast_exception(void)
+{
+    static uint16_t holding[8] = {0};
+    static uint8_t mb_buf[256];
+    SYN_Modbus mb;
+    SYN_Modbus_Config cfg = {
+        .slave_addr = 1,
+        .holding_regs = holding,
+        .holding_count = 8,
+        .on_write = test_on_write,
+    };
+    syn_modbus_init(&mb, &cfg, mb_buf, sizeof(mb_buf));
+
+    /* 1. FC 0x17 Read/Write Multiple with on_write rejecting (write_addr = 5) */
+    uint8_t fc17_req[15] = {1, 0x17, 0, 0, 0, 1, 0, 5, 0, 1, 2, 0x12, 0x34, 0, 0};
+    uint16_t crc = syn_crc16_modbus(fc17_req, 13);
+    fc17_req[13] = (uint8_t)(crc & 0xFF);
+    fc17_req[14] = (uint8_t)(crc >> 8);
+    memcpy(mb.buf, fc17_req, 15);
+    mb.rx_len = 15;
+
+    mock_port_reset();
+    TEST_ASSERT_TRUE(syn_modbus_process(&mb));
+    TEST_ASSERT_EQUAL(0x97, mock_uart_tx_buf[1]);
+    TEST_ASSERT_EQUAL(SYN_MB_EX_ILLEGAL_VALUE, mock_uart_tx_buf[2]);
+
+    /* 2. Broadcast write single exception (slave_addr = 0, illegal addr = 99) */
+    uint8_t bc_req[8] = {0, 0x06, 0, 99, 0, 1, 0, 0};
+    crc = syn_crc16_modbus(bc_req, 6);
+    bc_req[6] = (uint8_t)(crc & 0xFF);
+    bc_req[7] = (uint8_t)(crc >> 8);
+    memcpy(mb.buf, bc_req, 8);
+    mb.rx_len = 8;
+
+    mock_port_reset();
+    TEST_ASSERT_FALSE(syn_modbus_process(&mb));
+    TEST_ASSERT_EQUAL(0, mock_uart_tx_len);
+    TEST_ASSERT_TRUE(mb.errors > 0);
+
+    /* 3. FC 0x03 short frame len < 8 */
+    uint8_t short_read[6] = {1, 0x03, 0, 0, 0, 0};
+    crc = syn_crc16_modbus(short_read, 4);
+    short_read[4] = (uint8_t)(crc & 0xFF);
+    short_read[5] = (uint8_t)(crc >> 8);
+    memcpy(mb.buf, short_read, 6);
+    mb.rx_len = 6;
+
+    mock_port_reset();
+    TEST_ASSERT_TRUE(syn_modbus_process(&mb));
+    TEST_ASSERT_EQUAL(0x83, mock_uart_tx_buf[1]);
+    TEST_ASSERT_EQUAL(SYN_MB_EX_ILLEGAL_VALUE, mock_uart_tx_buf[2]);
+}
+
 void run_modbus_tests(void)
 {
     RUN_TEST(test_modbus_basic);
@@ -2299,4 +2352,5 @@ void run_modbus_tests(void)
     RUN_TEST(test_modbus_broadcast_additional_fc_rejection);
     RUN_TEST(test_modbus_short_frame_exceptions);
     RUN_TEST(test_modbus_write_multiple_short_frame_exception);
+    RUN_TEST(test_modbus_fc17_on_write_rejection_and_broadcast_exception);
 }

@@ -94,9 +94,26 @@ void test_netbuf_auto_pool_free_and_headroom_overflow(void)
     TEST_ASSERT_EQUAL_UINT32(2, pool.free_count);
 }
 
+void test_netbuf_null_edge_cases(void)
+{
+    syn_netbuf_ref(NULL);
+    syn_netbuf_free(NULL, NULL);
+
+    SYN_NetBuf buf_no_pool;
+    memset(&buf_no_pool, 0, sizeof(buf_no_pool));
+    buf_no_pool.ref_count = 1;
+    buf_no_pool.pool = NULL;
+    syn_netbuf_free(NULL, &buf_no_pool);
+
+    TEST_ASSERT_NULL(syn_netbuf_push(NULL, 10));
+    TEST_ASSERT_NULL(syn_netbuf_pull(NULL, 10));
+    TEST_ASSERT_NULL(syn_netbuf_put(NULL, 10));
+}
+
 void run_netbuf_tests(void)
 {
     RUN_TEST(test_netbuf_alloc_push_pull_free);
     RUN_TEST(test_netbuf_pool_exhaustion_and_invalid);
     RUN_TEST(test_netbuf_auto_pool_free_and_headroom_overflow);
+    RUN_TEST(test_netbuf_null_edge_cases);
 }

@@ -174,6 +174,19 @@ void test_pubsub_unsubscribe_during_publish(void)
     TEST_ASSERT_EQUAL_INT(1, (int)broker.count);
 }
 
+void test_pubsub_null_and_error_handling(void)
+{
+    pubsub_setUp();
+
+    SYN_PubSubBroker null_subs_broker;
+    syn_pubsub_init(&null_subs_broker, NULL, 0);
+
+    /* NULL subs array check */
+    TEST_ASSERT_FALSE(syn_pubsub_subscribe(&null_subs_broker, 10, handler1, NULL));
+    TEST_ASSERT_FALSE(syn_pubsub_unsubscribe(&null_subs_broker, 10, handler1));
+    syn_pubsub_publish(&null_subs_broker, 10, NULL, 0);
+}
+
 void run_pubsub_tests(void)
 {
     RUN_TEST(test_pubsub_subscribe);
@@ -182,4 +195,5 @@ void run_pubsub_tests(void)
     RUN_TEST(test_pubsub_unsubscribe);
     RUN_TEST(test_pubsub_wildcard);
     RUN_TEST(test_pubsub_unsubscribe_during_publish);
+    RUN_TEST(test_pubsub_null_and_error_handling);
 }

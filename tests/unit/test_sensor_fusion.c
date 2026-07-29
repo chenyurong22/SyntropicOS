@@ -132,6 +132,7 @@ static void test_sensor_fusion_reset_and_invalid(void)
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_sensor_fusion_update(NULL, 0, 0, 0, 0, 0, 0));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_sensor_fusion_get_quaternion(NULL, &q));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_sensor_fusion_get_quaternion(&f, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_sensor_fusion_get_euler(&f, NULL));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_sensor_fusion_get_euler(NULL, NULL));
 }
 

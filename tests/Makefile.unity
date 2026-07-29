@@ -181,7 +181,6 @@ test: test_unity
 test-cov: CFLAGS += --coverage
 test-cov: LDFLAGS += --coverage
 test-cov: test_unity
-	@find . -name "*.gcda" -delete
 	./$(BUILD_DIR)/test_unity
 	@echo "Coverage data generated."
 

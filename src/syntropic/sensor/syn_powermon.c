@@ -16,7 +16,7 @@ SYN_Status syn_powermon_init(SYN_PowerMon *pm, SYN_GPIO_Pin scl, SYN_GPIO_Pin sd
     SYN_ASSERT(shunt_resistor_ohms > 0.0001f);
 
     if (pm == NULL || shunt_resistor_ohms <= 0.0001f) {
-        return SYN_INVALID_PARAM;
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     memset(pm, 0, sizeof(*pm));

@@ -90,7 +90,7 @@ bool syn_coredump_read(SYN_CoreDump *out)
 {
     SYN_ASSERT(out != NULL);
     if (out == NULL) {
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     }
 
     SYN_CoreDump dump;

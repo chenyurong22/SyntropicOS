@@ -15,7 +15,7 @@ SYN_Status syn_lux_init(SYN_Lux *sensor, SYN_GPIO_Pin scl, SYN_GPIO_Pin sda, uin
 {
     SYN_ASSERT(sensor != NULL);
     if (sensor == NULL) {
-        return SYN_INVALID_PARAM;
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     memset(sensor, 0, sizeof(*sensor));

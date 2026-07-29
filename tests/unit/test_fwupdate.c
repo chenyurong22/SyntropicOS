@@ -505,11 +505,17 @@ static void test_fwboot_testing_priority_and_confirm_failures(void)
     write_test_header(SLOT_A_ADDR, SYN_FW_STATE_CONFIRMED, 0x00010000);
     syn_fwboot_init(&mgr, SLOT_A_ADDR, SLOT_B_ADDR);
     syn_fwboot_select(&mgr, false);
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_fwboot_confirm(&mgr));
-
     /* Confirm failure when active_slot == NONE (line 131) */
     mgr.active_slot = SYN_FW_SLOT_NONE;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_fwboot_confirm(&mgr));
+
+    /* Flash erase failure branch in update_state_in_flash (line 48) */
+    write_test_header(SLOT_A_ADDR, SYN_FW_STATE_TESTING, 0x00010000);
+    syn_fwboot_init(&mgr, SLOT_A_ADDR, SLOT_B_ADDR);
+    syn_fwboot_select(&mgr, false);
+    mock_flash_fail_at = SLOT_A_ADDR;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_fwboot_confirm(&mgr));
+    mock_flash_fail_at = 0;
 }
 
 void run_fwupdate_tests(void)

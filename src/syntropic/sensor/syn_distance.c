@@ -16,7 +16,7 @@ SYN_Status syn_distance_init(SYN_Distance *sensor, SYN_GPIO_Pin trig_pin, SYN_GP
     SYN_ASSERT(max_mm > min_mm);
 
     if (sensor == NULL || max_mm <= min_mm) {
-        return SYN_INVALID_PARAM;
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     memset(sensor, 0, sizeof(*sensor));

@@ -15,7 +15,7 @@ SYN_Status syn_scale_init(SYN_Scale *scale, SYN_GPIO_Pin dout_pin, SYN_GPIO_Pin 
 {
     SYN_ASSERT(scale != NULL);
     if (scale == NULL) {
-        return SYN_INVALID_PARAM;
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     memset(scale, 0, sizeof(*scale));

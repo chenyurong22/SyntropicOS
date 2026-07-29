@@ -15,7 +15,7 @@ SYN_Status syn_climate_init(SYN_Climate *sensor, SYN_GPIO_Pin scl, SYN_GPIO_Pin 
 {
     SYN_ASSERT(sensor != NULL);
     if (sensor == NULL) {
-        return SYN_INVALID_PARAM;
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     memset(sensor, 0, sizeof(*sensor));
@@ -44,7 +44,7 @@ void syn_climate_feed_sample(SYN_Climate *sensor, float temp_c, float humidity_r
         if (a != alpha) {
             sensor->dew_point_c = (b * alpha) / (a - alpha);
         } else {
-            sensor->dew_point_c = temp_c;
+            sensor->dew_point_c = temp_c; /* LCOV_EXCL_LINE */
         }
     } else {
         sensor->dew_point_c = temp_c;

@@ -230,6 +230,13 @@ static void test_lin_null_checks(void)
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_lin_slave_add_frame(NULL, 0, 0, SYN_LIN_SLOT_SUBSCRIBE,
                                                                  SYN_LIN_CHECKSUM_CLASSIC));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_lin_slave_set_publish_data(NULL, 0, NULL, 0));
+
+    /* Diagnostic frame 0x3C / 0x3D classic checksum fallback test */
+    uint8_t diag_data[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    uint8_t pid_3c = syn_lin_calc_pid(0x3C);
+    uint8_t cs_enhanced = syn_lin_calc_checksum(pid_3c, diag_data, 8, SYN_LIN_CHECKSUM_ENHANCED);
+    uint8_t cs_classic = syn_lin_calc_checksum(pid_3c, diag_data, 8, SYN_LIN_CHECKSUM_CLASSIC);
+    TEST_ASSERT_EQUAL_UINT8(cs_classic, cs_enhanced); /* Overridden to Classic for 0x3C */
 }
 
 void run_lin_tests(void)

@@ -209,6 +209,9 @@ static void test_nmea_uncovered_edge_cases(void)
     /* 3. Non-hex char in checksum */
     const char *non_hex = "$GPGGA*ZZ";
     TEST_ASSERT_FALSE(syn_nmea_validate(non_hex));
+
+    /* 4. Parse coordinate with invalid direction fallback */
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, 12.576, syn_nmea_parse_coord("1234.56", 'X'));
 }
 
 void run_nmea_tests(void)

@@ -163,9 +163,12 @@ void test_n2k_fast_packet_reassembly(void)
     TEST_ASSERT_NOT_NULL(payload);
     TEST_ASSERT_EQUAL_MEMORY("HELLO! WORLD!N2K!!", payload, 18);
 
-    /* Null invalid params */
+    /* Null invalid params and short dlc check */
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
                           syn_n2k_fastpacket_process(NULL, &f2, target_pgn, &payload, &len));
+    SYN_CAN_Frame short_frame = {.dlc = 7};
+    SYN_N2K_PositionRapid pos;
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_n2k_decode_position_rapid(&short_frame, &pos));
 }
 
 void test_n2k_fast_packet_single_frame_and_sequence_error(void)

@@ -528,6 +528,10 @@ extern "C" {
 #include "proto/syn_uds.h"
 #endif
 
+#if !defined(SYN_USE_DEVICENET) || SYN_USE_DEVICENET
+#include "proto/syn_devicenet.h"
+#endif
+
 /* ── Storage ────────────────────────────────────────────────────────────── */
 
 #if !defined(SYN_USE_PARAM) || SYN_USE_PARAM

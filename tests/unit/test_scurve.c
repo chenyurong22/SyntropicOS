@@ -162,6 +162,20 @@ void test_scurve3d_path_planning(void)
     TEST_ASSERT_EQUAL_INT(30, z);
 }
 
+static void test_scurve_null_and_bounds(void)
+{
+    syn_scurve_init(NULL, 0);
+    syn_scurve_set_constraints(NULL, 0, 0, 0);
+    syn_scurve_set_target(NULL, 0);
+
+    SYN_SCurve sc_local;
+    syn_scurve_init(&sc_local, 0);
+    syn_scurve_set_constraints(&sc_local, -10, -5, 0);
+    TEST_ASSERT_EQUAL_INT(1, sc_local.v_max);
+    TEST_ASSERT_EQUAL_INT(1, sc_local.a_max);
+    TEST_ASSERT_EQUAL_INT(1, sc_local.j_max);
+}
+
 void run_scurve_tests(void)
 {
     RUN_TEST(test_scurve_init);
@@ -172,4 +186,5 @@ void run_scurve_tests(void)
     RUN_TEST(test_scurve_isqrt_branch);
     RUN_TEST(test_scurve_tj_reduction);
     RUN_TEST(test_scurve3d_path_planning);
+    RUN_TEST(test_scurve_null_and_bounds);
 }

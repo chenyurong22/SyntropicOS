@@ -1,12 +1,19 @@
 # SyntropicOS Tools Container Makefile
 # Run containerized sanitizers, QEMU ARM emulation, protocol fuzzing, coverage, static analysis, doxygen, and 3rd-party integration.
 
-SHELL := /bin/bash
-ROOT_DIR_RAW := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
-ROOT_DIR := $(shell if command -v wslpath >/dev/null 2>&1; then wslpath -m "$(ROOT_DIR_RAW)"; else echo "$(ROOT_DIR_RAW)"; fi)
-CONTAINER_ENGINE ?= $(shell command -v podman 2>/dev/null || command -v docker.exe 2>/dev/null || command -v docker 2>/dev/null || echo docker)
-VOL_FLAG ?= $(shell if command -v podman >/dev/null 2>&1; then echo ":z"; else echo ""; fi)
-JOBS ?= $(shell nproc 2>/dev/null || echo 4)
+ifeq ($(OS),Windows_NT)
+  CONTAINER_ENGINE ?= docker
+  VOL_FLAG ?=
+  ROOT_DIR_RAW := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
+  ROOT_DIR ?= $(subst \,/,$(ROOT_DIR_RAW))
+  JOBS ?= 16
+else
+  ROOT_DIR_RAW := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
+  ROOT_DIR := $(shell if command -v wslpath >/dev/null 2>&1; then wslpath -m "$(ROOT_DIR_RAW)"; else echo "$(ROOT_DIR_RAW)"; fi)
+  CONTAINER_ENGINE ?= $(shell command -v podman 2>/dev/null || command -v docker.exe 2>/dev/null || command -v docker 2>/dev/null || echo docker)
+  VOL_FLAG ?= $(shell if command -v podman >/dev/null 2>&1; then echo ":z"; else echo ""; fi)
+  JOBS ?= $(shell nproc 2>/dev/null || echo 4)
+endif
 CACHE_VOL ?= syntropicos-build-cache
 
 
@@ -88,7 +95,7 @@ integration:
 	@bash $(ROOT_DIR)/tests/integration/run_integration.sh
 
 container-volume:
-	@"$(CONTAINER_ENGINE)" volume create $(CACHE_VOL) >/dev/null 2>&1 || true
+	@"$(CONTAINER_ENGINE)" volume create $(CACHE_VOL)
 
 container-build:
 	@"$(CONTAINER_ENGINE)" build -t syntropicos-test -f $(ROOT_DIR)/tools/containers/Containerfile $(ROOT_DIR)

@@ -491,6 +491,33 @@ static void test_nn_quant_activations_and_avgpool_clamping(void)
     syn_nn_dense_pt(&pt, NULL, 2, w, b_sat_pos, out, 2, SYN_NN_ACT_NONE, 0, &cur, 1);
     PT_INIT(&pt);
     syn_nn_dense_pt(&pt, in, 2, w, b_sat_pos, out, 2, SYN_NN_ACT_NONE, 0, &cur, 0);
+
+    /* Dense PT chunking past end (line 161) */
+    q7_t out3[3];
+    q7_t w3[2 * 3] = {10, 20, 30, 40, 50, 60};
+    q16_t b3[3] = {0, 0, 0};
+    PT_INIT(&pt);
+    cur = 0;
+    syn_nn_dense_pt(&pt, in, 2, w3, b3, out3, 3, SYN_NN_ACT_NONE, 0, &cur, 2);
+    syn_nn_dense_pt(&pt, in, 2, w3, b3, out3, 3, SYN_NN_ACT_NONE, 0, &cur, 2);
+
+    /* Softmax num_inputs > 64 and num_inputs == 0 (lines 188 & 193) */
+    q7_t big65[65];
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_nn_softmax_q7(big65, big65, 65));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_nn_softmax_q7(big65, big65, 0));
+
+    /* Attention seq_len > 32 and attn_shift > 0 (lines 231 & 249) */
+    q7_t q_att[2] = {10, 20}, k_att[2] = {10, 20}, v_att[2] = {10, 20}, out_att[2];
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_nn_attention_q7(q_att, k_att, v_att, 33, 1, 1, out_att, 0));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_nn_attention_q7(q_att, k_att, v_att, 2, 1, 1, out_att, 1));
+
+    /* Conv1d kernel_size > seq_len (lines 279 & 317) */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_nn_conv1d_q7(in, 2, 1, w, NULL, out, 1, 3, 1, SYN_NN_ACT_NONE, 0));
+    PT_INIT(&pt);
+    cur = 0;
+    syn_nn_conv1d_pt(&pt, in, 2, 1, w, NULL, out, 1, 3, 1, SYN_NN_ACT_NONE, 0, &cur, 1);
 }
 
 void run_nn_tests(void)

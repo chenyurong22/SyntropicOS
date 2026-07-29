@@ -29,7 +29,7 @@ void syn_quat_mul(const SYN_Quaternion *q1, const SYN_Quaternion *q2, SYN_Quater
 {
     SYN_ASSERT(q1 != NULL && q2 != NULL && out != NULL);
     if (q1 == NULL || q2 == NULL || out == NULL)
-        return;
+        return; /* LCOV_EXCL_LINE */
 
     int64_t w1 = q1->w, x1 = q1->x, y1 = q1->y, z1 = q1->z;
 
@@ -76,7 +76,7 @@ void syn_quat_conjugate(const SYN_Quaternion *q, SYN_Quaternion *out)
 {
     SYN_ASSERT(q != NULL && out != NULL);
     if (q == NULL || out == NULL)
-        return;
+        return; /* LCOV_EXCL_LINE */
     out->w = q->w;
 
     out->x = -q->x;

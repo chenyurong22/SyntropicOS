@@ -1203,6 +1203,37 @@ static void test_matrix_solve_lu_and_cholesky_oversized_dim(void)
     SYN_Matrix x0 = {.rows = 0, .cols = 1, .data = NULL};
     q16_t L[1], y[1];
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_matrix_solve_cholesky_work(&A0, &b0, &x0, L, y));
+
+    /* LU solver n > SYN_SOLVER_MAX_N (line 709 of syn_matrix.c) */
+    q16_t big_buf[100];
+    uint8_t P_big[10];
+    SYN_Matrix Abig = {.rows = SYN_SOLVER_MAX_N + 1, .cols = SYN_SOLVER_MAX_N + 1, .data = big_buf};
+    SYN_Matrix bbig = {.rows = SYN_SOLVER_MAX_N + 1, .cols = 1, .data = big_buf};
+    SYN_Matrix xbig = {.rows = SYN_SOLVER_MAX_N + 1, .cols = 1, .data = big_buf};
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_matrix_solve_lu_work(&Abig, &bbig, &xbig, big_buf, P_big, big_buf));
+
+    /* Eigen sym2 and sym3 dimension mismatch (lines 1013 & 1057 of syn_matrix.c) */
+    SYN_MAT_DECL(m3, 3, 3);
+    SYN_MAT_DECL(m2, 2, 2);
+    q16_t ev2[2], ev3[3];
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_matrix_eigen_sym2(&m3, ev2, &m2));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_matrix_eigen_sym3(&m2, ev3, &m3));
+
+    /* Least squares Cholesky fallback to LU (line 884 of syn_matrix.c) */
+    SYN_MAT_DECL(A_sing_ls, 3, 2);
+    SYN_MAT_DECL(b_sing_ls, 3, 1);
+    SYN_MAT_DECL(x_sing_ls, 2, 1);
+    A_sing_ls.data[0] = Q16_ONE;
+    A_sing_ls.data[1] = Q16_ONE;
+    A_sing_ls.data[2] = Q16_ONE;
+    A_sing_ls.data[3] = Q16_ONE;
+    A_sing_ls.data[4] = Q16_ONE;
+    A_sing_ls.data[5] = Q16_ONE;
+    b_sing_ls.data[0] = Q16_ONE;
+    b_sing_ls.data[1] = Q16_ONE;
+    b_sing_ls.data[2] = Q16_ONE;
+    syn_matrix_least_squares(&A_sing_ls, &b_sing_ls, &x_sing_ls);
 }
 
 void run_matrix_tests(void)

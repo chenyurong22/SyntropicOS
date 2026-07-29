@@ -219,6 +219,14 @@ static void test_param_save_write_errors(void)
     TestParams loaded;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_load(&store, &loaded));
 
+    /* 5. verify_slot_crc flash read failure during init scan (line 62) */
+    mock_port_reset();
+    syn_param_init(&store, 0, 2, sizeof(p));
+    syn_param_save(&store, &p);
+    mock_flash_fail_at = 8;
+    SYN_ParamStore store_scan;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_init(&store_scan, 0, 2, sizeof(p)));
+
     mock_port_reset();
 }
 

@@ -776,6 +776,21 @@ static void test_cbor_read_bool_and_float_underrun(void)
     TEST_ASSERT_FALSE(syn_cbor_reader_ok(&r));
 }
 
+static void test_cbor_peek_at_eof_and_write_already_overflowed(void)
+{
+    /* 1. peek_byte at EOF (line 38 of syn_cbor_read.c) */
+    SYN_CborReader reader;
+    syn_cbor_reader_init(&reader, buf, 0);
+    TEST_ASSERT_EQUAL(SYN_CBOR_ERROR, syn_cbor_peek_type(&reader));
+
+    /* 2. emit_byte on already overflowed writer (line 24 of syn_cbor_write.c) */
+    SYN_CborWriter writer;
+    syn_cbor_writer_init(&writer, buf, 1);
+    syn_cbor_write_uint(
+        &writer, 1000); /* 1000 needs 3 bytes: 0x19 0x03 0xE8. 2nd byte hits overflow line 24 */
+    TEST_ASSERT_TRUE(writer.overflow);
+}
+
 void run_cbor_tests(void)
 {
     /* Encoder */
@@ -829,4 +844,5 @@ void run_cbor_tests(void)
     RUN_TEST(test_cbor_read_type_mismatch_type_error_branches);
     RUN_TEST(test_cbor_read_bool_and_float_underrun);
     RUN_TEST(test_cbor_write_text_cstr);
+    RUN_TEST(test_cbor_peek_at_eof_and_write_already_overflowed);
 }

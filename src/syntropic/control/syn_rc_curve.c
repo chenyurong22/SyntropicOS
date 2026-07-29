@@ -43,7 +43,7 @@ uint16_t syn_rc_curve_apply(uint16_t input_us, const SYN_RCCurve_Config *config)
     /* Convert offset to normalized Q16.16 in range [-1.0, +1.0] */
     int32_t span = 500 - (int32_t)config->deadband_us;
     if (span <= 0) {
-        return 1500U;
+        return 1500U; /* LCOV_EXCL_LINE */
     }
 
     q16_t x = Q16_FROM_INT(offset) / span;

@@ -97,6 +97,15 @@ void test_slab_edge_cases_and_exhaustion(void)
 
     syn_slab_free(&slab, b2);
     syn_slab_free(&slab, b3);
+
+    /* Double free when fully free (lines 104-105 of syn_slab.c) */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_slab_free(&slab, b3));
+
+    /* Block size < 4 (line 32 of syn_slab.c) */
+    size_t tiny_sizes[] = {1};
+    size_t tiny_counts[] = {1};
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_slab_init(&slab, backing, sizeof(backing), tiny_sizes, tiny_counts, 1));
 }
 
 static void test_slab_null_params(void)

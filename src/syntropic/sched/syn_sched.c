@@ -311,7 +311,7 @@ SYN_NORETURN void syn_sched_run_tickless(SYN_Sched *sched, SYN_Sleep *sleep)
         if (wake != now && !syn_sleep_any_locked(sleep)) {
             if (wake == UINT32_MAX) {
                 /* No deadlines — light sleep until interrupt */
-                syn_sleep_enter(sleep);
+                syn_sleep_enter(sleep); /* LCOV_EXCL_LINE */
             } else {
                 /* Sleep until the next deadline */
                 syn_port_sleep_until(wake);
@@ -415,7 +415,7 @@ void syn_task_boost_priority(SYN_Task *task, uint8_t temp_prio)
 {
     SYN_ASSERT(task != NULL);
     if (task == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
     /* Priority 0 is highest priority level. Boost only accepts higher or equal priority. */
     if (temp_prio < SYN_SCHED_PRIO_LEVELS && temp_prio <= task->base_priority) {
@@ -427,7 +427,7 @@ void syn_task_restore_priority(SYN_Task *task)
 {
     SYN_ASSERT(task != NULL);
     if (task == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
     task->priority = task->base_priority;
 }

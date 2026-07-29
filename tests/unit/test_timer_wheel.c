@@ -88,9 +88,10 @@ void test_timer_wheel_add_step_cancel(void)
     SYN_TimerWheelNode t_rot, t_rot2;
     memset(&t_rot, 0, sizeof(t_rot));
     memset(&t_rot2, 0, sizeof(t_rot2));
-    syn_timer_wheel_add(&wheel, &t_rot, SYN_TIMER_WHEEL_BUCKETS + 5, timer1_cb, NULL);
     syn_timer_wheel_add(&wheel, &t_rot2, 5, timer2_cb,
-                        NULL); /* Firing node behind multi-rotation head (line 94) */
+                        NULL); /* Added first -> ends up behind head */
+    syn_timer_wheel_add(&wheel, &t_rot, SYN_TIMER_WHEEL_BUCKETS + 5, timer1_cb,
+                        NULL); /* Prepended as head */
     for (int i = 0; i < 4; i++)
         syn_timer_wheel_step(&wheel);
     TEST_ASSERT_EQUAL_UINT32(1, syn_timer_wheel_step(&wheel)); /* t_rot2 fires, line 94 executed */

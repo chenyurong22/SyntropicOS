@@ -55,8 +55,50 @@ void test_aes128_cbc_roundtrip(void)
     TEST_ASSERT_EQUAL_MEMORY(msg, plain, msg_len);
 }
 
+static void test_aes128_cbc_capacity_and_padding_errors(void)
+{
+    const uint8_t key[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    const uint8_t iv[16] = {0};
+    const uint8_t msg[16] = "TestMessage12345";
+    SYN_AES128_Context ctx;
+    syn_aes128_init(&ctx, key);
+
+    uint8_t cipher[32];
+    size_t cipher_len;
+
+    /* Encrypt capacity error (line 294) */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_aes128_cbc_encrypt(&ctx, iv, msg, 16, cipher, 5, &cipher_len));
+
+    /* Decrypt capacity and invalid len error (line 338) */
+    uint8_t plain[32];
+    size_t plain_len;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_aes128_cbc_decrypt(&ctx, iv, cipher, 0, plain,
+                                                                sizeof(plain), &plain_len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_aes128_cbc_decrypt(&ctx, iv, cipher, 16, plain, 5, &plain_len));
+
+    /* Valid encrypt with 14-byte message (pad_len = 2) */
+    const uint8_t msg14[14] = "TestMessage123";
+    syn_aes128_cbc_encrypt(&ctx, iv, msg14, 14, cipher, sizeof(cipher), &cipher_len);
+
+    /* Corrupt last byte to trigger pad_val error (line 360) */
+    uint8_t bad_cipher[32];
+    memcpy(bad_cipher, cipher, cipher_len);
+    bad_cipher[cipher_len - 1] ^= 0x01;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_aes128_cbc_decrypt(&ctx, iv, bad_cipher, cipher_len,
+                                                                plain, sizeof(plain), &plain_len));
+
+    /* Corrupt second-to-last byte to trigger pad mismatch in loop (line 365) */
+    memcpy(bad_cipher, cipher, cipher_len);
+    bad_cipher[cipher_len - 2] ^= 0x01;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_aes128_cbc_decrypt(&ctx, iv, bad_cipher, cipher_len,
+                                                                plain, sizeof(plain), &plain_len));
+}
+
 void run_aes128_tests(void)
 {
     RUN_TEST(test_aes128_nist_vector);
     RUN_TEST(test_aes128_cbc_roundtrip);
+    RUN_TEST(test_aes128_cbc_capacity_and_padding_errors);
 }

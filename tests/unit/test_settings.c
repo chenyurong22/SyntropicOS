@@ -469,10 +469,9 @@ static void test_settings_init_load_fail(void)
     /* First init writes valid settings to flash */
     syn_settings_init(&store, FLASH_BASE, 2, &data, sizeof(data), &defaults_data);
 
-    /* Corrupt payload data in flash (header remains valid so syn_param_init returns SYN_OK) */
-    mock_flash[sizeof(SYN_ParamSlotHeader)] ^= 0xFF;
-
-    /* Second init: syn_param_init returns SYN_OK, but syn_param_load fails (hits line 50) */
+    /* Second init: syn_param_init returns SYN_OK, but syn_param_load fails because flash read fails
+     * (hits line 50) */
+    mock_flash_fail_at = 8;
     TestSettings data2 = {0};
     SYN_Settings store2;
     TEST_ASSERT_EQUAL(

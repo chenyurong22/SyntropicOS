@@ -174,6 +174,22 @@ static void test_scurve_null_and_bounds(void)
     TEST_ASSERT_EQUAL_INT(1, sc_local.v_max);
     TEST_ASSERT_EQUAL_INT(1, sc_local.a_max);
     TEST_ASSERT_EQUAL_INT(1, sc_local.j_max);
+
+    /* Zero constraints when setting target (lines 54, 56, 58 of syn_scurve.c) */
+    sc_local.v_max = 0;
+    sc_local.a_max = 0;
+    sc_local.j_max = 0;
+    syn_scurve_set_target(&sc_local, 100);
+    TEST_ASSERT_EQUAL_INT(1, sc_local.v_max);
+
+    /* Zero distance 3D update branch (lines 233-235 of syn_scurve.c) */
+    SYN_SCurve3D sc3d;
+    syn_scurve3d_plan(&sc3d, 5, 5, 5, 5, 5, 5, 10, 10, 10); /* total_dist == 0 */
+    sc3d.sc_master.done = false;
+    sc3d.sc_master.current_phase = 1;
+    int32_t ox, oy, oz;
+    syn_scurve3d_update(&sc3d, &ox, &oy, &oz);
+    TEST_ASSERT_EQUAL_INT(5, ox);
 }
 
 void run_scurve_tests(void)

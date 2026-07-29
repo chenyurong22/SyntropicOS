@@ -315,6 +315,23 @@ void test_stream_delimiter_overflow_resync(void)
 
 /* ── Test runner ────────────────────────────────────────────────────────── */
 
+static void test_stream_null_and_wrapped_delim(void)
+{
+    /* Null & zero length checks (lines 71 & 85) */
+    TEST_ASSERT_EQUAL(0, syn_stream_write(NULL, NULL, 0));
+    TEST_ASSERT_FALSE(syn_stream_put(NULL, 'A'));
+
+    /* Wrapped ringbuf delimiter scan (line 31) */
+    stream_setup();
+    /* Move tail & head near end of 32B buffer */
+    s_stream.rb.tail = 30;
+    s_stream.rb.head = 30;
+    syn_stream_set_delimiter(&s_stream, '\n');
+    syn_stream_write(&s_stream, (const uint8_t *)"abc\n",
+                     4); /* Tail at 30, idx wraps 30 -> 31 -> 0 -> 1 */
+    TEST_ASSERT_TRUE(syn_stream_readable(&s_stream));
+}
+
 void run_stream_tests(void)
 {
     RUN_TEST(test_stream_init);
@@ -335,4 +352,5 @@ void run_stream_tests(void)
     RUN_TEST(test_stream_free);
     RUN_TEST(test_stream_clear_delimiter);
     RUN_TEST(test_stream_delimiter_overflow_resync);
+    RUN_TEST(test_stream_null_and_wrapped_delim);
 }

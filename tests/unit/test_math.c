@@ -73,6 +73,14 @@ static void test_rate_limit(void)
     mock_tick_advance(500);
     TEST_ASSERT_TRUE(syn_rate_limit_allow(&rl));
 
+    /* Partial refill token cap test (line 76 of syn_rate_limit.h) */
+    SYN_RateLimit rl_cap;
+    syn_rate_limit_init(&rl_cap, 10, 1000);
+    syn_rate_limit_allow(&rl_cap); /* tokens = 9 */
+    mock_tick_advance(900);
+    TEST_ASSERT_TRUE(
+        syn_rate_limit_allow(&rl_cap)); /* Partial refill 9 tokens -> 9+9=18 > 10, clamps to 10 */
+
     /* Reset */
     syn_rate_limit_reset(&rl);
     TEST_ASSERT_EQUAL_INT(3, syn_rate_limit_remaining(&rl));
@@ -256,6 +264,18 @@ static void test_q16_q7_q15_edge_cases(void)
     TEST_ASSERT_INT32_WITHIN(1000, 24109, q16_exp_fast(-Q16_ONE)); /* exp(-1) ~ 0.3678 in Q16.16 */
     TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_exp_fast(Q16_FROM_INT(12)));
     TEST_ASSERT_INT32_WITHIN(5, 0, q16_exp_fast(-Q16_FROM_INT(20)));
+
+    /* q16_tan near pi/2 (line 100 of syn_qmath.c) */
+    TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_tan(Q16_PI_2));
+
+    /* Q16 conversions and saturating arithmetic non-clamping paths (lines 132, 155, 157, 263, 279,
+     * 295 of syn_qmath.h) */
+    TEST_ASSERT_EQUAL_INT8(-128, q16_to_q7(Q16_FROM_INT(-200)));
+    TEST_ASSERT_EQUAL_INT16(32767, q16_to_q15(Q16_FROM_INT(100)));
+    TEST_ASSERT_EQUAL_INT16(-32768, q16_to_q15(Q16_FROM_INT(-100)));
+    TEST_ASSERT_EQUAL_INT32(2 * Q16_ONE, q16_add_sat(Q16_ONE, Q16_ONE));
+    TEST_ASSERT_EQUAL_INT32(0, q16_sub_sat(Q16_ONE, Q16_ONE));
+    TEST_ASSERT_EQUAL_INT32(Q16_ONE, q16_mul_sat(Q16_ONE, Q16_ONE));
 }
 
 static void test_q16_str_conversion_branches(void)

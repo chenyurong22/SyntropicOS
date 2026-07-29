@@ -154,6 +154,28 @@ static void test_ramp_fixed_point_and_negative_rate_clamp(void)
     TEST_ASSERT_EQUAL_INT(10, syn_ramp_value(&r));
 }
 
+static void test_ramp_over_deceleration_clamp(void)
+{
+    SYN_Ramp r;
+    syn_ramp_init(&r, 100);
+
+    /* Positive velocity over-decelerating past zero (line 169) */
+    syn_ramp_set_target_trapezoid(&r, 105, 50, 10);
+    r.current = 104;
+    r.velocity = 3;
+    r.done = false;
+    syn_ramp_update(&r);
+    TEST_ASSERT_EQUAL_INT(0, r.velocity);
+
+    /* Negative velocity over-decelerating past zero (line 173) */
+    syn_ramp_set_target_trapezoid(&r, 95, 50, 10);
+    r.current = 96;
+    r.velocity = -3;
+    r.done = false;
+    syn_ramp_update(&r);
+    TEST_ASSERT_EQUAL_INT(0, r.velocity);
+}
+
 void run_ramp_tests(void)
 {
     RUN_TEST(test_ramp);
@@ -163,4 +185,5 @@ void run_ramp_tests(void)
     RUN_TEST(test_ramp_linear_done_at_diff_zero);
     RUN_TEST(test_ramp_scurve_done_at_diff_zero);
     RUN_TEST(test_ramp_fixed_point_and_negative_rate_clamp);
+    RUN_TEST(test_ramp_over_deceleration_clamp);
 }

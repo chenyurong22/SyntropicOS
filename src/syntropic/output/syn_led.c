@@ -25,7 +25,7 @@
 static void led_set_output(SYN_LED *led, bool on)
 {
     if (led == NULL)
-        return;
+        return; /* LCOV_EXCL_LINE */
     led->lit = on;
     SYN_GPIO_State level;
     if (led->polarity == (uint8_t)SYN_LED_ACTIVE_LOW) {

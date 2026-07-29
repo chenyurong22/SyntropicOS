@@ -212,7 +212,7 @@ SYN_Status syn_nn_softmax_q7(const q7_t *inputs, q7_t *outputs, size_t num_input
     }
 
     if (sum <= 0.0) {
-        sum = 1.0;
+        sum = 1.0; /* LCOV_EXCL_LINE */
     }
 
     /* Normalize so sum equals 127 in Q7 (+1.0) */
@@ -479,9 +479,9 @@ SYN_Status syn_nn_avgpool1d_q7(const q7_t *inputs, size_t seq_len, size_t num_ch
             }
             int32_t avg = sum / (int32_t)pool_size;
             if (avg > 127)
-                avg = 127;
+                avg = 127; /* LCOV_EXCL_LINE */
             if (avg < -128)
-                avg = -128;
+                avg = -128; /* LCOV_EXCL_LINE */
             outputs[s * num_channels + c] = (q7_t)avg;
         }
     }

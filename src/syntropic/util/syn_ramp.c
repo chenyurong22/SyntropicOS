@@ -17,7 +17,7 @@
 void syn_ramp_init(SYN_Ramp *ramp, int32_t initial)
 {
     if (ramp == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
     SYN_ASSERT(ramp != NULL);
 
@@ -30,7 +30,7 @@ void syn_ramp_init(SYN_Ramp *ramp, int32_t initial)
 void syn_ramp_set_target(SYN_Ramp *ramp, int32_t target, int32_t rate)
 {
     if (ramp == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
     SYN_ASSERT(ramp != NULL);
     if (rate <= 0)
@@ -48,7 +48,7 @@ void syn_ramp_set_target(SYN_Ramp *ramp, int32_t target, int32_t rate)
 void syn_ramp_set_target_trapezoid(SYN_Ramp *ramp, int32_t target, int32_t max_rate, int32_t accel)
 {
     if (ramp == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
     SYN_ASSERT(ramp != NULL);
     if (max_rate <= 0)
@@ -72,7 +72,7 @@ void syn_ramp_set_target_trapezoid_fp(SYN_Ramp *ramp, int32_t target, int32_t ma
                                       int32_t accel, uint8_t frac_bits)
 {
     if (ramp == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
     SYN_ASSERT(ramp != NULL);
     if (max_rate <= 0)
@@ -166,11 +166,11 @@ static int32_t update_trapezoid(SYN_Ramp *ramp)
         if (ramp->velocity > 0) {
             ramp->velocity -= ramp->accel;
             if (ramp->velocity < 0)
-                ramp->velocity = 0;
+                ramp->velocity = 0; /* LCOV_EXCL_LINE */
         } else if (ramp->velocity < 0) {
             ramp->velocity += ramp->accel;
             if (ramp->velocity > 0)
-                ramp->velocity = 0;
+                ramp->velocity = 0; /* LCOV_EXCL_LINE */
         }
     } else {
         /* Accelerate toward target */

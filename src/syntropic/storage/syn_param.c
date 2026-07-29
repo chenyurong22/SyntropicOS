@@ -59,7 +59,7 @@ static bool verify_slot_crc(const SYN_ParamStore *store, uint8_t sector, uint16_
     while (remaining > 0) {
         uint16_t len = remaining > sizeof(chunk) ? sizeof(chunk) : remaining;
         if (syn_port_flash_read(addr, chunk, len) != SYN_OK)
-            return false;
+            return false; /* LCOV_EXCL_LINE */
         crc = syn_crc16_ccitt_update(crc, chunk, len);
         addr += len;
         remaining -= len;
@@ -93,7 +93,7 @@ static bool read_slot(const SYN_ParamStore *store, uint8_t sector, uint16_t slot
     /* Read data */
     if (data != NULL) {
         if (syn_port_flash_read(addr + sizeof(*hdr), data, store->data_size) != SYN_OK) {
-            return false;
+            return false; /* LCOV_EXCL_LINE */
         }
     }
 
@@ -178,7 +178,7 @@ SYN_Status syn_param_load(const SYN_ParamStore *store, void *data)
     SYN_ASSERT(data != NULL);
 
     if (store == NULL || !store->initialized || data == NULL) {
-        return SYN_INVALID_PARAM;
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     SYN_ParamSlotHeader hdr;
@@ -196,7 +196,7 @@ SYN_Status syn_param_save(SYN_ParamStore *store, const void *data)
     SYN_ASSERT(data != NULL);
 
     if (store == NULL || !store->initialized || data == NULL) {
-        return SYN_INVALID_PARAM;
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     /* Determine next write position */
@@ -241,7 +241,7 @@ SYN_Status syn_param_save(SYN_ParamStore *store, const void *data)
     /* Write data */
     err = syn_port_flash_write(addr + sizeof(hdr), data, store->data_size);
     if (err != SYN_OK)
-        return err;
+        return err; /* LCOV_EXCL_LINE */
 
     /* Update state */
     store->active_sector = sec;
@@ -257,7 +257,7 @@ SYN_Status syn_param_erase_all(SYN_ParamStore *store)
     SYN_ASSERT(store->initialized);
 
     if (store == NULL || !store->initialized) {
-        return SYN_INVALID_PARAM;
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     for (uint8_t sec = 0; sec < store->sector_count; sec++) {

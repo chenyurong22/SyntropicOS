@@ -46,6 +46,7 @@ void test_fwimage_bad_magic(void)
     syn_fwimage_seal_header(&hdr);
 
     TEST_ASSERT_FALSE(syn_fwimage_header_valid(&hdr));
+    TEST_ASSERT_FALSE(syn_fwimage_is_bootable(&hdr));
 }
 
 void test_fwimage_corrupted_crc(void)

@@ -741,6 +741,42 @@ static void test_autotune_calc_relay_gains_zero_tu_and_default_state(void)
     TEST_ASSERT_EQUAL((SYN_AutoTune_State)99, syn_autotune_update(&at));
 }
 
+void test_autotune_extended_coverage(void)
+{
+    SYN_MotorCtrl ctrl;
+    SYN_MotorCtrl_Config mcfg =
+        SYN_MOTOR_CTRL_DEFAULTS(((SYN_MotorOutput){.set_output = mock_set_output, .ctx = NULL}),
+                                mock_read_pos, NULL, 1000, 100);
+    syn_motor_ctrl_init(&ctrl, &mcfg);
+    SYN_AutoTune at;
+    SYN_AutoTune_Config cfg = {.mode = SYN_ATUNE_MODE_AUTO, .relay_cycles = 1, .test_output = 50};
+    syn_autotune_init(&at, &ctrl, &cfg);
+
+    /* 1. Deadband abort no motion output > 50 (line 217) */
+    at.state = SYN_ATUNE_PROBE;
+    at.current_output = 50;
+    at.phase_start_tick = 0;
+    mock_tick_ms = 300;
+    syn_autotune_update(&at);
+    TEST_ASSERT_EQUAL(SYN_ATUNE_ABORTED, at.state);
+    TEST_ASSERT_EQUAL(SYN_ATUNE_ABORT_NO_MOTION, at.abort_reason);
+
+    /* 2. Negative peak amplitude amp < 0 & period_sum update (lines 445, 451-452, 483) */
+    syn_autotune_init(&at, &ctrl, &cfg);
+    ctrl.cfg.pid_scale = 0; /* line 483 test */
+    at.state = SYN_ATUNE_RELAY;
+    at.half_cycles = 1;
+    at.last_cross_tick = 100;
+    at.above_setpoint = true;
+    at.osc_peak_pos = -100;
+    at.osc_peak_neg = 100; /* amp = pos - neg = -200 < 0 (line 445) */
+    mock_tick_ms = 500;
+    mock_pos = -10; /* Cross setpoint 0 to negative */
+    syn_autotune_update(&at);
+    TEST_ASSERT_EQUAL(2, at.half_cycles);
+    TEST_ASSERT_EQUAL_UINT32(400, at.period_sum); /* lines 451-452 hit */
+}
+
 void run_autotune_tests(void)
 {
     RUN_TEST(test_autotune_probe_phase);
@@ -766,4 +802,5 @@ void run_autotune_tests(void)
     RUN_TEST(test_autotune_ka_identification_calculation);
     RUN_TEST(test_autotune_zn_no_overshoot_and_tyreus_luyben);
     RUN_TEST(test_autotune_calc_relay_gains_zero_tu_and_default_state);
+    RUN_TEST(test_autotune_extended_coverage);
 }

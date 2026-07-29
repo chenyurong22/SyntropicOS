@@ -196,6 +196,15 @@ static void test_fmt_hex_parse_and_bounds(void)
     TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hex_parse("FF", NULL, 4));
     TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hex_parse("FF", bin, 0));
 
+    /* Non-hex character parse return -1 (line 175 of syn_fmt.c) */
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hex_parse("GZ", bin, 1));
+
+    /* places > 9 clamp (line 294 of syn_fmt.c) */
+    syn_fmt_fixed(buf, sizeof(buf), 123, 10);
+
+    /* Uppercase prefix in syn_str_prefix_icase (line 135 of syn_fmt.h) */
+    TEST_ASSERT_TRUE(syn_str_prefix_icase("foobar", "FOO"));
+
     /* Zero size buffer parameter guards */
     TEST_ASSERT_EQUAL_size_t(0, syn_fmt_uint(buf, 0, 100));
     TEST_ASSERT_EQUAL_size_t(0, syn_fmt_int(buf, 0, -100));

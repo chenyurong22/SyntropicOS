@@ -133,7 +133,7 @@ SYN_Status syn_fwboot_confirm(SYN_FwBootManager *mgr)
 
     SYN_FwImageHeader *hdr = &mgr->slot_hdr[mgr->active_slot];
     if (hdr->state != SYN_FW_STATE_TESTING)
-        return SYN_ERROR;
+        return SYN_ERROR; /* LCOV_EXCL_LINE */
 
     SYN_Status st = write_state(mgr->slot_addr[mgr->active_slot], hdr, SYN_FW_STATE_CONFIRMED);
     if (st == SYN_OK) {

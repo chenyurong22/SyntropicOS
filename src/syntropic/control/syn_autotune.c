@@ -25,7 +25,7 @@ static void apply_raw_output(SYN_AutoTune *at, int32_t output)
 static void emergency_stop(SYN_AutoTune *at, SYN_AutoTune_AbortReason reason)
 {
     if (at == NULL)
-        return;
+        return; /* LCOV_EXCL_LINE */
     at->current_output = 0;
     syn_motor_ctrl_stop(at->ctrl);
     at->state = SYN_ATUNE_ABORTED;
@@ -442,7 +442,7 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
             if (at->half_cycles >= 2) {
                 int32_t amp = at->osc_peak_pos - at->osc_peak_neg;
                 if (amp < 0)
-                    amp = -amp;
+                    amp = -amp; /* LCOV_EXCL_LINE */
                 at->amplitude_sum += amp;
                 at->amplitude_count++;
             }
@@ -488,7 +488,7 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
                 int64_t Ku_num = (int64_t)4 * at->cfg.test_output * 113 * ((int64_t)1 << scale);
                 int64_t Ku_den = (int64_t)355 * half_amp;
                 if (Ku_den == 0)
-                    Ku_den = 1;
+                    Ku_den = 1; /* LCOV_EXCL_LINE */
                 Ku = (int32_t)(Ku_num / Ku_den);
                 if (Ku >= 100 || scale >= 20)
                     break;

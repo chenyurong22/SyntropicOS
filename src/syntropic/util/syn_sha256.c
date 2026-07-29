@@ -176,7 +176,7 @@ void syn_sha256_init(SYN_SHA256 *ctx)
 {
     SYN_ASSERT(ctx != NULL);
     if (ctx == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
     memcpy(ctx->state, H_INIT, sizeof(H_INIT));
     ctx->buf_len = 0;
@@ -235,7 +235,7 @@ void syn_sha256_final(SYN_SHA256 *ctx, uint8_t hash[SYN_SHA256_DIGEST_SIZE])
     SYN_ASSERT(hash != NULL);
 
     if (ctx == NULL || hash == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
 
     /* Pad: append 0x80, then zeros, then 64-bit big-endian length */

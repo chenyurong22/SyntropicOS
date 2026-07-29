@@ -368,6 +368,50 @@ static void test_json_read_unterminated_object_key(void)
     TEST_ASSERT_FALSE(syn_json_get_str(&r, "key", out, sizeof(out)));
 }
 
+static void test_json_read_more_edge_cases(void)
+{
+    SYN_JsonReader r;
+    char out[16];
+
+    /* Object token has tok->value == NULL in syn_json_get_str (line 373) */
+    char json_obj[] = "{\"obj\":{\"a\":1}}";
+    TEST_ASSERT_TRUE(syn_json_parse(&r, json_obj, strlen(json_obj)));
+    TEST_ASSERT_FALSE(syn_json_get_str(&r, "obj", out, sizeof(out)));
+
+    /* Unexpected char after key-value pair (line 280) */
+    char bad_char[] = "{\"k\":1 @}";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, bad_char, strlen(bad_char)));
+
+    /* Unterminated after colon (line 190) */
+    char no_val[] = "{\"k\":";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, no_val, strlen(no_val)));
+
+    /* Unterminated nested array (line 221) */
+    char bad_arr[] = "{\"arr\":[1,2";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, bad_arr, strlen(bad_arr)));
+
+    /* Unterminated whitespace before comma/brace (line 273) */
+    char bad_end[] = "{\"k\":1  ";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, bad_end, strlen(bad_end)));
+
+    /* Unterminated nested object (line 209) */
+    char bad_nested[] = "{\"sub\":{\"bad";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, bad_nested, strlen(bad_nested)));
+
+    /* Unterminated string with trailing backslash (line 114) */
+    char bad_esc[] = "{\"k\":\"val\\";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, bad_esc, strlen(bad_esc)));
+
+    /* Non-object root (line 167) */
+    char non_obj[] = "123";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, non_obj, strlen(non_obj)));
+
+    /* Token overflow with malformed skipped value (line 197) */
+    char overflow_bad[] = "{\"a\":1,\"b\":2,\"c\":3,\"d\":4,\"e\":5,\"f\":6,\"g\":7,\"h\":8,\"i\":"
+                          "9,\"j\":10,\"k\":\"val\\";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, overflow_bad, strlen(overflow_bad)));
+}
+
 void run_json_read_tests(void)
 {
     RUN_TEST(test_json_read_simple_object);
@@ -395,4 +439,5 @@ void run_json_read_tests(void)
     RUN_TEST(test_json_get_str_null_and_missing_key);
     RUN_TEST(test_json_read_skip_value_unterminated_string);
     RUN_TEST(test_json_read_unterminated_object_key);
+    RUN_TEST(test_json_read_more_edge_cases);
 }

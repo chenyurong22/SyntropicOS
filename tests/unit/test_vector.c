@@ -37,8 +37,8 @@ void test_vector_basic_ops(void)
 
 void test_vector_stats(void)
 {
-    q16_t v[5] = {Q16_FROM_INT(2), Q16_FROM_INT(4), Q16_FROM_INT(6), Q16_FROM_INT(8),
-                  Q16_FROM_INT(10)};
+    q16_t v[5] = {Q16_FROM_INT(6), Q16_FROM_INT(2), Q16_FROM_INT(10), Q16_FROM_INT(4),
+                  Q16_FROM_INT(8)};
 
     TEST_ASSERT_EQUAL_INT32(Q16_FROM_INT(2), syn_vec_min(v, 5));
     TEST_ASSERT_EQUAL_INT32(Q16_FROM_INT(10), syn_vec_max(v, 5));

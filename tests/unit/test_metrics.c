@@ -70,6 +70,11 @@ void test_metric_extra_coverage(void)
     syn_metrics_foreach(NULL, NULL);
 
 #if SYN_USE_ROUTER
+    /* Test null router branches (lines 37 & 49) */
+    syn_metrics_set_router(NULL);
+    syn_metrics_record("temp", 23.45f);
+    syn_metrics_count("requests", 5);
+
     SYN_Router router;
     SYN_RouterHandler handlers[2];
     SYN_Transport transport;

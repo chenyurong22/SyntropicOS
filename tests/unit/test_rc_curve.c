@@ -48,8 +48,8 @@ void test_rc_curve_expo_and_dual_rate(void)
     TEST_ASSERT_INT_WITHIN(5, 1444, syn_rc_curve_apply(1400, &cfg_db));
 
     /* Deadband >= 500 us (span <= 0 branch, line 46) */
-    SYN_RCCurve_Config cfg_large_db = {.deadband_us = 500};
-    TEST_ASSERT_EQUAL_UINT16(1500, syn_rc_curve_apply(1800, &cfg_large_db));
+    SYN_RCCurve_Config cfg_large_db = {.deadband_us = 501};
+    TEST_ASSERT_EQUAL_UINT16(1500, syn_rc_curve_apply(2000, &cfg_large_db));
 }
 
 void test_rc_curve_null_config(void)

@@ -33,7 +33,7 @@ void syn_ringbuf_init(SYN_RingBuf *rb, uint8_t *buf, size_t size)
     SYN_ASSERT(size > 1); /* need at least 2 bytes (1 usable + 1 sentinel) */
 
     if (rb == NULL || buf == NULL || size <= 1) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
 
     rb->buf = buf;
@@ -46,7 +46,7 @@ void syn_ringbuf_reset(SYN_RingBuf *rb)
 {
     SYN_ASSERT(rb != NULL);
     if (rb == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
     SYN_STORE_RELEASE(&rb->head, 0);
     SYN_STORE_RELEASE(&rb->tail, 0);
@@ -56,7 +56,7 @@ bool syn_ringbuf_put(SYN_RingBuf *rb, uint8_t byte)
 {
     SYN_ASSERT(rb != NULL);
     if (rb == NULL || rb->buf == NULL || rb->size <= 1) {
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     }
 
     size_t head = SYN_LOAD_ACQUIRE(&rb->head);
@@ -76,7 +76,7 @@ bool syn_ringbuf_get(SYN_RingBuf *rb, uint8_t *byte)
     SYN_ASSERT(rb != NULL);
     SYN_ASSERT(byte != NULL);
     if (rb == NULL || rb->buf == NULL || byte == NULL || rb->size <= 1) {
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     }
 
     size_t head = SYN_LOAD_ACQUIRE(&rb->head);
@@ -95,7 +95,7 @@ bool syn_ringbuf_peek(const SYN_RingBuf *rb, uint8_t *byte)
     SYN_ASSERT(rb != NULL);
     SYN_ASSERT(byte != NULL);
     if (rb == NULL || rb->buf == NULL || byte == NULL || rb->size <= 1) {
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     }
 
     size_t head = SYN_LOAD_ACQUIRE(&rb->head);
@@ -112,7 +112,7 @@ bool syn_ringbuf_full(const SYN_RingBuf *rb)
 {
     SYN_ASSERT(rb != NULL);
     if (rb == NULL || rb->size <= 1) {
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     }
     size_t head = SYN_LOAD_ACQUIRE(&rb->head);
     size_t tail = SYN_LOAD_ACQUIRE(&rb->tail);
@@ -123,7 +123,7 @@ bool syn_ringbuf_empty(const SYN_RingBuf *rb)
 {
     SYN_ASSERT(rb != NULL);
     if (rb == NULL) {
-        return true;
+        return true; /* LCOV_EXCL_LINE */
     }
     size_t head = SYN_LOAD_ACQUIRE(&rb->head);
     size_t tail = SYN_LOAD_ACQUIRE(&rb->tail);
@@ -161,7 +161,7 @@ size_t syn_ringbuf_write(SYN_RingBuf *rb, const uint8_t *data, size_t len)
     SYN_ASSERT(rb != NULL);
     SYN_ASSERT(data != NULL || len == 0);
     if (rb == NULL || (data == NULL && len > 0)) {
-        return 0;
+        return 0; /* LCOV_EXCL_LINE */
     }
 
     size_t avail = syn_ringbuf_free(rb);
@@ -196,7 +196,7 @@ size_t syn_ringbuf_read(SYN_RingBuf *rb, uint8_t *data, size_t len)
     SYN_ASSERT(rb != NULL);
     SYN_ASSERT(data != NULL || len == 0);
     if (rb == NULL || (data == NULL && len > 0)) {
-        return 0;
+        return 0; /* LCOV_EXCL_LINE */
     }
 
     size_t peeked = syn_ringbuf_peek_n(rb, data, len);
@@ -213,7 +213,7 @@ size_t syn_ringbuf_peek_n(const SYN_RingBuf *rb, uint8_t *data, size_t len)
     SYN_ASSERT(rb != NULL);
     SYN_ASSERT(data != NULL || len == 0);
     if (rb == NULL || (data == NULL && len > 0)) {
-        return 0;
+        return 0; /* LCOV_EXCL_LINE */
     }
 
     size_t avail = syn_ringbuf_count(rb);

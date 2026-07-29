@@ -6,6 +6,8 @@
 #include "syntropic/util/syn_quaternion.h"
 #include "unity/unity.h"
 
+#include <string.h>
+
 #define Q16_TOL 50 /* ~0.0007 in Q16 */
 
 static void ASSERT_Q16_NEAR(q16_t expected, q16_t actual, q16_t tol)
@@ -119,12 +121,14 @@ void test_quaternion_matrix_and_inverse(void)
 
 void test_quaternion_extended_edge_cases(void)
 {
-    /* Gimbal lock pitch testing (sinp >= 1.0) */
+    /* Gimbal lock pitch testing (sinp >= 1.0, line 194 of syn_quaternion.c) */
     SYN_Quaternion q_gimbal, q_out;
-    syn_quat_from_euler(&q_gimbal, 0, Q16_PI_2, 0);
+    memset(&q_gimbal, 0, sizeof(q_gimbal));
+    q_gimbal.w = 46342;
+    q_gimbal.y = 46342;
     q16_t roll, pitch, yaw;
     syn_quat_to_euler(&q_gimbal, &roll, &pitch, &yaw);
-    TEST_ASSERT_INT32_WITHIN(100, 81290, pitch);
+    TEST_ASSERT_EQUAL_INT32(102944, pitch);
 
     /* Slerp with negative dot product (opposite orientation quaternions) */
     SYN_Quaternion q1, q2_neg;

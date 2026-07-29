@@ -463,19 +463,21 @@ static void test_settings_dual_bank_neither_bank_valid(void)
 static void test_settings_init_load_fail(void)
 {
     mock_port_reset();
-    TestSettings data;
+    TestSettings data, defaults_data = defaults;
     SYN_Settings store;
 
-    /* Write valid magic (0x5041) but invalid data_size to slot 0 */
-    SYN_ParamSlotHeader hdr = {.magic = 0x5041, .data_size = sizeof(data), .seq = 1, .crc = 0xFFFF};
-    syn_port_flash_write(FLASH_BASE, &hdr, sizeof(hdr));
+    /* First init writes valid settings to flash */
+    syn_settings_init(&store, FLASH_BASE, 2, &data, sizeof(data), &defaults_data);
 
-    /* syn_param_init returns SYN_OK (hdr.magic matches, hdr.data_size matches),
-     * but syn_param_load fails because CRC (0xFFFF) doesn't match!
-     * Hits line 50 of syn_settings.c (st != SYN_OK inside if (st == SYN_OK)). */
-    TEST_ASSERT_EQUAL(SYN_OK,
-                      syn_settings_init(&store, FLASH_BASE, 2, &data, sizeof(data), &defaults));
-    TEST_ASSERT_EQUAL_INT32(500, data.velocity);
+    /* Corrupt payload data in flash (header remains valid so syn_param_init returns SYN_OK) */
+    mock_flash[sizeof(SYN_ParamSlotHeader)] ^= 0xFF;
+
+    /* Second init: syn_param_init returns SYN_OK, but syn_param_load fails (hits line 50) */
+    TestSettings data2 = {0};
+    SYN_Settings store2;
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_settings_init(&store2, FLASH_BASE, 2, &data2, sizeof(data2), &defaults_data));
+    TEST_ASSERT_EQUAL_INT32(500, data2.velocity);
     mock_port_reset();
 }
 

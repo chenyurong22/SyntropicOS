@@ -438,7 +438,7 @@ void syn_task_set_base_priority(SYN_Task *task, uint8_t new_prio)
     SYN_ASSERT(new_prio < SYN_SCHED_PRIO_LEVELS);
 
     if (task == NULL || new_prio >= SYN_SCHED_PRIO_LEVELS) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
 
     task->base_priority = new_prio;

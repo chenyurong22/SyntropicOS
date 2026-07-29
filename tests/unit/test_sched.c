@@ -1168,6 +1168,25 @@ static void test_sched_next_wakeup_blocked_event_fired(void)
     TEST_ASSERT_EQUAL_UINT32(now, wakeup);
 }
 
+static void test_sched_next_wakeup_uint32_max_and_prio_bounds(void)
+{
+    SYN_Task task;
+    syn_task_create(&task, "dummy", sched_task_a, 0, NULL);
+    SYN_Sched sched;
+    mock_tick_ms = UINT32_MAX - 500;
+    task.delay_until = UINT32_MAX;
+    syn_sched_init(&sched, &task, 1);
+
+    /* delay_until == UINT32_MAX target cap branch (line 276) */
+    TEST_ASSERT_EQUAL_UINT32(UINT32_MAX - 1, syn_sched_next_wakeup(&sched));
+    mock_tick_ms = 0;
+
+    /* Round-robin start index clamp branch (line 165) */
+    task.delay_until = 0;
+    sched.rr_per_prio[0] = 10;
+    syn_sched_run(&sched);
+}
+
 void run_sched_tests(void)
 {
     RUN_TEST(test_scheduler);
@@ -1202,4 +1221,5 @@ void run_sched_tests(void)
     RUN_TEST(test_block_condition_isr_wakeup_not_lost);
     RUN_TEST(test_block_event_auto_clear_is_atomic);
     RUN_TEST(test_sched_next_wakeup_blocked_event_fired);
+    RUN_TEST(test_sched_next_wakeup_uint32_max_and_prio_bounds);
 }

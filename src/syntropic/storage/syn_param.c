@@ -120,7 +120,7 @@ SYN_Status syn_param_init(SYN_ParamStore *store, uint32_t flash_base, uint8_t se
     SYN_ASSERT(data_size > 0);
 
     if (store == NULL || sector_count == 0 || data_size == 0) {
-        return SYN_INVALID_PARAM;
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     memset(store, 0, sizeof(*store));

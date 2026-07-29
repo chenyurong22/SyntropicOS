@@ -82,4 +82,8 @@ void test_rc_curve_extended_edge_cases(void)
     cfg.dual_rate = Q16_FROM_FLOAT(3.0f);
     TEST_ASSERT_EQUAL_UINT16(2000, syn_rc_curve_apply(1900, &cfg));
     TEST_ASSERT_EQUAL_UINT16(1000, syn_rc_curve_apply(1100, &cfg));
+
+    /* deadband >= 500 with non-zero offset (span <= 0, line 46) */
+    cfg.deadband_us = 550;
+    TEST_ASSERT_EQUAL_UINT16(1500, syn_rc_curve_apply(1800, &cfg));
 }

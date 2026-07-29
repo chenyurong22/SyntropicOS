@@ -1739,6 +1739,124 @@ static void test_uds_dtc_iso14229_bit_operations(void)
     TEST_ASSERT_FALSE(syn_uds_dtc_get_status(&server, 0x999999U, &status));
 }
 
+static bool mock_dtc_cb_fail_fn(uint8_t sub, const uint8_t *req, uint16_t req_len, uint8_t *resp,
+                                uint16_t max_resp_len, uint16_t *out_len, void *user_ctx)
+{
+    (void)sub;
+    (void)req;
+    (void)req_len;
+    (void)resp;
+    (void)max_resp_len;
+    (void)out_len;
+    (void)user_ctx;
+    return false;
+}
+
+static bool mock_dtc_cb_ok_fn(uint8_t sub, const uint8_t *req, uint16_t req_len, uint8_t *resp,
+                              uint16_t max_resp_len, uint16_t *out_len, void *user_ctx)
+{
+    (void)sub;
+    (void)req;
+    (void)req_len;
+    (void)resp;
+    (void)max_resp_len;
+    (void)out_len;
+    (void)user_ctx;
+    *out_len = 2;
+    resp[0] = 0x11;
+    resp[1] = 22;
+    return true;
+}
+
+static bool mock_mem_cb_fail_fn(bool write, uint32_t addr, uint32_t len, uint8_t *buf,
+                                void *user_ctx)
+{
+    (void)write;
+    (void)addr;
+    (void)len;
+    (void)buf;
+    (void)user_ctx;
+    return false;
+}
+
+static void test_uds_remaining_uncovered_paths(void)
+{
+    SYN_UDS_Server server;
+    syn_uds_init(&server);
+    uint8_t resp[256];
+    uint16_t resp_len = 0;
+
+    /* 1. Clear DTC group filtering (lines 604, 636-637, 659, 661) */
+    syn_uds_register_dtc(&server, 0x812345U, SYN_UDS_DTC_STATUS_CONFIRMED_DTC,
+                         SYN_UDS_DTC_SEVERITY_CHECK_IMMEDIATELY); /* Body 0x800000..0x8EFFFF */
+    syn_uds_register_dtc(&server, 0x412345U, SYN_UDS_DTC_STATUS_CONFIRMED_DTC,
+                         SYN_UDS_DTC_SEVERITY_CHECK_IMMEDIATELY); /* Chassis 0x400000..0x4EFFFF */
+    syn_uds_register_dtc(&server, 0xC12345U, SYN_UDS_DTC_STATUS_CONFIRMED_DTC,
+                         SYN_UDS_DTC_SEVERITY_CHECK_IMMEDIATELY); /* Network 0xC00000..0xFEFFFF */
+
+    uint8_t req_clear_body[4] = {SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION, 0x81, 0x23, 0x45};
+    syn_uds_process_request(&server, req_clear_body, 4, resp, sizeof(resp), &resp_len);
+
+    uint8_t req_clear_chassis[4] = {SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION, 0x41, 0x23, 0x45};
+    syn_uds_process_request(&server, req_clear_chassis, 4, resp, sizeof(resp), &resp_len);
+
+    uint8_t req_clear_net[4] = {SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION, 0xC1, 0x23, 0x45};
+    syn_uds_process_request(&server, req_clear_net, 4, resp, sizeof(resp), &resp_len);
+
+    uint8_t req_clear_all[4] = {SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION, 0xFF, 0xFF, 0xFF};
+    syn_uds_process_request(&server, req_clear_all, 4, resp, sizeof(resp), &resp_len);
+
+    /* 2. Read DTC subfunctions with dtc_cb (lines 894-905, 925, 948-956, 974-982, 996-1004) */
+    server.dtc_cb = mock_dtc_cb_ok_fn;
+    uint8_t subs[] = {0x06, 0x09, 0x0B, 0x0C, 0x0D};
+    for (size_t i = 0; i < sizeof(subs); i++) {
+        uint8_t req_dtc[6] = {SYN_UDS_SID_READ_DTC_INFORMATION, subs[i], 0x01, 0x02, 0x03, 0xFF};
+        syn_uds_process_request(&server, req_dtc, 6, resp, sizeof(resp), &resp_len);
+        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SID_READ_DTC_INFORMATION + 0x40, resp[0]);
+    }
+
+    server.dtc_cb = mock_dtc_cb_fail_fn;
+    for (size_t i = 0; i < sizeof(subs); i++) {
+        uint8_t req_dtc[6] = {SYN_UDS_SID_READ_DTC_INFORMATION, subs[i], 0x01, 0x02, 0x03, 0xFF};
+        syn_uds_process_request(&server, req_dtc, 6, resp, sizeof(resp), &resp_len);
+        TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+    }
+    server.dtc_cb = NULL;
+
+    /* 3. Subfunction 0x14/0x15 max_resp_len < 4 (line 1046) */
+    uint8_t req_sf14[2] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x14};
+    syn_uds_process_request(&server, req_sf14, 2, resp, 3, &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+
+    /* 4. Transfer data overflow & read mem_cb fail (lines 1135, 1161, 1165-1168) */
+    server.transfer_state = SYN_UDS_TRANSFER_DOWNLOAD;
+    server.transfer_size = 5;
+    server.transfer_bytes_processed = 4;
+    uint8_t req_td_overflow[6] = {SYN_UDS_SID_TRANSFER_DATA, 0x01, 0xAA, 0xBB, 0xCC, 0xDD};
+    syn_uds_process_request(&server, req_td_overflow, 6, resp, sizeof(resp), &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+
+    server.transfer_state = SYN_UDS_TRANSFER_UPLOAD;
+    server.memory_cb = mock_mem_cb_fail_fn;
+    uint8_t req_td_read_fail[3] = {SYN_UDS_SID_TRANSFER_DATA, 0x01, 0x02};
+    syn_uds_process_request(&server, req_td_read_fail, 3, resp, sizeof(resp), &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+
+    /* 5. Read Scaling Data By Identifier bounds (lines 1237, 1242) */
+    uint8_t req_scaling_short[2] = {SYN_UDS_SID_READ_SCALING_DATA_BY_IDENTIFIER, 0x01};
+    syn_uds_process_request(&server, req_scaling_short, 2, resp, sizeof(resp), &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+
+    uint8_t req_scaling_ok[3] = {SYN_UDS_SID_READ_SCALING_DATA_BY_IDENTIFIER, 0x01, 0x02};
+    syn_uds_process_request(&server, req_scaling_ok, 3, resp, 3, &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+
+    /* 6. Request Download incorrect length (line 1385) */
+    uint8_t req_dl_short[4] = {SYN_UDS_SID_REQUEST_DOWNLOAD, 0x00, 0x11, 0x11};
+    syn_uds_process_request(&server, req_dl_short, 4, resp, sizeof(resp), &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -1762,4 +1880,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_read_dtc_additional_subfunctions);
     RUN_TEST(test_uds_clear_dtc_group_filtering);
     RUN_TEST(test_uds_dtc_iso14229_bit_operations);
+    RUN_TEST(test_uds_remaining_uncovered_paths);
 }

@@ -384,12 +384,19 @@ static void test_ir_edge_cases(void)
     syn_ir_decode_pulse(&decoder, 889, false, &rx_frame);
     syn_ir_decode_pulse(&decoder, 1778, true, &rx_frame);
 
-    /* Forced invalid active_proto to hit default case */
+    /* Forced invalid active_proto in decode_pulse to hit default case (line 362) */
     syn_ir_decoder_init(&decoder);
     decoder.state = SYN_IR_STATE_DATA;
     decoder.active_proto = (SYN_IR_Protocol)99;
-    decoder.bit_idx = 10;
-    TEST_ASSERT_FALSE(syn_ir_decode_timeout(&decoder, &rx_frame));
+    TEST_ASSERT_FALSE(syn_ir_decode_pulse(&decoder, 500, true, &rx_frame));
+
+    /* Data pulse error reset in active protocol (line 402) */
+    syn_ir_decoder_init(&decoder);
+    syn_ir_decode_pulse(&decoder, 9000, true, &rx_frame);
+    syn_ir_decode_pulse(&decoder, 4500, false, &rx_frame); /* NEC header matched */
+    TEST_ASSERT_EQUAL(SYN_IR_PROTO_NEC, decoder.active_proto);
+    /* Send invalid pulse length in DATA state -> line 402 reset_decoder_state */
+    TEST_ASSERT_FALSE(syn_ir_decode_pulse(&decoder, 50000, true, &rx_frame));
 
     /* Encode frame with invalid/unknown protocol (SYN_IR_PROTO_UNKNOWN) */
     SYN_IR_Pulse pulse_buf[100];

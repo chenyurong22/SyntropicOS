@@ -419,14 +419,21 @@ static void test_websocket_uncovered_edge_cases(void)
     SYN_Status st = syn_websocket_upgrade(&req, &resp, &ws, on_ws_message, NULL);
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 
-    /* 2. Multi-block SHA-1 update (> 128 bytes, lines 109 & 115) */
-    const char *long_key = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                           "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                           "123456789012345678901234567890";
-    char long_hdr[300];
+    /* 2. Multi-block SHA-1 update (> 256 bytes, lines 109 & 115) */
+    char long_key[500];
+    memset(long_key, 'A', 400);
+    long_key[400] = '\0';
+    char long_hdr[600];
     snprintf(long_hdr, sizeof(long_hdr), "Sec-WebSocket-Key: %s\r\n\r\n", long_key);
     req.headers = long_hdr;
     TEST_ASSERT_EQUAL(SYN_OK, syn_websocket_upgrade(&req, &resp, &ws, on_ws_message, NULL));
+
+    /* Run websocket task until PT_END (line 403) */
+    SYN_PT task_pt;
+    PT_INIT(&task_pt);
+    SYN_Task task_obj = {.user_data = &ws};
+    ws.state = SYN_WS_STATE_CLOSED;
+    syn_websocket_task(&task_pt, &task_obj);
 
     /* 3. send when not connected (line 275) */
     ws.state = SYN_WS_STATE_CLOSED;

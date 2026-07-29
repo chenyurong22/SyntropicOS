@@ -581,9 +581,9 @@ static void test_canopen_uncovered_edge_cases(void)
     /* 6. NULL check in syn_canopen_send_emcy */
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_send_emcy(NULL, 0x1000, 0x01));
 
-    /* 7. Unknown COB-ID */
+    /* 7. Unknown COB-ID returns SYN_ERROR (line 501) */
     uint8_t dummy[8] = {0};
-    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x123U, dummy, 8));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_canopen_process_rx(&node, 0x7FFU, dummy, 8));
 
     /* 8. Segmented upload segment request when entry disappears (lines 381-383) */
     node.sdo_session.state = SYN_CANOPEN_SDO_SEG_UPLOAD;
@@ -592,6 +592,14 @@ static void test_canopen_uncovered_edge_cases(void)
     node.sdo_session.toggle = 0;
     uint8_t seg_up_req[8] = {0x60U, 0, 0, 0, 0, 0, 0, 0};
     syn_canopen_process_rx(&node, 0x605U, seg_up_req, 8);
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]);
+
+    /* 9. SDO Expedited upload request with type mismatch (line 325) */
+    /* 0x2001:0x01 is uint16_t (2 bytes). Send SDO upload initiate with e=1, s=1, n=3 (indicating 1
+     * byte size) */
+    uint8_t sdo_up_typemismatch[8] = {0x4BU, 0x01U, 0x20U, 0x01U, 0, 0, 0, 0};
+    syn_canopen_process_rx(&node, 0x605U, sdo_up_typemismatch, 8);
     TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
     TEST_ASSERT_EQUAL(0x80U, tx_buf[0]);
 }

@@ -681,6 +681,43 @@ static void test_cli_tasks_unknown_state(void)
     syn_cli_set_scheduler(NULL);
 }
 
+/* ── Test: Uncovered edge cases (L72, L149, L153, L417, L418, L436, L437, L453) ── */
+
+static void test_cli_uncovered_lines(void)
+{
+    SYN_CLI cli;
+    syn_cli_init(&cli, test_commands, 4, "> ");
+
+    /* 1. cli_puts(cli, NULL) via prompt=NULL -> line 72 */
+    cli.prompt = NULL;
+    syn_cli_print_prompt(&cli);
+
+    /* 2. Help command with errlog & sched bound -> lines 149 & 153 */
+    SYN_ErrLog elog;
+    SYN_ErrEntry e_buf[2];
+    syn_errlog_init(&elog, e_buf, 2, 1);
+    syn_cli_set_errlog(&elog);
+
+    SYN_Task tasks[1];
+    SYN_Sched sched;
+    syn_task_create(&tasks[0], "t1", dummy_task_fn, 0, NULL);
+    syn_sched_init(&sched, tasks, 1);
+    syn_cli_set_scheduler(&sched);
+
+    clear_output();
+    syn_cli_process_line(&cli, "help");
+    TEST_ASSERT_NOT_NULL(strstr(cli_output_buf, "errors"));
+    TEST_ASSERT_NOT_NULL(strstr(cli_output_buf, "tasks"));
+
+    syn_cli_set_errlog(NULL);
+    syn_cli_set_scheduler(NULL);
+
+    /* 3. Async output while prompt is visible & line_pos > 0 -> lines 417-418, 436-437, 453 */
+    syn_cli_process_char(&cli, 'a');
+    syn_cli_process_char(&cli, 'b'); /* prompt_visible = true, line_pos = 2 */
+    syn_cli_printf(&cli, "Async log message\n");
+}
+
 /* ── Test runner ─────────────────────────────────────────────────────── */
 
 void run_cli_tests(void)
@@ -716,4 +753,5 @@ void run_cli_tests(void)
     RUN_TEST(test_cli_errors_unknown_severity);
     RUN_TEST(test_cli_tasks_unknown_state);
     RUN_TEST(test_cli_refresh_prompt);
+    RUN_TEST(test_cli_uncovered_lines);
 }

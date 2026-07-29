@@ -97,6 +97,10 @@ void test_dds_buffer_fill(void)
     syn_dds_init(&dds, SYN_DDS_SAWTOOTH, 100, 1000);
     syn_dds_set_gain(&dds, Q16_FROM_INT(100), Q16_FROM_INT(50));
     syn_dds_fill_u16(&dds, dac_buf, 16, 2048, 2047);
+
+    /* Invalid waveform default branch */
+    dds.type = (SYN_DDS_Waveform)999;
+    TEST_ASSERT_EQUAL(0, syn_dds_step(&dds));
 }
 
 void run_dds_tests(void)

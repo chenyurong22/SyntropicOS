@@ -447,6 +447,10 @@ static void test_isotp_canfd_multi_frame(void)
         SYN_CAN_Frame frame;
         TEST_ASSERT_FALSE(syn_isotp_get_tx_frame(&link, &frame));
         TEST_ASSERT_EQUAL(SYN_ISOTP_TX_IDLE, link.tx_state);
+
+        /* Invalid frame type (top nibble 4) default case */
+        SYN_CAN_Frame invalid_frame = {.id = 0x708, .dlc = 8, .data = {0x40, 0, 0, 0, 0, 0, 0, 0}};
+        syn_isotp_process_rx_frame(&link, &invalid_frame);
     }
 
     static void test_isotp_32bit_extended_first_frame_parsing(void)

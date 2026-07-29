@@ -887,6 +887,116 @@ static void test_wg_response_mac1_tampered_rejection(void)
     TEST_ASSERT_FALSE(wg_consume_response(&wg, msg, sizeof(msg)));
 }
 
+static void test_wg_send_initiation_failure_task_branch(void)
+{
+    /* Line 723: send_initiation fail in task */
+    test_wg_init_state();
+    s_wg.state = SYN_WG_HANDSHAKE_INIT;
+    mock_udp_sendto_fail = true;
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &s_wg};
+    syn_wg_task(&pt, &task);
+
+    TEST_ASSERT_EQUAL(SYN_WG_DISCONNECTED, s_wg.state);
+    mock_udp_sendto_fail = false;
+}
+
+static void test_wg_valid_response_exchange(void)
+{
+    SYN_WG wg;
+    SYN_WgConfig cfg;
+    SYN_SNTP sntp;
+    uint8_t rx_buf[1600], tx_buf[1600];
+
+    memset(&cfg, 0, sizeof(cfg));
+    /* Initiator static key = 0x01 */
+    memset(cfg.private_key, 0x01, 32);
+    /* Responder static private key = 0x02 -> calculate responder public key */
+    uint8_t resp_priv[32];
+    memset(resp_priv, 0x02, 32);
+    syn_x25519_clamp(resp_priv);
+    syn_x25519_pubkey(cfg.peer_public_key, resp_priv);
+    cfg.endpoint.port = 51820;
+
+    syn_wg_init(&wg, &cfg, &sntp, rx_buf, sizeof(rx_buf), tx_buf, sizeof(tx_buf));
+    wg.udp_sock = 1;
+    wg.state = SYN_WG_HANDSHAKE_INIT;
+
+    /* 1. Generate Initiation packet via syn_wg_task */
+    SYN_PT init_pt;
+    PT_INIT(&init_pt);
+    SYN_Task init_task = {.user_data = &wg};
+    mock_port_reset();
+    mock_sock_connected = true;
+    syn_wg_task(&init_pt, &init_task);
+
+    /* 2. Build valid Response packet from Responder */
+    uint8_t msg[92];
+    memset(msg, 0, sizeof(msg));
+    store32_le(msg, SYN_WG_MSG_RESPONSE);
+    store32_le(msg + 4, 0x99887766); /* Responder sender_index */
+    store32_le(msg + 8, wg.session.sender_index);
+
+    /* Responder ephemeral keypair (0x03) */
+    uint8_t resp_e_priv[32], resp_e_pub[32];
+    memset(resp_e_priv, 0x03, 32);
+    syn_x25519_clamp(resp_e_priv);
+    syn_x25519_pubkey(resp_e_pub, resp_e_priv);
+    memcpy(msg + 12, resp_e_pub, 32);
+
+    /* Initialize noise state on responder side */
+    uint8_t ck[32], h[32];
+    const char *INIT_LABEL = "Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s";
+    const char *IDENT_LABEL = "WireGuard v1 zx2c4 justify";
+    syn_blake2s(INIT_LABEL, strlen(INIT_LABEL), ck, 32);
+    memcpy(h, ck, 32);
+    wg_mix_hash(h, IDENT_LABEL, strlen(IDENT_LABEL));
+    wg_mix_hash(h, cfg.peer_public_key, 32);  /* Responder public key */
+    wg_mix_hash(h, mock_udp_tx_buf + 12, 32); /* Initiator ephemeral key (E_i) */
+    wg_mix_hash(h, resp_e_pub, 32);           /* Responder ephemeral key (E_r) */
+
+    /* DH(E_r, E_i) */
+    uint8_t dh1[32], key[32];
+    syn_x25519(dh1, resp_e_priv, mock_udp_tx_buf + 12);
+    wg_hkdf2(ck, key, ck, dh1, 32);
+
+    /* DH(E_r, S_i) */
+    uint8_t dh2[32];
+    syn_x25519(dh2, resp_e_priv, wg.public_key);
+    wg_hkdf2(ck, key, ck, dh2, 32);
+
+    /* DH(psk) */
+    uint8_t psk_zeros[32] = {0};
+    wg_hkdf3(ck, h, key, ck, psk_zeros, 32);
+
+    /* Encrypt empty payload */
+    uint8_t zero_nonce[12] = {0};
+    syn_aead_encrypt(key, zero_nonce, h, 32, NULL, 0, msg + 44, msg + 44 + 0);
+    wg_mix_hash(h, msg + 44, 16);
+
+    /* MAC1 over 0..59 with initiator's public key */
+    wg_mac1(msg + 60, wg.public_key, msg, 60);
+
+    /* Consume valid response message (lines 481-504) */
+    TEST_ASSERT_TRUE(wg_consume_response(&wg, msg, 92));
+    TEST_ASSERT_EQUAL(SYN_WG_ESTABLISHED, wg.state);
+
+    /* Test task receiving response packet in SYN_WG_HANDSHAKE_INIT state (lines 759-760) */
+    mock_port_reset();
+    wg.state = SYN_WG_HANDSHAKE_INIT;
+    wg.udp_sock = 1;
+    mock_sock_connected = true;
+    mock_sock_set_response(msg, 92);
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &wg};
+    syn_wg_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_WG_ESTABLISHED, wg.state);
+}
+
 static void test_wg_send_initiation_tx_buf_too_small(void)
 {
     /* Test syn_wg_disconnect with open socket (line 781) */
@@ -942,6 +1052,8 @@ void run_wg_tests(void)
     RUN_TEST(test_wg_send_fail_and_rekey_timeout_task_branches);
     RUN_TEST(test_wg_response_mac1_tampered_rejection);
     RUN_TEST(test_wg_cookie_mac2_verification_failure);
+    RUN_TEST(test_wg_send_initiation_failure_task_branch);
+    RUN_TEST(test_wg_valid_response_exchange);
     RUN_TEST(test_wg_send_initiation_tx_buf_too_small);
     RUN_TEST(test_wg_send_buffer_too_small);
 }

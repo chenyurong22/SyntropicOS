@@ -1207,6 +1207,28 @@ static void test_http_long_redirect_and_header_write_failures(void)
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
     run_client_task(&client);
     TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+
+    /* 5. URL host clamping (lines 165 & 172) */
+    const char *long_url1 = "http://"
+                            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                            "aaaaaaaaaa.com:8080/path";
+    syn_http_client_init(&client, "GET", long_url1, 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+
+    const char *long_url2 =
+        "http://"
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com/path";
+    syn_http_client_init(&client, "GET", long_url2, 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+
+    /* 6. sock_write_str CRLF fail (line 139) */
+    mock_port_reset();
+    reset_accum();
+    mock_sock_send_fail_after_bytes = 23; /* Fails on trailing CRLF write */
+    syn_http_client_init(&client, "GET", "a", 80, "/", NULL, NULL, 0, NULL, 0, body_accumulate,
+                         NULL, work_buf, sizeof(work_buf));
+    run_client_task(&client);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
 }
 
 void run_http_tests(void)

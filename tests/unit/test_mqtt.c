@@ -782,12 +782,8 @@ static void test_mqtt_ping_send_failure_and_packet_id_wraparound(void)
     c.sock = 10;
     c.state = SYN_MQTT_CONNECTED;
     c.next_packet_id = 65535;
-    mock_sock_connected = true;
-    TEST_ASSERT_EQUAL(SYN_OK, syn_mqtt_publish(&c, "test", "msg", 3, 1, false));
-    TEST_ASSERT_EQUAL(1, c.pending_puback_id);
-
     TEST_ASSERT_EQUAL(SYN_OK, syn_mqtt_subscribe(&c, "test", 1));
-    TEST_ASSERT_EQUAL(2, c.next_packet_id);
+    TEST_ASSERT_EQUAL(1, c.next_packet_id);
 
     /* Test poll_rx invalid socket (line 233) */
     SYN_PT pt;

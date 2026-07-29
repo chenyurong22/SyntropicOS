@@ -349,6 +349,22 @@ static void test_canvas_corner_cases(void)
     /* 3. char with NULL font or out of bounds char */
     c.font = NULL;
     TEST_ASSERT_EQUAL_UINT8(0, syn_canvas_char(&c, 0, 0, 'A', 1));
+    TEST_ASSERT_EQUAL_UINT16(0, syn_canvas_text_width(&c, "test"));
+    TEST_ASSERT_EQUAL_UINT8(0, syn_canvas_text_height(&c));
+    syn_canvas_text(&c, 0, 0, NULL, 1); /* str == NULL (line 522) */
+    syn_canvas_flush(&c);               /* flush_fn == NULL (line 584) */
+
+    /* 4. char out of bounds with valid font (line 502) */
+    syn_canvas_set_font(&c, &syn_font_5x7);
+    TEST_ASSERT_EQUAL_UINT8(syn_font_5x7.width + 1, syn_canvas_char(&c, 0, 0, 0x01, 1));
+    TEST_ASSERT_EQUAL_UINT16(0, syn_canvas_text_width(&c, NULL)); /* str == NULL (line 534) */
+
+    /* 5. polar line length <= 0 and negative angle (lines 599 & 603) */
+    syn_canvas_line_polar(&c, 10, 10, -45, 0, 1);
+    syn_canvas_line_polar(&c, 10, 10, -45, 10, 1);
+
+    /* 6. arc radius <= 0 (line 620) */
+    syn_canvas_arc(&c, 10, 10, 0, 0, 90, 1);
 }
 
 void run_canvas_tests(void)

@@ -400,7 +400,8 @@ static void test_sntp_task_send_fail(void)
     syn_sntp_init(&sntp, &server, 3600);
 
     mock_udp_sendto_fail = true;
-    syn_sntp_task(&pt, &task); /* Open ok, but Send fails */
+    syn_sntp_task(&pt, &task); /* Phase 1: Open socket ok */
+    syn_sntp_task(&pt, &task); /* Phase 2: Send fails -> triggers line 224 continue */
 
     TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, sntp.udp_sock);
     TEST_ASSERT_EQUAL(1, sntp.backoff.attempts);

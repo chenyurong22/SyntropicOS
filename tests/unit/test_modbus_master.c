@@ -441,6 +441,19 @@ static void test_modbus_master_queue_fc_variants(void)
     TEST_ASSERT_EQUAL(0, q.count);
 }
 
+static int static_cb_called = 0;
+static void test_modbus_cb(uint8_t slave, uint8_t fc, const uint16_t *data, uint16_t len,
+                           SYN_Status status, void *user_ctx)
+{
+    (void)slave;
+    (void)fc;
+    (void)data;
+    (void)len;
+    (void)status;
+    (void)user_ctx;
+    static_cb_called++;
+}
+
 static void test_modbus_master_queue_retries(void)
 {
     SYN_ModbusMaster master;
@@ -449,8 +462,12 @@ static void test_modbus_master_queue_retries(void)
     SYN_ModbusMasterQueue q;
     syn_modbus_master_queue_init(&q, 1); /* 1 retry */
 
-    SYN_ModbusMasterQuery qry = {
-        .slave_addr = 1, .func_code = SYN_MB_FC_READ_HOLDING, .start_addr = 0, .count = 1};
+    SYN_ModbusMasterQuery qry = {.slave_addr = 1,
+                                 .func_code = SYN_MB_FC_READ_HOLDING,
+                                 .start_addr = 0,
+                                 .count = 1,
+                                 .callback = test_modbus_cb,
+                                 .user_ctx = NULL};
     syn_modbus_master_queue_push(&q, &qry);
 
     syn_modbus_master_queue_step(&master, &q, 1000);
@@ -465,10 +482,19 @@ static void test_modbus_master_queue_retries(void)
     syn_modbus_master_queue_step(&master, &q, 1150);
     TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_WAITING_RESPONSE, master.state);
 
-    /* Timeout second time at 1300ms -> retry count exhausted, query popped, returns to IDLE */
+    /* Timeout second time at 1300ms -> retry count exhausted, callback called (line 456), query
+     * popped */
+    static_cb_called = 0;
     syn_modbus_master_queue_step(&master, &q, 1300);
     TEST_ASSERT_EQUAL(0, q.count);
+    TEST_ASSERT_EQUAL(1, static_cb_called);
     TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_IDLE, master.state);
+
+    /* Unknown func_code query in queue (line 431 default) */
+    SYN_ModbusMasterQuery qry_bad = {
+        .slave_addr = 1, .func_code = 0x99, .start_addr = 0, .count = 1};
+    syn_modbus_master_queue_push(&q, &qry_bad);
+    syn_modbus_master_queue_step(&master, &q, 1400);
 }
 
 static void test_modbus_master_parameter_bounds(void)

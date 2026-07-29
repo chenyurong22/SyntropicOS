@@ -315,6 +315,10 @@ static void test_mbus_streaming_decoder_edge_cases(void)
     uint8_t buf[4];
     size_t out_len = 0;
     TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_mbus_encode_short(0x40, 0x01, buf, 4, &out_len));
+
+    /* 5. Invalid decoder state default branch */
+    dec.state = 99;
+    syn_mbus_decoder_feed(&dec, 0x00);
 }
 
 void run_mbus_tests(void)

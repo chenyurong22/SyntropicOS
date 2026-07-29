@@ -1516,7 +1516,6 @@ static void test_imgui_edge_cases_and_uncovered_paths(void)
     ctx.focused_id = 1;
     ctx.active_id = 1;
     syn_imgui_tabs(&ctx, long_tabs, 1, &active_tab, 0, 0, 20);
-    syn_imgui_end(&ctx);
 
     int16_t marquee_offset = 0;
     canvas.clip_w = 0;
@@ -1532,10 +1531,12 @@ static void test_imgui_edge_cases_and_uncovered_paths(void)
     syn_imgui_text_marquee(&ctx, "MarqueeLongTextScroll", &marquee_offset, 0, 0, 10, 1);
     marquee_offset = 250;
     syn_imgui_text_marquee(&ctx, "MarqueeLongTextScroll", &marquee_offset, 0, 0, 10, 1);
+    syn_gfx_reset_clip(&canvas);
 
     /* 8. Progress Bar & Selectable & Header Hits */
     syn_imgui_progress_bar_ex(&ctx, -100, 0, 100, NULL, 0, 0, 100, 12);
     syn_imgui_progress_bar_ex(&ctx, 5, 0, 100, NULL, 0, 0, 100, 12);
+    syn_imgui_end(&ctx);
 }
 
 static void test_imgui_spinner_arrow_and_encoder_wrapping(void)
@@ -1637,20 +1638,19 @@ static void test_imgui_layout_row_height_wrapping(void)
     syn_imgui_init(&ctx);
 
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    syn_imgui_layout_begin(&ctx, 10, 10, 100);
 
-    /* Simulate unwrapped previous row in layout mode by setting in_layout=true and row_h > 0 */
-    ctx.layout.in_layout = true;
+    /* Set row_h > 0 to simulate unwrapped previous row */
     ctx.layout.row_h = 25;
-    ctx.layout.row_y = 10;
     ctx.layout.same_line = false;
 
-    syn_imgui_button(&ctx, "WrappedBtn", 0, 0, 0, 0);
-    syn_imgui_button(&ctx, "Btn2", 0, 0, 0, 0);
+    syn_imgui_label(&ctx, "WrappedLabel", 0, 0);
+    syn_imgui_label(&ctx, "Label2", 0, 0);
     int16_t cy_after2 = ctx.layout.cy;
-    ctx.layout.in_layout = false;
+    syn_imgui_layout_end(&ctx);
     syn_imgui_end(&ctx);
 
-    /* Verify cursor y was wrapped to row_y (10) + row_h (20) + spacing */
+    /* Verify cursor y was wrapped */
     TEST_ASSERT_GREATER_THAN(20, cy_after2);
 }
 
@@ -1685,6 +1685,83 @@ static void test_imgui_slider_and_progress_bar_bounds_clamping(void)
 
     ctx.enc_delta = 100;
     syn_imgui_slider(&ctx, "sl", &val, 10, 90, 10, 10, 80, 20);
+    syn_imgui_end(&ctx);
+}
+
+static void test_imgui_remaining_uncovered_paths(void)
+{
+    uint8_t fb[128 * 128 / 8] = {0};
+    SYN_Canvas canvas;
+    syn_canvas_init(&canvas, fb, 128, 128, 1, NULL, NULL);
+    SYN_IMGUI_Context ctx;
+    syn_imgui_init(&ctx);
+
+    /* 1. Negative integer formatting in syn_imgui_value_int & format_int (lines 992-993, 1619-1620)
+     */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    syn_imgui_value_int(&ctx, "Neg", -42, 10, 10);
+
+    /* 2. Bar chart null/zero count/range and min/max clamping (lines 1422, 1426, 1430, 1436-1442)
+     */
+    int32_t bdata[3] = {-10, 50, 150};
+    syn_imgui_bar_chart(&ctx, "bc0", bdata, 0, 0, 100, 10, 10, 50, 20); /* count = 0 */
+    syn_imgui_bar_chart(&ctx, "bc1", bdata, 3, 100, 100, 10, 10, 50,
+                        20); /* range = 0 -> clamped to 1 */
+    syn_imgui_bar_chart(&ctx, "bc2", bdata, 3, 0, 100, 10, 10, 50,
+                        20); /* data < min & data > max */
+
+    /* 3. Progress bar ex indeterminate and min/max clamping (lines 1671, 1688-1690) */
+    syn_imgui_progress_bar_ex(&ctx, 10, 0, 100, "10%", 10, 10, 10,
+                              15); /* indeterminate, w=10 -> inner_w=6 -> bar_w min 2 */
+    syn_imgui_progress_bar_ex(&ctx, -10, 0, 100, NULL, 10, 10, 50, 15); /* val < min */
+    syn_imgui_progress_bar_ex(&ctx, 150, 0, 100, NULL, 10, 10, 50, 15); /* val > max */
+
+    /* 4. Icon button rendering & click/focus (lines 1472-1473, 1489-1492) */
+    const uint8_t icon[8] = {0xFF, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0xFF};
+    ctx.focused_id = 0;
+    ctx.next_id = 1;
+    ctx.btn_select = true;
+    bool icon_clicked = syn_imgui_icon_button(&ctx, icon, 8, 8, 10, 10, 20, 20);
+    (void)icon_clicked;
+
+    /* 5. Marquee scroll reset, pause, and overflow handling (lines 2021, 2045, 2053, 2055, 2067,
+     * 2086, 2092) */
+    int16_t offset_val = 100;
+    syn_imgui_text_marquee(&ctx, "Short", &offset_val, 10, 10, 100,
+                           1); /* Short text -> offset reset to 0 */
+    TEST_ASSERT_EQUAL_INT16(0, offset_val);
+
+    offset_val = 0;
+    syn_imgui_text_marquee(&ctx, "Very Long Marquee Text String For Overflow Testing", &offset_val,
+                           10, 10, 30, 1);
+
+    /* 6. Combo index wrapping on encoder / touch (lines 448, 1320, 1322, 1330) */
+    const char *items[] = {"One", "Two", "Three"};
+    int32_t active_idx = 5; /* idx >= count -> clamped to count-1 */
+    syn_imgui_combo(&ctx, "cb", items, 3, &active_idx, 10, 10, 60, 20);
+
+    /* 7. Layout row max columns clamping (line 1929) */
+    int16_t widths[20];
+    for (int i = 0; i < 20; i++)
+        widths[i] = 10;
+    syn_imgui_layout_begin(&ctx, 10, 10, 100);
+    syn_imgui_layout_row(&ctx, 20, widths, 20); /* count > SYN_IMGUI_MAX_ROW_COLS (16) */
+    syn_imgui_layout_end(&ctx);
+
+    /* 8. Scroll region scroll bounds clamping (lines 1081, 1083, 1096) */
+    int16_t scroll_y = 1000;
+    syn_imgui_scroll_begin(&ctx, 10, 10, 50, 20, &scroll_y);
+    syn_imgui_label(&ctx, "S1", 0, 0);
+    syn_imgui_label(&ctx, "S2", 0, 0);
+    syn_imgui_label(&ctx, "S3", 0, 0);
+    syn_imgui_label(&ctx, "S4", 0, 0);
+    syn_imgui_scroll_end(&ctx);
+
+    scroll_y = 0;
+    syn_imgui_scroll_begin(&ctx, 10, 10, 50, 20, &scroll_y);
+    syn_imgui_label(&ctx, "S1", 0, 0);
+    syn_imgui_scroll_end(&ctx);
+
     syn_imgui_end(&ctx);
 }
 
@@ -1748,4 +1825,5 @@ void run_imgui_tests(void)
     RUN_TEST(test_imgui_encoder_wrap_clamping_and_focus_cap);
     RUN_TEST(test_imgui_slider_touch_out_of_bounds_clamping);
     RUN_TEST(test_imgui_begin_focused_id_zero);
+    RUN_TEST(test_imgui_remaining_uncovered_paths);
 }

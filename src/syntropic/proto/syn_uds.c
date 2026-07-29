@@ -39,6 +39,11 @@ bool syn_uds_init(SYN_UDS_Server *server)
     server->dtc_ctx = NULL;
     server->did_count = 0U;
     server->dtc_count = 0U;
+    server->transfer_state = SYN_UDS_TRANSFER_IDLE;
+    server->transfer_address = 0U;
+    server->transfer_size = 0U;
+    server->transfer_bytes_processed = 0U;
+    server->expected_block_seq = 1U;
     server->reset_type_requested = 0U;
 
     return true;
@@ -69,6 +74,7 @@ void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms)
             server->session = SYN_UDS_SESSION_DEFAULT;
             server->security_state = SYN_UDS_SECURITY_LOCKED;
             server->comm_control_state = SYN_UDS_COMM_ENABLE_RX_AND_TX;
+            server->transfer_state = SYN_UDS_TRANSFER_IDLE;
             server->s3_timer_ms = 0U;
         } else {
             server->s3_timer_ms -= dt_ms;
@@ -896,6 +902,24 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
                                           resp_len);
         }
+
+        uint32_t addr = 0U;
+        for (uint8_t i = 0U; i < addr_len; i++) {
+            addr = (addr << 8U) | req[3U + i];
+        }
+
+        uint32_t size = 0U;
+        for (uint8_t i = 0U; i < size_len; i++) {
+            size = (size << 8U) | req[3U + addr_len + i];
+        }
+
+        server->transfer_state = (sid == SYN_UDS_SID_REQUEST_DOWNLOAD) ? SYN_UDS_TRANSFER_DOWNLOAD
+                                                                       : SYN_UDS_TRANSFER_UPLOAD;
+        server->transfer_address = addr;
+        server->transfer_size = size;
+        server->transfer_bytes_processed = 0U;
+        server->expected_block_seq = 1U;
+
         resp_buf[0] = sid + 0x40U;
         resp_buf[1] = 0x20U;
         syn_poke_u16(0x0400U, resp_buf, 2);
@@ -909,15 +933,83 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
                                           resp_len);
         }
+        if (server->transfer_state == SYN_UDS_TRANSFER_IDLE) {
+            return make_negative_response(sid, SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp_buf,
+                                          resp_len);
+        }
+
         uint8_t block_seq = req[1];
-        resp_buf[0] = sid + 0x40U;
-        resp_buf[1] = block_seq;
-        *resp_len = 2U;
-        success = true;
+        if (block_seq == (uint8_t)(server->expected_block_seq - 1U)) {
+            /* Repeated block sequence counter -> echo previous response */
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = block_seq;
+            *resp_len = 2U;
+            success = true;
+            break;
+        }
+
+        if (block_seq != server->expected_block_seq) {
+            return make_negative_response(sid, SYN_UDS_NRC_WRONG_BLOCK_SEQUENCE_COUNTER, resp_buf,
+                                          resp_len);
+        }
+
+        if (server->transfer_state == SYN_UDS_TRANSFER_DOWNLOAD) {
+            uint16_t payload_len = req_len - 2U;
+            if (server->transfer_size > 0U &&
+                (server->transfer_bytes_processed + payload_len > server->transfer_size)) {
+                return make_negative_response(sid, SYN_UDS_NRC_TRANSFER_DATA_SUSPENDED, resp_buf,
+                                              resp_len);
+            }
+            if (server->memory_cb != NULL) {
+                if (!server->memory_cb(true,
+                                       server->transfer_address + server->transfer_bytes_processed,
+                                       payload_len, (uint8_t *)&req[2], server->memory_ctx)) {
+                    return make_negative_response(sid, SYN_UDS_NRC_GENERAL_PROGRAMMING_FAILURE,
+                                                  resp_buf, resp_len);
+                }
+            }
+            server->transfer_bytes_processed += payload_len;
+            server->expected_block_seq++;
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = block_seq;
+            *resp_len = 2U;
+            success = true;
+        } else {
+            uint16_t chunk_len = 0x03FEU;
+            if (server->transfer_size > 0U) {
+                uint32_t remaining = server->transfer_size - server->transfer_bytes_processed;
+                if (remaining < chunk_len) {
+                    chunk_len = (uint16_t)remaining;
+                }
+            }
+            if ((uint32_t)2U + chunk_len > max_resp_len) {
+                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                              resp_len);
+            }
+            if (server->memory_cb != NULL) {
+                if (!server->memory_cb(false,
+                                       server->transfer_address + server->transfer_bytes_processed,
+                                       chunk_len, &resp_buf[2], server->memory_ctx)) {
+                    return make_negative_response(sid, SYN_UDS_NRC_GENERAL_PROGRAMMING_FAILURE,
+                                                  resp_buf, resp_len);
+                }
+            }
+            server->transfer_bytes_processed += chunk_len;
+            server->expected_block_seq++;
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = block_seq;
+            *resp_len = 2U + chunk_len;
+            success = true;
+        }
         break;
     }
 
     case SYN_UDS_SID_REQUEST_TRANSFER_EXIT: {
+        if (server->transfer_state == SYN_UDS_TRANSFER_IDLE) {
+            return make_negative_response(sid, SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp_buf,
+                                          resp_len);
+        }
+        server->transfer_state = SYN_UDS_TRANSFER_IDLE;
         resp_buf[0] = sid + 0x40U;
         *resp_len = 1U;
         success = true;

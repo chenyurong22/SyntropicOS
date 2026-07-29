@@ -934,6 +934,67 @@ static void test_uds_read_dtc_information_subfunctions(void)
     TEST_ASSERT_EQUAL_HEX8(0x23, resp[3]);
 }
 
+static void test_uds_stateful_data_transfer_sequence(void)
+{
+    SYN_UDS_Server server;
+    TEST_ASSERT_TRUE(syn_uds_init(&server));
+    server.security_state = SYN_UDS_SECURITY_UNLOCKED;
+
+    uint8_t req[16] = {0};
+    uint8_t resp[32] = {0};
+    uint16_t resp_len = 0;
+
+    /* TransferData without RequestDownload -> NRC 0x24 (requestSequenceError) */
+    req[0] = SYN_UDS_SID_TRANSFER_DATA;
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp[2]);
+
+    /* RequestTransferExit without active transfer -> NRC 0x24 (requestSequenceError) */
+    req[0] = SYN_UDS_SID_REQUEST_TRANSFER_EXIT;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 1, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp[2]);
+
+    /* RequestDownload (0x34): ALFID 0x11 (1-byte addr 0x20, 1-byte size 0x10) */
+    req[0] = SYN_UDS_SID_REQUEST_DOWNLOAD;
+    req[1] = 0x00; /* DFI */
+    req[2] = 0x11; /* ALFID */
+    req[3] = 0x20; /* Addr */
+    req[4] = 0x10; /* Size = 16 bytes */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 5, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x74, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x20, resp[1]);
+    TEST_ASSERT_EQUAL(SYN_UDS_TRANSFER_DOWNLOAD, server.transfer_state);
+    TEST_ASSERT_EQUAL_UINT32(0x20, server.transfer_address);
+    TEST_ASSERT_EQUAL_UINT32(0x10, server.transfer_size);
+
+    /* TransferData (0x36): Sequence 0x02 instead of expected 0x01 -> NRC 0x73 */
+    req[0] = SYN_UDS_SID_TRANSFER_DATA;
+    req[1] = 0x02; /* Out-of-order sequence counter */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_WRONG_BLOCK_SEQUENCE_COUNTER, resp[2]);
+
+    /* TransferData (0x36): Sequence 0x01 (Valid 4 bytes payload) */
+    req[1] = 0x01;
+    req[2] = 0xDE;
+    req[3] = 0xAD;
+    req[4] = 0xBE;
+    req[5] = 0xEF;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 6, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x76, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
+    TEST_ASSERT_EQUAL_UINT32(4, server.transfer_bytes_processed);
+
+    /* RequestTransferExit (0x37): Completes download sequence and resets state to IDLE */
+    req[0] = SYN_UDS_SID_REQUEST_TRANSFER_EXIT;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 1, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x77, resp[0]);
+    TEST_ASSERT_EQUAL(SYN_UDS_TRANSFER_IDLE, server.transfer_state);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -947,5 +1008,6 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_did_read_write);
     RUN_TEST(test_uds_ecu_reset_routine_tester_present);
     RUN_TEST(test_uds_read_dtc_information_subfunctions);
+    RUN_TEST(test_uds_stateful_data_transfer_sequence);
     RUN_TEST(test_uds_bounds_and_null_checks);
 }

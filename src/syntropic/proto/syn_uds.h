@@ -96,6 +96,17 @@ extern "C" {
 #define SYN_UDS_NRC_INVALID_KEY 0x35U
 #define SYN_UDS_NRC_EXCEEDED_NUMBER_OF_ATTEMPTS 0x36U
 #define SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED 0x37U
+#define SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR 0x24U
+#define SYN_UDS_NRC_TRANSFER_DATA_SUSPENDED 0x71U
+#define SYN_UDS_NRC_GENERAL_PROGRAMMING_FAILURE 0x72U
+#define SYN_UDS_NRC_WRONG_BLOCK_SEQUENCE_COUNTER 0x73U
+
+/* UDS Transfer States */
+typedef enum {
+    SYN_UDS_TRANSFER_IDLE = 0U,
+    SYN_UDS_TRANSFER_DOWNLOAD = 1U,
+    SYN_UDS_TRANSFER_UPLOAD = 2U
+} SYN_UDS_TransferState;
 
 /* UDS Diagnostic Sessions */
 typedef enum {
@@ -250,6 +261,11 @@ typedef struct {
     uint8_t did_count;
     SYN_UDS_DTCEntry dtc_table[SYN_UDS_MAX_DTCS];
     uint8_t dtc_count;
+    SYN_UDS_TransferState transfer_state;
+    uint32_t transfer_address;
+    uint32_t transfer_size;
+    uint32_t transfer_bytes_processed;
+    uint8_t expected_block_seq;
     uint8_t reset_type_requested;
 } SYN_UDS_Server;
 

@@ -9,9 +9,12 @@ install-hooks:
 	@echo "Git pre-commit hook installed successfully! (.githooks)"
 
 
+JOBS ?= $(shell nproc 2>/dev/null || echo 4)
+
+
 clean:
-	@rm -rf build/ doxygen_output/ coverage_html/ coverage.info coverage_src.info doxygen_warnings.txt
-	@find . \( -name "*.gcda" -o -name "*.gcno" -o -name "*.o" -o -name "*.su" \) -delete
+	@rm -rf build/ doxygen_output/ coverage_html/ coverage.info coverage_src.info doxygen_warnings.txt *.gcov
+	@find . \( -name "*.gcda" -o -name "*.gcno" -o -name "*.o" -o -name "*.su" -o -name "*.gcov" \) -delete
 
 help:
 	@make -C tools/containers help

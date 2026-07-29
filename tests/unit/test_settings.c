@@ -431,11 +431,12 @@ static void test_settings_dual_bank_bank_b_only_valid(void)
     data.velocity = 999;
     syn_settings_save(&store_b);
 
-    /* Set mock_flash_fail_at = 12296 (inside sector 12288 data area) so Bank A erase fails during init */
+    /* Set mock_flash_fail_at = 12296 (inside sector 12288 data area) so Bank A erase fails during
+     * init */
     mock_flash_fail_at = 12296;
 
-    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_dual_bank_init(&db, 12288, 2048, 2,
-                                                          &data, sizeof(data), &defaults));
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_settings_dual_bank_init(&db, 12288, 2048, 2, &data, sizeof(data), &defaults));
     TEST_ASSERT_EQUAL(1, db.active_bank);
     TEST_ASSERT_EQUAL_INT32(999, data.velocity);
     mock_port_reset();
@@ -447,12 +448,13 @@ static void test_settings_dual_bank_neither_bank_valid(void)
     TestSettings data;
     SYN_DualBankSettings db;
 
-    /* Set mock_flash_fail_at = 12296 (fails Bank A erase) and mock_flash_write_fail_next = true (fails Bank B write) */
+    /* Set mock_flash_fail_at = 12296 (fails Bank A erase) and mock_flash_write_fail_next = true
+     * (fails Bank B write) */
     mock_flash_fail_at = 12296;
     mock_flash_write_fail_next = true;
 
-    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_dual_bank_init(&db, 12288, 2048, 2,
-                                                          &data, sizeof(data), &defaults));
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_settings_dual_bank_init(&db, 12288, 2048, 2, &data, sizeof(data), &defaults));
     TEST_ASSERT_EQUAL(0, db.active_bank);
     TEST_ASSERT_EQUAL_INT32(500, data.velocity);
     mock_port_reset();
@@ -465,13 +467,14 @@ static void test_settings_init_load_fail(void)
     SYN_Settings store;
 
     /* Write valid magic (0x5041) but invalid data_size to slot 0 */
-    SYN_ParamSlotHeader hdr = { .magic = 0x5041, .data_size = sizeof(data), .seq = 1, .crc = 0xFFFF };
+    SYN_ParamSlotHeader hdr = {.magic = 0x5041, .data_size = sizeof(data), .seq = 1, .crc = 0xFFFF};
     syn_port_flash_write(FLASH_BASE, &hdr, sizeof(hdr));
 
     /* syn_param_init returns SYN_OK (hdr.magic matches, hdr.data_size matches),
      * but syn_param_load fails because CRC (0xFFFF) doesn't match!
      * Hits line 50 of syn_settings.c (st != SYN_OK inside if (st == SYN_OK)). */
-    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_init(&store, FLASH_BASE, 2, &data, sizeof(data), &defaults));
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_settings_init(&store, FLASH_BASE, 2, &data, sizeof(data), &defaults));
     TEST_ASSERT_EQUAL_INT32(500, data.velocity);
     mock_port_reset();
 }

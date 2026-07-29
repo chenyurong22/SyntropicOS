@@ -94,8 +94,14 @@ pio:
 integration:
 	@bash $(ROOT_DIR)/tests/integration/run_integration.sh
 
+ifeq ($(OS),Windows_NT)
+  CONTAINER_VOLUME_CMD := @"$(CONTAINER_ENGINE)" volume inspect $(CACHE_VOL) >NUL 2>&1 || "$(CONTAINER_ENGINE)" volume create $(CACHE_VOL) >NUL 2>&1 || (exit 0)
+else
+  CONTAINER_VOLUME_CMD := @"$(CONTAINER_ENGINE)" volume inspect $(CACHE_VOL) >/dev/null 2>&1 || "$(CONTAINER_ENGINE)" volume create $(CACHE_VOL) >/dev/null 2>&1 || true
+endif
+
 container-volume:
-	@"$(CONTAINER_ENGINE)" volume inspect $(CACHE_VOL) >/dev/null 2>&1 || "$(CONTAINER_ENGINE)" volume create $(CACHE_VOL) >/dev/null 2>&1 || true
+	$(CONTAINER_VOLUME_CMD)
 
 container-build:
 	@"$(CONTAINER_ENGINE)" build -t syntropicos-test -f $(ROOT_DIR)/tools/containers/Containerfile $(ROOT_DIR)

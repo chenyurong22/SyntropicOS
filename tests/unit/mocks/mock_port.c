@@ -60,11 +60,17 @@ void syn_port_delay_ms(uint32_t ms)
     mock_tick_advance(ms);
 }
 
+int mock_critical_depth = 0;
+int mock_critical_enter_count = 0;
+
 void syn_port_enter_critical(void)
-{ /* no-op on host */
+{
+    mock_critical_depth++;
+    mock_critical_enter_count++;
 }
 void syn_port_exit_critical(void)
-{ /* no-op on host */
+{
+    mock_critical_depth--;
 }
 
 /* ── Random Port ────────────────────────────────────────────────────────── */
@@ -431,15 +437,19 @@ uint16_t syn_port_adc_reference_mv(void)
 int mock_sleep_count = 0;
 int mock_sleep_until_count = 0;
 uint32_t mock_sleep_until_tick = 0;
+int mock_sleep_critical_depth = -1;
+int mock_sleep_until_critical_depth = -1;
 void syn_port_sleep(SYN_SleepMode m)
 {
     (void)m;
     mock_sleep_count++;
+    mock_sleep_critical_depth = mock_critical_depth;
 }
 void syn_port_sleep_until(uint32_t wake_tick_ms)
 {
     mock_sleep_until_count++;
     mock_sleep_until_tick = wake_tick_ms;
+    mock_sleep_until_critical_depth = mock_critical_depth;
     /* Advance mock tick to the wake time */
     if ((int32_t)(wake_tick_ms - mock_tick_ms) > 0) {
         mock_tick_ms = wake_tick_ms;
@@ -911,6 +921,10 @@ void mock_port_reset(void)
     mock_sleep_count = 0;
     mock_sleep_until_count = 0;
     mock_sleep_until_tick = 0;
+    mock_sleep_critical_depth = -1;
+    mock_sleep_until_critical_depth = -1;
+    mock_critical_depth = 0;
+    mock_critical_enter_count = 0;
     memset(&mock_can_rx, 0, sizeof(mock_can_rx));
     mock_can_rx_avail = false;
     mock_can_tx_ok = true;

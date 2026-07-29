@@ -76,6 +76,12 @@ void syn_port_delay_ms(uint32_t ms);
  * Used by the tickless scheduler to sleep between task deadlines.
  * The default weak stub falls back to syn_port_sleep(SYN_SLEEP_LIGHT).
  *
+ * @note The tickless scheduler calls this inside a critical section
+ *       (interrupts masked) to close the race between wakeup evaluation
+ *       and sleep entry. The implementation must use a sleep instruction
+ *       that wakes on pending-but-masked interrupts (WFI on Cortex-M)
+ *       and must NOT re-enable interrupts itself.
+ *
  * @param wake_tick_ms  Tick value at which the CPU should wake.
  */
 void syn_port_sleep_until(uint32_t wake_tick_ms);

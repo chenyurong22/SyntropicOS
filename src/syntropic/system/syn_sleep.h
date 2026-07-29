@@ -84,6 +84,11 @@ typedef struct {
  * For Cortex-M: SYN_SLEEP_LIGHT → WFI, SYN_SLEEP_DEEP → STOP mode.
  * Must return when an interrupt wakes the MCU.
  *
+ * @note The tickless scheduler calls this inside a critical section
+ *       (interrupts masked). The implementation must use a sleep
+ *       instruction that wakes on pending-but-masked interrupts (WFI
+ *       on Cortex-M) and must NOT re-enable interrupts itself.
+ *
  * @param mode  Requested sleep depth.
  */
 extern void syn_port_sleep(SYN_SleepMode mode);

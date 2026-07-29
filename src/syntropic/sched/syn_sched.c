@@ -297,7 +297,13 @@ SYN_NORETURN void syn_sched_run_tickless(SYN_Sched *sched, SYN_Sleep *sleep)
         /* Run the scheduler — returns true if any tasks alive */
         syn_sched_run(sched);
 
-        /* Check if we can sleep */
+        /* Wakeup evaluation and sleep entry must be atomic: an ISR firing
+         * between syn_sched_next_wakeup() and the sleep call could make a
+         * task ready, and the CPU would sleep through the wakeup (TOCTOU).
+         * With interrupts masked, WFI-class sleep instructions still wake
+         * on pending interrupts; the ISR runs after exit_critical(). */
+        syn_port_enter_critical();
+
         uint32_t now = syn_port_get_tick_ms();
         uint32_t wake = syn_sched_next_wakeup(sched);
 
@@ -311,6 +317,8 @@ SYN_NORETURN void syn_sched_run_tickless(SYN_Sched *sched, SYN_Sleep *sleep)
                 syn_port_sleep_until(wake);
             }
         }
+
+        syn_port_exit_critical();
     }
 }
 
@@ -328,6 +336,9 @@ SYN_NORETURN void syn_sched_run_tickless_ex(SYN_Sched *sched, SYN_Sleep *sleep, 
 
         /* Service software timers */
         syn_timer_service(timers, timer_count);
+
+        /* Atomic wakeup evaluation + sleep entry — see syn_sched_run_tickless(). */
+        syn_port_enter_critical();
 
         /* Compute sleep duration: min of task deadlines and timer expiries */
         uint32_t now = syn_port_get_tick_ms();
@@ -350,6 +361,8 @@ SYN_NORETURN void syn_sched_run_tickless_ex(SYN_Sched *sched, SYN_Sleep *sleep, 
                 syn_port_sleep_until(wake);
             }
         }
+
+        syn_port_exit_critical();
     }
 }
 

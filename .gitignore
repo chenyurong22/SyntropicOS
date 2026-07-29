@@ -6,31 +6,33 @@
 *.map
 *.lst
 *.d
+build/
 
-# Test binaries
+# Test binaries & harness
 test_multitask
+test_unity
+test_unity_cov
+test_blake2s_exact
+test_wg_handshake
+test_wg_integration
+test_crypto
+wg_keygen
 tests/*.out
-
-# Test harness build artifacts
 tests/imgui_host/imgui_host
 tests/imgui_host/visual_test
 
-# IDE / editor
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
+# Fuzz binaries & crash dumps
+fuzz_cobs
+fuzz_modbus
+crash-*
 
-# Gemini agent data
-.gemini/
-reply.md
-REPLY.md
-.pio/
-build/
-site/
+# Test coverage
+*.gcda
+*.gcno
+*.gcov
+coverage.info
+coverage_src.info
+coverage_html/
 
 # Renode and Robot Framework simulation files
 .renode-root
@@ -40,20 +42,15 @@ report.html
 robot_output.xml
 logs/
 snapshots/
-test_unity
 test_firmware.elf
 test_firmware.bin
 test_firmware_node0.elf
 test_firmware_node1.elf
 test_firmware_node0.map
 test_firmware_node1.map
-
-# Fuzz binaries
-fuzz_cobs
-fuzz_modbus
-
-# Fuzzer / test crash dumps
-crash-*
+tests/sim/sim_harness
+tests/sim/sim_log.txt
+tests/sim/results.csv
 
 # Doxygen generated output (config is tracked)
 doxygen_output/
@@ -61,27 +58,19 @@ doxygen_warnings.txt
 cppcheck_report.txt
 html/
 latex/
-tests/sim/sim_harness
-tests/sim/sim_log.txt
-tests/sim/results.csv
+
+# IDE, Editor & Agent Files
+.vscode/
+.idea/
+.cache/
+.pio/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
 *.code-workspace
-
-# Test coverage
-*.gcda
-*.gcno
-test_unity_cov
-coverage.info
-coverage_src.info
-coverage_html/
-
-*.gcov
-coverage.info
-coverage_html/
-
-# Standalone test/debug binaries
-test_unity
-test_blake2s_exact
-test_wg_handshake
-test_wg_integration
-test_crypto
-wg_keygen
+.gemini/
+reply.md
+REPLY.md
+site/

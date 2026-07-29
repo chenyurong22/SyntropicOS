@@ -295,13 +295,15 @@ typedef enum {
  * @param grp   Pointer to SYN_EventGroup.
  * @param mask  Bitmask of event flags to wait for (any of them).
  */
-#define PT_BLOCK_EVENT(pt, task, grp, mask)               \
-    do {                                                  \
-        (task)->wait_event = (SYN_EventFlags *)(grp);     \
-        (task)->wait_mask = (mask);                       \
-        (task)->state = (uint8_t)SYN_TASK_BLOCKED;        \
-        PT_YIELD(pt);                                     \
-        (grp)->flags &= ~(mask); /* Auto-clear matched */ \
+#define PT_BLOCK_EVENT(pt, task, grp, mask)                            \
+    do {                                                               \
+        (task)->wait_event = (SYN_EventFlags *)(grp);                  \
+        (task)->wait_mask = (mask);                                    \
+        (task)->state = (uint8_t)SYN_TASK_BLOCKED;                     \
+        PT_YIELD(pt);                                                  \
+        /* Atomic clear: a raw RMW here would clobber bits an ISR sets \
+         * between the load and store. */                              \
+        syn_event_flags_clear((SYN_EventFlags *)(grp), (mask));        \
     } while (0)
 
 /**
@@ -315,13 +317,16 @@ typedef enum {
  * @param task  Pointer to the SYN_Task struct.
  * @param cond  Boolean condition expression to evaluate.
  */
-#define PT_BLOCK_CONDITION(pt, task, cond)             \
-    do {                                               \
-        while (!(cond)) {                              \
-            (task)->state = (uint8_t)SYN_TASK_BLOCKED; \
-            PT_YIELD(pt);                              \
-        }                                              \
-        (task)->state = (uint8_t)SYN_TASK_READY;       \
+#define PT_BLOCK_CONDITION(pt, task, cond)               \
+    do {                                                 \
+        while (1) {                                      \
+            (task)->state = (uint8_t)SYN_TASK_BLOCKED;   \
+            if (cond) {                                  \
+                (task)->state = (uint8_t)SYN_TASK_READY; \
+                break;                                   \
+            }                                            \
+            PT_YIELD(pt);                                \
+        }                                                \
     } while (0)
 
 /* ── Query macros ───────────────────────────────────────────────────────── */

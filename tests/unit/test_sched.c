@@ -1036,6 +1036,112 @@ static void test_block_condition_and_primitives(void)
     TEST_ASSERT_EQUAL_INT((uint8_t)SYN_TASK_DEAD, task.state);
 }
 
+/* ── PT_BLOCK_CONDITION lost-wakeup regression ──────────────────────────── */
+
+static SYN_Task *g_lw_task;
+static volatile bool g_lw_cond;
+static bool g_lw_fire_isr_once;
+static uint8_t g_lw_state_at_eval;
+static int g_lw_done;
+
+/**
+ * Condition expression with an "ISR" side effect. Records the task state
+ * observed at evaluation time, then — one-shot — simulates an interrupt
+ * that produces the data and resumes the task, exactly in the window
+ * between the condition check and the yield.
+ */
+static bool lw_cond_eval(void)
+{
+    bool result = g_lw_cond;
+
+    g_lw_state_at_eval = g_lw_task->state;
+    if (g_lw_fire_isr_once) {
+        g_lw_fire_isr_once = false;
+        g_lw_cond = true;           /* ISR produces the data...       */
+        syn_task_resume(g_lw_task); /* ...and wakes the consumer task */
+    }
+    return result;
+}
+
+static SYN_PT_Status lw_task_fn(SYN_PT *pt, SYN_Task *task)
+{
+    PT_BEGIN(pt);
+    PT_BLOCK_CONDITION(pt, task, lw_cond_eval());
+    g_lw_done = 1;
+    PT_END(pt);
+}
+
+/**
+ * Regression: PT_BLOCK_CONDITION must set BLOCKED before evaluating the
+ * condition. With the old order (evaluate, then block), an ISR firing in
+ * between saw READY, its syn_task_resume() was a no-op, and the task then
+ * blocked forever on a condition that was already true (lost wakeup).
+ */
+static void test_block_condition_isr_wakeup_not_lost(void)
+{
+    SYN_Task task;
+    SYN_Sched sched;
+
+    g_lw_task = &task;
+    g_lw_cond = false;
+    g_lw_fire_isr_once = true;
+    g_lw_state_at_eval = 0xFF;
+    g_lw_done = 0;
+
+    syn_task_create(&task, "lost_wake", lw_task_fn, 0, NULL);
+    syn_sched_init(&sched, &task, 1);
+
+    /* Run 1: condition false, "ISR" fires at the evaluation boundary.
+     * The task must already be BLOCKED so the resume takes effect. */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_UINT8((uint8_t)SYN_TASK_BLOCKED, g_lw_state_at_eval);
+    TEST_ASSERT_EQUAL_UINT8((uint8_t)SYN_TASK_READY, task.state);
+    TEST_ASSERT_EQUAL_INT(0, g_lw_done);
+
+    /* Run 2: resumed task re-evaluates, condition now true, completes.
+     * Pre-fix this deadlocked: BLOCKED with wait_event == NULL. */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(1, g_lw_done);
+    TEST_ASSERT_EQUAL_UINT8((uint8_t)SYN_TASK_DEAD, task.state);
+}
+
+/**
+ * Regression: PT_BLOCK_EVENT's auto-clear must go through the
+ * critical-section-protected syn_event_flags_clear(), not a raw RMW that
+ * an ISR flag-set could interleave with.
+ */
+static void test_block_event_auto_clear_is_atomic(void)
+{
+    mock_tick_ms = 0;
+    block_counter = 0;
+
+    SYN_EventGroup evt;
+    syn_event_init(&evt);
+
+    SYN_Task tasks[1];
+    SYN_Sched sched;
+    syn_task_create(&tasks[0], "blk", block_task_fn, 0, &evt);
+    syn_sched_init(&sched, tasks, 1);
+
+    /* Block the task, then fire the event plus an unrelated bit */
+    syn_sched_run(&sched);
+    syn_event_set(&evt, EVT_DATA | SYN_BIT(5));
+
+    int enters_before = mock_critical_enter_count;
+
+    /* Wake — the auto-clear inside PT_BLOCK_EVENT runs on this pass */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(1, block_counter);
+
+    /* Clear ran inside a critical section (raw RMW would not enter one) */
+    TEST_ASSERT_GREATER_THAN_INT(enters_before, mock_critical_enter_count);
+    TEST_ASSERT_EQUAL_INT(0, mock_critical_depth);
+
+    /* Only the waited-on mask was cleared; the unrelated bit survives */
+    TEST_ASSERT_FALSE(syn_event_check_any(&evt, EVT_DATA));
+    TEST_ASSERT_TRUE(syn_event_check_any(&evt, SYN_BIT(5)));
+}
+
 static void test_sched_next_wakeup_blocked_event_fired(void)
 {
     SYN_Task task;
@@ -1093,5 +1199,7 @@ void run_sched_tests(void)
     RUN_TEST(test_two_deferring_high_pri_tasks_starve_lower);
     RUN_TEST(test_pt_delay_us);
     RUN_TEST(test_block_condition_and_primitives);
+    RUN_TEST(test_block_condition_isr_wakeup_not_lost);
+    RUN_TEST(test_block_event_auto_clear_is_atomic);
     RUN_TEST(test_sched_next_wakeup_blocked_event_fired);
 }

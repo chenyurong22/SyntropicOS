@@ -62,11 +62,22 @@ extern int32_t mock_flash_fail_at;
 /** Set true to make the next flash write (only) fail. One-shot. */
 extern bool mock_flash_write_fail_next;
 
+/* ── Critical sections ──────────────────────────────────────────────────── */
+
+/** Current syn_port_enter/exit_critical nesting depth (0 = interrupts on). */
+extern int mock_critical_depth;
+/** Total syn_port_enter_critical calls since reset. */
+extern int mock_critical_enter_count;
+
 /* ── Sleep ──────────────────────────────────────────────────────────────── */
 
 extern int mock_sleep_count;
 extern int mock_sleep_until_count;
 extern uint32_t mock_sleep_until_tick;
+/** mock_critical_depth captured when syn_port_sleep was last called. */
+extern int mock_sleep_critical_depth;
+/** mock_critical_depth captured when syn_port_sleep_until was last called. */
+extern int mock_sleep_until_critical_depth;
 
 /* ── UART ───────────────────────────────────────────────────────────────── */
 

@@ -68,7 +68,7 @@ typedef struct SYN_Task {
     const char *name;           /**< Human-readable name (for debug/logging)  */
     uint8_t priority;           /**< Active priority (0 = highest)            */
     uint8_t base_priority;      /**< Configured base priority                 */
-    uint8_t state;              /**< SYN_TaskState                           */
+    volatile uint8_t state;     /**< SYN_TaskState                           */
     uint32_t delay_until;       /**< Tick deadline for PT_TASK_DELAY_MS       */
     void *user_data;            /**< Optional pointer to task-private state   */
     SYN_EventFlags *wait_event; /**< Event flags task blocks on (NULL if not blocking) */

@@ -297,6 +297,8 @@ static void test_run_tickless_longjmp(void)
     mock_tick_ms = 100;
     g_tickless_call_count = 0;
     mock_sleep_until_count = 0;
+    mock_sleep_until_critical_depth = -1;
+    mock_critical_depth = 0;
 
     syn_task_create(&tasks[0], "jmp", task_tickless_longjmp, 0, NULL);
     syn_sched_init(&sched, tasks, 1);
@@ -310,6 +312,15 @@ static void test_run_tickless_longjmp(void)
          * syn_port_sleep_until with the task's deadline. */
         TEST_ASSERT_GREATER_OR_EQUAL(2, g_tickless_call_count);
         TEST_ASSERT_EQUAL(1, mock_sleep_until_count);
+
+        /* TOCTOU regression: sleep entry must happen with interrupts
+         * masked (inside the critical section), otherwise an ISR firing
+         * between next_wakeup() and sleep_until() is slept through. */
+        TEST_ASSERT_EQUAL(1, mock_sleep_until_critical_depth);
+
+        /* The longjmp escapes from the task function, which runs outside
+         * the critical section — depth must be balanced back to 0. */
+        TEST_ASSERT_EQUAL(0, mock_critical_depth);
     }
 }
 

@@ -24,6 +24,7 @@
 #ifndef SYN_PT_SEM_H
 #define SYN_PT_SEM_H
 
+#include "../port/syn_port_system.h"
 #include "syn_pt.h"
 
 #ifdef __cplusplus
@@ -66,7 +67,9 @@ typedef struct {
 #define PT_SEM_WAIT(pt, sem)                 \
     do {                                     \
         PT_WAIT_UNTIL(pt, (sem)->count > 0); \
+        syn_port_enter_critical();           \
         (sem)->count--;                      \
+        syn_port_exit_critical();            \
     } while (0)
 
 /**
@@ -80,7 +83,9 @@ typedef struct {
 #define PT_SEM_BLOCK(pt, task, sem)                     \
     do {                                                \
         PT_BLOCK_CONDITION(pt, task, (sem)->count > 0); \
+        syn_port_enter_critical();                      \
         (sem)->count--;                                 \
+        syn_port_exit_critical();                       \
     } while (0)
 
 /* ── Signal (any context) ───────────────────────────────────────────────── */
@@ -88,11 +93,24 @@ typedef struct {
 /**
  * @brief Increment the semaphore count, unblocking a waiting protothread.
  *
- * Safe to call from ISR context.
+ * Safe to call from ISR context. The increment runs inside a critical
+ * section: `count++` on a volatile int16_t is a load-modify-store, and
+ * a preempting ISR signaling the same semaphore would otherwise be
+ * overwritten by the stale store (lost signal).
  *
  * @param sem  Semaphore to signal.
  */
-#define PT_SEM_SIGNAL(sem) ((sem)->count++)
+static inline void pt_sem_signal(SYN_PT_Sem *sem)
+{
+    syn_port_enter_critical();
+    sem->count++;
+    syn_port_exit_critical();
+}
+
+/**
+ * @brief Macro wrapper for pt_sem_signal.
+ */
+#define PT_SEM_SIGNAL(sem) pt_sem_signal(sem)
 
 /* ── Non-blocking try ───────────────────────────────────────────────────── */
 
@@ -104,11 +122,16 @@ typedef struct {
  */
 static inline int pt_sem_trywait(SYN_PT_Sem *sem)
 {
+    int acquired = 0;
+
+    syn_port_enter_critical();
     if (sem->count > 0) {
         sem->count--;
-        return 1;
+        acquired = 1;
     }
-    return 0;
+    syn_port_exit_critical();
+
+    return acquired;
 }
 
 /**

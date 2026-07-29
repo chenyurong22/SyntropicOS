@@ -878,9 +878,23 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                           resp_len);
         }
         uint8_t sub = req[1] & 0x7FU;
+        if (sub > 0x07U) {
+            return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
+                                          resp_len);
+        }
+        if (max_resp_len < 4U) {
+            return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len);
+        }
         resp_buf[0] = sid + 0x40U;
         resp_buf[1] = sub;
-        *resp_len = 2U;
+        if (sub == 0x04U) {
+            resp_buf[2] = 0x00U;
+            *resp_len = 3U;
+        } else {
+            resp_buf[2] = 0x00U;
+            resp_buf[3] = 0x02U;
+            *resp_len = 4U;
+        }
         success = true;
         break;
     }

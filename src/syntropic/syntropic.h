@@ -516,6 +516,14 @@ extern "C" {
 #include "proto/syn_ethercat.h"
 #endif
 
+#if !defined(SYN_USE_CCP) || SYN_USE_CCP
+#include "proto/syn_ccp.h"
+#endif
+
+#if !defined(SYN_USE_XCP) || SYN_USE_XCP
+#include "proto/syn_xcp.h"
+#endif
+
 /* ── Storage ────────────────────────────────────────────────────────────── */
 
 #if !defined(SYN_USE_PARAM) || SYN_USE_PARAM

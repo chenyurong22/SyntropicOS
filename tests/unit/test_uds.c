@@ -1559,6 +1559,78 @@ static void test_uds_dtc_overflow_and_short_msg_nrcs(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
 }
 
+static void test_uds_read_dtc_additional_subfunctions(void)
+{
+    SYN_UDS_Server server;
+    TEST_ASSERT_TRUE(syn_uds_init(&server));
+
+    uint8_t req[16] = {0};
+    uint8_t resp[64] = {0};
+    uint16_t resp_len = 0;
+
+    req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
+
+    /* 1. Subfunctions requiring req_len >= 5 (0x04, 0x06, 0x10, 0x18, 0x19) */
+    uint8_t subs5[] = {0x04, 0x06, 0x10, 0x18, 0x19};
+    for (size_t i = 0; i < sizeof(subs5); i++) {
+        req[1] = subs5[i];
+        req[2] = 0x01;
+        req[3] = 0x23;
+        req[4] = 0x45;
+        /* Short request (<5 bytes) -> NRC 0x13 */
+        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+        /* Valid request (5 bytes) -> Positive response (0x59, sub) */
+        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 5, resp, sizeof(resp), &resp_len));
+        TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+        TEST_ASSERT_EQUAL_HEX8(subs5[i], resp[1]);
+        TEST_ASSERT_EQUAL_UINT16(6, resp_len);
+    }
+
+    /* 2. Subfunction 0x03 (valid at req_len >= 2) */
+    req[1] = 0x03;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x03, resp[1]);
+
+    /* Subfunctions requiring req_len >= 3 (0x05, 0x16) */
+    uint8_t subs3[] = {0x05, 0x16};
+    for (size_t i = 0; i < sizeof(subs3); i++) {
+        req[1] = subs3[i];
+        req[2] = 0x01;
+        /* Short request (<3 bytes) -> NRC 0x13 */
+        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+        /* Valid request (3 bytes) -> Positive response */
+        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+        TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+        TEST_ASSERT_EQUAL_HEX8(subs3[i], resp[1]);
+        TEST_ASSERT_EQUAL_UINT16(3, resp_len);
+    }
+
+    /* 3. Subfunctions requiring req_len >= 4 (0x17, 0x42) */
+    uint8_t subs4[] = {0x17, 0x42};
+    for (size_t i = 0; i < sizeof(subs4); i++) {
+        req[1] = subs4[i];
+        req[2] = 0xFF;
+        req[3] = 0x01;
+        /* Short request (<4 bytes) -> NRC 0x13 */
+        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+        /* Valid request (4 bytes) -> Positive response */
+        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+        TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+        TEST_ASSERT_EQUAL_HEX8(subs4[i], resp[1]);
+        TEST_ASSERT_EQUAL_UINT16(3, resp_len);
+    }
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -1579,4 +1651,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_nrc_coverage_sweep_part2);
     RUN_TEST(test_uds_bounds_and_null_checks);
     RUN_TEST(test_uds_dtc_overflow_and_short_msg_nrcs);
+    RUN_TEST(test_uds_read_dtc_additional_subfunctions);
 }

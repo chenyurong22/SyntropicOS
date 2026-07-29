@@ -108,4 +108,22 @@ void test_crsf_null_and_error_handling(void)
     SYN_CRSF_Parser parser;
     syn_crsf_init(&parser);
     TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_crsf_parse_byte(&parser, 0x00, NULL)); /* Bad addr */
+
+    /* Invalid payload length < 2 */
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_crsf_parse_byte(&parser, 0xC8, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_crsf_parse_byte(&parser, 1, NULL));
+    TEST_ASSERT_EQUAL_UINT8(0, parser.idx);
+
+    /* Invalid payload length > max */
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_crsf_parse_byte(&parser, 0xC8, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_crsf_parse_byte(&parser, 100, NULL));
+    TEST_ASSERT_EQUAL_UINT8(0, parser.idx);
+
+    /* CRC error test */
+    uint8_t bad_pkt[6] = {0xC8, 4, 0x16, 0x01, 0x02, 0x00}; /* Bad CRC 0x00 */
+    for (int i = 0; i < 5; i++) {
+        syn_crsf_parse_byte(&parser, bad_pkt[i], NULL);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_crsf_parse_byte(&parser, bad_pkt[5], NULL));
+    TEST_ASSERT_EQUAL_UINT32(1, parser.crc_errors);
 }

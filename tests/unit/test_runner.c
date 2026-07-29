@@ -218,6 +218,7 @@ int main(void)
     run_rtc_tests();
     run_hwwdt_tests();
     run_soft_onewire_tests();
+    run_adc_tests();
     run_dac_tests();
     run_scurve_tests();
 
@@ -633,6 +634,8 @@ int main(void)
     RUN_TEST(test_flight_roll_correction);
     RUN_TEST(test_flight_angle_mode);
     RUN_TEST(test_flight_null_and_bounds);
+    extern void test_flight_clamp_motor_outputs_bounds(void);
+    RUN_TEST(test_flight_clamp_motor_outputs_bounds);
     RUN_TEST(test_msp_init);
     RUN_TEST(test_msp_encode_and_parse_response);
     RUN_TEST(test_msp_null_and_error_handling);

@@ -124,11 +124,33 @@ void test_lss_extra_coverage(void)
     /* Switch to configuration mode */
     g_lss_slave.mode = SYN_LSS_MODE_CONFIGURATION;
 
-    /* Invalid Node-ID (> 127) */
+    /* Invalid Node-ID (0 or > 127) */
     req.data[0] = SYN_LSS_CS_CONFIGURE_NODE_ID;
+    req.data[1] = 0;
+    TEST_ASSERT_TRUE(syn_lss_slave_process(&g_lss_slave, &req, &resp));
+    TEST_ASSERT_EQUAL(1, resp.data[1]); /* Error */
+
     req.data[1] = 200;
     TEST_ASSERT_TRUE(syn_lss_slave_process(&g_lss_slave, &req, &resp));
     TEST_ASSERT_EQUAL(1, resp.data[1]); /* Error */
+
+    /* Inquiries sent during operational mode return false */
+    g_lss_slave.mode = SYN_LSS_MODE_OPERATION;
+    req.data[0] = SYN_LSS_CS_INQUIRE_VENDOR;
+    TEST_ASSERT_FALSE(syn_lss_slave_process(&g_lss_slave, &req, &resp));
+    req.data[0] = SYN_LSS_CS_INQUIRE_PRODUCT;
+    TEST_ASSERT_FALSE(syn_lss_slave_process(&g_lss_slave, &req, &resp));
+    req.data[0] = SYN_LSS_CS_INQUIRE_REV;
+    TEST_ASSERT_FALSE(syn_lss_slave_process(&g_lss_slave, &req, &resp));
+    req.data[0] = SYN_LSS_CS_INQUIRE_SERIAL;
+    TEST_ASSERT_FALSE(syn_lss_slave_process(&g_lss_slave, &req, &resp));
+    req.data[0] = SYN_LSS_CS_CONFIGURE_BIT_TIMING;
+    TEST_ASSERT_FALSE(syn_lss_slave_process(&g_lss_slave, &req, &resp));
+    req.data[0] = SYN_LSS_CS_STORE_CONFIG;
+    TEST_ASSERT_FALSE(syn_lss_slave_process(&g_lss_slave, &req, &resp));
+
+    /* Restore configuration mode */
+    g_lss_slave.mode = SYN_LSS_MODE_CONFIGURATION;
 
     /* Invalid Baud Table Index (> 8) */
     req.data[0] = SYN_LSS_CS_CONFIGURE_BIT_TIMING;

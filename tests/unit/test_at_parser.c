@@ -188,17 +188,26 @@ static void test_at_parser_uncovered_edge_cases(void)
     memset(&null_buf_parser, 0, sizeof(null_buf_parser));
     TEST_ASSERT_EQUAL_INT(SYN_AT_RESP_NONE, syn_at_parser_feed_char(&null_buf_parser, 'A'));
 
-    /* 2. CME ERROR without numeric code */
+    /* 2. CME ERROR without colon (categorized as SYN_AT_RESP_LINE) */
+    syn_at_parser_init(&parser, line_buf, sizeof(line_buf));
+    const char *cme_no_colon = "+CME ERROR\r\n";
+    SYN_AtRespType resp = SYN_AT_RESP_NONE;
+    for (size_t i = 0; cme_no_colon[i] != '\0'; i++) {
+        resp = syn_at_parser_feed_char(&parser, cme_no_colon[i]);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_AT_RESP_LINE, resp);
+
+    /* 3. CME ERROR with colon but no number */
     syn_at_parser_init(&parser, line_buf, sizeof(line_buf));
     const char *cme_no_code = "+CME ERROR:\r\n";
-    SYN_AtRespType resp = SYN_AT_RESP_NONE;
+    resp = SYN_AT_RESP_NONE;
     for (size_t i = 0; cme_no_code[i] != '\0'; i++) {
         resp = syn_at_parser_feed_char(&parser, cme_no_code[i]);
     }
     TEST_ASSERT_EQUAL_INT(SYN_AT_RESP_CME_ERROR, resp);
     TEST_ASSERT_EQUAL_INT(0, syn_at_parser_get_cme_error(&parser));
 
-    /* 3. Empty parameter in string/int parsing */
+    /* 4. Empty parameter in string/int parsing */
     int val = 0;
     TEST_ASSERT_TRUE(syn_at_parser_get_param_int("+CSQ: ,1", 0, &val));
     TEST_ASSERT_FALSE(syn_at_parser_get_param_int("+CSQ: 1", 5, &val));

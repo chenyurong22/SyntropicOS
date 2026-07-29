@@ -145,6 +145,11 @@ static void test_cobs_zero_length(void)
     uint8_t dst[16] = {0};
     TEST_ASSERT_EQUAL_size_t(0, syn_cobs_encode(src, 0, dst));
     TEST_ASSERT_EQUAL_size_t(0, syn_cobs_decode(src, 0, dst));
+
+    /* NULL decoder checks */
+    syn_cobs_decoder_init(NULL, NULL, 0, NULL, NULL);
+    syn_cobs_decoder_feed(NULL, 0x01);
+    syn_cobs_decoder_reset(NULL);
 }
 
 void run_cobs_tests(void)

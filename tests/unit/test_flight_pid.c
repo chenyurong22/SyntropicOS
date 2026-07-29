@@ -90,6 +90,30 @@ void test_flight_angle_mode(void)
     TEST_ASSERT_TRUE(motors.m1 != motors.m3);
 }
 
+void test_flight_clamp_motor_outputs_bounds(void)
+{
+    SYN_Flight_Controller fc;
+    syn_flight_init(&fc);
+
+    SYN_Flight_IMU imu = {0};
+
+    /* Extreme low throttle to hit clamp_us < 1000 */
+    SYN_Flight_Commands cmd_low = {
+        .throttle_us = 500, .roll_target = 0, .pitch_target = 0, .yaw_target = 0};
+    SYN_Flight_MotorOutputs motors_low;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_flight_update(&fc, &imu, &cmd_low, 1, &motors_low));
+    TEST_ASSERT_EQUAL_UINT16(1000, motors_low.m1);
+    TEST_ASSERT_EQUAL_UINT16(1000, motors_low.m2);
+
+    /* Extreme high throttle to hit clamp_us > 2000 */
+    SYN_Flight_Commands cmd_high = {
+        .throttle_us = 2500, .roll_target = 0, .pitch_target = 0, .yaw_target = 0};
+    SYN_Flight_MotorOutputs motors_high;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_flight_update(&fc, &imu, &cmd_high, 1, &motors_high));
+    TEST_ASSERT_EQUAL_UINT16(2000, motors_high.m1);
+    TEST_ASSERT_EQUAL_UINT16(2000, motors_high.m2);
+}
+
 void test_flight_null_and_bounds(void)
 {
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_flight_init(NULL));

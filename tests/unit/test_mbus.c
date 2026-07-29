@@ -303,13 +303,18 @@ static void test_mbus_streaming_decoder_edge_cases(void)
     }
     TEST_ASSERT_EQUAL_INT(0, callback_count);
 
-    /* 2. Feed long frame with bad stop byte */
+    /* 3. Feed long frame with L1 != L2 mismatch */
     reset_test_state();
-    uint8_t bad_stop[] = {0x68, 0x03, 0x03, 0x68, 0x40, 0x01, 0x51, 0x92, 0x00};
-    for (size_t i = 0; i < sizeof(bad_stop); i++) {
-        syn_mbus_decoder_feed(&dec, bad_stop[i]);
+    uint8_t bad_l1_l2[] = {0x68, 0x03, 0x04};
+    for (size_t i = 0; i < sizeof(bad_l1_l2); i++) {
+        syn_mbus_decoder_feed(&dec, bad_l1_l2[i]);
     }
     TEST_ASSERT_EQUAL_INT(0, callback_count);
+
+    /* 4. Encode short buffer cap error */
+    uint8_t buf[4];
+    size_t out_len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_mbus_encode_short(0x40, 0x01, buf, 4, &out_len));
 }
 
 void run_mbus_tests(void)

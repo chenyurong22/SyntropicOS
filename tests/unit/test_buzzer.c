@@ -89,6 +89,7 @@ static void test_buzzer_stop_and_null(void)
 
     syn_buzzer_stop(NULL);
     syn_buzzer_step(NULL, 10);
+    syn_buzzer_step(&buz, 10); /* when not playing */
     TEST_ASSERT_FALSE(syn_buzzer_is_playing(NULL));
 }
 

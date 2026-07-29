@@ -82,6 +82,16 @@ void test_timer_wheel_add_step_cancel(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_timer_wheel_add(NULL, &n1, 5, timer1_cb, NULL));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_timer_wheel_add(&wheel, &n1, 0, timer1_cb, NULL));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_timer_wheel_cancel(NULL, &n1));
+    TEST_ASSERT_EQUAL_UINT32(0, syn_timer_wheel_step(NULL));
+
+    /* Multi-rotation timer rotation_count decrement branch (line 90) */
+    SYN_TimerWheelNode t_rot;
+    memset(&t_rot, 0, sizeof(t_rot));
+    syn_timer_wheel_add(&wheel, &t_rot, SYN_TIMER_WHEEL_BUCKETS + 5, timer1_cb, NULL);
+    for (int i = 0; i < 5; i++)
+        syn_timer_wheel_step(&wheel);
+    TEST_ASSERT_TRUE(t_rot.active); /* Still active after 1st rotation */
+    syn_timer_wheel_cancel(&wheel, &t_rot);
 }
 
 void run_timer_wheel_tests(void)

@@ -23,6 +23,12 @@ bool syn_uds_init(SYN_UDS_Server *server)
     server->security_error_count = 0U;
     server->security_delay_timer_ms = SYN_UDS_SECURITY_DELAY_MS;
     server->comm_control_state = SYN_UDS_COMM_ENABLE_RX_AND_TX;
+    server->p2_max_ms = 50U;
+    server->p2_star_max_10ms = 500U;
+    server->active_p2_max_ms = 50U;
+    server->active_p2_star_max_10ms = 500U;
+    server->timing_cb = NULL;
+    server->timing_ctx = NULL;
     server->did_count = 0U;
     server->reset_type_requested = 0U;
 
@@ -92,6 +98,17 @@ bool syn_uds_register_comm_control(SYN_UDS_Server *server, SYN_UDS_CommControlHa
     }
     server->comm_control_cb = handler;
     server->comm_control_ctx = ctx;
+    return true;
+}
+
+bool syn_uds_register_access_timing(SYN_UDS_Server *server, SYN_UDS_AccessTimingHandler handler,
+                                    void *ctx)
+{
+    if (server == NULL) {
+        return false;
+    }
+    server->timing_cb = handler;
+    server->timing_ctx = ctx;
     return true;
 }
 
@@ -364,6 +381,121 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         resp_buf[1] = sub;
         *resp_len = 2U;
         success = true;
+        break;
+    }
+
+    case SYN_UDS_SID_ACCESS_TIMING_PARAMETER: {
+        if (req_len < 2U) {
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                          resp_len);
+        }
+        uint8_t sub = req[1] & 0x7FU;
+        switch (sub) {
+        case SYN_UDS_TIMING_READ_EXTENDED: {
+            if (req_len != 2U) {
+                return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                              resp_len);
+            }
+            if (max_resp_len < 6U) {
+                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                              resp_len);
+            }
+            uint16_t p2 = server->p2_max_ms;
+            uint16_t p2_star = server->p2_star_max_10ms;
+            if (server->timing_cb != NULL) {
+                if (!server->timing_cb(SYN_UDS_TIMING_READ_EXTENDED, &p2, &p2_star,
+                                       server->timing_ctx)) {
+                    return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                                  resp_len);
+                }
+            }
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            syn_poke_u16(p2, resp_buf, 2);
+            syn_poke_u16(p2_star, resp_buf, 4);
+            *resp_len = 6U;
+            success = true;
+            break;
+        }
+
+        case SYN_UDS_TIMING_SET_TO_DEFAULT: {
+            if (req_len != 2U) {
+                return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                              resp_len);
+            }
+            uint16_t p2 = server->p2_max_ms;
+            uint16_t p2_star = server->p2_star_max_10ms;
+            if (server->timing_cb != NULL) {
+                if (!server->timing_cb(SYN_UDS_TIMING_SET_TO_DEFAULT, &p2, &p2_star,
+                                       server->timing_ctx)) {
+                    return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                                  resp_len);
+                }
+            }
+            server->active_p2_max_ms = p2;
+            server->active_p2_star_max_10ms = p2_star;
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            *resp_len = 2U;
+            success = true;
+            break;
+        }
+
+        case SYN_UDS_TIMING_READ_ACTIVE: {
+            if (req_len != 2U) {
+                return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                              resp_len);
+            }
+            if (max_resp_len < 6U) {
+                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                              resp_len);
+            }
+            uint16_t p2 = server->active_p2_max_ms;
+            uint16_t p2_star = server->active_p2_star_max_10ms;
+            if (server->timing_cb != NULL) {
+                if (!server->timing_cb(SYN_UDS_TIMING_READ_ACTIVE, &p2, &p2_star,
+                                       server->timing_ctx)) {
+                    return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                                  resp_len);
+                }
+            }
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            syn_poke_u16(p2, resp_buf, 2);
+            syn_poke_u16(p2_star, resp_buf, 4);
+            *resp_len = 6U;
+            success = true;
+            break;
+        }
+
+        case SYN_UDS_TIMING_SET_TO_GIVEN: {
+            if (req_len != 6U) {
+                return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                              resp_len);
+            }
+            uint16_t given_p2 = syn_peek_u16(req, 2);
+            uint16_t given_p2_star = syn_peek_u16(req, 4);
+            if (server->timing_cb != NULL) {
+                if (!server->timing_cb(SYN_UDS_TIMING_SET_TO_GIVEN, &given_p2, &given_p2_star,
+                                       server->timing_ctx)) {
+                    return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf,
+                                                  resp_len);
+                }
+            }
+            server->active_p2_max_ms = given_p2;
+            server->active_p2_star_max_10ms = given_p2_star;
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            *resp_len = 2U;
+            success = true;
+            break;
+        }
+
+        default: {
+            return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
+                                          resp_len);
+        }
+        }
         break;
     }
 

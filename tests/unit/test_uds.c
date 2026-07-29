@@ -472,12 +472,109 @@ static void test_uds_communication_control(void)
     TEST_ASSERT_EQUAL(SYN_UDS_COMM_ENABLE_RX_AND_TX, g_uds.comm_control_state);
 }
 
+static bool mock_timing_handler(SYN_UDS_AccessTimingType timing_type, uint16_t *p2_max_ms,
+                                uint16_t *p2_star_max_10ms, void *ctx)
+{
+    (void)p2_star_max_10ms;
+    (void)ctx;
+    if (timing_type == SYN_UDS_TIMING_SET_TO_GIVEN) {
+        if (*p2_max_ms > 1000U) {
+            return false; /* Reject values out of allowed range */
+        }
+    }
+    return true;
+}
+
+static void test_uds_access_timing_parameter(void)
+{
+    syn_uds_init(&g_uds);
+    uint8_t req[16] = {0};
+    uint8_t resp[16] = {0};
+    uint16_t resp_len = 0;
+
+    /* 1. Null server check */
+    TEST_ASSERT_FALSE(syn_uds_register_access_timing(NULL, mock_timing_handler, NULL));
+
+    /* 2. Short request -> NRC 0x13 */
+    req[0] = SYN_UDS_SID_ACCESS_TIMING_PARAMETER;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 1, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 3. Invalid subfunction -> NRC 0x12 */
+    req[1] = 0x05;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
+
+    /* 4. Subfunction 0x01: readExtendedTimingParameterSet */
+    req[1] = SYN_UDS_TIMING_READ_EXTENDED;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0xC3, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_TIMING_READ_EXTENDED, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(6, resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x00, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x32, resp[3]); /* 50 ms */
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[4]);
+    TEST_ASSERT_EQUAL_HEX8(0xF4, resp[5]); /* 500 (5000 ms) */
+
+    /* 5. Subfunction 0x01 wrong length -> NRC 0x13 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 6. Subfunction 0x04: setTimingParametersToGivenValues (P2=100ms, P2*=1000) */
+    req[1] = SYN_UDS_TIMING_SET_TO_GIVEN;
+    req[2] = 0x00;
+    req[3] = 0x64; /* 100 ms */
+    req[4] = 0x03;
+    req[5] = 0xE8; /* 1000 (10000 ms) */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0xC3, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_TIMING_SET_TO_GIVEN, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(2, resp_len);
+    TEST_ASSERT_EQUAL_UINT16(100, g_uds.active_p2_max_ms);
+    TEST_ASSERT_EQUAL_UINT16(1000, g_uds.active_p2_star_max_10ms);
+
+    /* 7. Subfunction 0x03: readCurrentlyActiveTimingParameterSet */
+    req[1] = SYN_UDS_TIMING_READ_ACTIVE;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0xC3, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_TIMING_READ_ACTIVE, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(6, resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x00, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x64, resp[3]); /* 100 ms */
+    TEST_ASSERT_EQUAL_HEX8(0x03, resp[4]);
+    TEST_ASSERT_EQUAL_HEX8(0xE8, resp[5]); /* 1000 */
+
+    /* 8. Subfunction 0x02: setTimingParametersToDefaultValues */
+    req[1] = SYN_UDS_TIMING_SET_TO_DEFAULT;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0xC3, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_TIMING_SET_TO_DEFAULT, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(2, resp_len);
+    TEST_ASSERT_EQUAL_UINT16(50, g_uds.active_p2_max_ms);
+    TEST_ASSERT_EQUAL_UINT16(500, g_uds.active_p2_star_max_10ms);
+
+    /* 9. Custom callback rejection */
+    TEST_ASSERT_TRUE(syn_uds_register_access_timing(&g_uds, mock_timing_handler, NULL));
+    req[1] = SYN_UDS_TIMING_SET_TO_GIVEN;
+    req[2] = 0x05;
+    req[3] = 0x00; /* P2 = 1280 ms > 1000 -> Handler rejects */
+    req[4] = 0x03;
+    req[5] = 0xE8;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
     RUN_TEST(test_uds_s3_timer_tick);
     RUN_TEST(test_uds_security_access);
     RUN_TEST(test_uds_communication_control);
+    RUN_TEST(test_uds_access_timing_parameter);
     RUN_TEST(test_uds_did_read_write);
     RUN_TEST(test_uds_ecu_reset_routine_tester_present);
     RUN_TEST(test_uds_bounds_and_null_checks);

@@ -733,9 +733,10 @@ static void test_autotune_calc_relay_gains_zero_tu_and_default_state(void)
                                 mock_read_pos, NULL, 1000, 100);
     syn_motor_ctrl_init(&ctrl, &mcfg);
     SYN_AutoTune at;
-    SYN_AutoTune_Config cfg = {.mode = SYN_ATUNE_MODE_AUTO};
-    syn_autotune_init(&at, &ctrl, &cfg);
     ctrl.cfg.pid_scale = 0;
+    ctrl.cfg.ff_scale = 0;
+    SYN_AutoTune_Limits limits = {.position_min = -1000, .position_max = 1000};
+    syn_autotune_start(&at, &ctrl, &limits, SYN_ATUNE_FLAG_ALL, 100);
     at.state = (SYN_AutoTune_State)99;
     TEST_ASSERT_EQUAL((SYN_AutoTune_State)99, syn_autotune_update(&at));
 }

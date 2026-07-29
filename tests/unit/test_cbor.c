@@ -757,6 +757,25 @@ static void test_cbor_read_type_mismatch_type_error_branches(void)
     TEST_ASSERT_FALSE(syn_cbor_reader_ok(&r));
 }
 
+static void test_cbor_read_bool_and_float_underrun(void)
+{
+    uint8_t empty[1] = {0};
+    syn_cbor_reader_init(&r, empty, 0);
+    TEST_ASSERT_FALSE(syn_cbor_read_bool(&r));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&r));
+
+    uint8_t trunc_float[] = {0xFA, 0x00, 0x00}; /* float32 needs 4 header bytes */
+    syn_cbor_reader_init(&r, trunc_float, sizeof(trunc_float));
+    TEST_ASSERT_EQUAL_FLOAT(0.0f, syn_cbor_read_float(&r));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&r));
+
+    uint8_t trunc_text[] = {0x6A, 0x61}; /* declares 10 byte text, only 1 available */
+    char str[16];
+    syn_cbor_reader_init(&r, trunc_text, sizeof(trunc_text));
+    TEST_ASSERT_EQUAL(10, syn_cbor_read_text(&r, str, sizeof(str)));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&r));
+}
+
 void run_cbor_tests(void)
 {
     /* Encoder */
@@ -808,5 +827,6 @@ void run_cbor_tests(void)
     RUN_TEST(test_cbor_read_text_and_bytes_overrun_and_mismatch);
     RUN_TEST(test_cbor_skip_truncated_strings_and_floats);
     RUN_TEST(test_cbor_read_type_mismatch_type_error_branches);
+    RUN_TEST(test_cbor_read_bool_and_float_underrun);
     RUN_TEST(test_cbor_write_text_cstr);
 }

@@ -114,15 +114,23 @@ static void test_uds_security_access(void)
     uint8_t resp[16] = {0};
     uint16_t resp_len = 0;
 
-    /* Request Seed */
+    /* Power-on delay active (10000ms): Request Seed fails with NRC 0x37 */
     req[0] = SYN_UDS_SID_SECURITY_ACCESS;
     req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED, resp[2]);
+
+    /* Tick 10s to expire power-on safety delay */
+    syn_uds_tick(&g_uds, 10000);
+
+    /* Request Seed now succeeds */
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_SEED_SENT, g_uds.security_state);
 
-    /* Send Key (Invalid key) */
+    /* Send Key (Invalid key #1) */
     req[1] = 0x02;
     req[2] = 0x00;
     req[3] = 0x00;
@@ -133,9 +141,32 @@ static void test_uds_security_access(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INVALID_KEY, resp[2]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_LOCKED, g_uds.security_state);
 
-    /* Request Seed again */
+    /* Seed #2 + Invalid key #2 */
     req[1] = 0x01;
     syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len);
+    req[1] = 0x02;
+    syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len);
+
+    /* Seed #3 + Invalid key #3 -> Exceeds max attempts (3) returning NRC 0x36 */
+    req[1] = 0x01;
+    syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len);
+    req[1] = 0x02;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_EXCEEDED_NUMBER_OF_ATTEMPTS, resp[2]);
+
+    /* Subsequent Request Seed during 10s lockout fails with NRC 0x37 */
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED, resp[2]);
+
+    /* Tick 10s to expire lockout timer */
+    syn_uds_tick(&g_uds, 10000);
+
+    /* Seed request now succeeds after lockout expiration */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
 
     /* Send Key (Correct expected key = seed ^ 0xA5A5A5A5) */
     uint32_t expected_key = g_uds.current_seed ^ 0xA5A5A5A5U;
@@ -148,11 +179,22 @@ static void test_uds_security_access(void)
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(0x02, resp[1]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
+    TEST_ASSERT_EQUAL_UINT8(0, g_uds.security_error_count);
 
     /* Send Key when seed not sent -> Conditions not correct */
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    /* Programming session mode transition bypasses power-on delay timer */
+    syn_uds_init(&g_uds);
+    uint8_t sess_ext[2] = {SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL, SYN_UDS_SESSION_EXTENDED};
+    syn_uds_process_request(&g_uds, sess_ext, 2, resp, sizeof(resp), &resp_len);
+    uint8_t sess_prog[2] = {SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL, SYN_UDS_SESSION_PROGRAMMING};
+    syn_uds_process_request(&g_uds, sess_prog, 2, resp, sizeof(resp), &resp_len);
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
 
     /* Invalid subfunction */
     req[1] = 0xFF;

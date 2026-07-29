@@ -45,6 +45,8 @@ extern "C" {
 #define SYN_UDS_NRC_REQUEST_OUT_OF_RANGE 0x31U
 #define SYN_UDS_NRC_SECURITY_ACCESS_DENIED 0x33U
 #define SYN_UDS_NRC_INVALID_KEY 0x35U
+#define SYN_UDS_NRC_EXCEEDED_NUMBER_OF_ATTEMPTS 0x36U
+#define SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED 0x37U
 
 /* UDS Diagnostic Sessions */
 typedef enum {
@@ -70,9 +72,17 @@ typedef struct {
     bool writable;
 } SYN_UDS_DIDEntry;
 
-/* UDS Timing Constants */
+/* UDS Timing & Security Constants */
 #ifndef SYN_UDS_S3_TIMEOUT_MS
 #define SYN_UDS_S3_TIMEOUT_MS 5000U
+#endif
+
+#ifndef SYN_UDS_SECURITY_MAX_ATTEMPTS
+#define SYN_UDS_SECURITY_MAX_ATTEMPTS 3U
+#endif
+
+#ifndef SYN_UDS_SECURITY_DELAY_MS
+#define SYN_UDS_SECURITY_DELAY_MS 10000U
 #endif
 
 /**
@@ -83,6 +93,8 @@ typedef struct {
     SYN_UDS_SecurityState security_state;
     uint32_t current_seed;
     uint32_t s3_timer_ms;
+    uint8_t security_error_count;
+    uint32_t security_delay_timer_ms;
     SYN_UDS_DIDEntry did_table[SYN_UDS_MAX_DIDS];
     uint8_t did_count;
     uint8_t reset_type_requested;

@@ -20,6 +20,8 @@ bool syn_uds_init(SYN_UDS_Server *server)
     server->security_state = SYN_UDS_SECURITY_LOCKED;
     server->current_seed = 0x12345678U;
     server->s3_timer_ms = 0U;
+    server->security_error_count = 0U;
+    server->security_delay_timer_ms = SYN_UDS_SECURITY_DELAY_MS;
     server->did_count = 0U;
     server->reset_type_requested = 0U;
 
@@ -28,20 +30,34 @@ bool syn_uds_init(SYN_UDS_Server *server)
 
 void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms)
 {
-    if ((server == NULL) || (server->session == SYN_UDS_SESSION_DEFAULT)) {
-        if (server != NULL) {
-            server->s3_timer_ms = 0U;
-        }
+    if (server == NULL) {
         return;
     }
 
-    if (dt_ms >= server->s3_timer_ms) {
-        /* S3 timer expired -> revert to DEFAULT session and lock security */
-        server->session = SYN_UDS_SESSION_DEFAULT;
-        server->security_state = SYN_UDS_SECURITY_LOCKED;
-        server->s3_timer_ms = 0U;
+    /* 1. Security delay countdown */
+    if (server->security_delay_timer_ms > 0U) {
+        if (dt_ms >= server->security_delay_timer_ms) {
+            server->security_delay_timer_ms = 0U;
+            if (server->security_error_count > 0U) {
+                server->security_error_count--;
+            }
+        } else {
+            server->security_delay_timer_ms -= dt_ms;
+        }
+    }
+
+    /* 2. S3 server session timeout countdown */
+    if (server->session != SYN_UDS_SESSION_DEFAULT) {
+        if (dt_ms >= server->s3_timer_ms) {
+            /* S3 timer expired -> revert to DEFAULT session and lock security */
+            server->session = SYN_UDS_SESSION_DEFAULT;
+            server->security_state = SYN_UDS_SECURITY_LOCKED;
+            server->s3_timer_ms = 0U;
+        } else {
+            server->s3_timer_ms -= dt_ms;
+        }
     } else {
-        server->s3_timer_ms -= dt_ms;
+        server->s3_timer_ms = 0U;
     }
 }
 
@@ -118,6 +134,10 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             server->s3_timer_ms = 0U;
         } else {
             server->s3_timer_ms = SYN_UDS_S3_TIMEOUT_MS;
+            if (server->session == SYN_UDS_SESSION_PROGRAMMING) {
+                /* ISO 14229: Switching to programming session clears power-on safety delay */
+                server->security_delay_timer_ms = 0U;
+            }
         }
 
         resp_buf[0] = sid + 0x40U;
@@ -156,6 +176,10 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         }
         uint8_t sub = req[1];
         if (sub == 0x01U) { /* Request Seed */
+            if (server->security_delay_timer_ms > 0U) {
+                return make_negative_response(sid, SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED,
+                                              resp_buf, resp_len);
+            }
             server->security_state = SYN_UDS_SECURITY_SEED_SENT;
             resp_buf[0] = sid + 0x40U;
             resp_buf[1] = sub;
@@ -176,12 +200,19 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             uint32_t expected_key = server->current_seed ^ 0xA5A5A5A5U;
             if (key == expected_key) {
                 server->security_state = SYN_UDS_SECURITY_UNLOCKED;
+                server->security_error_count = 0U;
                 resp_buf[0] = sid + 0x40U;
                 resp_buf[1] = sub;
                 *resp_len = 2U;
                 success = true;
             } else {
                 server->security_state = SYN_UDS_SECURITY_LOCKED;
+                server->security_error_count++;
+                if (server->security_error_count >= SYN_UDS_SECURITY_MAX_ATTEMPTS) {
+                    server->security_delay_timer_ms = SYN_UDS_SECURITY_DELAY_MS;
+                    return make_negative_response(sid, SYN_UDS_NRC_EXCEEDED_NUMBER_OF_ATTEMPTS,
+                                                  resp_buf, resp_len);
+                }
                 return make_negative_response(sid, SYN_UDS_NRC_INVALID_KEY, resp_buf, resp_len);
             }
         } else {

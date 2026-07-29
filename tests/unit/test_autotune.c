@@ -283,6 +283,7 @@ void test_autotune_abort_apply(void)
     syn_autotune_start(&at, &ctrl, &limits, SYN_ATUNE_FLAG_TUNE_PID, 100);
 
     /* Test Abort */
+    syn_autotune_abort(NULL);
     syn_autotune_abort(&at);
     TEST_ASSERT_EQUAL(SYN_ATUNE_ABORTED, at.state);
     TEST_ASSERT_EQUAL(SYN_ATUNE_ABORT_USER, syn_autotune_abort_reason(&at));

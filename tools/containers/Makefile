@@ -10,8 +10,12 @@ ifeq ($(OS),Windows_NT)
 else
   ROOT_DIR_RAW := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
   ROOT_DIR := $(shell if command -v wslpath >/dev/null 2>&1; then wslpath -m "$(ROOT_DIR_RAW)"; else echo "$(ROOT_DIR_RAW)"; fi)
-  CONTAINER_ENGINE ?= $(shell command -v podman 2>/dev/null || command -v docker.exe 2>/dev/null || command -v docker 2>/dev/null || echo docker)
-  VOL_FLAG ?= $(shell if command -v podman >/dev/null 2>&1; then echo ":z"; else echo ""; fi)
+  ifneq ($(GITHUB_ACTIONS),)
+    CONTAINER_ENGINE ?= docker
+  else
+    CONTAINER_ENGINE ?= $(shell command -v podman 2>/dev/null || command -v docker.exe 2>/dev/null || command -v docker 2>/dev/null || echo docker)
+  endif
+  VOL_FLAG ?= $(shell if [ "$(CONTAINER_ENGINE)" = "podman" ]; then echo ":z"; else echo ""; fi)
   JOBS ?= $(shell nproc 2>/dev/null || echo 4)
 endif
 CACHE_VOL ?= syntropicos-build-cache

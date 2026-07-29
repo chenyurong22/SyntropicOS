@@ -12,14 +12,22 @@ jobs:
     name: Build & Run Containerized Suite
     runs-on: ubuntu-latest
 
+    env:
+      CONTAINER_ENGINE: docker
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pre-build Testing Container Image
+        run: |
+          make -C tools/containers container-build
 
       - name: Run Containerized Code Formatting Check
         run: |
           make container-format
 
-      - name: Run Containerized Unit Tests
+      - name: Run Containerized Unit Tests & Coverage
         run: |
           make container-test
 

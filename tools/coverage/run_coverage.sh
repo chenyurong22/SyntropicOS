@@ -7,6 +7,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
 echo "=== Preparing Coverage Environment ==="
+rm -rf build/cov
 mkdir -p build/cov
 rm -f *.gcov
 

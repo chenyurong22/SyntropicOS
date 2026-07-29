@@ -873,7 +873,7 @@ static void test_uds_read_dtc_information_subfunctions(void)
     TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
     TEST_ASSERT_EQUAL_HEX8(0xFF, resp[2]);
-    TEST_ASSERT_EQUAL_HEX8(0x01, resp[3]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_DTC_FORMAT_ISO14229_1, resp[3]);
     TEST_ASSERT_EQUAL_UINT16(2, ((uint16_t)resp[4] << 8) | resp[5]);
 
     /* 2. reportDTCByStatusMask (0x02) */
@@ -1691,6 +1691,54 @@ static void test_uds_clear_dtc_group_filtering(void)
     TEST_ASSERT_EQUAL_HEX8(0x54, resp[0]);
 }
 
+static void test_uds_dtc_iso14229_bit_operations(void)
+{
+    SYN_UDS_Server server;
+    syn_uds_init(&server);
+
+    /* NULL checks */
+    TEST_ASSERT_FALSE(syn_uds_dtc_report_test_result(NULL, 0x010203U, true));
+    TEST_ASSERT_FALSE(syn_uds_dtc_start_operation_cycle(NULL));
+    TEST_ASSERT_FALSE(syn_uds_dtc_get_status(NULL, 0x010203U, NULL));
+    uint8_t status = 0;
+    TEST_ASSERT_FALSE(syn_uds_dtc_get_status(&server, 0x010203U, NULL));
+
+    /* Register DTC with initial status */
+    uint8_t init_status = SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_THIS_OP_CYCLE |
+                          SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_SINCE_LAST_CLEAR;
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x010203U, init_status,
+                                          SYN_UDS_DTC_SEVERITY_CHECK_IMMEDIATELY));
+
+    /* Check status retrieval */
+    TEST_ASSERT_TRUE(syn_uds_dtc_get_status(&server, 0x010203U, &status));
+    TEST_ASSERT_EQUAL_HEX8(init_status, status);
+
+    /* Report test failure */
+    TEST_ASSERT_TRUE(syn_uds_dtc_report_test_result(&server, 0x010203U, true));
+    TEST_ASSERT_TRUE(syn_uds_dtc_get_status(&server, 0x010203U, &status));
+    TEST_ASSERT_TRUE((status & SYN_UDS_DTC_STATUS_TEST_FAILED) != 0);
+    TEST_ASSERT_TRUE((status & SYN_UDS_DTC_STATUS_TEST_FAILED_THIS_OP_CYCLE) != 0);
+    TEST_ASSERT_TRUE((status & SYN_UDS_DTC_STATUS_PENDING_DTC) != 0);
+    TEST_ASSERT_TRUE((status & SYN_UDS_DTC_STATUS_CONFIRMED_DTC) != 0);
+    TEST_ASSERT_TRUE((status & SYN_UDS_DTC_STATUS_TEST_FAILED_SINCE_LAST_CLEAR) != 0);
+    TEST_ASSERT_EQUAL_HEX8(0, status & SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_THIS_OP_CYCLE);
+
+    /* Report test pass */
+    TEST_ASSERT_TRUE(syn_uds_dtc_report_test_result(&server, 0x010203U, false));
+    TEST_ASSERT_TRUE(syn_uds_dtc_get_status(&server, 0x010203U, &status));
+    TEST_ASSERT_EQUAL_HEX8(0, status & SYN_UDS_DTC_STATUS_TEST_FAILED);
+
+    /* Start new operation cycle */
+    TEST_ASSERT_TRUE(syn_uds_dtc_start_operation_cycle(&server));
+    TEST_ASSERT_TRUE(syn_uds_dtc_get_status(&server, 0x010203U, &status));
+    TEST_ASSERT_EQUAL_HEX8(0, status & SYN_UDS_DTC_STATUS_TEST_FAILED_THIS_OP_CYCLE);
+    TEST_ASSERT_TRUE((status & SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_THIS_OP_CYCLE) != 0);
+
+    /* Non-existent DTC search */
+    TEST_ASSERT_FALSE(syn_uds_dtc_report_test_result(&server, 0x999999U, true));
+    TEST_ASSERT_FALSE(syn_uds_dtc_get_status(&server, 0x999999U, &status));
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -1713,4 +1761,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_dtc_overflow_and_short_msg_nrcs);
     RUN_TEST(test_uds_read_dtc_additional_subfunctions);
     RUN_TEST(test_uds_clear_dtc_group_filtering);
+    RUN_TEST(test_uds_dtc_iso14229_bit_operations);
 }

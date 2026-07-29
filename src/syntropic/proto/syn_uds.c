@@ -1428,3 +1428,75 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
 
     return true;
 }
+
+bool syn_uds_dtc_report_test_result(SYN_UDS_Server *server, uint32_t dtc, bool failed)
+{
+    if (server == NULL) {
+        return false;
+    }
+
+    for (uint8_t i = 0U; i < server->dtc_count; i++) {
+        if (server->dtc_table[i].dtc == dtc) {
+            uint8_t status = server->dtc_table[i].status;
+
+            if (failed) {
+                status |= (uint8_t)SYN_UDS_DTC_STATUS_TEST_FAILED;
+                status |= (uint8_t)SYN_UDS_DTC_STATUS_TEST_FAILED_THIS_OP_CYCLE;
+                status |= (uint8_t)SYN_UDS_DTC_STATUS_PENDING_DTC;
+                status |= (uint8_t)SYN_UDS_DTC_STATUS_CONFIRMED_DTC;
+                status |= (uint8_t)SYN_UDS_DTC_STATUS_TEST_FAILED_SINCE_LAST_CLEAR;
+                status &= (uint8_t)~(uint8_t)SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_SINCE_LAST_CLEAR;
+                status &= (uint8_t)~(uint8_t)SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_THIS_OP_CYCLE;
+
+                if (server->dtc_table[i].fault_cnt < 127) {
+                    server->dtc_table[i].fault_cnt++;
+                }
+            } else {
+                status &= (uint8_t)~(uint8_t)SYN_UDS_DTC_STATUS_TEST_FAILED;
+                status &= (uint8_t)~(uint8_t)SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_SINCE_LAST_CLEAR;
+                status &= (uint8_t)~(uint8_t)SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_THIS_OP_CYCLE;
+
+                if (server->dtc_table[i].fault_cnt > -128) {
+                    server->dtc_table[i].fault_cnt--;
+                }
+            }
+
+            server->dtc_table[i].status = status;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool syn_uds_dtc_start_operation_cycle(SYN_UDS_Server *server)
+{
+    if (server == NULL) {
+        return false;
+    }
+
+    for (uint8_t i = 0U; i < server->dtc_count; i++) {
+        uint8_t status = server->dtc_table[i].status;
+        status &= (uint8_t)~(uint8_t)SYN_UDS_DTC_STATUS_TEST_FAILED_THIS_OP_CYCLE;
+        status |= (uint8_t)SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_THIS_OP_CYCLE;
+        server->dtc_table[i].status = status;
+    }
+
+    return true;
+}
+
+bool syn_uds_dtc_get_status(SYN_UDS_Server *server, uint32_t dtc, uint8_t *out_status)
+{
+    if (server == NULL || out_status == NULL) {
+        return false;
+    }
+
+    for (uint8_t i = 0U; i < server->dtc_count; i++) {
+        if (server->dtc_table[i].dtc == dtc) {
+            *out_status = server->dtc_table[i].status;
+            return true;
+        }
+    }
+
+    return false;
+}

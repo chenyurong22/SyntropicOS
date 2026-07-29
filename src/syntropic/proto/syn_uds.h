@@ -203,7 +203,30 @@ typedef struct {
 #endif
 
 #define SYN_UDS_DTC_STATUS_AVAILABILITY_MASK 0xFFU
-#define SYN_UDS_DTC_FORMAT_ISO14229_1 0x01U
+
+/* ISO 14229-1 DTCStatusByte Bit Definitions */
+#define SYN_UDS_DTC_STATUS_TEST_FAILED (1U << 0)
+#define SYN_UDS_DTC_STATUS_TEST_FAILED_THIS_OP_CYCLE (1U << 1)
+#define SYN_UDS_DTC_STATUS_PENDING_DTC (1U << 2)
+#define SYN_UDS_DTC_STATUS_CONFIRMED_DTC (1U << 3)
+#define SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_SINCE_LAST_CLEAR (1U << 4)
+#define SYN_UDS_DTC_STATUS_TEST_FAILED_SINCE_LAST_CLEAR (1U << 5)
+#define SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_THIS_OP_CYCLE (1U << 6)
+#define SYN_UDS_DTC_STATUS_WARNING_INDICATOR_REQUESTED (1U << 7)
+
+/* ISO 14229-1 DTCSeverityByte Definitions (Bits 7..5) */
+#define SYN_UDS_DTC_SEVERITY_NO_SEVERITY (0x00U << 5)
+#define SYN_UDS_DTC_SEVERITY_MAINTENANCE_REQUIRED (0x01U << 5)
+#define SYN_UDS_DTC_SEVERITY_CHECK_AT_NEXT_STOP (0x02U << 5)
+#define SYN_UDS_DTC_SEVERITY_CHECK_IMMEDIATELY (0x04U << 5)
+#define SYN_UDS_DTC_SEVERITY_MASK (0x07U << 5)
+#define SYN_UDS_DTC_CLASS_MASK (0x1FU)
+
+/* ISO 14229-1 DTCFormatIdentifier Definitions */
+#define SYN_UDS_DTC_FORMAT_ISO14229_1 0x00U
+#define SYN_UDS_DTC_FORMAT_ISO15031_6 0x01U
+#define SYN_UDS_DTC_FORMAT_SAE_J1939_73 0x02U
+#define SYN_UDS_DTC_FORMAT_ISO27145_4 0x03U
 
 /**
  * @brief Diagnostic Trouble Code (DTC) Registry Entry.
@@ -405,6 +428,40 @@ bool syn_uds_register_file_transfer(SYN_UDS_Server *server, SYN_UDS_FileTransfer
  */
 bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_t req_len,
                              uint8_t *resp_buf, uint16_t max_resp_len, uint16_t *resp_len);
+
+/**
+ * @brief Report diagnostic test result for a registered DTC according to ISO 14229-1 state
+ * transitions.
+ *
+ * Updates DTC status bits (testFailed, testFailedThisOperationCycle, pendingDTC, confirmedDTC,
+ * etc.) and fault detection counter.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param dtc 24-bit Diagnostic Trouble Code.
+ * @param failed True if test failed, false if test passed.
+ * @return true if DTC found and updated, false otherwise.
+ */
+bool syn_uds_dtc_report_test_result(SYN_UDS_Server *server, uint32_t dtc, bool failed);
+
+/**
+ * @brief Advance server state to a new operation cycle.
+ * Clears testFailedThisOperationCycle and sets testNotCompletedThisOperationCycle for all
+ * registered DTCs.
+ *
+ * @param server Pointer to UDS server instance.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_dtc_start_operation_cycle(SYN_UDS_Server *server);
+
+/**
+ * @brief Get current 8-bit status byte for a registered DTC.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param dtc 24-bit Diagnostic Trouble Code.
+ * @param out_status Output pointer to store DTC status byte.
+ * @return true if DTC found, false otherwise.
+ */
+bool syn_uds_dtc_get_status(SYN_UDS_Server *server, uint32_t dtc, uint8_t *out_status);
 
 #ifdef __cplusplus
 }

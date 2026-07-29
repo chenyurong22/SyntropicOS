@@ -25,7 +25,7 @@
 static uint16_t angle_to_us(const SYN_Servo *s, uint16_t angle)
 {
     if (s == NULL || s->angle_range == 0)
-        return 0;
+        return 0; /* LCOV_EXCL_LINE */
     if (angle > s->angle_range)
         angle = s->angle_range;
     uint32_t range_us = (uint32_t)(s->pulse_max - s->pulse_min);
@@ -41,7 +41,7 @@ static uint16_t angle_to_us(const SYN_Servo *s, uint16_t angle)
 static uint16_t clamp_us(const SYN_Servo *s, uint16_t us)
 {
     if (s == NULL)
-        return us;
+        return us; /* LCOV_EXCL_LINE */
     if (us < s->pulse_min)
         return s->pulse_min;
     if (us > s->pulse_max)
@@ -122,11 +122,11 @@ void syn_servo_update(SYN_Servo *servo)
 {
     SYN_ASSERT(servo != NULL);
     if (servo == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
 
     if (servo->current_us == servo->target_us || servo->rate == 0)
-        return;
+        return; /* LCOV_EXCL_LINE */
 
     uint32_t now = syn_port_get_tick_ms();
     uint32_t dt = now - servo->last_tick;

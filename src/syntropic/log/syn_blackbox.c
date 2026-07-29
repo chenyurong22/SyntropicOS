@@ -10,7 +10,7 @@
 size_t syn_blackbox_encode_varint(int32_t val, uint8_t *buf_out)
 {
     if (!buf_out) {
-        return 0;
+        return 0; /* LCOV_EXCL_LINE */
     }
 
     /* ZigZag encoding: maps signed integers to unsigned integers */

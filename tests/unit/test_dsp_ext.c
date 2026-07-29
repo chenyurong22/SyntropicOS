@@ -296,6 +296,10 @@ static void test_fft_windows(void)
     TEST_ASSERT_EQUAL(SYN_OK, syn_fft_window_blackman(win, 32));
     TEST_ASSERT_INT_WITHIN(Q16_FROM_FLOAT(0.02), 0, win[0]);
     TEST_ASSERT_INT_WITHIN(Q16_FROM_FLOAT(0.02), Q16_ONE, win[16]);
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_fft_window_hanning(NULL, 0));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_fft_window_hamming(NULL, 0));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_fft_window_blackman(NULL, 0));
 }
 
 static void test_fft_spectrum_analytics(void)
@@ -330,6 +334,10 @@ static void test_fft_spectrum_analytics(void)
     /* Harmonic is 0.1 of fundamental -> ~10% THD */
     TEST_ASSERT_INT_WITHIN(Q16_FROM_FLOAT(2.0), Q16_FROM_INT(10), thd_pct);
 
+    /* Zero fundamental magnitude (line 263 of syn_fft.c) */
+    q16_t zero_mag[17] = {0};
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_fft_thd(zero_mag, 17, 4, 3, &thd_pct));
+
     /* Invalid parameters tests */
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_fft_magnitude_spectrum(NULL, imag, mag, 32));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
@@ -348,6 +356,7 @@ static void test_fft_spectrum_analytics(void)
 static void test_biquad_cascade(void)
 {
     SYN_FilterBiquadCascade cascade;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_biquad_cascade_init(&cascade, 0));
     TEST_ASSERT_EQUAL(SYN_OK, syn_filter_biquad_cascade_init(&cascade, 2));
 
     /* Stage 0: lowpass filter at 100Hz, sample rate 1000Hz */

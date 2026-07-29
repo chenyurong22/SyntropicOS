@@ -231,6 +231,9 @@ void test_eth_runt_and_oversized_frames(void)
     TEST_ASSERT_EQUAL_UINT32(1, eth.arp_replies);
 
     /* Process UDP packet (lines 249-251) */
+    SYN_UDP dummy_udp;
+    syn_udp_init(&dummy_udp, &eth);
+    syn_transport_udp_set_instance(&dummy_udp);
     uint8_t udp_eth_pkt[64] = {0};
     memcpy(&udp_eth_pkt[0], MY_MAC, 6);
     memcpy(&udp_eth_pkt[6], PEER_MAC, 6);
@@ -240,6 +243,7 @@ void test_eth_runt_and_oversized_frames(void)
     udp_eth_pkt[23] = 17; /* UDP */
     TEST_ASSERT_EQUAL_INT(
         SYN_OK, syn_eth_process_frame(&eth, udp_eth_pkt, sizeof(udp_eth_pkt), tx, &tx_len));
+    syn_transport_udp_set_instance(NULL);
 }
 
 void test_eth_mac_filtering(void)

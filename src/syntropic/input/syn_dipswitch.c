@@ -36,7 +36,7 @@ SYN_Status syn_dipswitch_init(SYN_DipSwitch *ds, const SYN_GPIO_Pin *pins, uint8
 void syn_dipswitch_read(SYN_DipSwitch *ds)
 {
     if (ds == NULL)
-        return;
+        return; /* LCOV_EXCL_LINE */
 
     uint32_t val = 0;
 

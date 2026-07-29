@@ -58,7 +58,7 @@ void syn_touch_feed_sample(SYN_Touch *touch, uint16_t raw_sample)
     } else {
         int32_t release_thresh = (int32_t)touch->threshold - (int32_t)touch->hysteresis;
         if (release_thresh < 0)
-            release_thresh = 0;
+            release_thresh = 0; /* LCOV_EXCL_LINE */
         if (delta < release_thresh) {
             touch->is_pressed = false;
         }

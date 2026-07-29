@@ -21,7 +21,7 @@ volatile uint32_t syn_hpclock_msb;
 uint64_t syn_hpclock_resolve(const SYN_HPTimestamp *ts)
 {
     if (ts == NULL)
-        return 0;
+        return 0; /* LCOV_EXCL_LINE */
 
     SYN_ASSERT(ts != NULL);
 

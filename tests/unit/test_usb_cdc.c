@@ -55,6 +55,10 @@ void test_usb_cdc_read_write(void)
     TEST_ASSERT_EQUAL_UINT16(strlen(hello), cdc.tx_len);
     TEST_ASSERT_EQUAL_STRING(hello, (char *)cdc.tx_buf);
 
+    uint8_t bigbuf[1000] = {0};
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_cdc_write(&cdc, bigbuf, sizeof(bigbuf)));
+    TEST_ASSERT_EQUAL_UINT16(sizeof(cdc.tx_buf), cdc.tx_len);
+
     /* Simulate received USB OUT bulk data */
     const char *incoming = "Command 123";
     memcpy(cdc.rx_buf, incoming, strlen(incoming));

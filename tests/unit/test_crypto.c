@@ -232,6 +232,21 @@ static void test_hmac_blake2s_streaming(void)
     TEST_ASSERT_EQUAL_HEX8_ARRAY(mac_oneshot, mac_stream, 32);
 }
 
+static void test_blake2s_unaligned_outlen(void)
+{
+    uint8_t hash[3];
+    syn_blake2s("abc", 3, hash, 3);
+    TEST_ASSERT_NOT_EQUAL(0, hash[0]);
+}
+
+static void test_hmac_blake2s_large_key(void)
+{
+    uint8_t large_key[70], mac[32];
+    memset(large_key, 0xAA, sizeof(large_key));
+    syn_hmac_blake2s(large_key, sizeof(large_key), "test", 4, mac);
+    TEST_ASSERT_NOT_EQUAL(0, mac[0]);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
  *  ChaCha20-Poly1305
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -602,6 +617,8 @@ void run_crypto_tests(void)
     RUN_TEST(test_blake2s_keyed_mac_16byte);
     RUN_TEST(test_hmac_blake2s_vector);
     RUN_TEST(test_hmac_blake2s_streaming);
+    RUN_TEST(test_blake2s_unaligned_outlen);
+    RUN_TEST(test_hmac_blake2s_large_key);
 
     /* ChaCha20-Poly1305 */
     RUN_TEST(test_chacha20_block_rfc8439);

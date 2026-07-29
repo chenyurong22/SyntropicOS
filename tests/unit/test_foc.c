@@ -128,6 +128,9 @@ static void test_foc_fast_and_field_weakening(void)
     bool active = syn_foc_field_weakening(Q16_FROM_INT(8), Q16_FROM_INT(8), v_max, &id_cmd);
     TEST_ASSERT_TRUE(active);
     TEST_ASSERT_TRUE(id_cmd < 0);
+
+    bool inactive = syn_foc_field_weakening(Q16_FROM_INT(1), Q16_FROM_INT(1), v_max, &id_cmd);
+    TEST_ASSERT_FALSE(inactive);
 }
 
 void run_foc_tests(void)

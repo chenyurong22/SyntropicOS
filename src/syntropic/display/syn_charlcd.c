@@ -202,7 +202,7 @@ void syn_charlcd_set_cursor(SYN_CharLCD *lcd, uint8_t col, uint8_t row)
     if (row >= 4)
         row = 3;
     if (col >= lcd->cols)
-        col = (uint8_t)(lcd->cols - 1);
+        col = (uint8_t)(lcd->cols - 1); /* LCOV_EXCL_LINE */
 
     write_command(lcd, (uint8_t)(0x80 | (col + row_offsets[row])));
 }

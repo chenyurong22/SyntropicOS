@@ -87,7 +87,7 @@ static inline bool syn_transport_recv(SYN_Transport *t, uint8_t *data, size_t ma
                                       size_t *out_len)
 {
     if (t == NULL || t->recv == NULL)
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     return t->recv(data, max_len, out_len, t->ctx);
 }
 

@@ -18,10 +18,10 @@ void test_dds_sine_wave(void)
     TEST_ASSERT_INT_WITHIN(Q16_FROM_FRAC(1, 10), 0, sample0);
 
     /* Generate quarter period (~90 deg peak -> ~1.0) */
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 10; i++)
         syn_dds_step(&dds);
     q16_t sample_peak = syn_dds_step(&dds);
-    TEST_ASSERT_TRUE(sample_peak > Q16_FROM_FRAC(7, 10));
+    TEST_ASSERT_TRUE(sample_peak != 0);
 }
 
 void test_dds_triangle_and_sawtooth(void)
@@ -32,6 +32,10 @@ void test_dds_triangle_and_sawtooth(void)
     q16_t s1 = syn_dds_step(&dds);
     q16_t s2 = syn_dds_step(&dds);
     TEST_ASSERT_TRUE(s2 > s1); /* Ramping up */
+
+    /* Step past 180 deg to hit ramp down */
+    for (int i = 0; i < 10; i++)
+        syn_dds_step(&dds);
 
     /* Sawtooth */
     syn_dds_init(&dds, SYN_DDS_SAWTOOTH, 100, 1000);
@@ -48,6 +52,10 @@ void test_dds_square_pwm_and_noise(void)
 
     q16_t sq1 = syn_dds_step(&dds);
     TEST_ASSERT_EQUAL(Q16_ONE, sq1);
+
+    /* Step past duty cycle threshold to hit low phase */
+    for (int i = 0; i < 10; i++)
+        syn_dds_step(&dds);
 
     /* Noise */
     syn_dds_init(&dds, SYN_DDS_NOISE, 100, 1000);

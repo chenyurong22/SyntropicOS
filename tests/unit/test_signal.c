@@ -94,6 +94,15 @@ static void test_signal_wrapped_stats(void)
     /* variance: mean=45, diffs: -15,-5,5,15 → var = (225+25+25+225)/4 = 125 */
     int32_t var = syn_signal_variance_q16(&sig);
     TEST_ASSERT_TRUE(var > 0);
+    TEST_ASSERT_TRUE(syn_signal_rms_q16(&sig) > 0);
+    TEST_ASSERT_EQUAL_INT(30, syn_signal_at(&sig, 0));
+    TEST_ASSERT_TRUE(syn_signal_crest_factor_q16(&sig) > 0);
+
+    /* Negative peak larger magnitude in crest factor (line 267 of syn_signal.c) */
+    syn_signal_clear(&sig);
+    syn_signal_push(&sig, -100);
+    syn_signal_push(&sig, 10);
+    TEST_ASSERT_TRUE(syn_signal_crest_factor_q16(&sig) > 0);
 }
 
 static void test_signal_rms_std_dev(void)
@@ -127,6 +136,7 @@ static void test_signal_edge_cases(void)
     SYN_Signal sig;
     syn_signal_init(&sig, samples, 2);
 
+    TEST_ASSERT_EQUAL_INT(0, syn_signal_peak_to_peak(&sig));
     TEST_ASSERT_EQUAL_INT(0, syn_signal_min(&sig));
     TEST_ASSERT_EQUAL_INT(0, syn_signal_max(&sig));
     TEST_ASSERT_EQUAL_INT(0, syn_signal_latest(&sig));

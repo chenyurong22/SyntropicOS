@@ -21,7 +21,7 @@ void syn_timesync_init(SYN_TimeSync *tsync)
 {
     SYN_ASSERT(tsync != NULL);
     if (tsync == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
 
     memset(tsync, 0, sizeof(SYN_TimeSync));

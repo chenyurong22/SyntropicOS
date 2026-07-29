@@ -78,6 +78,14 @@ static void test_rtc_is_valid_reject_zero_month(void)
 {
     SYN_RTC_DateTime dt = {2024u, 0u, 1u, 0u, 0u, 0u};
     TEST_ASSERT_FALSE(syn_rtc_is_valid(&dt));
+
+    SYN_RTC_DateTime bad_min = {2024u, 1u, 1u, 0u, 60u, 0u};
+    TEST_ASSERT_FALSE(syn_rtc_is_valid(&bad_min));
+
+    SYN_RTC_DateTime bad_sec = {2024u, 1u, 1u, 0u, 0u, 60u};
+    TEST_ASSERT_FALSE(syn_rtc_is_valid(&bad_sec));
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_rtc_set_alarm(NULL));
 }
 
 /* ── test 5: epoch conversion — known values ────────────────────────────── */

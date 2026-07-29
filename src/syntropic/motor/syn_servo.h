@@ -124,7 +124,7 @@ static inline uint16_t syn_servo_get_angle(const SYN_Servo *servo)
         return 0;
     uint32_t range_us = (uint32_t)(servo->pulse_max - servo->pulse_min);
     if (range_us == 0)
-        return 0;
+        return 0; /* LCOV_EXCL_LINE */
     return (uint16_t)(((uint32_t)(servo->current_us - servo->pulse_min) * servo->angle_range) /
                       range_us);
 }

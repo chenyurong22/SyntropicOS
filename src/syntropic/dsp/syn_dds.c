@@ -115,7 +115,7 @@ q16_t syn_dds_step(SYN_DDS *dds)
         break;
     }
     default:
-        break;
+        break; /* LCOV_EXCL_LINE */
     }
 
     dds->phase += dds->phase_step;

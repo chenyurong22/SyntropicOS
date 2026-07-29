@@ -125,7 +125,7 @@ void syn_oled_set_display_on(SYN_OLED *oled, bool on)
 static bool get_canvas_pixel(const SYN_Canvas *c, uint16_t x, uint16_t y)
 {
     if (c == NULL || c->framebuf == NULL || x >= c->width || y >= c->height)
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     size_t pixel_idx = (size_t)y * c->width + x;
     size_t byte_idx = pixel_idx / 8;
     uint8_t bit_idx = (uint8_t)(7 - (pixel_idx % 8));

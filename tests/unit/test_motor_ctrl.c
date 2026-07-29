@@ -1001,6 +1001,38 @@ static void test_motor_ctrl_integrator_anti_windup_clamping(void)
     syn_motor_ctrl_update(&ctrl);
 }
 
+static void test_motor_ctrl_output_and_soft_limit_clamps(void)
+{
+    SYN_MotorCtrl ctrl;
+    SYN_MotorCtrl_Config cfg;
+    memset(&cfg, 0, sizeof(cfg));
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.update_hz = 1000;
+    cfg.output_min = -100;
+    cfg.output_max = 100;
+    cfg.position_min = -50;
+    cfg.position_max = 50;
+
+    syn_motor_ctrl_init(&ctrl, &cfg);
+
+    /* Output clamps */
+    syn_motor_ctrl_set_output(&ctrl, 500);
+    TEST_ASSERT_EQUAL_INT(100, ctrl.total_output);
+
+    syn_motor_ctrl_set_output(&ctrl, -500);
+    TEST_ASSERT_EQUAL_INT(-100, ctrl.total_output);
+
+    /* Soft limit clamps */
+    syn_motor_ctrl_set_position(&ctrl, -200);
+    TEST_ASSERT_EQUAL_INT(-50, ctrl.target_position);
+
+    syn_motor_ctrl_set_position(&ctrl, 200);
+    TEST_ASSERT_EQUAL_INT(50, ctrl.target_position);
+
+    /* Move to with low velocity */
+    syn_motor_ctrl_move_to(&ctrl, 10, 1, 1);
+}
+
 void run_motor_ctrl_tests(void)
 {
     RUN_TEST(test_motor_ctrl);
@@ -1021,4 +1053,5 @@ void run_motor_ctrl_tests(void)
     RUN_TEST(test_motor_ctrl_profile_completion_deactivation);
     RUN_TEST(test_motor_ctrl_feedforward_negative_saturation_swap);
     RUN_TEST(test_motor_ctrl_integrator_anti_windup_clamping);
+    RUN_TEST(test_motor_ctrl_output_and_soft_limit_clamps);
 }

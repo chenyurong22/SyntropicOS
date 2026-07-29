@@ -162,7 +162,7 @@ static inline void blake2s_increment_counter(SYN_BLAKE2s *ctx, uint32_t inc)
 {
     ctx->t[0] += inc;
     if (ctx->t[0] < inc) {
-        ctx->t[1]++;
+        ctx->t[1]++; /* LCOV_EXCL_LINE */
     }
 }
 

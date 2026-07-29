@@ -48,6 +48,10 @@ static void test_joystick_operations(void)
     syn_joystick_feed_adc(&joy, 3800, 2048, false);
     TEST_ASSERT_EQUAL(SYN_JOYSTICK_DIR_RIGHT, syn_joystick_get_dir(&joy));
 
+    /* Extreme min/max ADC values to trigger % clamps */
+    syn_joystick_feed_adc(&joy, 0, 0, false);
+    syn_joystick_feed_adc(&joy, 4095, 4095, false);
+
     syn_joystick_feed_adc(&joy, 200, 2048, false);
     TEST_ASSERT_EQUAL(SYN_JOYSTICK_DIR_LEFT, syn_joystick_get_dir(&joy));
 

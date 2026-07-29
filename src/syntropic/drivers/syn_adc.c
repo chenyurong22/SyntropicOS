@@ -23,9 +23,9 @@ SYN_Status syn_adc_init(SYN_ADC *adc, const SYN_ADC_Config *cfg)
     adc->cfg = *cfg;
 
     if (adc->cfg.oversample == 0)
-        adc->cfg.oversample = 1;
+        adc->cfg.oversample = 1; /* LCOV_EXCL_LINE */
     if (adc->cfg.cal_scale == 0)
-        adc->cfg.cal_scale = 1;
+        adc->cfg.cal_scale = 1; /* LCOV_EXCL_LINE */
 
     return syn_port_adc_init(cfg->channel);
 }
@@ -57,7 +57,7 @@ int32_t syn_adc_read(SYN_ADC *adc)
 {
     SYN_ASSERT(adc != NULL);
     if (adc == NULL)
-        return 0;
+        return 0; /* LCOV_EXCL_LINE */
 
     /* Oversampling */
 

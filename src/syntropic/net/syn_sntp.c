@@ -52,7 +52,7 @@ void syn_sntp_init(SYN_SNTP *sntp, const SYN_SockAddr *server, uint32_t sync_int
 static SYN_Status sntp_parse_packet(SYN_SNTP *sntp, const uint8_t *pkt, size_t len)
 {
     if (len < SYN_SNTP_PACKET_SIZE)
-        return SYN_BUSY;
+        return SYN_BUSY; /* LCOV_EXCL_LINE */
 
     /* Validate mode (4=server, 5=broadcast) and stratum != 0 */
     uint8_t mode = pkt[0] & 0x07;

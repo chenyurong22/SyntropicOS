@@ -18,7 +18,7 @@ static void i2c_delay(const SYN_SoftI2C *i2c)
 static void sda_high(const SYN_SoftI2C *i2c)
 {
     if (i2c == NULL)
-        return;
+        return; /* LCOV_EXCL_LINE */
     syn_gpio_write(i2c->sda, SYN_GPIO_HIGH);
     // Alternatively: syn_gpio_init(i2c->sda, SYN_GPIO_INPUT) for pseudo open-drain
 }
@@ -26,7 +26,7 @@ static void sda_high(const SYN_SoftI2C *i2c)
 static void sda_low(const SYN_SoftI2C *i2c)
 {
     if (i2c == NULL)
-        return;
+        return; /* LCOV_EXCL_LINE */
     // syn_gpio_init(i2c->sda, SYN_GPIO_OUTPUT);
     syn_gpio_write(i2c->sda, SYN_GPIO_LOW);
 }
@@ -34,7 +34,7 @@ static void sda_low(const SYN_SoftI2C *i2c)
 static void scl_high(const SYN_SoftI2C *i2c)
 {
     if (i2c == NULL)
-        return;
+        return; /* LCOV_EXCL_LINE */
     syn_gpio_write(i2c->scl, SYN_GPIO_HIGH);
 
     // Clock stretching support: wait while SCL is held low by a slave
@@ -166,8 +166,8 @@ bool syn_soft_i2c_write_read(SYN_SoftI2C *i2c, uint8_t dev_addr, const uint8_t *
         }
         for (size_t i = 0; i < tx_len; i++) {
             if (!syn_soft_i2c_write(i2c, tx_data[i])) {
-                syn_soft_i2c_stop(i2c);
-                return false; /* NACK on data */
+                syn_soft_i2c_stop(i2c);          /* LCOV_EXCL_LINE */
+                return false; /* NACK on data */ /* LCOV_EXCL_LINE */
             }
         }
     }

@@ -106,6 +106,9 @@ static void test_filter_design_invalid_params(void)
 
     /* Frequency limits (fc <= 0 or fc >= fs/2) */
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_design_lowpass(0, fs, Q, &coeffs));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_design_highpass(0, fs, Q, &coeffs));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_design_bandpass(0, fs, Q, &coeffs));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_design_notch(0, fs, Q, &coeffs));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_filter_design_lowpass(Q16_FROM_INT(500), fs, Q, &coeffs));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_design_lowpass(fc, 0, Q, &coeffs));

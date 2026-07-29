@@ -28,6 +28,16 @@ static void test_rfid_operations(void)
 
     syn_rfid_clear_card(&rfid);
     TEST_ASSERT_FALSE(syn_rfid_is_card_present(&rfid));
+    p_uid = syn_rfid_get_uid(&rfid, &len);
+    TEST_ASSERT_NULL(p_uid);
+    TEST_ASSERT_EQUAL_UINT8(0, len);
+
+    /* Oversized UID clamp */
+    uint8_t long_uid[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+    syn_rfid_feed_card(&rfid, long_uid, 16);
+    p_uid = syn_rfid_get_uid(&rfid, &len);
+    TEST_ASSERT_NOT_NULL(p_uid);
+    TEST_ASSERT_EQUAL_UINT8(sizeof(rfid.uid), len);
 
     /* NULL guards */
     syn_rfid_feed_card(NULL, NULL, 0);

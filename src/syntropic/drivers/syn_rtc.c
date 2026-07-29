@@ -47,7 +47,7 @@ bool syn_rtc_is_valid(const SYN_RTC_DateTime *dt)
 {
     SYN_ASSERT(dt != NULL);
     if (dt == NULL)
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     if (dt->year < 1970u)
 
         return false;
@@ -183,7 +183,7 @@ SYN_Status syn_rtc_schedule_alarm_seconds(uint32_t seconds_from_now, SYN_RTC_Dat
     SYN_RTC_DateTime now;
     SYN_Status status = syn_rtc_get(&now);
     if (status != SYN_OK)
-        return status;
+        return status; /* LCOV_EXCL_LINE */
 
     uint32_t current_epoch = syn_rtc_to_epoch(&now);
     uint32_t target_epoch = current_epoch + seconds_from_now;

@@ -78,6 +78,11 @@ void test_soft_spi_transfer_bulk(void)
     TEST_ASSERT_EQUAL(0, rx[2]);
 
     mock_gpio_read_overrides[PIN_MISO] = -1;
+
+    /* Unassigned CS pin (lines 109 & 117 of syn_soft_spi.c) */
+    spi.cs_pin = (SYN_GPIO_Pin)-1;
+    syn_soft_spi_select(&spi);
+    syn_soft_spi_deselect(&spi);
 }
 
 void run_soft_spi_tests(void)

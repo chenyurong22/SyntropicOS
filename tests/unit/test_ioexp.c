@@ -19,8 +19,9 @@ static void test_ioexp_mcp23017_and_pcf8574(void)
     syn_ioexp_set_pin_mode(&io, 0, SYN_GPIO_OUTPUT);
     syn_ioexp_set_pin_mode(&io, 1, SYN_GPIO_INPUT_PULLUP);
     syn_ioexp_write_pin(&io, 0, SYN_GPIO_HIGH);
-
     TEST_ASSERT_EQUAL(SYN_GPIO_HIGH, syn_ioexp_read_pin(&io, 0));
+    syn_ioexp_write_pin(&io, 0, SYN_GPIO_LOW);
+    TEST_ASSERT_EQUAL(SYN_GPIO_LOW, syn_ioexp_read_pin(&io, 0));
 
     /* MCP23008 Test */
     st = syn_ioexp_init(&io, 0, 1, 0x20, SYN_IOEXP_MCP23008);

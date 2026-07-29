@@ -45,11 +45,19 @@ static void test_keypad_scan(void)
     TEST_ASSERT_EQUAL_INT('1', k);
     TEST_ASSERT_EQUAL_UINT32(1, events);
 
+    TEST_ASSERT_TRUE(syn_keypad_get_key(&kp, NULL)); /* when pressed */
+
     /* Release key */
     mock_gpio_states[2] = 0;
     syn_keypad_scan(&kp);
     TEST_ASSERT_FALSE(syn_keypad_get_key(&kp, &k));
+    TEST_ASSERT_FALSE(syn_keypad_get_key(&kp, NULL)); /* when released */
     TEST_ASSERT_EQUAL_UINT32(2, events);
+
+    /* NULL instance guards */
+    syn_keypad_set_callback(NULL, NULL, NULL);
+    syn_keypad_scan(NULL);
+    TEST_ASSERT_FALSE(syn_keypad_get_key(NULL, &k));
 }
 
 void run_keypad_tests(void)

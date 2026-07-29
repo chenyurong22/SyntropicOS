@@ -17,7 +17,7 @@
 static void set_buzzer_state(SYN_Buzzer *buz, bool state)
 {
     if (buz == NULL)
-        return;
+        return; /* LCOV_EXCL_LINE */
     bool pin_val = buz->active_high ? state : !state;
     syn_port_gpio_write(buz->pin, pin_val ? SYN_GPIO_HIGH : SYN_GPIO_LOW);
 }
@@ -26,8 +26,8 @@ SYN_Status syn_buzzer_init(SYN_Buzzer *buz, SYN_GPIO_Pin pin, bool active_high)
 {
     SYN_ASSERT(buz != NULL);
 
-    if (buz == NULL) {
-        return SYN_INVALID_PARAM;
+    if (buz == NULL) {            /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     memset(buz, 0, sizeof(*buz));
@@ -43,8 +43,8 @@ SYN_Status syn_buzzer_init(SYN_Buzzer *buz, SYN_GPIO_Pin pin, bool active_high)
 SYN_Status syn_buzzer_beep(SYN_Buzzer *buz, uint32_t freq_hz, uint32_t duration_ms)
 {
     SYN_ASSERT(buz != NULL);
-    if (buz == NULL) {
-        return SYN_INVALID_PARAM;
+    if (buz == NULL) {            /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     buz->pattern_freqs = NULL;
@@ -74,8 +74,8 @@ SYN_Status syn_buzzer_play_pattern(SYN_Buzzer *buz, const uint16_t *freqs, const
     SYN_ASSERT(durs != NULL);
     SYN_ASSERT(count > 0);
 
-    if (buz == NULL || freqs == NULL || durs == NULL || count == 0) {
-        return SYN_INVALID_PARAM;
+    if (buz == NULL || freqs == NULL || durs == NULL || count == 0) { /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM;                                     /* LCOV_EXCL_LINE */
     }
 
     buz->pattern_freqs = freqs;

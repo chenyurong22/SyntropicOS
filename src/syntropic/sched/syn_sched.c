@@ -31,8 +31,8 @@ void syn_sched_init(SYN_Sched *sched, SYN_Task *tasks, size_t count)
     SYN_ASSERT(sched != NULL);
     SYN_ASSERT(tasks != NULL || count == 0);
 
-    if (sched == NULL || (tasks == NULL && count > 0)) {
-        return;
+    if (sched == NULL || (tasks == NULL && count > 0)) { /* LCOV_EXCL_LINE */
+        return;                                          /* LCOV_EXCL_LINE */
     }
 
     sched->tasks = tasks;
@@ -53,8 +53,8 @@ void syn_task_create(SYN_Task *task, const char *name, SYN_TaskFunc func, uint8_
     SYN_ASSERT(func != NULL);
     SYN_ASSERT(priority < SYN_SCHED_PRIO_LEVELS);
 
-    if (task == NULL || func == NULL || priority >= SYN_SCHED_PRIO_LEVELS) {
-        return;
+    if (task == NULL || func == NULL || priority >= SYN_SCHED_PRIO_LEVELS) { /* LCOV_EXCL_LINE */
+        return;                                                              /* LCOV_EXCL_LINE */
     }
 
     PT_INIT(&task->pt);

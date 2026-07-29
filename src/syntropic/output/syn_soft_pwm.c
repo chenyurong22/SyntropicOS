@@ -20,8 +20,8 @@ void syn_soft_pwm_init(SYN_SoftPWM *pwm, SYN_GPIO_Pin pin, uint16_t resolution)
     SYN_ASSERT(pwm != NULL);
     SYN_ASSERT(resolution > 0);
 
-    if (pwm == NULL || resolution == 0) {
-        return;
+    if (pwm == NULL || resolution == 0) { /* LCOV_EXCL_LINE */
+        return;                           /* LCOV_EXCL_LINE */
     }
 
     memset(pwm, 0, sizeof(*pwm));
@@ -37,8 +37,8 @@ void syn_soft_pwm_init(SYN_SoftPWM *pwm, SYN_GPIO_Pin pin, uint16_t resolution)
 void syn_soft_pwm_set_duty(SYN_SoftPWM *pwm, uint16_t duty)
 {
     SYN_ASSERT(pwm != NULL);
-    if (pwm == NULL) {
-        return;
+    if (pwm == NULL) { /* LCOV_EXCL_LINE */
+        return;        /* LCOV_EXCL_LINE */
     }
 
     if (duty > pwm->resolution) {
@@ -50,8 +50,8 @@ void syn_soft_pwm_set_duty(SYN_SoftPWM *pwm, uint16_t duty)
 void syn_soft_pwm_set_percent(SYN_SoftPWM *pwm, uint8_t percent)
 {
     SYN_ASSERT(pwm != NULL);
-    if (pwm == NULL) {
-        return;
+    if (pwm == NULL) { /* LCOV_EXCL_LINE */
+        return;        /* LCOV_EXCL_LINE */
     }
 
     if (percent > 100)

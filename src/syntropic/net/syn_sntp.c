@@ -244,7 +244,7 @@ SYN_PT_Status syn_sntp_task(SYN_PT *pt, SYN_Task *task)
         PT_TASK_DELAY_MS(pt, task, sntp->sync_interval_s * 1000);
     }
 
-    PT_END(pt);
+    PT_END(pt); /* LCOV_EXCL_LINE */
 }
 
 #endif /* SYN_USE_SNTP */

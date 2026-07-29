@@ -278,6 +278,33 @@ static void test_router_register_full(void)
     TEST_ASSERT_TRUE(syn_router_register(&rtr, 0x02, rt_handler, NULL));
     /* Third registration exceeds capacity */
     TEST_ASSERT_FALSE(syn_router_register(&rtr, 0x03, rt_handler, NULL));
+
+    /* Test deserialize oversized payload length > SYN_ROUTER_MAX_PAYLOAD (line 62) */
+    uint8_t over_len_buf[SYN_ROUTER_HEADER_SIZE + 10] = {0x02, 0x01, 0x10, 0x01, 0x00, 250};
+    rt_rx_len = sizeof(over_len_buf);
+    memcpy(rt_rx_buf, over_len_buf, rt_rx_len);
+    rt_rx_rdy = true;
+    syn_router_poll(&rtr);
+
+    /* Test deserialize truncated payload len < header + pkt->len (line 64) */
+    uint8_t trunc_payload_buf[SYN_ROUTER_HEADER_SIZE + 2] = {0x02, 0x01, 0x10, 0x01, 0x00, 10};
+    rt_rx_len = sizeof(trunc_payload_buf);
+    memcpy(rt_rx_buf, trunc_payload_buf, rt_rx_len);
+    rt_rx_rdy = true;
+    syn_router_poll(&rtr);
+
+    /* Test sending ACK-required packet when pending table is NULL (lines 105 & 130) */
+    /* Reliable send when pending table is NULL (lines 267-269) */
+    uint8_t d[3] = {1, 2, 3};
+    TEST_ASSERT_TRUE(syn_router_send(&rtr, 0x02, 0x10, d, 3, true));
+
+    /* Receive ACK when pending table is NULL (line 105) */
+    uint8_t ack_pkt[SYN_ROUTER_HEADER_SIZE] = {0x02, 0x01, SYN_MSG_ACK, 0x01, SYN_PKT_FLAG_IS_ACK,
+                                               0};
+    rt_rx_len = sizeof(ack_pkt);
+    memcpy(rt_rx_buf, ack_pkt, rt_rx_len);
+    rt_rx_rdy = true;
+    syn_router_poll(&rtr);
 }
 
 /* ── Test runner ─────────────────────────────────────────────────────── */

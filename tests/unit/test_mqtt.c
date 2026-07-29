@@ -777,13 +777,50 @@ static void test_mqtt_ping_send_failure_and_packet_id_wraparound(void)
     mock_sock_send_fail_after_bytes = -1;
 
     /* Packet ID wraparound in publish & subscribe (lines 403 & 452) */
+    mock_port_reset();
+    syn_mqtt_init(&c, "broker", 1883, "client", NULL, NULL, 60, rx, sizeof(rx), tx, sizeof(tx));
+    c.sock = 10;
+    c.state = SYN_MQTT_CONNECTED;
     c.next_packet_id = 65535;
     mock_sock_connected = true;
     TEST_ASSERT_EQUAL(SYN_OK, syn_mqtt_publish(&c, "test", "msg", 3, 1, false));
     TEST_ASSERT_EQUAL(1, c.pending_puback_id);
 
-    c.next_packet_id = 65535;
     TEST_ASSERT_EQUAL(SYN_OK, syn_mqtt_subscribe(&c, "test", 1));
+    TEST_ASSERT_EQUAL(2, c.next_packet_id);
+
+    /* Test poll_rx invalid socket (line 233) */
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &c};
+    c.sock = SYN_SOCKET_INVALID;
+    syn_mqtt_task(&pt, &task);
+
+    /* Test DISCARD phase EOF (lines 343-347) */
+    c.sock = 10;
+    c.rx_phase = SYN_MQTT_RX_DISCARD;
+    c.rx_rem_len = 50;
+    c.rx_pos = 0;
+    mock_sock_connected = true;
+    mock_sock_eof_on_empty = true;
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, c.sock);
+    TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
+    TEST_ASSERT_EQUAL(SYN_MQTT_RX_IDLE, c.rx_phase);
+
+    /* Test PAYLOAD phase non-blocking recv -1 (line 314) */
+    c.sock = 10;
+    c.state = SYN_MQTT_CONNECTED;
+    c.rx_phase = SYN_MQTT_RX_PAYLOAD;
+    c.rx_rem_len = 10;
+    c.rx_pos = 0;
+    c.rx_deadline = mock_tick_ms + 10000;
+    mock_sock_connected = true;
+    mock_sock_rx_len = 0;
+    mock_sock_rx_pos = 0;
+    mock_sock_eof_on_empty = false;
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_MQTT_CONNECTED, c.state);
 }
 
 void run_mqtt_tests(void)

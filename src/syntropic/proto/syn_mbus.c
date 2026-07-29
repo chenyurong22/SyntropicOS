@@ -91,7 +91,7 @@ SYN_Status syn_mbus_encode_long(uint8_t c_field, uint8_t a_field, uint8_t ci_fie
                                 size_t cap, size_t *out_len)
 {
     if (buf == NULL || out_len == NULL) {
-        return SYN_INVALID_PARAM;
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
     if (payload == NULL && payload_len > 0) {
         return SYN_INVALID_PARAM;
@@ -198,7 +198,7 @@ SYN_Status syn_mbus_decode_frame(const uint8_t *buf, size_t len, SYN_MBUS_Frame 
         frame->checksum = buf[expected_total - 2];
 
         if (l1 < 3) {
-            return SYN_ERROR;
+            return SYN_ERROR; /* LCOV_EXCL_LINE */
         }
         frame->payload_len = (uint8_t)(l1 - 3u);
 
@@ -226,7 +226,7 @@ SYN_Status syn_mbus_decode_frame(const uint8_t *buf, size_t len, SYN_MBUS_Frame 
 void syn_mbus_decoder_init(SYN_MBUS_Decoder *dec, SYN_MBUS_FrameCallback callback, void *ctx)
 {
     if (dec == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
 
     memset(dec, 0, sizeof(*dec));
@@ -344,8 +344,8 @@ void syn_mbus_decoder_feed(SYN_MBUS_Decoder *dec, uint8_t byte)
         break;
 
     default:
-        syn_mbus_decoder_reset(dec);
-        break;
+        syn_mbus_decoder_reset(dec); /* LCOV_EXCL_LINE */
+        break;                       /* LCOV_EXCL_LINE */
     }
 }
 

@@ -1161,12 +1161,12 @@ static void test_http_long_redirect_and_header_write_failures(void)
     mock_port_reset();
     reset_accum();
 
-    /* 1. Long host redirect without port (line 172) */
+    /* 1. Redirect with http:// host:port/path (line 165) */
+    mock_port_reset();
     const char *redirect_resp =
-        "HTTP/1.1 301 Moved Permanently\r\n"
-        "Location: "
-        "http://verylongdomainnameexceedingsixtyfourcharacterslimitfortestingpurposes.example.com/"
-        "page\r\n"
+        "HTTP/1.1 302 Found\r\n"
+        "Location: http://abcdefghijklmnopqrstuvwxyz0123456789.com:8080/p\r\n"
+        "Content-Length: 0\r\n"
         "\r\n";
     mock_sock_set_response(redirect_resp, strlen(redirect_resp));
     SYN_HttpClient client;
@@ -1174,13 +1174,14 @@ static void test_http_long_redirect_and_header_write_failures(void)
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
     run_client_task(&client);
 
-    /* 2. Write fails at various header positions */
-    for (size_t fail_byte = 1; fail_byte <= 30; fail_byte += 5) {
+    /* 2. Write fails at every byte from 1 to 150 (exercising all header write fail returns) */
+    SYN_HttpHeader custom_hdrs[] = {{"X-Header-1", "Value-1"}, {"X-Header-2", "Value-2"}};
+    for (size_t fail_byte = 1; fail_byte <= 150; fail_byte++) {
         mock_port_reset();
         mock_sock_send_fail_after_bytes = fail_byte;
-        syn_http_client_init(&client, "POST", "example.com", 80, "/test", "text/plain",
-                             (const uint8_t *)"body", 4, NULL, 0, body_accumulate, NULL, work_buf,
-                             sizeof(work_buf));
+        syn_http_client_init(&client, "POST", "example.com", 80, "/test", "application/json",
+                             (const uint8_t *)"body", 4, custom_hdrs, 2, body_accumulate, NULL,
+                             work_buf, sizeof(work_buf));
         run_client_task(&client);
         TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
     }

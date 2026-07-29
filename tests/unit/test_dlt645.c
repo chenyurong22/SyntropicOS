@@ -229,15 +229,15 @@ static void test_dlt645_additional_error_cases(void)
 
     /* 6. Oversized payload_bytes > 200 */
     uint8_t huge_datalen[225];
-    memset(huge_datalen, 0x11, sizeof(huge_datalen));
+    memset(huge_datalen, 0x33, sizeof(huge_datalen));
     huge_datalen[0] = 0x68;
     huge_datalen[7] = 0x68;
     huge_datalen[8] = 0x11;
     huge_datalen[9] = 210; /* data_len = 210, payload_bytes = 210 - 4 = 206 > 200 */
-    huge_datalen[223] = syn_dlt645_calc_checksum(huge_datalen, 223);
-    huge_datalen[224] = 0x16;
-    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_dlt645_parse(huge_datalen, sizeof(huge_datalen),
-                                                      SYN_DLT645_VER_2007, &frame));
+    huge_datalen[220] = syn_dlt645_calc_checksum(huge_datalen, 220);
+    huge_datalen[221] = 0x16;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR,
+                          syn_dlt645_parse(huge_datalen, 222, SYN_DLT645_VER_2007, &frame));
 }
 
 void run_dlt645_tests(void)

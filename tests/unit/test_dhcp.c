@@ -198,6 +198,19 @@ void test_dhcp_extended_option_parsing(void)
     offer_pkt[4] = 0xFF;
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_process_packet(&dhcp, NULL, offer_pkt, idx));
 
+    /* Test invalid magic cookie (line 135) */
+    offer_pkt[4] = (uint8_t)(XID >> 24); /* Restore XID */
+    offer_pkt[236] = 0x00;               /* Corrupt magic cookie */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_process_packet(&dhcp, NULL, offer_pkt, idx));
+
+    /* Test build request with non-zero server_ip (lines 111-114) */
+    dhcp.state = SYN_DHCP_STATE_DISCOVER;
+    dhcp.server_ip = 0xC0A80101;
+    uint8_t mac[6] = {1, 2, 3, 4, 5, 6};
+    uint8_t req_b[300];
+    size_t req_l = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_build_request(&dhcp, mac, req_b, &req_l));
+
     /* Truncated options tests */
     uint8_t trunc_pkt[250] = {0};
     trunc_pkt[4] = (uint8_t)(XID >> 24);
@@ -220,12 +233,6 @@ void test_dhcp_extended_option_parsing(void)
     /* Unknown message type (99) with valid length >= 244 */
     trunc_pkt[242] = 99;
     TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, trunc_pkt, 244));
-
-    /* Build request with server_ip == 0 */
-    dhcp.server_ip = 0;
-    uint8_t req_buf[300];
-    size_t req_len = 0;
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_build_request(&dhcp, MAC, req_buf, &req_len));
 
     /* Init with xid == 0 -> default xid 0x12345678UL */
     SYN_DHCP default_xid_dhcp;

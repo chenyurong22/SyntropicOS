@@ -178,6 +178,26 @@ static void test_at_parser_overflow(void)
     }
 
     TEST_ASSERT_EQUAL_INT(SYN_AT_RESP_LINE, resp);
+
+    /* Feed empty line leading \n (line 75) */
+    TEST_ASSERT_EQUAL_INT(SYN_AT_RESP_NONE, syn_at_parser_feed_char(&small_parser, '\n'));
+
+    /* CME ERROR parsing (lines 87-90) */
+    char buf[64];
+    SYN_AtParser p;
+    syn_at_parser_init(&p, buf, sizeof(buf));
+    const char *cme_err = "+CME ERROR: 100\r\n";
+    for (size_t i = 0; cme_err[i] != '\0'; i++) {
+        resp = syn_at_parser_feed_char(&p, cme_err[i]);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_AT_RESP_CME_ERROR, resp);
+    TEST_ASSERT_EQUAL_INT(100, p.cme_error_code);
+
+    /* Stream end returning SYN_AT_RESP_NONE (line 128) */
+    uint8_t dummy_buf[16];
+    SYN_Stream empty_stream;
+    syn_stream_init(&empty_stream, dummy_buf, sizeof(dummy_buf));
+    TEST_ASSERT_EQUAL_INT(SYN_AT_RESP_NONE, syn_at_parser_feed_stream(&p, &empty_stream));
     TEST_ASSERT_EQUAL_STRING("VERYLON", syn_at_parser_get_line(&small_parser));
 }
 

@@ -282,6 +282,31 @@ static void test_j1939_single_frame_rx_and_dm2_encoding(void)
     TEST_ASSERT_EQUAL(6, len);
 }
 
+static void test_j1939_edge_coverage(void)
+{
+    /* 1. DM1 encoding buffer truncation (break in dtc_list loop) */
+    SYN_J1939_DTC dtcs[3] = {{.spn = 100, .fmi = 1, .occurrence_count = 1, .conversion_method = 0},
+                             {.spn = 200, .fmi = 2, .occurrence_count = 1, .conversion_method = 0},
+                             {.spn = 300, .fmi = 3, .occurrence_count = 1, .conversion_method = 0}};
+    uint8_t buf[8];
+    /* Buffer size = 8 fits header (2) + 1 DTC (4) = 6 bytes, breaks on 2nd DTC */
+    size_t len = syn_j1939_encode_dm1(buf, sizeof(buf), dtcs, 3, 0);
+    TEST_ASSERT_EQUAL(6, len);
+
+    /* 2. Active DTC log overflow (max logged DTCs = 16) */
+    SYN_J1939_DTCLog log;
+    syn_j1939_dtc_log_init(&log);
+    for (uint32_t i = 0; i < SYN_J1939_MAX_LOGGED_DTCS; i++) {
+        TEST_ASSERT_EQUAL(SYN_OK, syn_j1939_dtc_add_active(&log, 1000 + i, 1));
+    }
+    /* 17th DTC fails */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_j1939_dtc_add_active(&log, 9999, 1));
+
+    /* 3. Shift elements when clearing active DTC */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_j1939_dtc_clear_active(&log, 1000, 1));
+    TEST_ASSERT_EQUAL(SYN_J1939_MAX_LOGGED_DTCS - 1, log.active_count);
+}
+
 void run_j1939_tests(void)
 {
     RUN_TEST(test_j1939_id_pack_unpack_pdu1_pdu2);
@@ -293,4 +318,5 @@ void run_j1939_tests(void)
     RUN_TEST(test_j1939_dtc_log_manager);
     RUN_TEST(test_j1939_dtc_log_null_checks_and_multi_packet_short_last_frame);
     RUN_TEST(test_j1939_single_frame_rx_and_dm2_encoding);
+    RUN_TEST(test_j1939_edge_coverage);
 }

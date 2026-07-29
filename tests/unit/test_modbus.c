@@ -1013,6 +1013,19 @@ static void test_modbus_ext_error_paths(void)
     /* 8. Diagnostics unsupported subfunction */
     mock_port_reset();
     mb.buf[0] = 1;
+    mb.buf[1] = SYN_MB_FC_WRITE_SINGLE;
+    mb.buf[2] = 0;
+    mb.buf[3] = 0;
+    crc = syn_crc16_modbus(mb.buf, 4);
+    mb.buf[4] = (uint8_t)(crc & 0xFF);
+    mb.buf[5] = (uint8_t)(crc >> 8);
+    mb.rx_len = 6; /* frame_len = 6 < 8 */
+    TEST_ASSERT_TRUE(syn_modbus_process(&mb));
+    TEST_ASSERT_EQUAL_HEX8(0x86, mock_uart_tx_buf[1]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_MB_EX_ILLEGAL_VALUE, mock_uart_tx_buf[2]);
+
+    mock_port_reset();
+    mb.buf[0] = 1;
     mb.buf[1] = SYN_MB_FC_DIAGNOSTICS;
     mb.buf[2] = 0;
     mb.buf[3] = 1;

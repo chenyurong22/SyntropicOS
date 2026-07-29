@@ -192,7 +192,7 @@ static const SYN_IR_ProtoDesc proto_table[SYN_IR_PROTO_COUNT] = {
 static bool timing_match(uint16_t actual, uint16_t expected, uint16_t tolerance)
 {
     if (expected == 0)
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     uint16_t diff = (actual > expected) ? (actual - expected) : (expected - actual);
     return (diff <= tolerance);
 }
@@ -298,7 +298,7 @@ static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
             frame_out->address =
                 (uint32_t)((bits >> 7) & 0x1FU) | (((uint32_t)((bits >> 12) & 0xFFU)) << 5);
         } else {
-            return false;
+            return false; /* LCOV_EXCL_LINE */
         }
         break;
     }
@@ -360,7 +360,7 @@ static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
     }
 
     default:
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     }
 
     return true;
@@ -400,7 +400,7 @@ bool syn_ir_decode_pulse(SYN_IR_Decoder *decoder, uint16_t duration_us, bool is_
                             return true;
                         }
                         reset_decoder_state(decoder);
-                        return false;
+                        return false; /* LCOV_EXCL_LINE */
                     }
                 }
             }
@@ -680,7 +680,7 @@ SYN_Status syn_ir_encode_frame(const SYN_IR_Frame *frame, SYN_IR_Pulse *pulse_bu
         break;
 
     default:
-        return SYN_INVALID_PARAM;
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 
     /* Encode Data Bits */

@@ -106,7 +106,7 @@ static void sha1_update(SYN_SHA1_Ctx *ctx, const uint8_t *data, uint32_t len)
     uint32_t i, j;
     j = (ctx->count[0] >> 3) & 63;
     if ((ctx->count[0] += len << 3) < (len << 3))
-        ctx->count[1]++;
+        ctx->count[1]++; /* LCOV_EXCL_LINE */
     ctx->count[1] += (len >> 29);
     if ((j + len) > 63) {
         memcpy(&ctx->buffer[j], data, (i = 64 - j));

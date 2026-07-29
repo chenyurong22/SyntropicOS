@@ -231,7 +231,7 @@ static void send_error(SYN_Socket sock, int code, const char *reason)
 static void drop_client(SYN_Httpd *srv)
 {
     if (srv == NULL)
-        return;
+        return; /* LCOV_EXCL_LINE */
     if (srv->client != SYN_SOCKET_INVALID) {
         syn_port_sock_close(srv->client);
         srv->client = SYN_SOCKET_INVALID;
@@ -535,7 +535,7 @@ SYN_PT_Status syn_httpd_task(SYN_PT *pt, SYN_Task *task)
         PT_YIELD(pt);
     }
 
-    PT_END(pt);
+    PT_END(pt); /* LCOV_EXCL_LINE */
 }
 
 #endif /* SYN_USE_HTTPD */

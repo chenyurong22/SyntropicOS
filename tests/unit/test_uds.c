@@ -1471,6 +1471,94 @@ static void test_uds_nrc_coverage_sweep_part2(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
 }
 
+static void test_uds_dtc_overflow_and_short_msg_nrcs(void)
+{
+    SYN_UDS_Server server;
+    TEST_ASSERT_TRUE(syn_uds_init(&server));
+
+    /* 1. Register max (32) DTCs and verify 33rd registration fails */
+    for (uint32_t i = 0; i < 32; i++) {
+        TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x100000 + i, 0x09, 0x01));
+    }
+    TEST_ASSERT_FALSE(syn_uds_register_dtc(&server, 0x100099, 0x09, 0x01));
+
+    uint8_t req[16] = {0};
+    uint8_t resp[64] = {0};
+    uint16_t resp_len = 0;
+
+    /* 2. ReadDTCInformation short request (<2 bytes) */
+    req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 1, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 3. ReportNumberByStatusMask short request (<3 bytes) */
+    req[1] = SYN_UDS_DTC_REPORT_NUMBER_BY_STATUS_MASK;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 4. ReportDTCByStatusMask short request (<3 bytes) */
+    req[1] = SYN_UDS_DTC_REPORT_BY_STATUS_MASK;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 5. ReportNumberBySeverityMask short request (<4 bytes) */
+    req[1] = SYN_UDS_DTC_REPORT_NUMBER_BY_SEVERITY_MASK;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 6. ReportDTCBySeverityMask short request (<4 bytes) */
+    req[1] = SYN_UDS_DTC_REPORT_BY_SEVERITY_MASK;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 7. ControlDTCSetting unsupported subfunction */
+    req[0] = SYN_UDS_SID_CONTROL_DTC_SETTING;
+    req[1] = 0x05;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
+
+    /* 8. RequestDownload short request (<3 bytes) */
+    req[0] = SYN_UDS_SID_REQUEST_DOWNLOAD;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 9. TransferData short request (<2 bytes) */
+    req[0] = SYN_UDS_SID_TRANSFER_DATA;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 1, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 10. ReadMemoryByAddress short request (<3 bytes) and header mismatch */
+    server.security_state = SYN_UDS_SECURITY_UNLOCKED;
+    req[0] = SYN_UDS_SID_READ_MEMORY_BY_ADDRESS;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[1] = 0x22; /* 2 bytes addr, 2 bytes size -> total header = 2 + 2 + 2 = 6 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 11. WriteMemoryByAddress short request (<3 bytes) and header mismatch */
+    req[0] = SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[1] = 0x22; /* header = 6, but payload length = 5 (< 6) */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 5, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -1490,4 +1578,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_nrc_coverage_sweep);
     RUN_TEST(test_uds_nrc_coverage_sweep_part2);
     RUN_TEST(test_uds_bounds_and_null_checks);
+    RUN_TEST(test_uds_dtc_overflow_and_short_msg_nrcs);
 }

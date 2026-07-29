@@ -26,7 +26,7 @@ static void canopen_queue_tx(SYN_CANOpenNode *node, uint32_t cob_id, const uint8
                              uint8_t len)
 {
     if (node == NULL) {
-        return;
+        return; /* LCOV_EXCL_LINE */
     }
 
     if (len > sizeof(node->tx_data)) {

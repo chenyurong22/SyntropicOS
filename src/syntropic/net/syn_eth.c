@@ -18,28 +18,22 @@
  * @brief Weak hook to obtain UDP transport instance.
  * @return Pointer to global SYN_UDP instance, or NULL if unavailable.
  */
+/* LCOV_EXCL_START */
 SYN_WEAK SYN_UDP *syn_transport_udp_get_instance(void)
 {
     return NULL;
 }
 
-/**
- * @brief Weak hook so callers can inject ICMP engine instance.
- * @return Pointer to global SYN_ICMP instance, or NULL if unavailable.
- */
 SYN_WEAK struct SYN_ICMP *syn_eth_get_icmp_instance(void)
 {
     return NULL;
 }
 
-/**
- * @brief Weak hook so callers can inject TCP engine instance.
- * @return Pointer to global SYN_TCP instance, or NULL if unavailable.
- */
 SYN_WEAK struct SYN_TCP *syn_eth_get_tcp_instance(void)
 {
     return NULL;
 }
+/* LCOV_EXCL_STOP */
 
 /** Broadcast MAC address (FF:FF:FF:FF:FF:FF) */
 static const uint8_t MAC_BROADCAST[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};

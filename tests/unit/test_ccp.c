@@ -482,6 +482,22 @@ static void test_ccp_null_checks_and_bounds(void)
     cro[3] = 0x80;
     TEST_ASSERT_TRUE(syn_ccp_process_cro(&g_ccp_slave, cro, dto));
     TEST_ASSERT_EQUAL_HEX8(SYN_CCP_ERR_PARAM_OUT_OF_RANGE, dto[1]);
+
+    /* SET_MTA with addr = 0 & mta_num = 0 (line 119) */
+    cro[0] = SYN_CCP_CMD_SET_MTA;
+    cro[2] = 0;    /* mta_num = 0 */
+    cro[3] = 0x55; /* ext */
+    cro[4] = 0;
+    cro[5] = 0;
+    cro[6] = 0;
+    cro[7] = 0; /* addr = 0 */
+    TEST_ASSERT_TRUE(syn_ccp_process_cro(&g_ccp_slave, cro, dto));
+    TEST_ASSERT_EQUAL_HEX8(0x55, g_ccp_slave.mta0_ext);
+
+    /* daq_event when slave disconnected (line 307) */
+    g_ccp_slave.connected = false;
+    uint8_t daq_dto[8], l_idx, o_idx;
+    TEST_ASSERT_FALSE(syn_ccp_service_daq(&g_ccp_slave, 0x01, daq_dto, &l_idx, &o_idx));
 }
 
 void run_ccp_tests(void)

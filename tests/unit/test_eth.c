@@ -26,6 +26,9 @@ void test_eth_generate_mac(void)
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_generate_mac(uid, 12, mac1));
     TEST_ASSERT_EQUAL_UINT8(0x02, mac1[0]); /* Bit 1 set -> Locally Administered MAC */
 
+    /* Null parameter error test */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_generate_mac(NULL, 0, NULL));
+
     /* Deterministic: Same UID produces exact same MAC */
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_generate_mac(uid, 12, mac2));
     TEST_ASSERT_EQUAL_INT(0, memcmp(mac1, mac2, 6));
@@ -204,6 +207,39 @@ void test_eth_runt_and_oversized_frames(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
                           syn_eth_build_frame(&eth, PEER_MAC, SYN_ETHTYPE_IPV4, large_payload, 1510,
                                               large_out, &out_len));
+
+    /* ARP update existing entry (lines 87-89) */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_arp_update(&eth, 0x0A000001, PEER_MAC));
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_arp_update(&eth, 0x0A000001, PEER_MAC));
+
+    /* Process ARP Reply packet (lines 241-242) */
+    uint8_t arp_reply_pkt[60] = {0};
+    memcpy(&arp_reply_pkt[0], MY_MAC, 6);
+    memcpy(&arp_reply_pkt[6], PEER_MAC, 6);
+    arp_reply_pkt[12] = 0x08;
+    arp_reply_pkt[13] = 0x06; /* ARP */
+    arp_reply_pkt[14] = 0x00;
+    arp_reply_pkt[15] = 0x01; /* htype = 1 */
+    arp_reply_pkt[16] = 0x08;
+    arp_reply_pkt[17] = 0x00; /* ptype = 0x0800 */
+    arp_reply_pkt[18] = 6;    /* hlen = 6 */
+    arp_reply_pkt[19] = 4;    /* plen = 4 */
+    arp_reply_pkt[20] = 0x00;
+    arp_reply_pkt[21] = 0x02; /* ARP Reply */
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_eth_process_frame(&eth, arp_reply_pkt, sizeof(arp_reply_pkt), tx, &tx_len));
+    TEST_ASSERT_EQUAL_UINT32(1, eth.arp_replies);
+
+    /* Process UDP packet (lines 249-251) */
+    uint8_t udp_eth_pkt[64] = {0};
+    memcpy(&udp_eth_pkt[0], MY_MAC, 6);
+    memcpy(&udp_eth_pkt[6], PEER_MAC, 6);
+    udp_eth_pkt[12] = 0x08;
+    udp_eth_pkt[13] = 0x00; /* IPv4 */
+    udp_eth_pkt[14] = 0x45;
+    udp_eth_pkt[23] = 17; /* UDP */
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_eth_process_frame(&eth, udp_eth_pkt, sizeof(udp_eth_pkt), tx, &tx_len));
 }
 
 void test_eth_mac_filtering(void)

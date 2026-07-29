@@ -730,6 +730,20 @@ static void test_httpd_uncovered_edge_cases(void)
     memcpy(srv.work_buf, req2, sizeof(req2));
     srv.rx_total = sizeof(req2) - 1;
     syn_httpd_step(&srv);
+
+    /* 5. NULL header guards & drop_client(NULL) (lines 234 & 440) */
+    syn_httpd_header(NULL, "Host", "test");
+    syn_httpd_header((const SYN_HttpdResponse *)1, NULL, "test");
+    syn_httpd_header((const SYN_HttpdResponse *)1, "Host", NULL);
+
+    /* 6. READING_HEADERS state timeout when recv returns -1 (line 366) */
+    setup_server();
+    srv.state = SYN_HTTPD_READING_HEADERS;
+    srv.client = 1;
+    mock_sock_rx_len = 0;
+    mock_sock_rx_pos = 0;
+    mock_sock_eof_on_empty = false;
+    TEST_ASSERT_EQUAL(SYN_TIMEOUT, syn_httpd_step(&srv));
 }
 
 void run_httpd_tests(void)

@@ -414,13 +414,17 @@ static void test_dns_parse_response_error_branches(void)
     uint8_t rx_bad_txid[12] = {0xFF, 0xFF, 0x81, 0x80, 0, 0, 0, 1, 0, 0, 0, 0};
     mock_udp_set_response(rx_bad_txid, sizeof(rx_bad_txid), &from);
     PT_INIT(&pt);
-    syn_dns_resolve_task(&pt, &task);
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 1100;
+    }
 
     /* 2. Answers == 0 (line 107) */
     uint8_t rx_no_answers[12] = {0x00, 0x00, 0x81, 0x80, 0, 1, 0, 0, 0, 0, 0, 0};
     mock_udp_set_response(rx_no_answers, sizeof(rx_no_answers), &from);
     PT_INIT(&pt);
-    syn_dns_resolve_task(&pt, &task);
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 1100;
+    }
 }
 
 static void test_dns_resolve_malformed_qname_and_truncated_records(void)
@@ -438,14 +442,18 @@ static void test_dns_resolve_malformed_qname_and_truncated_records(void)
                                 0,    0,    0x80, 0x01, 0,    0,    0,    0,    0, 0};
     mock_udp_set_response(rx_bad_qname, sizeof(rx_bad_qname), &from);
     PT_INIT(&pt);
-    syn_dns_resolve_task(&pt, &task);
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 1100;
+    }
 
     /* 2. Truncated answer header (< 10 bytes after QNAME) */
     uint8_t rx_trunc_ans[18] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x00, 0x00, 0x01, 0,
                                 0,    0,    0,    0x03, 'f',  'o',  'o',  0x00, 0x01};
     mock_udp_set_response(rx_trunc_ans, sizeof(rx_trunc_ans), &from);
     PT_INIT(&pt);
-    syn_dns_resolve_task(&pt, &task);
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 1100;
+    }
 }
 
 static void test_dns_mdns_match_qname_local_boundary_mismatches(void)
@@ -498,7 +506,9 @@ static void test_dns_resolve_null_params(void)
     SYN_Task task;
     memset(&task, 0, sizeof(task));
     task.user_data = &res;
-    syn_dns_resolve_task(&pt, &task);
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 1100;
+    }
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, res.status);
 }
 
@@ -567,6 +577,50 @@ static void test_dns_mdns_init_open_failure_and_truncated_records(void)
     mock_udp_set_response(bad_local, sizeof(bad_local), &from);
     PT_INIT(&pt);
     task.user_data = &mdns2;
+    syn_mdns_task(&pt, &task);
+
+    /* 6. Truncated answer QNAME (parse_qname fails in answer loop, line 120) */
+    uint8_t bad_ans_qname[] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
+                               0x00,
+                               /* Question: "a.com" */
+                               1, 'a', 3, 'c', 'o', 'm', 0, 0x00, 0x01, 0x00, 0x01,
+                               /* Answer: invalid QNAME label length pointing out of bounds */
+                               0x3F, 'x'};
+    mock_udp_set_response(bad_ans_qname, sizeof(bad_ans_qname), NULL);
+    PT_INIT(&pt);
+    task.user_data = &r;
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 10;
+    }
+    TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
+
+    /* 7. mDNS match_qname_local length & terminator mismatches (lines 259, 267, 269, 274, 279,
+     * 286) */
+    /* Truncated hostname label payload */
+    uint8_t mdns_trunc_host[] = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 5, 'm', 'y'};
+    mock_udp_set_response(mdns_trunc_host, sizeof(mdns_trunc_host), &from);
+    PT_INIT(&pt);
+    syn_mdns_task(&pt, &task);
+
+    /* Mismatched hostname characters */
+    uint8_t mdns_wrong_host[] = {0,   0,   0,   0, 0,   1,   0,   0,   0,   0, 0, 0, 5, 'x', 'y',
+                                 'd', 'e', 'v', 5, 'l', 'o', 'c', 'a', 'l', 0, 0, 1, 0, 1};
+    mock_udp_set_response(mdns_wrong_host, sizeof(mdns_wrong_host), &from);
+    PT_INIT(&pt);
+    syn_mdns_task(&pt, &task);
+
+    /* Truncated local label payload */
+    uint8_t mdns_trunc_local[] = {0, 0, 0,   0,   0,   1,   0,   0, 0,   0,  0,
+                                  0, 5, 'm', 'y', 'd', 'e', 'v', 5, 'l', 'o'};
+    mock_udp_set_response(mdns_trunc_local, sizeof(mdns_trunc_local), &from);
+    PT_INIT(&pt);
+    syn_mdns_task(&pt, &task);
+
+    /* Non-zero terminator byte */
+    uint8_t mdns_bad_term[] = {0,   0,   0,   0, 0,   1,   0,   0,   0,   0, 0, 0, 5, 'm', 'y',
+                               'd', 'e', 'v', 5, 'l', 'o', 'c', 'a', 'l', 1, 0, 1, 0, 1};
+    mock_udp_set_response(mdns_bad_term, sizeof(mdns_bad_term), &from);
+    PT_INIT(&pt);
     syn_mdns_task(&pt, &task);
 }
 

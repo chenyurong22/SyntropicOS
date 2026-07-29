@@ -401,7 +401,7 @@ static void test_websocket_uncovered_edge_cases(void)
     mock_sock_connected = true;
 
     /* 1. Header line without \n (line 215) */
-    const char *no_newline_headers = "Sec-WebSocket-Key: key_no_newline";
+    const char *no_newline_headers = "X-Foo: Bar\rSec-WebSocket-Key: key_no_newline";
     SYN_HttpdResponse resp;
     resp.sock = 11;
     resp.buf = (uint8_t *)no_newline_headers;
@@ -417,9 +417,18 @@ static void test_websocket_uncovered_edge_cases(void)
 
     SYN_WebsocketSession ws;
     SYN_Status st = syn_websocket_upgrade(&req, &resp, &ws, on_ws_message, NULL);
-    TEST_ASSERT_EQUAL(SYN_OK, st);
+    TEST_ASSERT_EQUAL(SYN_ERROR, st);
 
-    /* 2. send when not connected (line 275) */
+    /* 2. Multi-block SHA-1 update (> 128 bytes, lines 109 & 115) */
+    const char *long_key = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                           "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                           "123456789012345678901234567890";
+    char long_hdr[300];
+    snprintf(long_hdr, sizeof(long_hdr), "Sec-WebSocket-Key: %s\r\n\r\n", long_key);
+    req.headers = long_hdr;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_websocket_upgrade(&req, &resp, &ws, on_ws_message, NULL));
+
+    /* 3. send when not connected (line 275) */
     ws.state = SYN_WS_STATE_CLOSED;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_websocket_send(&ws, 0x01, "test", 4));
 }

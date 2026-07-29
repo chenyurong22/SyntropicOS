@@ -398,9 +398,11 @@ SYN_Status syn_mqtt_publish(SYN_MqttClient *client, const char *topic, const voi
 
     uint16_t pkt_id = 0;
     if (qos > 0) {
-        pkt_id = ++client->next_packet_id;
-        if (pkt_id == 0)
-            pkt_id = 1;
+        client->next_packet_id++;
+        if (client->next_packet_id == 0) {
+            client->next_packet_id = 1;
+        }
+        pkt_id = client->next_packet_id;
         client->pending_puback_id = pkt_id;
         client->pending_puback_ms = syn_port_get_tick_ms();
     }
@@ -447,9 +449,11 @@ SYN_Status syn_mqtt_subscribe(SYN_MqttClient *client, const char *topic, uint8_t
     if (client->state != SYN_MQTT_CONNECTED)
         return SYN_ERROR;
 
-    uint16_t pkt_id = ++client->next_packet_id;
-    if (pkt_id == 0)
-        pkt_id = 1;
+    client->next_packet_id++;
+    if (client->next_packet_id == 0) {
+        client->next_packet_id = 1;
+    }
+    uint16_t pkt_id = client->next_packet_id;
 
     uint32_t rem_len =
         2u + 2u + (uint32_t)strlen(topic) + 1u; /* packet id, topic len, topic, qos */

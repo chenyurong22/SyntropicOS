@@ -584,6 +584,16 @@ static void test_canopen_uncovered_edge_cases(void)
     /* 7. Unknown COB-ID */
     uint8_t dummy[8] = {0};
     TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x123U, dummy, 8));
+
+    /* 8. Segmented upload segment request when entry disappears (lines 381-383) */
+    node.sdo_session.state = SYN_CANOPEN_SDO_SEG_UPLOAD;
+    node.sdo_session.index = 0x9999U; /* Non-existent index */
+    node.sdo_session.subindex = 0x00U;
+    node.sdo_session.toggle = 0;
+    uint8_t seg_up_req[8] = {0x60U, 0, 0, 0, 0, 0, 0, 0};
+    syn_canopen_process_rx(&node, 0x605U, seg_up_req, 8);
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]);
 }
 
 void run_canopen_tests(void)

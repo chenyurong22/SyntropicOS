@@ -450,6 +450,24 @@ static void test_dali_extended_coverage(void)
     TEST_ASSERT_FALSE(syn_dali_decode_backward(0, NULL));
     TEST_ASSERT_EQUAL(0, syn_dali_manchester_encode_byte(0, NULL));
     TEST_ASSERT_FALSE(syn_dali_manchester_decode_byte(NULL, &resp_data));
+
+    /* Direct arc power control level > max_level clamp (line 143) */
+    SYN_DALI_SlaveState clamp_slave;
+    SYN_DALI_SlaveConfig clamp_cfg = {.short_address = 25, .max_level = 200};
+    syn_dali_slave_init(&clamp_slave, &clamp_cfg);
+    syn_dali_decode_forward(syn_dali_encode_forward(0xFE, 250), &req);
+    syn_dali_slave_process(&clamp_slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_EQUAL(200, clamp_slave.actual_level);
+
+    /* QUERY STATUS with control gear failure, lamp failure, unassigned address (lines 263, 265,
+     * 269) */
+    unassigned_slave.control_gear_failure = true;
+    unassigned_slave.lamp_failure = true;
+    unassigned_slave.lamp_on = true;
+    syn_dali_decode_forward(syn_dali_encode_forward(0xFF, SYN_DALI_CMD_QUERY_STATUS), &req);
+    syn_dali_slave_process(&unassigned_slave, &req, &resp_data, &has_resp);
+    TEST_ASSERT_TRUE(has_resp);
+    TEST_ASSERT_EQUAL_HEX8((1U << 0) | (1U << 1) | (1U << 2) | (1U << 6), resp_data);
 }
 
 void run_dali_tests(void)

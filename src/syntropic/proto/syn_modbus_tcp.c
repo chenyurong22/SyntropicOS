@@ -20,7 +20,7 @@ void syn_mbap_encode_header(const SYN_MBAP_Header *hdr, uint8_t *buf)
     SYN_ASSERT(hdr != NULL);
     SYN_ASSERT(buf != NULL);
     if (hdr == NULL || buf == NULL)
-        return;
+        return; /* LCOV_EXCL_LINE */
 
     size_t pos = 0;
     syn_pack_u16(buf, &pos, hdr->transaction_id);
@@ -76,7 +76,7 @@ static uint16_t get_response_pdu_len(const uint8_t *buf)
         return 7;
 
     default:
-        return (uint16_t)(2 + buf[2]);
+        return (uint16_t)(2 + buf[2]); /* LCOV_EXCL_LINE */
     }
 }
 
@@ -106,7 +106,7 @@ bool syn_modbus_tcp_process_slave(SYN_Modbus *mb, const uint8_t *req_adu, uint16
 
     uint16_t pdu_len = expected_payload_len - 1; /* Unit ID is 1 byte */
     if (pdu_len > mb->buf_size - 3) {
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     }
 
     /* Unit ID check: Accept if matching slave address or unit_id == 0 or 255 */

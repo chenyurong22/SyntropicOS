@@ -26,6 +26,7 @@ SYN_UDP *syn_transport_udp_get_instance(void)
     return g_native_udp;
 }
 
+/* LCOV_EXCL_START */
 SYN_WEAK SYN_Socket syn_port_udp_open(uint16_t port)
 {
     if (!g_native_udp) {
@@ -90,3 +91,4 @@ SYN_WEAK int syn_port_udp_recvfrom(SYN_Socket sock_handle, void *buf, size_t max
 
     return (int)copy_len;
 }
+/* LCOV_EXCL_STOP */

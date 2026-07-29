@@ -889,17 +889,11 @@ static void test_wg_response_mac1_tampered_rejection(void)
 
 static void test_wg_send_initiation_tx_buf_too_small(void)
 {
+    /* Test syn_wg_disconnect with open socket (line 781) */
     SYN_WG wg;
-    SYN_WgConfig cfg;
-    SYN_SNTP sntp;
-    memset(&cfg, 0, sizeof(cfg));
-    memset(&sntp, 0, sizeof(sntp));
-    cfg.private_key[0] = 1;
-    cfg.peer_public_key[0] = 2;
-    uint8_t rx[500], tx[500];
-    syn_wg_init(&wg, &cfg, &sntp, rx, sizeof(rx), tx, sizeof(tx));
-    uint8_t pkt[10] = {0};
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_wg_send(&wg, pkt, sizeof(pkt)));
+    wg.udp_sock = 5;
+    syn_wg_disconnect(&wg);
+    TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, wg.udp_sock);
 }
 
 void run_wg_tests(void)

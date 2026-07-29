@@ -68,23 +68,61 @@ void test_mavlink_null_and_crc_error(void)
 
 void test_mavlink_msg_ids_and_invalid_state_fallback(void)
 {
-    /* Test encode_msg with sys_status, global_pos_int, vfr_hud, and unknown msg_id */
+    /* Test encode_msg with sys_status, global_pos_int, vfr_hud, heartbeat, and unknown msg_id */
     uint8_t payload[8] = {0};
     uint8_t buf[32];
     size_t out_len = 0;
+    SYN_MAVLINK_Parser parser;
+    SYN_MAVLINK_Frame frame;
 
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mavlink_encode_msg(1, 1, 1, SYN_MAVLINK_MSG_SYS_STATUS, 124,
+    /* 1. Heartbeat (msg_id 0, crc_extra 50) */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mavlink_encode_msg(1, 1, 1, SYN_MAVLINK_MSG_HEARTBEAT, 50,
+                                                         payload, 9, buf, &out_len));
+    syn_mavlink_init(&parser);
+    for (size_t i = 0; i < out_len - 1; i++) {
+        syn_mavlink_parse_byte(&parser, buf[i], NULL);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mavlink_parse_byte(&parser, buf[out_len - 1], &frame));
+    TEST_ASSERT_EQUAL_UINT32(SYN_MAVLINK_MSG_HEARTBEAT, frame.msg_id);
+
+    /* 2. Sys Status (msg_id 1, crc_extra 124) */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mavlink_encode_msg(1, 1, 2, SYN_MAVLINK_MSG_SYS_STATUS, 124,
                                                          payload, 8, buf, &out_len));
+    syn_mavlink_init(&parser);
+    for (size_t i = 0; i < out_len - 1; i++) {
+        syn_mavlink_parse_byte(&parser, buf[i], NULL);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mavlink_parse_byte(&parser, buf[out_len - 1], &frame));
+
+    /* 3. Global Position Int (msg_id 33, crc_extra 96) */
     TEST_ASSERT_EQUAL_INT(SYN_OK,
-                          syn_mavlink_encode_msg(1, 1, 2, SYN_MAVLINK_MSG_GLOBAL_POSITION_INT, 96,
+                          syn_mavlink_encode_msg(1, 1, 3, SYN_MAVLINK_MSG_GLOBAL_POSITION_INT, 96,
                                                  payload, 8, buf, &out_len));
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mavlink_encode_msg(1, 1, 3, SYN_MAVLINK_MSG_VFR_HUD, 20,
+    syn_mavlink_init(&parser);
+    for (size_t i = 0; i < out_len - 1; i++) {
+        syn_mavlink_parse_byte(&parser, buf[i], NULL);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mavlink_parse_byte(&parser, buf[out_len - 1], &frame));
+
+    /* 4. VFR HUD (msg_id 74, crc_extra 20) */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mavlink_encode_msg(1, 1, 4, SYN_MAVLINK_MSG_VFR_HUD, 20,
                                                          payload, 8, buf, &out_len));
-    TEST_ASSERT_EQUAL_INT(SYN_OK,
-                          syn_mavlink_encode_msg(1, 1, 4, 99999, 0, payload, 8, buf, &out_len));
+    syn_mavlink_init(&parser);
+    for (size_t i = 0; i < out_len - 1; i++) {
+        syn_mavlink_parse_byte(&parser, buf[i], NULL);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mavlink_parse_byte(&parser, buf[out_len - 1], &frame));
+
+    /* 5. Zero-payload frame */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mavlink_encode_msg(1, 1, 5, 999, 0, NULL, 0, buf, &out_len));
+    syn_mavlink_init(&parser);
+    for (size_t i = 0; i < out_len - 1; i++) {
+        syn_mavlink_parse_byte(&parser, buf[i], NULL);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_mavlink_parse_byte(&parser, buf[out_len - 1], &frame));
+    TEST_ASSERT_EQUAL_UINT8(0, frame.payload_len);
 
     /* Test parser fallback when state is invalid */
-    SYN_MAVLINK_Parser parser;
     syn_mavlink_init(&parser);
     parser.state = 255; /* Out of range state */
     TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_mavlink_parse_byte(&parser, 0, NULL));

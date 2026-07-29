@@ -681,6 +681,155 @@ static void test_uds_extended_sids(void)
     TEST_ASSERT_EQUAL_HEX8(0x77, resp[0]);
 }
 
+static bool mock_memory_cb(bool is_write, uint32_t address, uint32_t size, uint8_t *data_buf,
+                           void *ctx)
+{
+    (void)address;
+    (void)size;
+    (void)ctx;
+    if (is_write) {
+        data_buf[0] = 0xAA;
+    } else {
+        data_buf[0] = 0xBB;
+    }
+    return true;
+}
+
+static bool mock_auth_cb(uint8_t subfunction, const uint8_t *in_data, uint16_t in_len,
+                         uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len, void *ctx)
+{
+    (void)subfunction;
+    (void)in_data;
+    (void)in_len;
+    (void)max_out_len;
+    (void)ctx;
+    out_buf[0] = 0x99;
+    *out_len = 1;
+    return true;
+}
+
+static bool mock_file_transfer_cb(uint8_t mode, const char *file_path, uint16_t path_len,
+                                  uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len,
+                                  void *ctx)
+{
+    (void)mode;
+    (void)file_path;
+    (void)path_len;
+    (void)max_out_len;
+    (void)ctx;
+    out_buf[0] = 0x10;
+    *out_len = 1;
+    return true;
+}
+
+static void test_uds_complete_27_sids(void)
+{
+    syn_uds_init(&g_uds);
+    uint8_t req[32] = {0};
+    uint8_t resp[32] = {0};
+    uint16_t resp_len = 0;
+
+    /* 1. Null registration checks */
+    TEST_ASSERT_FALSE(syn_uds_register_memory_handler(NULL, mock_memory_cb, NULL));
+    TEST_ASSERT_FALSE(syn_uds_register_auth_handler(NULL, mock_auth_cb, NULL));
+    TEST_ASSERT_FALSE(syn_uds_register_file_transfer(NULL, mock_file_transfer_cb, NULL));
+
+    TEST_ASSERT_TRUE(syn_uds_register_memory_handler(&g_uds, mock_memory_cb, NULL));
+    TEST_ASSERT_TRUE(syn_uds_register_auth_handler(&g_uds, mock_auth_cb, NULL));
+    TEST_ASSERT_TRUE(syn_uds_register_file_transfer(&g_uds, mock_file_transfer_cb, NULL));
+
+    /* 2. ReadMemoryByAddress (0x23) */
+    req[0] = SYN_UDS_SID_READ_MEMORY_BY_ADDRESS;
+    req[1] = 0x12; /* 2-byte addr, 1-byte size */
+    req[2] = 0x10;
+    req[3] = 0x00;
+    req[4] = 0x04;
+    /* Locked state -> NRC 0x33 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 5, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp[2]);
+
+    g_uds.security_state = SYN_UDS_SECURITY_UNLOCKED;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 5, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x63, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0xBB, resp[1]);
+
+    /* 3. ReadScalingDataByIdentifier (0x24) */
+    req[0] = SYN_UDS_SID_READ_SCALING_DATA_BY_IDENTIFIER;
+    req[1] = 0xF1;
+    req[2] = 0x90;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x64, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0xF1, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x90, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[3]);
+
+    /* 4. Authentication (0x29) */
+    req[0] = SYN_UDS_SID_AUTHENTICATION;
+    req[1] = 0x00; /* deAuthenticate */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x69, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x99, resp[2]);
+
+    /* 5. ReadDataByPeriodicIdentifier (0x2A) */
+    req[0] = SYN_UDS_SID_READ_DATA_BY_PERIODIC_IDENTIFIER;
+    req[1] = 0x01; /* Fast mode */
+    req[2] = 0xE0; /* Periodic DID */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x6A, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0xE0, resp[1]);
+
+    /* 6. DynamicallyDefineDataIdentifier (0x2C) */
+    req[0] = SYN_UDS_SID_DYNAMICALLY_DEFINE_DATA_IDENTIFIER;
+    req[1] = 0x01; /* defineByIdentifier */
+    req[2] = 0xF2;
+    req[3] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x6C, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0xF2, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, resp[3]);
+
+    /* 7. InputOutputControlByIdentifier (0x2F) */
+    req[0] = SYN_UDS_SID_INPUT_OUTPUT_CONTROL_BY_IDENTIFIER;
+    req[1] = 0xF1;
+    req[2] = 0x90;
+    req[3] = 0x03; /* Short term adjustment */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x6F, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0xF1, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x90, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x03, resp[3]);
+
+    /* 8. RequestFileTransfer (0x38) */
+    req[0] = SYN_UDS_SID_REQUEST_FILE_TRANSFER;
+    req[1] = 0x01; /* AddFile */
+    req[2] = '/';
+    req[3] = 'a';
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x78, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x10, resp[2]);
+
+    /* 9. WriteMemoryByAddress (0x3D) */
+    req[0] = SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS;
+    req[1] = 0x11; /* 1-byte addr, 1-byte size */
+    req[2] = 0x20;
+    req[3] = 0x01;
+    req[4] = 0x55;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 5, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x7D, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x11, resp[1]);
+
+    /* 10. LinkControl (0x87) */
+    req[0] = SYN_UDS_SID_LINK_CONTROL;
+    req[1] = 0x01; /* verifyBaudrateTransitionWithFixedBaudrate */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0xC7, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -690,6 +839,7 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_access_timing_parameter);
     RUN_TEST(test_uds_secured_data_transmission);
     RUN_TEST(test_uds_extended_sids);
+    RUN_TEST(test_uds_complete_27_sids);
     RUN_TEST(test_uds_did_read_write);
     RUN_TEST(test_uds_ecu_reset_routine_tester_present);
     RUN_TEST(test_uds_bounds_and_null_checks);

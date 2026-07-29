@@ -29,19 +29,28 @@ extern "C" {
 #define SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION 0x14U
 #define SYN_UDS_SID_READ_DTC_INFORMATION 0x19U
 #define SYN_UDS_SID_READ_DATA_BY_IDENTIFIER 0x22U
+#define SYN_UDS_SID_READ_MEMORY_BY_ADDRESS 0x23U
+#define SYN_UDS_SID_READ_SCALING_DATA_BY_IDENTIFIER 0x24U
 #define SYN_UDS_SID_SECURITY_ACCESS 0x27U
 #define SYN_UDS_SID_COMMUNICATION_CONTROL 0x28U
+#define SYN_UDS_SID_AUTHENTICATION 0x29U
+#define SYN_UDS_SID_READ_DATA_BY_PERIODIC_IDENTIFIER 0x2AU
+#define SYN_UDS_SID_DYNAMICALLY_DEFINE_DATA_IDENTIFIER 0x2CU
 #define SYN_UDS_SID_WRITE_DATA_BY_IDENTIFIER 0x2EU
+#define SYN_UDS_SID_INPUT_OUTPUT_CONTROL_BY_IDENTIFIER 0x2FU
 #define SYN_UDS_SID_ROUTINE_CONTROL 0x31U
 #define SYN_UDS_SID_REQUEST_DOWNLOAD 0x34U
 #define SYN_UDS_SID_REQUEST_UPLOAD 0x35U
 #define SYN_UDS_SID_TRANSFER_DATA 0x36U
 #define SYN_UDS_SID_REQUEST_TRANSFER_EXIT 0x37U
+#define SYN_UDS_SID_REQUEST_FILE_TRANSFER 0x38U
+#define SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS 0x3DU
 #define SYN_UDS_SID_TESTER_PRESENT 0x3EU
 #define SYN_UDS_SID_ACCESS_TIMING_PARAMETER 0x83U
 #define SYN_UDS_SID_SECURED_DATA_TRANSMISSION 0x84U
 #define SYN_UDS_SID_CONTROL_DTC_SETTING 0x85U
 #define SYN_UDS_SID_RESPONSE_ON_EVENT 0x86U
+#define SYN_UDS_SID_LINK_CONTROL 0x87U
 
 /* UDS Response Identifiers */
 #define SYN_UDS_RESPONSE_NEGATIVE 0x7FU
@@ -112,6 +121,26 @@ typedef bool (*SYN_UDS_SecuredDataHandler)(const uint8_t *in_data, uint16_t in_l
                                            uint16_t *out_len, void *ctx);
 
 /**
+ * @brief ReadMemoryByAddress (0x23) and WriteMemoryByAddress (0x3D) callback function signature.
+ */
+typedef bool (*SYN_UDS_MemoryHandler)(bool is_write, uint32_t address, uint32_t size,
+                                      uint8_t *data_buf, void *ctx);
+
+/**
+ * @brief Authentication (0x29) callback function signature.
+ */
+typedef bool (*SYN_UDS_AuthHandler)(uint8_t subfunction, const uint8_t *in_data, uint16_t in_len,
+                                    uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len,
+                                    void *ctx);
+
+/**
+ * @brief RequestFileTransfer (0x38) callback function signature.
+ */
+typedef bool (*SYN_UDS_FileTransferHandler)(uint8_t mode, const char *file_path, uint16_t path_len,
+                                            uint8_t *out_buf, uint16_t max_out_len,
+                                            uint16_t *out_len, void *ctx);
+
+/**
  * @brief Data Identifier (DID) Registry Entry.
  */
 typedef struct {
@@ -148,14 +177,20 @@ typedef struct {
     uint8_t comm_type;
     SYN_UDS_CommControlHandler comm_control_cb;
     void *comm_control_ctx;
-    uint16_t p2_max_ms;                         /**< Default P2Server_max timing (ms). */
-    uint16_t p2_star_max_10ms;                  /**< Default P2*Server_max timing (10ms units). */
-    uint16_t active_p2_max_ms;                  /**< Active P2Server_max timing (ms). */
-    uint16_t active_p2_star_max_10ms;           /**< Active P2*Server_max timing (10ms units). */
-    SYN_UDS_AccessTimingHandler timing_cb;      /**< AccessTimingParameter callback. */
-    void *timing_ctx;                           /**< Context pointer for timing callback. */
-    SYN_UDS_SecuredDataHandler secured_data_cb; /**< SecuredDataTransmission callback. */
-    void *secured_data_ctx;                     /**< Context pointer for secured data callback. */
+    uint16_t p2_max_ms;                           /**< Default P2Server_max timing (ms). */
+    uint16_t p2_star_max_10ms;                    /**< Default P2*Server_max timing (10ms units). */
+    uint16_t active_p2_max_ms;                    /**< Active P2Server_max timing (ms). */
+    uint16_t active_p2_star_max_10ms;             /**< Active P2*Server_max timing (10ms units). */
+    SYN_UDS_AccessTimingHandler timing_cb;        /**< AccessTimingParameter callback. */
+    void *timing_ctx;                             /**< Context pointer for timing callback. */
+    SYN_UDS_SecuredDataHandler secured_data_cb;   /**< SecuredDataTransmission callback. */
+    void *secured_data_ctx;                       /**< Context pointer for secured data callback. */
+    SYN_UDS_MemoryHandler memory_cb;              /**< Memory (0x23/0x3D) callback. */
+    void *memory_ctx;                             /**< Context pointer for memory callback. */
+    SYN_UDS_AuthHandler auth_cb;                  /**< Authentication (0x29) callback. */
+    void *auth_ctx;                               /**< Context pointer for auth callback. */
+    SYN_UDS_FileTransferHandler file_transfer_cb; /**< File transfer (0x38) callback. */
+    void *file_transfer_ctx; /**< Context pointer for file transfer callback. */
     SYN_UDS_DIDEntry did_table[SYN_UDS_MAX_DIDS];
     uint8_t did_count;
     uint8_t reset_type_requested;
@@ -223,6 +258,38 @@ bool syn_uds_register_access_timing(SYN_UDS_Server *server, SYN_UDS_AccessTiming
  */
 bool syn_uds_register_secured_data(SYN_UDS_Server *server, SYN_UDS_SecuredDataHandler handler,
                                    void *ctx);
+
+/**
+ * @brief Register ReadMemoryByAddress (0x23) and WriteMemoryByAddress (0x3D) handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when memory services are processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_memory_handler(SYN_UDS_Server *server, SYN_UDS_MemoryHandler handler,
+                                     void *ctx);
+
+/**
+ * @brief Register Authentication (0x29) handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when Service 0x29 is processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_auth_handler(SYN_UDS_Server *server, SYN_UDS_AuthHandler handler, void *ctx);
+
+/**
+ * @brief Register RequestFileTransfer (0x38) handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when Service 0x38 is processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_file_transfer(SYN_UDS_Server *server, SYN_UDS_FileTransferHandler handler,
+                                    void *ctx);
 
 /**
  * @brief Process incoming UDS request diagnostic payload and format response.

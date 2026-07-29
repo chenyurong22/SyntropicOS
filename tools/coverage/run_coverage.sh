@@ -8,8 +8,8 @@ cd "${ROOT_DIR}"
 
 echo "=== Cleaning previous build artifacts & coverage data ==="
 make -f tests/Makefile.unity clean || true
+rm -rf build/coverage coverage.info coverage_html coverage_src.info || true
 mkdir -p build/coverage
-rm -rf build/coverage/* coverage.info coverage_html coverage_src.info
 
 echo "=== Running Test Suite with Coverage Instrumentation ==="
 JOBS=$(nproc 2>/dev/null || true)

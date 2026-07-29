@@ -326,7 +326,7 @@ static void test_json_read_escaped_string_inside_token_overflow_skip(void)
     }
     /* 33rd key has escaped quotes inside string and inside nested object */
     pos += snprintf(json + pos, sizeof(json) - pos, "\"str\":\"val\\\"escaped\",");
-    pos += snprintf(json + pos, sizeof(json) - pos, "\"obj\":{\"key\\\"sub\":\"val\\\"sub\"}}");
+    snprintf(json + pos, sizeof(json) - pos, "\"obj\":{\"key\\\"sub\":\"val\\\"sub\"}}");
 
     SYN_JsonReader r;
     syn_json_parse(&r, json, strlen(json));

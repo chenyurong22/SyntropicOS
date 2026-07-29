@@ -194,6 +194,21 @@ void test_modbus_tcp_additional_edge_cases(void)
     uint8_t fc11_adu[12] = {0, 4, 0, 0, 0, 2, 1, 0x11};
     TEST_ASSERT_TRUE(
         syn_modbus_tcp_process_slave(&mb, fc11_adu, 8, resp_adu, sizeof(resp_adu), &resp_len));
+
+    /* Unit ID mismatch (unit_id = 99 when slave = 1) */
+    uint8_t mismatch_unit_adu[12] = {0, 5, 0, 0, 0, 6, 99, 6, 0, 0, 0, 1};
+    TEST_ASSERT_FALSE(syn_modbus_tcp_process_slave(&mb, mismatch_unit_adu, 12, resp_adu,
+                                                   sizeof(resp_adu), &resp_len));
+
+    /* FC 0x16 (Mask Write Register) test */
+    uint8_t fc16_adu[14] = {0, 6, 0, 0, 0, 8, 1, 0x16, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x12};
+    TEST_ASSERT_TRUE(
+        syn_modbus_tcp_process_slave(&mb, fc16_adu, 14, resp_adu, sizeof(resp_adu), &resp_len));
+
+    /* FC 0x07 (Read Exception Status) test */
+    uint8_t fc07_adu[10] = {0, 7, 0, 0, 0, 2, 1, 0x07};
+    TEST_ASSERT_TRUE(
+        syn_modbus_tcp_process_slave(&mb, fc07_adu, 8, resp_adu, sizeof(resp_adu), &resp_len));
 }
 
 void run_modbus_tcp_tests(void)

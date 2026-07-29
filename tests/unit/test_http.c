@@ -1184,6 +1184,28 @@ static void test_http_long_redirect_and_header_write_failures(void)
         run_client_task(&client);
         TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
     }
+
+    /* 3. body_cb returning false during streaming (line 611) */
+    mock_port_reset();
+    reset_accum();
+    s_body_cb_fail = true;
+    const char *resp_body_cb_fail = "HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n0123456789";
+    mock_sock_set_response(resp_body_cb_fail, strlen(resp_body_cb_fail));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_cb_rejectable, NULL, work_buf, sizeof(work_buf));
+    run_client_task(&client);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+    s_body_cb_fail = false;
+
+    /* 4. Premature EOF when known_length && body_remaining > 0 (line 623) */
+    mock_port_reset();
+    reset_accum();
+    const char *resp_short = "HTTP/1.1 200 OK\r\nContent-Length: 50\r\n\r\nShort";
+    mock_sock_set_response(resp_short, strlen(resp_short));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    run_client_task(&client);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
 }
 
 void run_http_tests(void)

@@ -138,6 +138,11 @@ static void test_ramp_fixed_point_and_negative_rate_clamp(void)
     TEST_ASSERT_EQUAL_INT(1, r.rate);
     TEST_ASSERT_EQUAL_INT(1, r.accel);
 
+    /* Fixed-point mode negative rate/accel and frac_bits > 16 clamp */
+    syn_ramp_set_target_trapezoid_fp(&r, 10, -5, -2, 20);
+    TEST_ASSERT_EQUAL_INT(1, r.rate);
+    TEST_ASSERT_EQUAL_INT(1, r.accel);
+
     /* Fixed-point mode (frac_bits = 4 -> Q4.4) */
     syn_ramp_set_target_trapezoid_fp(&r, 10, 16, 1, 4);
     int iters = 0;

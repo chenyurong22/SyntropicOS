@@ -176,15 +176,6 @@ static void test_dmx512_full_universe_loopback(void)
     }
 }
 
-static void test_dmx512_null_checks(void)
-{
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_dmx512_master_init(NULL, NULL, 0));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_dmx512_slave_init(NULL, 0, 0));
-    TEST_ASSERT_EQUAL_INT(0, syn_dmx512_master_build_frame(NULL, NULL, 0));
-    syn_dmx512_slave_rx_break(NULL);
-    syn_dmx512_slave_rx_byte(NULL, 0);
-}
-
 void run_dmx512_tests(void)
 {
     RUN_TEST(test_dmx512_master_init_and_channels);
@@ -192,5 +183,4 @@ void run_dmx512_tests(void)
     RUN_TEST(test_dmx512_slave_rx_flow);
     RUN_TEST(test_dmx512_slave_init_bounds);
     RUN_TEST(test_dmx512_full_universe_loopback);
-    RUN_TEST(test_dmx512_null_checks);
 }

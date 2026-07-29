@@ -1179,10 +1179,24 @@ static void test_matrix_vec_normalize_zero_vector(void)
 
 static void test_matrix_solve_lu_and_cholesky_oversized_dim(void)
 {
-    SYN_Matrix A = {.rows = 17, .cols = 17, .data = NULL};
-    SYN_Matrix b = {.rows = 17, .cols = 1, .data = NULL};
-    SYN_Matrix x = {.rows = 17, .cols = 1, .data = NULL};
+    /* Oversized solver dimensions & invalid parameters (lines 709, 852, 867, 911, 941, 969) */
+    q16_t dummy[17 * 17];
+    SYN_Matrix A = {.rows = 17, .cols = 17, .data = dummy};
+    SYN_Matrix b = {.rows = 17, .cols = 1, .data = dummy};
+    SYN_Matrix x = {.rows = 17, .cols = 1, .data = dummy};
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_matrix_solve_lu(&A, &b, &x));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_matrix_solve_cholesky(&A, &b, &x));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_matrix_qr(&A, &A, &A));
+
+    SYN_Matrix A_rect = {.rows = 2, .cols = 4, .data = dummy};
+    SYN_Matrix x_rect = {.rows = 4, .cols = 1, .data = dummy};
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_matrix_least_squares_work(&A_rect, &b, &x_rect, dummy,
+                                                                       dummy, dummy, dummy, dummy));
+
+    SYN_MAT_DECL(src, 2, 2);
+    SYN_MAT_DECL(dst, 2, 2);
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_matrix_get_block(&src, 1, 1, &dst));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_matrix_outer_product(NULL, 2, NULL, 2, &dst));
 
     SYN_Matrix A0 = {.rows = 0, .cols = 0, .data = NULL};
     SYN_Matrix b0 = {.rows = 0, .cols = 1, .data = NULL};

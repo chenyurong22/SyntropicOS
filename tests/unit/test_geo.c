@@ -150,6 +150,9 @@ static void test_geo_null_params(void)
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_ecef_to_enu(0, 0, 0, 0, 0, 0, NULL));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_wgs84_to_enu(0, 0, 0, 0, 0, 0, NULL));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_pos_from_gga(NULL, NULL));
+
+    /* NULL 3D distance check (line 162) */
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, syn_geo_3d_distance_m(NULL, NULL));
 }
 
 void run_geo_tests(void)

@@ -48,4 +48,13 @@ void test_rc_failsafe_null_and_error(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_failsafe_init(NULL, NULL));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_failsafe_feed_frame(NULL, NULL, 0, 0));
     TEST_ASSERT_TRUE(syn_failsafe_step(NULL, 1000, NULL));
+
+    /* Channel count overflow clamping test (> 16 channels) */
+    SYN_Failsafe_Config cfg = {.timeout_ms = 500};
+    SYN_Failsafe_Manager mgr;
+    syn_failsafe_init(&mgr, &cfg);
+    uint16_t oversized_ch[32];
+    for (int i = 0; i < 32; i++)
+        oversized_ch[i] = 1600;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_failsafe_feed_frame(&mgr, oversized_ch, 32, 1000));
 }

@@ -132,6 +132,12 @@ static void test_menu_back_while_editing(void)
     syn_menu_back(&menu3);
     TEST_ASSERT_FALSE(menu3.editing);
     TEST_ASSERT_EQUAL_INT(1, menu3.depth); /* still in submenu */
+
+    /* Decrement edit mode to min bound clamping */
+    syn_menu_enter(&menu3); /* start editing */
+    for (int i = 0; i < 10; i++)
+        syn_menu_down(&menu3);
+    TEST_ASSERT_EQUAL_INT(0, mnu_bright3);
 }
 
 void run_menu_tests(void)

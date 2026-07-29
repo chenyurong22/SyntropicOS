@@ -181,10 +181,11 @@ void test_pubsub_null_and_error_handling(void)
     SYN_PubSubBroker null_subs_broker;
     syn_pubsub_init(&null_subs_broker, NULL, 0);
 
-    /* NULL subs array check */
+    /* NULL subs array and NULL broker check */
     TEST_ASSERT_FALSE(syn_pubsub_subscribe(&null_subs_broker, 10, handler1, NULL));
     TEST_ASSERT_FALSE(syn_pubsub_unsubscribe(&null_subs_broker, 10, handler1));
     syn_pubsub_publish(&null_subs_broker, 10, NULL, 0);
+    syn_pubsub_publish(NULL, 10, NULL, 0);
 }
 
 void run_pubsub_tests(void)

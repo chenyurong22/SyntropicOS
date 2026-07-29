@@ -27,6 +27,21 @@ static void test_lux_operations(void)
     TEST_ASSERT_FLOAT_WITHIN(1.0f, 2250.0f, syn_lux_get_lux(&lux));
     TEST_ASSERT_GREATER_THAN(1000, syn_lux_get_color_temp_k(&lux));
 
+    /* Zero clear channel (c = 0) */
+    syn_lux_feed_rgbc(&lux, 10, 10, 10, 0);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, syn_lux_get_lux(&lux));
+
+    /* CCT clamping low (cct < 1000K) */
+    syn_lux_feed_rgbc(&lux, 500, 200, 0, 1000);
+    TEST_ASSERT_EQUAL_UINT16(1000, syn_lux_get_color_temp_k(&lux));
+
+    /* CCT clamping high (cct > 20000K) */
+    syn_lux_feed_rgbc(&lux, 0, 3000, 6230, 1000);
+    TEST_ASSERT_EQUAL_UINT16(20000, syn_lux_get_color_temp_k(&lux));
+
+    /* Singularity branch (y ≈ 0.1858) */
+    syn_lux_feed_rgbc(&lux, 1000, 200, 1000, 1000);
+
     /* NULL guards */
     syn_lux_feed_lux(NULL, 0.0f);
     syn_lux_feed_rgbc(NULL, 0, 0, 0, 0);

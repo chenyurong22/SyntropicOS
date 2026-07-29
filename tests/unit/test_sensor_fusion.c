@@ -27,6 +27,11 @@ static void test_sensor_fusion_init(void)
     TEST_ASSERT_EQUAL(0, euler.roll_rad);
     TEST_ASSERT_EQUAL(0, euler.pitch_rad);
     TEST_ASSERT_EQUAL(0, euler.yaw_rad);
+
+    /* Zero dt default fallback test */
+    SYN_SensorFusion f0;
+    syn_sensor_fusion_init(&f0, Q16_ONE, 0, 0);
+    TEST_ASSERT_EQUAL(Q16_FROM_FLOAT(0.01), f0.dt);
 }
 
 static void test_sensor_fusion_static_gravity(void)

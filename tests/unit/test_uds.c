@@ -1631,6 +1631,66 @@ static void test_uds_read_dtc_additional_subfunctions(void)
     }
 }
 
+static void test_uds_clear_dtc_group_filtering(void)
+{
+    SYN_UDS_Server server;
+    TEST_ASSERT_TRUE(syn_uds_init(&server));
+
+    /* Register DTCs across Powertrain (P), Chassis (C), Body (B), Network (U) */
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x010000, 0x09, 0x01)); /* Powertrain */
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x450000, 0x09, 0x01)); /* Chassis */
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x850000, 0x09, 0x01)); /* Body */
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0xC50000, 0x09, 0x01)); /* Network */
+    TEST_ASSERT_EQUAL_UINT8(4, server.dtc_count);
+
+    uint8_t req[16] = {0};
+    uint8_t resp[64] = {0};
+    uint16_t resp_len = 0;
+
+    req[0] = SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION;
+
+    /* 1. Incorrect request length (!= 4) -> NRC 0x13 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 2. Unsupported groupOfDTC -> NRC 0x31 */
+    req[1] = 0x99;
+    req[2] = 0x99;
+    req[3] = 0x99;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
+
+    /* 3. Clear Powertrain group (0x000000) */
+    req[1] = 0x00;
+    req[2] = 0x00;
+    req[3] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x54, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(3, server.dtc_count);
+
+    /* 4. Clear Chassis group (0x400000) */
+    req[1] = 0x40;
+    req[2] = 0x00;
+    req[3] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x54, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(2, server.dtc_count);
+
+    /* 5. Clear All DTCs (0xFFFFFF) */
+    req[1] = 0xFF;
+    req[2] = 0xFF;
+    req[3] = 0xFF;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x54, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(0, server.dtc_count);
+
+    /* 6. Clear All DTCs when no DTCs stored -> Positive response 0x54 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x54, resp[0]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -1652,4 +1712,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_bounds_and_null_checks);
     RUN_TEST(test_uds_dtc_overflow_and_short_msg_nrcs);
     RUN_TEST(test_uds_read_dtc_additional_subfunctions);
+    RUN_TEST(test_uds_clear_dtc_group_filtering);
 }

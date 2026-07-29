@@ -615,10 +615,61 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
     }
 
     case SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION: {
-        if (req_len < 4U) {
+        if (req_len != 4U) {
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
                                           resp_len);
         }
+        uint32_t group_of_dtc =
+            ((uint32_t)req[1] << 16U) | ((uint32_t)req[2] << 8U) | (uint32_t)req[3];
+
+        bool is_all = (group_of_dtc == SYN_UDS_DTC_GROUP_ALL);
+        bool is_powertrain =
+            (group_of_dtc == SYN_UDS_DTC_GROUP_POWERTRAIN) || (group_of_dtc == 0x010000U);
+        bool is_chassis =
+            (group_of_dtc == SYN_UDS_DTC_GROUP_CHASSIS) || (group_of_dtc == 0x020000U);
+        bool is_body = (group_of_dtc == SYN_UDS_DTC_GROUP_BODY) || (group_of_dtc == 0x030000U);
+        bool is_network = (group_of_dtc == SYN_UDS_DTC_GROUP_NETWORK);
+
+        bool matches_exact_dtc = false;
+        for (uint8_t i = 0U; i < server->dtc_count; i++) {
+            if (server->dtc_table[i].dtc == group_of_dtc) {
+                matches_exact_dtc = true;
+                break;
+            }
+        }
+
+        if (!is_all && !is_powertrain && !is_chassis && !is_body && !is_network &&
+            !matches_exact_dtc) {
+            return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf,
+                                          resp_len);
+        }
+
+        uint8_t write_idx = 0U;
+        for (uint8_t i = 0U; i < server->dtc_count; i++) {
+            uint32_t dtc = server->dtc_table[i].dtc;
+            bool clear_dtc = false;
+
+            if (is_all || (dtc == group_of_dtc)) {
+                clear_dtc = true;
+            } else if (is_powertrain && (dtc <= 0x3FFFFFU)) {
+                clear_dtc = true;
+            } else if (is_chassis && (dtc >= 0x400000U && dtc <= 0x7FFFFFU)) {
+                clear_dtc = true;
+            } else if (is_body && (dtc >= 0x800000U && dtc <= 0xBFFFFFU)) {
+                clear_dtc = true;
+            } else if (is_network && (dtc >= 0xC00000U && dtc <= 0xFEFFFFU)) {
+                clear_dtc = true;
+            }
+
+            if (!clear_dtc) {
+                if (write_idx != i) {
+                    server->dtc_table[write_idx] = server->dtc_table[i];
+                }
+                write_idx++;
+            }
+        }
+        server->dtc_count = write_idx;
+
         resp_buf[0] = sid + 0x40U;
         *resp_len = 1U;
         success = true;

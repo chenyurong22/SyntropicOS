@@ -160,10 +160,42 @@ void test_modbus_tcp_edge_cases(void)
         syn_modbus_tcp_process_slave(&mb, huge_adu, 260, resp_adu, sizeof(resp_adu), &resp_len));
 }
 
+void test_modbus_tcp_additional_edge_cases(void)
+{
+    static uint16_t holding_regs[16] = {0x1111};
+    static uint8_t mb_buf[256];
+    SYN_Modbus mb;
+    SYN_Modbus_Config cfg = {.slave_addr = 1, .holding_regs = holding_regs, .holding_count = 16};
+    syn_modbus_init(&mb, &cfg, mb_buf, sizeof(mb_buf));
+
+    uint8_t resp_adu[256];
+    uint16_t resp_len = 0;
+
+    /* 1. Broadcast unit ID (0) -> Processed, but no response generated */
+    uint8_t bcast_adu[12] = {0, 1, 0, 0, 0, 6, 0, 6, 0, 0, 0x12, 0x34};
+    TEST_ASSERT_FALSE(
+        syn_modbus_tcp_process_slave(&mb, bcast_adu, 12, resp_adu, sizeof(resp_adu), &resp_len));
+
+    /* 2. Custom/unsupported FC (0x17 / 23) falling through default case in get_response_pdu_len */
+    uint8_t custom_fc_adu[12] = {0, 2, 0, 0, 0, 6, 1, 0x17, 0x02, 0xAA, 0xBB, 0xCC};
+    TEST_ASSERT_TRUE(syn_modbus_tcp_process_slave(&mb, custom_fc_adu, 12, resp_adu,
+                                                  sizeof(resp_adu), &resp_len));
+
+    /* 3. syn_modbus_tcp_build_client_adu error bounds */
+    uint8_t pdu[4] = {0x01, 0x02, 0x03, 0x04};
+    uint8_t req_adu[16];
+    uint16_t req_len = 0;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_tcp_build_client_adu(
+                                             1, 1, pdu, 0, req_adu, sizeof(req_adu), &req_len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_modbus_tcp_build_client_adu(1, 1, pdu, 4, req_adu, 5, &req_len));
+}
+
 void run_modbus_tcp_tests(void)
 {
     RUN_TEST(test_mbap_encode_decode);
     RUN_TEST(test_modbus_tcp_slave);
     RUN_TEST(test_modbus_tcp_client_adu);
     RUN_TEST(test_modbus_tcp_edge_cases);
+    RUN_TEST(test_modbus_tcp_additional_edge_cases);
 }

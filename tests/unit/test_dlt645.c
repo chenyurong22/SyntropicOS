@@ -187,6 +187,36 @@ static void test_dlt645_error_handling(void)
     TEST_ASSERT_EQUAL_INT(0, dec.rx_len);
 }
 
+static void test_dlt645_additional_error_cases(void)
+{
+    SYN_DLT645_Frame frame;
+
+    /* 1. SOF1 / SOF2 mismatch */
+    uint8_t bad_sof[15] = {0x00, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x68,
+                           0x11, 0x04, 0x33, 0x33, 0x33, 0x33, 0x16};
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR,
+                          syn_dlt645_parse(bad_sof, sizeof(bad_sof), SYN_DLT645_VER_2007, &frame));
+
+    /* 2. data_len < di_len (e.g. data_len = 1 < 4) */
+    uint8_t small_datalen[15] = {0x68, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x68,
+                                 0x11, 0x01, 0x33, 0x33, 0x33, 0x33, 0x16};
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_dlt645_parse(small_datalen, sizeof(small_datalen),
+                                                      SYN_DLT645_VER_2007, &frame));
+
+    /* 3. rem < total_frame_len (truncated frame buffer) */
+    uint8_t trunc_frame[12] = {0x68, 0x11, 0x11, 0x11, 0x11, 0x11,
+                               0x11, 0x68, 0x11, 0x08, 0x33, 0x33};
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dlt645_parse(trunc_frame, sizeof(trunc_frame),
+                                                              SYN_DLT645_VER_2007, &frame));
+
+    /* 4. EOF mismatch (0xAA instead of 0x16) */
+    uint8_t bad_eof[16] = {0x68, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x68,
+                           0x11, 0x04, 0x33, 0x33, 0x33, 0x33, 0x17, 0xAA};
+    bad_eof[14] = syn_dlt645_calc_checksum(bad_eof, 14);
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR,
+                          syn_dlt645_parse(bad_eof, sizeof(bad_eof), SYN_DLT645_VER_2007, &frame));
+}
+
 void run_dlt645_tests(void)
 {
     RUN_TEST(test_dlt645_checksum);
@@ -194,4 +224,5 @@ void run_dlt645_tests(void)
     RUN_TEST(test_dlt645_1997_roundtrip);
     RUN_TEST(test_dlt645_streaming_decoder);
     RUN_TEST(test_dlt645_error_handling);
+    RUN_TEST(test_dlt645_additional_error_cases);
 }

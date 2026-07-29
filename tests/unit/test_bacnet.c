@@ -158,6 +158,42 @@ static void test_bacnet_add_object_max_capacity(void)
         SYN_ERROR, syn_bacnet_add_object(&node, SYN_BACNET_OBJ_ANALOG_INPUT, 99, 1.0f, "AI"));
 }
 
+static void test_bacnet_mstp_decode_error_cases(void)
+{
+    SYN_BACnet_MSTP_Frame frame;
+
+    /* 1. NULL out_buf encode */
+    TEST_ASSERT_EQUAL(0, syn_bacnet_mstp_encode_frame(0, 1, 2, NULL, 0, NULL));
+
+    /* 2. NULL buf or frame or short len decode */
+    TEST_ASSERT_FALSE(syn_bacnet_mstp_decode_frame(NULL, 10, &frame));
+    TEST_ASSERT_FALSE(syn_bacnet_mstp_decode_frame((uint8_t *)"123", 3, &frame));
+
+    /* 3. Bad preamble */
+    uint8_t bad_preamble[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    TEST_ASSERT_FALSE(syn_bacnet_mstp_decode_frame(bad_preamble, 8, &frame));
+
+    /* 4. Bad header CRC */
+    uint8_t bad_hdr_crc[8] = {0x55, 0xFF, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00};
+    TEST_ASSERT_FALSE(syn_bacnet_mstp_decode_frame(bad_hdr_crc, 8, &frame));
+
+    /* 5. Oversized data len (> 501) */
+    uint8_t over_len[8] = {0x55, 0xFF, 0x00, 0x01, 0x02, 0x02, 0x00, 0x00};
+    over_len[7] = syn_bacnet_crc8(&over_len[2], 5);
+    TEST_ASSERT_FALSE(syn_bacnet_mstp_decode_frame(over_len, 8, &frame));
+
+    /* 6. Truncated payload len */
+    uint8_t trunc_payload[10] = {0x55, 0xFF, 0x00, 0x01, 0x02, 0x00, 0x05, 0x00};
+    trunc_payload[7] = syn_bacnet_crc8(&trunc_payload[2], 5);
+    TEST_ASSERT_FALSE(syn_bacnet_mstp_decode_frame(trunc_payload, 10, &frame));
+
+    /* 7. Bad data CRC */
+    uint8_t bad_data_crc[15] = {0x55, 0xFF, 0x00, 0x01, 0x02, 0x00,
+                                0x02, 0x00, 0xAA, 0xBB, 0x00, 0x00};
+    bad_data_crc[7] = syn_bacnet_crc8(&bad_data_crc[2], 5);
+    TEST_ASSERT_FALSE(syn_bacnet_mstp_decode_frame(bad_data_crc, 12, &frame));
+}
+
 void run_bacnet_tests(void)
 {
     RUN_TEST(test_bacnet_crc8);
@@ -169,4 +205,5 @@ void run_bacnet_tests(void)
     RUN_TEST(test_bacnet_read_property);
     RUN_TEST(test_bacnet_edge_cases_and_nulls);
     RUN_TEST(test_bacnet_add_object_max_capacity);
+    RUN_TEST(test_bacnet_mstp_decode_error_cases);
 }

@@ -472,9 +472,14 @@ bool syn_imgui_combo(SYN_IMGUI_Context *ctx, const char *label, const char **opt
     syn_gfx_text(ctx->gfx, tx, ty, label, fg);
 
     /* Draw "< option_text >" centered in the right half */
+    int32_t sel_idx = *selected;
+    if (sel_idx < 0)
+        sel_idx = 0;
+    if (sel_idx >= (int32_t)count)
+        sel_idx = (int32_t)count - 1;
     int16_t val_w = w / 2;
     int16_t val_x = x + w / 2;
-    const char *opt_str = options[*selected];
+    const char *opt_str = options[sel_idx];
     int16_t opt_w = (int16_t)syn_gfx_text_width(ctx->gfx, opt_str);
     int16_t opt_x = (int16_t)(val_x + (val_w - opt_w) / 2);
 
@@ -1663,7 +1668,7 @@ void syn_imgui_progress_bar_ex(SYN_IMGUI_Context *ctx, int32_t value, int32_t mi
 
     if (max > min) {
         int16_t inner_w = (int16_t)(w - 4);
-        if (indeterminate) {
+        if (indeterminate && inner_w > 0) {
             /* Bouncing 20% wide bar based on low bits of value */
             int32_t phase = (value < 0 ? -value : value) % (inner_w * 2);
             int16_t bar_w = (int16_t)(inner_w / 5);

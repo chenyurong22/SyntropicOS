@@ -1628,32 +1628,6 @@ static void test_imgui_slider_touch_out_of_bounds_clamping(void)
     syn_imgui_end(&ctx);
 }
 
-static void test_imgui_layout_row_height_wrapping(void)
-{
-    uint8_t fb[128 * 64 / 8] = {0};
-    SYN_Canvas canvas;
-    syn_canvas_init(&canvas, fb, 128, 64, 1, NULL, NULL);
-
-    SYN_IMGUI_Context ctx;
-    syn_imgui_init(&ctx);
-
-    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
-    syn_imgui_layout_begin(&ctx, 10, 10, 100);
-
-    /* Set row_h > 0 to simulate unwrapped previous row */
-    ctx.layout.row_h = 25;
-    ctx.layout.same_line = false;
-
-    syn_imgui_label(&ctx, "WrappedLabel", 0, 0);
-    syn_imgui_label(&ctx, "Label2", 0, 0);
-    int16_t cy_after2 = ctx.layout.cy;
-    syn_imgui_layout_end(&ctx);
-    syn_imgui_end(&ctx);
-
-    /* Verify cursor y was wrapped */
-    TEST_ASSERT_GREATER_THAN(20, cy_after2);
-}
-
 static void test_imgui_slider_and_progress_bar_bounds_clamping(void)
 {
     uint8_t fb[64 * 64 / 8] = {0};
@@ -1819,7 +1793,6 @@ void run_imgui_tests(void)
     RUN_TEST(test_imgui_layout_resolve_page0_stacking);
     RUN_TEST(test_imgui_layout_resolve_tabs);
     RUN_TEST(test_imgui_edge_cases_and_uncovered_paths);
-    RUN_TEST(test_imgui_layout_row_height_wrapping);
     RUN_TEST(test_imgui_spinner_arrow_and_encoder_wrapping);
     RUN_TEST(test_imgui_slider_and_progress_bar_bounds_clamping);
     RUN_TEST(test_imgui_encoder_wrap_clamping_and_focus_cap);

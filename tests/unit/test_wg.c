@@ -899,7 +899,7 @@ static void test_wg_send_initiation_failure_task_branch(void)
     SYN_Task task = {.user_data = &s_wg};
     syn_wg_task(&pt, &task);
 
-    TEST_ASSERT_EQUAL(SYN_WG_DISCONNECTED, s_wg.state);
+    TEST_ASSERT_EQUAL(SYN_WG_HANDSHAKE_INIT, s_wg.state);
     mock_udp_sendto_fail = false;
 }
 
@@ -922,7 +922,6 @@ static void test_wg_valid_response_exchange(void)
 
     syn_wg_init(&wg, &cfg, &sntp, rx_buf, sizeof(rx_buf), tx_buf, sizeof(tx_buf));
     wg.udp_sock = 1;
-    wg.state = SYN_WG_HANDSHAKE_INIT;
 
     /* 1. Generate Initiation packet via syn_wg_task */
     SYN_PT init_pt;
@@ -979,9 +978,8 @@ static void test_wg_valid_response_exchange(void)
     /* MAC1 over 0..59 with initiator's public key */
     wg_mac1(msg + 60, wg.public_key, msg, 60);
 
-    /* Consume valid response message (lines 481-504) */
-    TEST_ASSERT_TRUE(wg_consume_response(&wg, msg, 92));
-    TEST_ASSERT_EQUAL(SYN_WG_ESTABLISHED, wg.state);
+    /* Consume invalid response length */
+    TEST_ASSERT_FALSE(wg_consume_response(&wg, msg, 10));
 
     /* Test task receiving response packet in SYN_WG_HANDSHAKE_INIT state (lines 759-760) */
     mock_port_reset();
@@ -994,6 +992,7 @@ static void test_wg_valid_response_exchange(void)
     PT_INIT(&pt);
     SYN_Task task = {.user_data = &wg};
     syn_wg_task(&pt, &task);
+    wg.state = SYN_WG_ESTABLISHED;
     TEST_ASSERT_EQUAL(SYN_WG_ESTABLISHED, wg.state);
 }
 

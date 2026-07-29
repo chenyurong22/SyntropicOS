@@ -778,6 +778,8 @@ static void test_mqtt_ping_send_failure_and_packet_id_wraparound(void)
 
     /* Packet ID wraparound in publish & subscribe (lines 403 & 452) */
     mock_port_reset();
+    mock_sock_connected = true;
+    mock_sock_tx_len = 1000;
     syn_mqtt_init(&c, "broker", 1883, "client", NULL, NULL, 60, rx, sizeof(rx), tx, sizeof(tx));
     c.sock = 10;
     c.state = SYN_MQTT_CONNECTED;

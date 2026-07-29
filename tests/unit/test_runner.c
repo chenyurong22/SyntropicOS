@@ -101,6 +101,7 @@ void run_trace_tests(void);
 void run_profiler_tests(void);
 void run_task_profile_tests(void);
 void run_dds_tests(void);
+void run_nn_tests(void);
 void run_boot_tests(void);
 void run_errlog_tests(void);
 void run_power_tests(void);
@@ -256,6 +257,7 @@ int main(void)
     run_xcp_tests();
     run_uds_tests();
     run_isotp_tests();
+    run_nn_tests();
     run_j1939_tests();
     run_motor_ctrl_tests();
     run_actuator_tests();

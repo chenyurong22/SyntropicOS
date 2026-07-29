@@ -58,8 +58,7 @@ static void test_kalman_init_bad_dims(void)
     SYN_Kalman kf;
     SYN_Kalman_Config cfg;
 
-    /* x is 3×1 but n_state = 2 → mismatch */
-    SYN_MAT_DECL(x, 3, 1);
+    SYN_MAT_DECL(x, 2, 1);
     SYN_MAT_DECL(P, 2, 2);
     SYN_MAT_DECL(F, 2, 2);
     SYN_MAT_DECL(Q, 2, 2);
@@ -75,6 +74,39 @@ static void test_kalman_init_bad_dims(void)
     cfg.n_state = 2;
     cfg.n_meas = 1;
 
+    /* 1. x mismatch */
+    SYN_MAT_DECL(x_bad, 3, 1);
+    cfg.x = &x_bad;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
+    cfg.x = &x;
+
+    /* 2. P mismatch */
+    SYN_MAT_DECL(P_bad, 3, 2);
+    cfg.P = &P_bad;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
+    cfg.P = &P;
+
+    /* 3. F mismatch */
+    SYN_MAT_DECL(F_bad, 3, 2);
+    cfg.F = &F_bad;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
+    cfg.F = &F;
+
+    /* 4. Q mismatch */
+    SYN_MAT_DECL(Q_bad, 3, 2);
+    cfg.Q = &Q_bad;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
+    cfg.Q = &Q;
+
+    /* 5. H mismatch */
+    SYN_MAT_DECL(H_bad, 3, 2);
+    cfg.H = &H_bad;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
+    cfg.H = &H;
+
+    /* 6. R mismatch */
+    SYN_MAT_DECL(R_bad, 3, 1);
+    cfg.R = &R_bad;
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
 }
 

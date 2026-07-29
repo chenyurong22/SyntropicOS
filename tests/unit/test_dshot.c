@@ -37,8 +37,10 @@ void test_dshot_encode(void)
 
 void test_dshot_us_to_throttle(void)
 {
-    TEST_ASSERT_EQUAL_UINT16(0, syn_dshot_us_to_throttle(1000));    /* Below disarm threshold */
-    TEST_ASSERT_EQUAL_UINT16(0, syn_dshot_us_to_throttle(1048));    /* Disarm boundary */
+    TEST_ASSERT_EQUAL_UINT16(0, syn_dshot_us_to_throttle(1000)); /* Below disarm threshold */
+    TEST_ASSERT_EQUAL_UINT16(0, syn_dshot_us_to_throttle(1048)); /* Disarm boundary */
+    TEST_ASSERT_GREATER_THAN(
+        0, syn_dshot_us_to_throttle(1500)); /* Mid-range throttle linear mapping */
     TEST_ASSERT_EQUAL_UINT16(2047, syn_dshot_us_to_throttle(2000)); /* Max throttle boundary */
     TEST_ASSERT_EQUAL_UINT16(2047, syn_dshot_us_to_throttle(2200)); /* Over-range clamping */
 }
@@ -76,6 +78,18 @@ void test_dshot_telemetry_extended_edge_cases(void)
     TEST_ASSERT_EQUAL_UINT32(0, telem.period_us);
     TEST_ASSERT_EQUAL_UINT32(0, telem.erpm);
     TEST_ASSERT_EQUAL_UINT32(0, telem.rpm);
+
+    /* Test nonzero period_us with pole_pairs = 0 (defaults to 7) */
+    /* data_12bit = (1 << 9) | 100 = 0x0264. mantissa=100, exp=1 -> period_us=200 */
+    /* CRC(0x0264): 0x0264 ^ 0x0026 ^ 0x0002 = 0x0240 -> & 0x0F = 0x00 */
+    /* payload = (0x0264 << 4) | 0x00 = 0x2640 */
+    /* GCR encoding for 2, 6, 4, 0 -> 2=18(0x12), 6=22(0x16), 4=29(0x1D), 0=25(0x19) */
+    uint32_t valid_gcr_non_zero = (0x12U << 15U) | (0x16U << 10U) | (0x1DU << 5U) | 0x19U;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dshot_parse_telemetry(valid_gcr_non_zero, 0, &telem));
+    TEST_ASSERT_TRUE(telem.valid);
+    TEST_ASSERT_EQUAL_UINT32(200, telem.period_us);
+    TEST_ASSERT_EQUAL_UINT32(300000, telem.erpm);
+    TEST_ASSERT_EQUAL_UINT32(300000 / 7, telem.rpm);
 
     /* Construct GCR frame with valid GCR decoding but invalid CRC */
     /* Nibbles: 0, 0, 0, 1 -> 0x0001. data_12bit=0x000, rx_crc=1. CRC(0)=0. Mismatch! */

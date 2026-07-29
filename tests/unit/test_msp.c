@@ -68,4 +68,26 @@ void test_msp_null_and_error_handling(void)
     status = syn_msp_parse_byte(&parser, bad_frame[5], NULL);
     TEST_ASSERT_EQUAL_INT(SYN_ERROR, status);
     TEST_ASSERT_EQUAL_UINT32(1, parser.checksum_errors);
+
+    /* Test header resets on invalid characters */
+    syn_msp_init(&parser);
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_msp_parse_byte(&parser, '$', NULL));
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_msp_parse_byte(&parser, 'X', NULL)); /* Non-M char resets */
+
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_msp_parse_byte(&parser, '$', NULL));
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_msp_parse_byte(&parser, 'M', NULL));
+    TEST_ASSERT_EQUAL(SYN_BUSY,
+                      syn_msp_parse_byte(&parser, 'Z', NULL)); /* Invalid dir char resets */
+
+    /* Test payload length overflow */
+    syn_msp_init(&parser);
+    syn_msp_parse_byte(&parser, '$', NULL);
+    syn_msp_parse_byte(&parser, 'M', NULL);
+    syn_msp_parse_byte(&parser, '<', NULL);
+    syn_msp_parse_byte(&parser, 250, NULL); /* len = 250 > SYN_MSP_MAX_PAYLOAD */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_msp_parse_byte(&parser, 101, NULL)); /* cmd -> error */
+
+    /* Test default invalid state fallback */
+    parser.state = 99;
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_msp_parse_byte(&parser, '$', NULL));
 }

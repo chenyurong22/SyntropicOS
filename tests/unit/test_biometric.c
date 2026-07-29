@@ -25,6 +25,14 @@ static void test_biometric_operations(void)
     TEST_ASSERT_EQUAL_UINT16(72, syn_biometric_get_bpm(&bio));
     TEST_ASSERT_GREATER_THAN(80.0f, syn_biometric_get_spo2(&bio));
 
+    /* Test SpO2 upper clamping (> 100%) */
+    syn_biometric_feed_samples(&bio, 10000, 100000);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 100.0f, syn_biometric_get_spo2(&bio));
+
+    /* Test SpO2 lower clamping (< 70%) */
+    syn_biometric_feed_samples(&bio, 300000, 60000);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 70.0f, syn_biometric_get_spo2(&bio));
+
     /* NULL guards */
     syn_biometric_feed_samples(NULL, 0, 0);
     TEST_ASSERT_EQUAL_UINT16(0, syn_biometric_get_bpm(NULL));

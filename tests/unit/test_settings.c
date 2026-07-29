@@ -363,6 +363,31 @@ static void test_settings_dual_bank_fallback_to_defaults(void)
     TEST_ASSERT_EQUAL(SYN_OK, st);
     TEST_ASSERT_EQUAL(0, db.active_bank);
     TEST_ASSERT_EQUAL_INT32(500, data.velocity);
+
+    /* Corrupt Bank A in flash so Bank B becomes active (if valid) */
+    memset(mock_flash, 0, 4096);
+    st = syn_settings_dual_bank_init(&db, FLASH_BASE, FLASH_BASE + 4096, SECTOR_COUNT, &data,
+                                     sizeof(data), &defaults);
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+}
+
+static void test_settings_dual_bank_ping_pong(void)
+{
+    mock_port_reset();
+    TestSettings data;
+    SYN_DualBankSettings db;
+
+    syn_settings_dual_bank_init(&db, FLASH_BASE, FLASH_BASE + 2048, 2, &data, sizeof(data),
+                                &defaults);
+    TEST_ASSERT_EQUAL(0, db.active_bank);
+
+    data.velocity = 100;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_dual_bank_save(&db));
+    TEST_ASSERT_EQUAL(1, db.active_bank);
+
+    data.velocity = 200;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_dual_bank_save(&db));
+    TEST_ASSERT_EQUAL(0, db.active_bank);
 }
 
 static void test_settings_null_and_invalid_param_checks(void)
@@ -409,6 +434,7 @@ void run_settings_tests(void)
     RUN_TEST(test_settings_edge_cases);
     RUN_TEST(test_settings_vfs_export_import);
     RUN_TEST(test_settings_dual_bank_fallback_to_defaults);
+    RUN_TEST(test_settings_dual_bank_ping_pong);
     RUN_TEST(test_settings_null_and_invalid_param_checks);
     RUN_TEST(test_settings_vfs_import_no_save);
 }

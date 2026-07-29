@@ -452,6 +452,37 @@ static void test_nn_softmax_q7_null_and_basic(void)
     TEST_ASSERT_TRUE(out[1] >= out[0]);
 }
 
+static void test_nn_quant_activations_and_avgpool_clamping(void)
+{
+    q7_t in[2] = {100, -100};
+    q7_t w[2 * 2] = {127, 0, 0, 127};
+    q16_t b_sat_pos[2] = {Q16_FROM_INT(10), Q16_FROM_INT(10)};
+    q16_t b_sat_neg[2] = {Q16_FROM_INT(-10), Q16_FROM_INT(-10)};
+    q7_t out[2];
+    syn_nn_quant_t quant = {.multiplier = 32768, .shift = 0, .zero_point = 0};
+
+    /* LEAKY_RELU, TANH, SIGMOID with positive/negative saturation in quant mode */
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_nn_dense_quant_q7(in, 2, w, b_sat_pos, out, 2, SYN_NN_ACT_SIGMOID, &quant));
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_nn_dense_quant_q7(in, 2, w, b_sat_neg, out, 2, SYN_NN_ACT_SIGMOID, &quant));
+
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_nn_dense_quant_q7(in, 2, w, b_sat_pos, out, 2, SYN_NN_ACT_TANH, &quant));
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_nn_dense_quant_q7(in, 2, w, b_sat_neg, out, 2, SYN_NN_ACT_TANH, &quant));
+
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_nn_dense_quant_q7(in, 2, w, b_sat_neg, out, 2, SYN_NN_ACT_LEAKY_RELU, &quant));
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_nn_dense_quant_q7(in, 2, w, b_sat_pos, out, 2, SYN_NN_ACT_NONE, &quant));
+
+    /* AvgPool1d clamping */
+    q7_t pool_in[2] = {127, 127};
+    q7_t pool_out[1];
+    TEST_ASSERT_EQUAL(SYN_OK, syn_nn_avgpool1d_q7(pool_in, 2, 1, pool_out, 2, 1));
+}
+
 void run_nn_tests(void)
 {
     RUN_TEST(test_nn_activations);
@@ -470,4 +501,5 @@ void run_nn_tests(void)
     RUN_TEST(test_nn_conv1d_quant_q7_valid_conv_with_biases);
     RUN_TEST(test_nn_conv1d_quant_q7_invalid_params);
     RUN_TEST(test_nn_softmax_q7_null_and_basic);
+    RUN_TEST(test_nn_quant_activations_and_avgpool_clamping);
 }

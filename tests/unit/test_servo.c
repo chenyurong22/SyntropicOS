@@ -134,6 +134,26 @@ static void test_servo_reverse_move_and_zero_dt(void)
     TEST_ASSERT_EQUAL_INT(1000, syn_servo_get_pulse_us(&servo));
 }
 
+static void test_servo_negative_rate_clamp(void)
+{
+    mock_tick_ms = 0;
+    SYN_Servo servo;
+    syn_servo_init(&servo, 1000, 2000, 180);
+    syn_servo_set_angle(&servo, 90); /* 1500µs */
+
+    /* Move reverse tiny step: 1500µs to 1499µs over 10000ms -> rate = -1 */
+    syn_servo_move_to(&servo, 89, 10000);
+    TEST_ASSERT_FALSE(syn_servo_at_target(&servo));
+
+    mock_tick_advance(10);
+    syn_servo_update(&servo);
+
+    /* Null API safety checks */
+    syn_servo_set_angle(NULL, 90);
+    syn_servo_set_pulse(NULL, 1500);
+    syn_servo_move_to(NULL, 90, 100);
+}
+
 void run_servo_tests(void)
 {
     RUN_TEST(test_servo);
@@ -141,4 +161,5 @@ void run_servo_tests(void)
     RUN_TEST(test_servo_rate_clamp);
     RUN_TEST(test_servo_edge_cases_and_nulls);
     RUN_TEST(test_servo_reverse_move_and_zero_dt);
+    RUN_TEST(test_servo_negative_rate_clamp);
 }

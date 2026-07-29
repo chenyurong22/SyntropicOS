@@ -155,6 +155,8 @@ static void test_param_flash_erase_error_returns_failure(void)
     syn_param_init(&store, 0, 2, sizeof(p));
     mock_flash_fail_at = 0;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_erase_all(&store));
+    mock_flash_fail_at = 0;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_save(&store, &p));
     mock_flash_fail_at = -1;
 }
 

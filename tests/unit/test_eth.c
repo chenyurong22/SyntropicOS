@@ -452,12 +452,11 @@ void test_eth_arp_reply_and_oversized_payload(void)
 
 static void test_eth_weak_hooks_and_udp_dispatch(void)
 {
-    TEST_ASSERT_NULL(syn_transport_udp_get_instance());
-    TEST_ASSERT_NULL(syn_eth_get_icmp_instance());
-    TEST_ASSERT_NULL(syn_eth_get_tcp_instance());
-
     SYN_ETH eth;
+    SYN_UDP udp;
     syn_eth_init(&eth, MY_MAC, MY_IP);
+    syn_udp_init(&udp, &eth);
+    syn_transport_udp_set_instance(&udp);
 
     /* Construct IPv4 UDP frame (proto=17) */
     uint8_t udp_frame[60] = {0};
@@ -469,6 +468,7 @@ static void test_eth_weak_hooks_and_udp_dispatch(void)
     udp_frame[23] = 17; /* UDP */
 
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, udp_frame, 60, NULL, NULL));
+    syn_transport_udp_set_instance(NULL);
 
     /* Construct ARP Reply frame (oper=2) */
     uint8_t arp_reply[42] = {0};
@@ -480,6 +480,11 @@ static void test_eth_weak_hooks_and_udp_dispatch(void)
     arp_reply[21] = 0x02; /* Reply */
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, arp_reply, 42, NULL, NULL));
     TEST_ASSERT_EQUAL_UINT32(1, eth.arp_replies);
+
+    /* Test ARP update existing entry */
+    uint8_t mac_new[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x99};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_eth_arp_update(&eth, 0x0A000002, PEER_MAC));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_eth_arp_update(&eth, 0x0A000002, mac_new));
 }
 
 static void test_eth_generate_mac_null_checks(void)

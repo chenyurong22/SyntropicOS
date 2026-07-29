@@ -160,6 +160,11 @@ static void test_q16_trig_fast(void)
 
     /* sin(pi/4) == cos(pi/4) ≈ 0.7071 */
     TEST_ASSERT_INT32_WITHIN(100, s_out, c_out);
+
+    /* Test negative angle wrap: x < -Q16_PI */
+    TEST_ASSERT_INT32_WITHIN(200, 0, q16_sin(-4 * Q16_PI));
+    TEST_ASSERT_INT32_WITHIN(200, 0, q16_sin_fast(-4 * Q16_PI));
+    TEST_ASSERT_INT32_WITHIN(200, Q16_ONE, q16_cos_fast(-4 * Q16_PI));
 }
 
 static void test_q16_inv_and_rsqrt(void)
@@ -171,10 +176,16 @@ static void test_q16_inv_and_rsqrt(void)
     /* 1 / 1.0 = 1.0 */
     TEST_ASSERT_EQUAL_INT32(Q16_ONE, q16_inv(Q16_ONE));
 
+    /* 1 / 0.00001 (1 in Q16) -> INT32_MAX overflow */
+    TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_inv(1));
+
     /* 1 / sqrt(4.0) = 0.5 */
     TEST_ASSERT_EQUAL_INT32(Q16_HALF, q16_rsqrt(Q16_FROM_INT(4)));
     /* 1 / sqrt(1.0) = 1.0 */
     TEST_ASSERT_EQUAL_INT32(Q16_ONE, q16_rsqrt(Q16_ONE));
+
+    /* q16_hypot large value clamping */
+    TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_hypot(INT32_MAX / 2, INT32_MAX / 2));
 }
 
 static void test_q16_exp_log_fast(void)

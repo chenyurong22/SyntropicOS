@@ -640,6 +640,36 @@ static void test_wg_send_disconnected_or_null(void)
     memset(&wg, 0, sizeof(wg));
     wg.state = SYN_WG_DISCONNECTED;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_wg_send(&wg, (const uint8_t *)"test", 4));
+
+    /* Oversized send payload */
+    wg.state = SYN_WG_ESTABLISHED;
+    wg.tx_buf_size = 32;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_wg_send(&wg, (const uint8_t *)"12345678901234567890", 20));
+}
+
+static void test_wg_transport_error_branches(void)
+{
+    wg_state_setup();
+    s_wg.state = SYN_WG_ESTABLISHED;
+    s_wg.session.sender_index = 100;
+    s_wg.session.receiver_index = 200;
+    memset(s_wg.session.send_key, 0x11, 32);
+    memset(s_wg.session.recv_key, 0x22, 32);
+
+    /* 1. Runt message len < 32 */
+    uint8_t runt[20] = {0};
+    TEST_ASSERT_FALSE(wg_handle_transport(&s_wg, runt, 20));
+
+    /* 2. Receiver index mismatch */
+    uint8_t msg[64] = {0};
+    store32_le(msg, SYN_WG_MSG_TRANSPORT);
+    store32_le(msg + 4, 999); /* Wrong index */
+    TEST_ASSERT_FALSE(wg_handle_transport(&s_wg, msg, 64));
+
+    /* 3. Corrupted tag -> AEAD decrypt failure */
+    store32_le(msg + 4, 100);
+    store64_le(msg + 8, 1);
+    TEST_ASSERT_FALSE(wg_handle_transport(&s_wg, msg, 64));
 }
 
 static void test_wg_reject_after_time_expiry(void)
@@ -906,6 +936,7 @@ void run_wg_tests(void)
     RUN_TEST(test_wg_handshake_response_invalid);
     RUN_TEST(test_wg_established_transport_and_keepalive);
     RUN_TEST(test_wg_send_disconnected_or_null);
+    RUN_TEST(test_wg_transport_error_branches);
     RUN_TEST(test_wg_reject_after_time_expiry);
     RUN_TEST(test_wg_cookie_packet_handling);
     RUN_TEST(test_wg_rekey_after_time);

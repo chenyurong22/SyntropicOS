@@ -135,4 +135,24 @@ void test_icmp_process_packet_invalid_headers(void)
     short_icmp[23] = 1; /* ICMP */
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_icmp_process_packet(&icmp, short_icmp, sizeof(short_icmp), NULL, NULL));
+
+    /* 5. Inbound Echo Reply frame (type = 0) */
+    uint8_t echo_reply_frame[60] = {0};
+    echo_reply_frame[12] = 0x08;
+    echo_reply_frame[13] = 0x00;
+    echo_reply_frame[14] = 0x45;
+    echo_reply_frame[23] = 1; /* ICMP */
+    echo_reply_frame[34] = SYN_ICMP_TYPE_ECHO_REPLY;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_icmp_process_packet(&icmp, echo_reply_frame, 60, NULL, NULL));
+    TEST_ASSERT_EQUAL_UINT32(1, icmp.echo_replies_rx);
+
+    /* 6. Build echo request with oversized payload > 1500 bytes */
+    SYN_ETH eth;
+    syn_eth_init(&eth, MY_MAC, MY_IP);
+    uint8_t huge_payload[1600] = {0};
+    uint8_t huge_frame[1600];
+    size_t huge_len = 0;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_icmp_build_echo_request(&icmp, &eth, PEER_IP, PEER_MAC, 1, 1,
+                                                  huge_payload, 1500, huge_frame, &huge_len));
 }

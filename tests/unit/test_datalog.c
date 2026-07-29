@@ -131,6 +131,21 @@ void test_datalog_clear(void)
     TEST_ASSERT_EQUAL_UINT32(0, syn_datalog_get_dropped(&datalog));
 }
 
+void test_datalog_null_and_incomplete_payload(void)
+{
+    /* Incomplete payload: write header specifying 10 bytes payload, but only write 2 payload bytes
+     */
+    syn_datalog_init(&datalog, backing, sizeof(backing));
+    SYN_DataLogHeader header = {.id = 0x7777, .len = 10};
+    syn_ringbuf_write(&datalog.rb, (const uint8_t *)&header, sizeof(header));
+    uint8_t partial[2] = {0xAA, 0xBB};
+    syn_ringbuf_write(&datalog.rb, partial, 2);
+
+    uint16_t out_id = 0;
+    uint8_t out_buf[16] = {0};
+    TEST_ASSERT_EQUAL_size_t(0, syn_datalog_read(&datalog, &out_id, out_buf, sizeof(out_buf)));
+}
+
 void run_datalog_tests(void)
 {
     RUN_TEST(test_datalog_init);
@@ -140,4 +155,5 @@ void run_datalog_tests(void)
     RUN_TEST(test_datalog_read_empty);
     RUN_TEST(test_datalog_zero_len_payload_and_incomplete_header);
     RUN_TEST(test_datalog_clear);
+    RUN_TEST(test_datalog_null_and_incomplete_payload);
 }

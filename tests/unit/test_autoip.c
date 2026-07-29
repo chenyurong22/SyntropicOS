@@ -93,4 +93,25 @@ void test_autoip_null_checks(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_autoip_build_probe(NULL, NULL, NULL, NULL));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_autoip_build_announce(NULL, NULL, NULL, NULL));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_autoip_process_arp(NULL, NULL, NULL, 0));
+
+    /* Non-ARP frame -> return SYN_OK */
+    SYN_AUTOIP autoip;
+    syn_autoip_init(&autoip, MAC);
+    uint8_t ip_frame[60] = {0};
+    ip_frame[12] = 0x08;
+    ip_frame[13] = 0x00; /* IPv4 */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_autoip_process_arp(&autoip, NULL, ip_frame, 60));
+
+    /* ARP Conflict: sender IP matches candidate autoip->ip_addr */
+    uint8_t conflict_arp[60] = {0};
+    conflict_arp[12] = 0x08;
+    conflict_arp[13] = 0x06;
+    conflict_arp[28] = (uint8_t)(autoip.ip_addr >> 24);
+    conflict_arp[29] = (uint8_t)(autoip.ip_addr >> 16);
+    conflict_arp[30] = (uint8_t)(autoip.ip_addr >> 8);
+    conflict_arp[31] = (uint8_t)(autoip.ip_addr);
+
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_autoip_process_arp(&autoip, NULL, conflict_arp, 60));
+    TEST_ASSERT_EQUAL_UINT8(1, autoip.collisions);
+    TEST_ASSERT_EQUAL_INT(SYN_AUTOIP_STATE_INIT, autoip.state);
 }

@@ -112,6 +112,17 @@ bool syn_uds_register_access_timing(SYN_UDS_Server *server, SYN_UDS_AccessTiming
     return true;
 }
 
+bool syn_uds_register_secured_data(SYN_UDS_Server *server, SYN_UDS_SecuredDataHandler handler,
+                                   void *ctx)
+{
+    if (server == NULL) {
+        return false;
+    }
+    server->secured_data_cb = handler;
+    server->secured_data_ctx = ctx;
+    return true;
+}
+
 static bool make_negative_response(uint8_t sid, uint8_t nrc, uint8_t *resp_buf, uint16_t *resp_len)
 {
     resp_buf[0] = SYN_UDS_RESPONSE_NEGATIVE;
@@ -496,6 +507,133 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                           resp_len);
         }
         }
+        break;
+    }
+
+    case SYN_UDS_SID_SECURED_DATA_TRANSMISSION: {
+        if (req_len < 2U) {
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                          resp_len);
+        }
+        if (server->security_state != SYN_UDS_SECURITY_UNLOCKED) {
+            return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
+                                          resp_len);
+        }
+        uint16_t sec_in_len = req_len - 1U;
+        const uint8_t *sec_in_data = &req[1];
+        uint16_t sec_out_len = 0U;
+
+        if (server->secured_data_cb != NULL) {
+            if (!server->secured_data_cb(sec_in_data, sec_in_len, &resp_buf[1], max_resp_len - 1U,
+                                         &sec_out_len, server->secured_data_ctx)) {
+                return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                              resp_len);
+            }
+        } else {
+            if (sec_in_len > (max_resp_len - 1U)) {
+                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                              resp_len);
+            }
+            memcpy(&resp_buf[1], sec_in_data, sec_in_len);
+            sec_out_len = sec_in_len;
+        }
+
+        resp_buf[0] = sid + 0x40U;
+        *resp_len = 1U + sec_out_len;
+        success = true;
+        break;
+    }
+
+    case SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION: {
+        if (req_len < 4U) {
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                          resp_len);
+        }
+        resp_buf[0] = sid + 0x40U;
+        *resp_len = 1U;
+        success = true;
+        break;
+    }
+
+    case SYN_UDS_SID_READ_DTC_INFORMATION: {
+        if (req_len < 2U) {
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                          resp_len);
+        }
+        uint8_t sub = req[1] & 0x7FU;
+        resp_buf[0] = sid + 0x40U;
+        resp_buf[1] = sub;
+        resp_buf[2] = 0x00U;
+        *resp_len = 3U;
+        success = true;
+        break;
+    }
+
+    case SYN_UDS_SID_CONTROL_DTC_SETTING: {
+        if (req_len < 2U) {
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                          resp_len);
+        }
+        uint8_t sub = req[1] & 0x7FU;
+        if (sub != 0x01U && sub != 0x02U) {
+            return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
+                                          resp_len);
+        }
+        resp_buf[0] = sid + 0x40U;
+        resp_buf[1] = sub;
+        *resp_len = 2U;
+        success = true;
+        break;
+    }
+
+    case SYN_UDS_SID_RESPONSE_ON_EVENT: {
+        if (req_len < 2U) {
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                          resp_len);
+        }
+        uint8_t sub = req[1] & 0x7FU;
+        resp_buf[0] = sid + 0x40U;
+        resp_buf[1] = sub;
+        *resp_len = 2U;
+        success = true;
+        break;
+    }
+
+    case SYN_UDS_SID_REQUEST_DOWNLOAD:
+    case SYN_UDS_SID_REQUEST_UPLOAD: {
+        if (req_len < 3U) {
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                          resp_len);
+        }
+        if (server->security_state != SYN_UDS_SECURITY_UNLOCKED) {
+            return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
+                                          resp_len);
+        }
+        resp_buf[0] = sid + 0x40U;
+        resp_buf[1] = 0x20U;
+        syn_poke_u16(0x0400U, resp_buf, 2);
+        *resp_len = 4U;
+        success = true;
+        break;
+    }
+
+    case SYN_UDS_SID_TRANSFER_DATA: {
+        if (req_len < 2U) {
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                          resp_len);
+        }
+        uint8_t block_seq = req[1];
+        resp_buf[0] = sid + 0x40U;
+        resp_buf[1] = block_seq;
+        *resp_len = 2U;
+        success = true;
+        break;
+    }
+
+    case SYN_UDS_SID_REQUEST_TRANSFER_EXIT: {
+        resp_buf[0] = sid + 0x40U;
+        *resp_len = 1U;
+        success = true;
         break;
     }
 

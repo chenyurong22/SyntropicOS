@@ -568,6 +568,119 @@ static void test_uds_access_timing_parameter(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
 }
 
+static bool mock_secured_data_handler(const uint8_t *in_data, uint16_t in_len, uint8_t *out_buf,
+                                      uint16_t max_out_len, uint16_t *out_len, void *ctx)
+{
+    (void)ctx;
+    (void)max_out_len;
+    if (in_len == 0 || in_data[0] == 0xFF) {
+        return false; /* Rejection case */
+    }
+    /* Simple XOR cipher for testing */
+    for (uint16_t i = 0; i < in_len; i++) {
+        out_buf[i] = in_data[i] ^ 0x5AU;
+    }
+    *out_len = in_len;
+    return true;
+}
+
+static void test_uds_secured_data_transmission(void)
+{
+    syn_uds_init(&g_uds);
+    uint8_t req[16] = {0};
+    uint8_t resp[16] = {0};
+    uint16_t resp_len = 0;
+
+    /* 1. Null server check */
+    TEST_ASSERT_FALSE(syn_uds_register_secured_data(NULL, mock_secured_data_handler, NULL));
+
+    /* 2. Short request (req_len < 2) -> NRC 0x13 */
+    req[0] = SYN_UDS_SID_SECURED_DATA_TRANSMISSION;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 1, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 3. Locked state -> NRC 0x33 (Security Access Denied) */
+    req[1] = 0x12;
+    req[2] = 0x34;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp[2]);
+
+    /* 4. Unlock security & test default echo response (no callback) */
+    g_uds.security_state = SYN_UDS_SECURITY_UNLOCKED;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0xC4, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x12, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x34, resp[2]);
+    TEST_ASSERT_EQUAL_UINT16(3, resp_len);
+
+    /* 5. Custom handler registration & encrypted payload transformation */
+    TEST_ASSERT_TRUE(syn_uds_register_secured_data(&g_uds, mock_secured_data_handler, NULL));
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0xC4, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x12 ^ 0x5A, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x34 ^ 0x5A, resp[2]);
+
+    /* 6. Handler rejection -> NRC 0x22 */
+    req[1] = 0xFF;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+}
+
+static void test_uds_extended_sids(void)
+{
+    syn_uds_init(&g_uds);
+    uint8_t req[16] = {0};
+    uint8_t resp[16] = {0};
+    uint16_t resp_len = 0;
+
+    /* ClearDiagnosticInformation (0x14) */
+    req[0] = SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION;
+    req[1] = 0xFF;
+    req[2] = 0xFF;
+    req[3] = 0xFF;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x54, resp[0]);
+
+    /* ReadDTCInformation (0x19) */
+    req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
+    req[1] = 0x02;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, resp[1]);
+
+    /* ControlDTCSetting (0x85) */
+    req[0] = SYN_UDS_SID_CONTROL_DTC_SETTING;
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0xC5, resp[0]);
+
+    /* ResponseOnEvent (0x86) */
+    req[0] = SYN_UDS_SID_RESPONSE_ON_EVENT;
+    req[1] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0xC6, resp[0]);
+
+    /* Transfer Data Services (0x34, 0x35, 0x36, 0x37) */
+    g_uds.security_state = SYN_UDS_SECURITY_UNLOCKED;
+    req[0] = SYN_UDS_SID_REQUEST_DOWNLOAD;
+    req[1] = 0x00;
+    req[2] = 0x44;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x74, resp[0]);
+
+    req[0] = SYN_UDS_SID_TRANSFER_DATA;
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x76, resp[0]);
+
+    req[0] = SYN_UDS_SID_REQUEST_TRANSFER_EXIT;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 1, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x77, resp[0]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -575,6 +688,8 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_security_access);
     RUN_TEST(test_uds_communication_control);
     RUN_TEST(test_uds_access_timing_parameter);
+    RUN_TEST(test_uds_secured_data_transmission);
+    RUN_TEST(test_uds_extended_sids);
     RUN_TEST(test_uds_did_read_write);
     RUN_TEST(test_uds_ecu_reset_routine_tester_present);
     RUN_TEST(test_uds_bounds_and_null_checks);

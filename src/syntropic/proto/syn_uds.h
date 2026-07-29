@@ -26,13 +26,22 @@ extern "C" {
 /* UDS Service Identifiers (SID) */
 #define SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL 0x10U
 #define SYN_UDS_SID_ECU_RESET 0x11U
+#define SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION 0x14U
+#define SYN_UDS_SID_READ_DTC_INFORMATION 0x19U
 #define SYN_UDS_SID_READ_DATA_BY_IDENTIFIER 0x22U
 #define SYN_UDS_SID_SECURITY_ACCESS 0x27U
 #define SYN_UDS_SID_COMMUNICATION_CONTROL 0x28U
 #define SYN_UDS_SID_WRITE_DATA_BY_IDENTIFIER 0x2EU
 #define SYN_UDS_SID_ROUTINE_CONTROL 0x31U
+#define SYN_UDS_SID_REQUEST_DOWNLOAD 0x34U
+#define SYN_UDS_SID_REQUEST_UPLOAD 0x35U
+#define SYN_UDS_SID_TRANSFER_DATA 0x36U
+#define SYN_UDS_SID_REQUEST_TRANSFER_EXIT 0x37U
 #define SYN_UDS_SID_TESTER_PRESENT 0x3EU
 #define SYN_UDS_SID_ACCESS_TIMING_PARAMETER 0x83U
+#define SYN_UDS_SID_SECURED_DATA_TRANSMISSION 0x84U
+#define SYN_UDS_SID_CONTROL_DTC_SETTING 0x85U
+#define SYN_UDS_SID_RESPONSE_ON_EVENT 0x86U
 
 /* UDS Response Identifiers */
 #define SYN_UDS_RESPONSE_NEGATIVE 0x7FU
@@ -96,6 +105,13 @@ typedef bool (*SYN_UDS_AccessTimingHandler)(SYN_UDS_AccessTimingType timing_type
                                             void *ctx);
 
 /**
+ * @brief SecuredDataTransmission (0x84) callback function signature.
+ */
+typedef bool (*SYN_UDS_SecuredDataHandler)(const uint8_t *in_data, uint16_t in_len,
+                                           uint8_t *out_buf, uint16_t max_out_len,
+                                           uint16_t *out_len, void *ctx);
+
+/**
  * @brief Data Identifier (DID) Registry Entry.
  */
 typedef struct {
@@ -132,12 +148,14 @@ typedef struct {
     uint8_t comm_type;
     SYN_UDS_CommControlHandler comm_control_cb;
     void *comm_control_ctx;
-    uint16_t p2_max_ms;                    /**< Default P2Server_max timing (ms). */
-    uint16_t p2_star_max_10ms;             /**< Default P2*Server_max timing (10ms units). */
-    uint16_t active_p2_max_ms;             /**< Active P2Server_max timing (ms). */
-    uint16_t active_p2_star_max_10ms;      /**< Active P2*Server_max timing (10ms units). */
-    SYN_UDS_AccessTimingHandler timing_cb; /**< AccessTimingParameter callback. */
-    void *timing_ctx;                      /**< Context pointer for timing callback. */
+    uint16_t p2_max_ms;                         /**< Default P2Server_max timing (ms). */
+    uint16_t p2_star_max_10ms;                  /**< Default P2*Server_max timing (10ms units). */
+    uint16_t active_p2_max_ms;                  /**< Active P2Server_max timing (ms). */
+    uint16_t active_p2_star_max_10ms;           /**< Active P2*Server_max timing (10ms units). */
+    SYN_UDS_AccessTimingHandler timing_cb;      /**< AccessTimingParameter callback. */
+    void *timing_ctx;                           /**< Context pointer for timing callback. */
+    SYN_UDS_SecuredDataHandler secured_data_cb; /**< SecuredDataTransmission callback. */
+    void *secured_data_ctx;                     /**< Context pointer for secured data callback. */
     SYN_UDS_DIDEntry did_table[SYN_UDS_MAX_DIDS];
     uint8_t did_count;
     uint8_t reset_type_requested;
@@ -194,6 +212,17 @@ bool syn_uds_register_comm_control(SYN_UDS_Server *server, SYN_UDS_CommControlHa
  */
 bool syn_uds_register_access_timing(SYN_UDS_Server *server, SYN_UDS_AccessTimingHandler handler,
                                     void *ctx);
+
+/**
+ * @brief Register SecuredDataTransmission (0x84) callback handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when Service 0x84 is processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_secured_data(SYN_UDS_Server *server, SYN_UDS_SecuredDataHandler handler,
+                                   void *ctx);
 
 /**
  * @brief Process incoming UDS request diagnostic payload and format response.

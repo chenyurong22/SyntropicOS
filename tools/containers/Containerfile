@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libnewlib-arm-none-eabi \
     qemu-system-arm \
     lcov \
+    libjson-xs-perl \
     gcovr \
     cppcheck \
     valgrind \

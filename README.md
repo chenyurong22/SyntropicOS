@@ -64,7 +64,7 @@ flowchart TD
 ### Module Guides
 - ⚡ **[Core & Multitasking](https://outlookhazy.github.io/SyntropicOS/modules/multitasking/)** — Protothreads, Task Scheduler, Active Objects, Workqueues.
 - 🎛️ **[Input / Output](https://outlookhazy.github.io/SyntropicOS/modules/io/)** — Debounced Buttons, Tap Gestures, Combos, Rotary Encoders, LEDs, Soft PWM.
-- 📡 **[Communication Protocols](https://outlookhazy.github.io/SyntropicOS/modules/communication/)** — COBS Framing, Addressed Router, Modbus RTU/TCP, DALI, BACnet MS/TP, M-Bus, ISO-TP, J1939, NMEA 2000, CCP v2.1, ASAM XCP v1.x.
+- 📡 **[Communication Protocols](https://outlookhazy.github.io/SyntropicOS/modules/communication/)** — COBS Framing, Addressed Router, Modbus RTU/TCP, DALI, BACnet MS/TP, M-Bus, ISO-TP, J1939, NMEA 2000, CCP v2.1, ASAM XCP v1.x, UDS (ISO 14229).
 - 💾 **[Storage & Filesystems](https://outlookhazy.github.io/SyntropicOS/modules/storage/)** — Persistent Settings Manager, Wear-Leveled Flash, LittleFS, FAT.
 - 🖥️ **[Display & Embedded UI](https://outlookhazy.github.io/SyntropicOS/modules/display/)** — Framebuffer Canvas, 2D Graphics, Zero-Heap IMGUI.
 - 🔬 **[Diagnostics & Debug](https://outlookhazy.github.io/SyntropicOS/modules/debug/)** — Lightweight Event Tracer (`syn_trace`), Task CPU Profiler (`syn_profiler`), Serial CLI.

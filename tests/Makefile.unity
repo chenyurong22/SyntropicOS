@@ -43,6 +43,7 @@ SYN_SRCS := \
 	src/syntropic/proto/syn_dmx512.c \
 	src/syntropic/proto/syn_ccp.c \
 	src/syntropic/proto/syn_xcp.c \
+	src/syntropic/proto/syn_uds.c \
 	src/syntropic/proto/syn_isotp.c \
 	src/syntropic/proto/syn_dali.c \
 	src/syntropic/proto/syn_bacnet.c \

@@ -216,6 +216,21 @@ void test_dhcp_extended_option_parsing(void)
 
     trunc_pkt[244] = 10; /* opt_len 10 > 0 remaining bytes */
     TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, trunc_pkt, 245));
+
+    /* Unknown message type (99) with valid length >= 244 */
+    trunc_pkt[242] = 99;
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, trunc_pkt, 244));
+
+    /* Build request with server_ip == 0 */
+    dhcp.server_ip = 0;
+    uint8_t req_buf[300];
+    size_t req_len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_build_request(&dhcp, MAC, req_buf, &req_len));
+
+    /* Init with xid == 0 -> default xid 0x12345678UL */
+    SYN_DHCP default_xid_dhcp;
+    syn_dhcp_init(&default_xid_dhcp, 0);
+    TEST_ASSERT_EQUAL_UINT32(0x12345678UL, default_xid_dhcp.xid);
 }
 
 void test_dhcp_null_checks(void)

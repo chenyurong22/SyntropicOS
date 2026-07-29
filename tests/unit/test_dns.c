@@ -534,7 +534,30 @@ static void test_dns_mdns_init_open_failure_and_truncated_records(void)
     }
     TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
 
-    /* 3. mDNS QNAME "local" string mismatch (line 281) */
+    /* 3. RCODE != 0 error response (line 100) */
+    uint8_t rcode_err[] = {0x00, 0x00, 0x81, 0x82, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
+    mock_udp_set_response(rcode_err, sizeof(rcode_err), NULL);
+    PT_INIT(&pt);
+    task.user_data = &r;
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 10;
+    }
+    TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
+
+    /* 4. Truncated answer record header (pos + 10 > rx_len, line 121) */
+    uint8_t trunc_ans_hdr[] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+                               0x00, 0x00, 1,    'a',  3,    'c',  'o',  'm',  0,    0x00,
+                               0x01, 0x00, 0x01, 0xC0, 0x0C, 0x00, 0x01}; /* only 4 bytes instead of
+                                                                             10 for answer header */
+    mock_udp_set_response(trunc_ans_hdr, sizeof(trunc_ans_hdr), NULL);
+    PT_INIT(&pt);
+    task.user_data = &r;
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 10;
+    }
+    TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
+
+    /* 5. mDNS QNAME "local" string mismatch (line 281) */
     SYN_Mdns mdns2;
     syn_mdns_init(&mdns2, "mydev", ip);
     SYN_SockAddr from = {.port = 5353};

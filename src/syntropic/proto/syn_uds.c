@@ -19,10 +19,30 @@ bool syn_uds_init(SYN_UDS_Server *server)
     server->session = SYN_UDS_SESSION_DEFAULT;
     server->security_state = SYN_UDS_SECURITY_LOCKED;
     server->current_seed = 0x12345678U;
+    server->s3_timer_ms = 0U;
     server->did_count = 0U;
     server->reset_type_requested = 0U;
 
     return true;
+}
+
+void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms)
+{
+    if ((server == NULL) || (server->session == SYN_UDS_SESSION_DEFAULT)) {
+        if (server != NULL) {
+            server->s3_timer_ms = 0U;
+        }
+        return;
+    }
+
+    if (dt_ms >= server->s3_timer_ms) {
+        /* S3 timer expired -> revert to DEFAULT session and lock security */
+        server->session = SYN_UDS_SESSION_DEFAULT;
+        server->security_state = SYN_UDS_SECURITY_LOCKED;
+        server->s3_timer_ms = 0U;
+    } else {
+        server->s3_timer_ms -= dt_ms;
+    }
 }
 
 bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
@@ -64,6 +84,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
     }
 
     uint8_t sid = req[0];
+    bool success = false;
 
     switch (sid) {
     case SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL: {
@@ -77,9 +98,26 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
                                           resp_len);
         }
+
+        /* ISO 14229 Session transition rules:
+         * DEFAULT -> PROGRAMMING : Not allowed directly (must enter EXTENDED first).
+         * PROGRAMMING -> EXTENDED : Not allowed directly (must return to DEFAULT first).
+         */
+        if ((server->session == SYN_UDS_SESSION_DEFAULT) && (sub == SYN_UDS_SESSION_PROGRAMMING)) {
+            return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                          resp_len);
+        }
+        if ((server->session == SYN_UDS_SESSION_PROGRAMMING) && (sub == SYN_UDS_SESSION_EXTENDED)) {
+            return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                          resp_len);
+        }
+
         server->session = (SYN_UDS_Session)sub;
         if (server->session == SYN_UDS_SESSION_DEFAULT) {
             server->security_state = SYN_UDS_SECURITY_LOCKED;
+            server->s3_timer_ms = 0U;
+        } else {
+            server->s3_timer_ms = SYN_UDS_S3_TIMEOUT_MS;
         }
 
         resp_buf[0] = sid + 0x40U;
@@ -89,6 +127,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         resp_buf[4] = 0x01U; /* P2* Server max high byte */
         resp_buf[5] = 0xF4U; /* P2* Server max low byte (5000ms) */
         *resp_len = 6U;
+        success = true;
         break;
     }
 
@@ -106,6 +145,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         resp_buf[0] = sid + 0x40U;
         resp_buf[1] = sub;
         *resp_len = 2U;
+        success = true;
         break;
     }
 
@@ -121,6 +161,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             resp_buf[1] = sub;
             syn_poke_u32(server->current_seed, resp_buf, 2);
             *resp_len = 6U;
+            success = true;
         } else if (sub == 0x02U) { /* Send Key */
             if (req_len < 6U) {
                 return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
@@ -138,6 +179,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                 resp_buf[0] = sid + 0x40U;
                 resp_buf[1] = sub;
                 *resp_len = 2U;
+                success = true;
             } else {
                 server->security_state = SYN_UDS_SECURITY_LOCKED;
                 return make_negative_response(sid, SYN_UDS_NRC_INVALID_KEY, resp_buf, resp_len);
@@ -173,6 +215,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         syn_poke_u16(target_did, resp_buf, 1);
         memcpy(&resp_buf[3], matched_entry->data, matched_entry->len);
         *resp_len = 3U + matched_entry->len;
+        success = true;
         break;
     }
 
@@ -209,6 +252,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         resp_buf[0] = sid + 0x40U;
         syn_poke_u16(target_did, resp_buf, 1);
         *resp_len = 3U;
+        success = true;
         break;
     }
 
@@ -224,6 +268,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         resp_buf[1] = sub;
         syn_poke_u16(routine_id, resp_buf, 2);
         *resp_len = 4U;
+        success = true;
         break;
     }
 
@@ -236,12 +281,17 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         resp_buf[0] = sid + 0x40U;
         resp_buf[1] = sub;
         *resp_len = 2U;
+        success = true;
         break;
     }
 
     default: {
         return make_negative_response(sid, SYN_UDS_NRC_SERVICE_NOT_SUPPORTED, resp_buf, resp_len);
     }
+    }
+
+    if (success && (server->session != SYN_UDS_SESSION_DEFAULT)) {
+        server->s3_timer_ms = SYN_UDS_S3_TIMEOUT_MS;
     }
 
     return true;

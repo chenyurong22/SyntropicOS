@@ -70,6 +70,11 @@ typedef struct {
     bool writable;
 } SYN_UDS_DIDEntry;
 
+/* UDS Timing Constants */
+#ifndef SYN_UDS_S3_TIMEOUT_MS
+#define SYN_UDS_S3_TIMEOUT_MS 5000U
+#endif
+
 /**
  * @brief UDS Server Instance Context.
  */
@@ -77,6 +82,7 @@ typedef struct {
     SYN_UDS_Session session;
     SYN_UDS_SecurityState security_state;
     uint32_t current_seed;
+    uint32_t s3_timer_ms;
     SYN_UDS_DIDEntry did_table[SYN_UDS_MAX_DIDS];
     uint8_t did_count;
     uint8_t reset_type_requested;
@@ -89,6 +95,15 @@ typedef struct {
  * @return true on success, false if server is NULL.
  */
 bool syn_uds_init(SYN_UDS_Server *server);
+
+/**
+ * @brief Advance periodic S3 server timer by dt_ms milliseconds.
+ * Reverts session to DEFAULT and locks security state if S3 timer expires (5000ms).
+ *
+ * @param server Pointer to UDS server instance.
+ * @param dt_ms Milliseconds elapsed since last tick.
+ */
+void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms);
 
 /**
  * @brief Register Data Identifier (DID) mapping in UDS Server table.

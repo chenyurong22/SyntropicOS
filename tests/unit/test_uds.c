@@ -1329,9 +1329,9 @@ static void test_uds_nrc_coverage_sweep(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
 }
 
-static bool mock_failing_auth_cb(uint8_t subfunction, const uint8_t *req_payload,
-                                   uint16_t req_len, uint8_t *resp_payload,
-                                   uint16_t max_resp_len, uint16_t *resp_len, void *ctx)
+static bool mock_failing_auth_cb(uint8_t subfunction, const uint8_t *req_payload, uint16_t req_len,
+                                 uint8_t *resp_payload, uint16_t max_resp_len, uint16_t *resp_len,
+                                 void *ctx)
 {
     (void)subfunction;
     (void)req_payload;
@@ -1344,8 +1344,8 @@ static bool mock_failing_auth_cb(uint8_t subfunction, const uint8_t *req_payload
 }
 
 static bool mock_failing_secured_data_cb(const uint8_t *req_payload, uint16_t req_len,
-                                          uint8_t *resp_payload, uint16_t max_resp_len,
-                                          uint16_t *resp_len, void *ctx)
+                                         uint8_t *resp_payload, uint16_t max_resp_len,
+                                         uint16_t *resp_len, void *ctx)
 {
     (void)req_payload;
     (void)req_len;

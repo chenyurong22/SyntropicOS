@@ -195,6 +195,16 @@ static void test_fmt_hex_parse_and_bounds(void)
     TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hex_parse(NULL, bin, 4));
     TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hex_parse("FF", NULL, 4));
     TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hex_parse("FF", bin, 0));
+
+    /* Zero size buffer parameter guards */
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_uint(buf, 0, 100));
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_int(buf, 0, -100));
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hex(buf, 0, 0xAA, 2));
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_q16(buf, 0, Q16_ONE, 2));
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hexdump(buf, 0, bin, 2));
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hexdump(buf, 10, NULL, 0));
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_fixed(buf, 0, 100, 2));
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_concat(buf, 0, NULL, 0));
 }
 
 void run_fmt_tests(void)

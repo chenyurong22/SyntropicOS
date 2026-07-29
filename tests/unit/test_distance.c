@@ -35,6 +35,12 @@ static void test_distance_operations(void)
     syn_distance_feed_pulse(&dist, 250);
     TEST_ASSERT_EQUAL_UINT32(250, syn_distance_get_mm(&dist));
 
+    /* Min / Max range clamping test */
+    syn_distance_feed_pulse(&dist, 5); /* Below min (10) */
+    TEST_ASSERT_EQUAL_UINT32(10, syn_distance_get_mm(&dist));
+    syn_distance_feed_pulse(&dist, 3000); /* Above max (2000) */
+    TEST_ASSERT_EQUAL_UINT32(2000, syn_distance_get_mm(&dist));
+
     /* NULL guards */
     syn_distance_set_proximity_threshold(NULL, 0);
     syn_distance_feed_pulse(NULL, 0);

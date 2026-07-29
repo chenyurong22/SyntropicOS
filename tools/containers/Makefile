@@ -95,7 +95,7 @@ integration:
 	@bash $(ROOT_DIR)/tests/integration/run_integration.sh
 
 container-volume:
-	@"$(CONTAINER_ENGINE)" volume create $(CACHE_VOL)
+	@"$(CONTAINER_ENGINE)" volume inspect $(CACHE_VOL) >/dev/null 2>&1 || "$(CONTAINER_ENGINE)" volume create $(CACHE_VOL) >/dev/null 2>&1 || true
 
 container-build:
 	@"$(CONTAINER_ENGINE)" build -t syntropicos-test -f $(ROOT_DIR)/tools/containers/Containerfile $(ROOT_DIR)

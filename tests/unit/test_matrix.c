@@ -101,6 +101,20 @@ static void test_q16_trig(void)
 
     /* tan(π/4) ≈ 1 */
     ASSERT_Q16_NEAR(Q16_ONE, q16_tan(Q16_PI / 4), Q16_TOL);
+
+    /* sin/cos wrapping outside [-π, π] */
+    TEST_ASSERT_NOT_EQUAL(0, q16_sin(Q16_PI * 3));
+    TEST_ASSERT_NOT_EQUAL(0, q16_sin(-Q16_PI * 3));
+
+    /* fast sin/cos and sincos_fast */
+    q16_t sf = 0, cf = 0;
+    q16_sincos_fast(Q16_PI_2, &sf, &cf);
+    ASSERT_Q16_NEAR(Q16_ONE, sf, Q16_TOL);
+    ASSERT_Q16_NEAR(0, cf, Q16_TOL);
+
+    /* fast sin/cos with large negative/positive inputs */
+    TEST_ASSERT_NOT_EQUAL(0, q16_sin_fast(Q16_PI * 3));
+    TEST_ASSERT_NOT_EQUAL(0, q16_cos_fast(-Q16_PI * 3));
 }
 
 static void test_q16_atan2(void)

@@ -463,6 +463,7 @@ static void test_fwupdate_parameter_and_state_guards(void)
     uint32_t crc = syn_crc32(fw, sizeof(fw));
     mock_flash_fail_at = SLOT_A_ADDR;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_fwupdate_finish(&upd, crc, NULL, 0x00010000));
+    mock_flash_fail_at = -1;
 
     /* 4. Flush page flash write failure (lines 47-49) */
     mock_port_reset();
@@ -470,6 +471,22 @@ static void test_fwupdate_parameter_and_state_guards(void)
     uint8_t fw64[64] = {0};
     mock_flash_write_fail_next = true;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_fwupdate_write(&upd, fw64, sizeof(fw64)));
+
+    /* Inactive abort test */
+    memset(&upd, 0, sizeof(upd));
+    syn_fwupdate_abort(&upd);
+
+#if defined(SYN_FW_USE_HMAC) && SYN_FW_USE_HMAC
+    /* HMAC test with key */
+    mock_port_reset();
+    syn_fwupdate_begin(&upd, SLOT_A_ADDR, SLOT_SIZE, pbuf, sizeof(pbuf));
+    uint8_t hmac_key[16] = {0x01, 0x02, 0x03};
+    syn_fwupdate_set_key(&upd, hmac_key, sizeof(hmac_key));
+    uint8_t chunk[16] = {0xAA};
+    syn_fwupdate_write(&upd, chunk, sizeof(chunk));
+    syn_fwupdate_abort(&upd);
+#endif
+
     mock_port_reset();
 }
 

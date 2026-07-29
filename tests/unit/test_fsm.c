@@ -182,6 +182,10 @@ static void test_fsm_edge_cases(void)
     took = syn_fsm_dispatch(&fsm_no_log, FSM_EV_START);
     TEST_ASSERT_TRUE(took);
     TEST_ASSERT_EQUAL_INT(0, (int)log_capture_pos); // log is empty
+
+    /* NULL transition table guard for dispatch */
+    SYN_FSM fsm_null_trans = {0};
+    TEST_ASSERT_FALSE(syn_fsm_dispatch(&fsm_null_trans, FSM_EV_START));
 }
 
 void run_fsm_tests(void)

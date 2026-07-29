@@ -1824,7 +1824,7 @@ static void test_uds_remaining_uncovered_paths(void)
 
     /* 2. Read DTC subfunctions with dtc_cb (lines 894-905, 925, 948-956, 974-982, 996-1004) */
     server.dtc_cb = mock_dtc_cb_ok_fn;
-    uint8_t subs[] = {0x06, 0x09, 0x0B, 0x0C, 0x0D};
+    uint8_t subs[] = {0x06, 0x09, 0x0B, 0x0C, 0x0D, 0x17, 0x18};
     for (size_t i = 0; i < sizeof(subs); i++) {
         uint8_t req_dtc[6] = {SYN_UDS_SID_READ_DTC_INFORMATION, subs[i], 0x01, 0x02, 0x03, 0xFF};
         syn_uds_process_request(&server, req_dtc, 6, resp, sizeof(resp), &resp_len);
@@ -1832,7 +1832,7 @@ static void test_uds_remaining_uncovered_paths(void)
     }
 
     server.dtc_cb = mock_dtc_cb_fail_fn;
-    uint8_t subs_nrc[] = {0x06, 0x09};
+    uint8_t subs_nrc[] = {0x06, 0x09, 0x17, 0x18};
     for (size_t i = 0; i < sizeof(subs_nrc); i++) {
         uint8_t req_dtc[6] = {
             SYN_UDS_SID_READ_DTC_INFORMATION, subs_nrc[i], 0x01, 0x02, 0x03, 0xFF};

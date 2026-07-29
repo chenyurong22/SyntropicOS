@@ -1756,8 +1756,15 @@ static void test_imgui_remaining_uncovered_paths(void)
     const int16_t w_arr[2] = {20, 20};
     syn_imgui_layout_row(&ctx, 2, w_arr, 0);
     syn_imgui_layout_row(&ctx, 0, NULL, 15);
-    ctx.layout.in_layout = false;
+    /* 10. Graph out-of-bounds data clamping (lines 557 & 559) */
+    const int32_t spk_data[3] = {-50, 50, 150};
+    syn_imgui_graph(&ctx, "G", spk_data, 3, 0, 100, 0, 0, 50, 20);
 
+    /* 11. Gauge out-of-bounds value clamping (lines 630 & 632) */
+    syn_imgui_gauge(&ctx, "G1", -50, 0, 100, 25, 25, 20);
+    syn_imgui_gauge(&ctx, "G2", 150, 0, 100, 25, 25, 20);
+
+    ctx.layout.in_layout = false;
     syn_imgui_end(&ctx);
 }
 

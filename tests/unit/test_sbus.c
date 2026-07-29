@@ -84,7 +84,7 @@ void test_sbus_null_and_error_handling(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_sbus_decode_buffer(NULL, NULL));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_sbus_parse_byte(NULL, 0x0F, NULL));
 
-    uint8_t bad_buf[25] = {0x00}; /* Bad header 0x00 */
+    uint8_t bad_buf[25] = {0x00}; /* Bad header 0x00 (expected 0x0F) */
     SYN_SBUS_Frame frame;
     TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_sbus_decode_buffer(bad_buf, &frame));
 

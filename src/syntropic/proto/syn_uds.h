@@ -28,6 +28,7 @@ extern "C" {
 #define SYN_UDS_SID_ECU_RESET 0x11U
 #define SYN_UDS_SID_READ_DATA_BY_IDENTIFIER 0x22U
 #define SYN_UDS_SID_SECURITY_ACCESS 0x27U
+#define SYN_UDS_SID_COMMUNICATION_CONTROL 0x28U
 #define SYN_UDS_SID_WRITE_DATA_BY_IDENTIFIER 0x2EU
 #define SYN_UDS_SID_ROUTINE_CONTROL 0x31U
 #define SYN_UDS_SID_TESTER_PRESENT 0x3EU
@@ -62,6 +63,22 @@ typedef enum {
     SYN_UDS_SECURITY_UNLOCKED = 0x02U
 } SYN_UDS_SecurityState;
 
+/* UDS CommunicationControl (0x28) Subfunctions */
+typedef enum {
+    SYN_UDS_COMM_ENABLE_RX_AND_TX = 0x00U,
+    SYN_UDS_COMM_ENABLE_RX_DISABLE_TX = 0x01U,
+    SYN_UDS_COMM_DISABLE_RX_ENABLE_TX = 0x02U,
+    SYN_UDS_COMM_DISABLE_RX_AND_TX = 0x03U,
+    SYN_UDS_COMM_ENABLE_RX_TX_ENHANCED = 0x04U,
+    SYN_UDS_COMM_ENABLE_RX_ENHANCED = 0x05U
+} SYN_UDS_CommControlType;
+
+/**
+ * @brief CommunicationControl (0x28) callback function signature.
+ */
+typedef bool (*SYN_UDS_CommControlHandler)(SYN_UDS_CommControlType control_type, uint8_t comm_type,
+                                           void *ctx);
+
 /**
  * @brief Data Identifier (DID) Registry Entry.
  */
@@ -95,6 +112,10 @@ typedef struct {
     uint32_t s3_timer_ms;
     uint8_t security_error_count;
     uint32_t security_delay_timer_ms;
+    SYN_UDS_CommControlType comm_control_state;
+    uint8_t comm_type;
+    SYN_UDS_CommControlHandler comm_control_cb;
+    void *comm_control_ctx;
     SYN_UDS_DIDEntry did_table[SYN_UDS_MAX_DIDS];
     uint8_t did_count;
     uint8_t reset_type_requested;
@@ -129,6 +150,17 @@ void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms);
  */
 bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
                           bool writable);
+
+/**
+ * @brief Register CommunicationControl (0x28) callback handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when Service 0x28 is processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_comm_control(SYN_UDS_Server *server, SYN_UDS_CommControlHandler handler,
+                                   void *ctx);
 
 /**
  * @brief Process incoming UDS request diagnostic payload and format response.

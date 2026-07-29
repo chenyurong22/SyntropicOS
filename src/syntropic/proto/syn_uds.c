@@ -22,6 +22,7 @@ bool syn_uds_init(SYN_UDS_Server *server)
     server->s3_timer_ms = 0U;
     server->security_error_count = 0U;
     server->security_delay_timer_ms = SYN_UDS_SECURITY_DELAY_MS;
+    server->comm_control_state = SYN_UDS_COMM_ENABLE_RX_AND_TX;
     server->did_count = 0U;
     server->reset_type_requested = 0U;
 
@@ -49,9 +50,10 @@ void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms)
     /* 2. S3 server session timeout countdown */
     if (server->session != SYN_UDS_SESSION_DEFAULT) {
         if (dt_ms >= server->s3_timer_ms) {
-            /* S3 timer expired -> revert to DEFAULT session and lock security */
+            /* S3 timer expired -> revert to DEFAULT session, lock security, and restore comm */
             server->session = SYN_UDS_SESSION_DEFAULT;
             server->security_state = SYN_UDS_SECURITY_LOCKED;
+            server->comm_control_state = SYN_UDS_COMM_ENABLE_RX_AND_TX;
             server->s3_timer_ms = 0U;
         } else {
             server->s3_timer_ms -= dt_ms;
@@ -79,6 +81,17 @@ bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, u
     entry->writable = writable;
 
     server->did_count++;
+    return true;
+}
+
+bool syn_uds_register_comm_control(SYN_UDS_Server *server, SYN_UDS_CommControlHandler handler,
+                                   void *ctx)
+{
+    if (server == NULL) {
+        return false;
+    }
+    server->comm_control_cb = handler;
+    server->comm_control_ctx = ctx;
     return true;
 }
 
@@ -219,6 +232,44 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
                                           resp_len);
         }
+        break;
+    }
+
+    case SYN_UDS_SID_COMMUNICATION_CONTROL: {
+        if (req_len < 3U) {
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                          resp_len);
+        }
+        if (server->session == SYN_UDS_SESSION_DEFAULT) {
+            return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                          resp_len);
+        }
+        uint8_t sub = req[1] & 0x7FU;
+        if (sub > 0x05U) {
+            return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
+                                          resp_len);
+        }
+        uint8_t comm_type = req[2];
+        if (comm_type == 0U) {
+            return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf,
+                                          resp_len);
+        }
+
+        if (server->comm_control_cb != NULL) {
+            if (!server->comm_control_cb((SYN_UDS_CommControlType)sub, comm_type,
+                                         server->comm_control_ctx)) {
+                return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                              resp_len);
+            }
+        }
+
+        server->comm_control_state = (SYN_UDS_CommControlType)sub;
+        server->comm_type = comm_type;
+
+        resp_buf[0] = sid + 0x40U;
+        resp_buf[1] = sub;
+        *resp_len = 2U;
+        success = true;
         break;
     }
 

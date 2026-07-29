@@ -398,11 +398,86 @@ static void test_uds_bounds_and_null_checks(void)
     TEST_ASSERT_FALSE(syn_uds_register_did(&g_uds, 0x9999, g_test_did_data, 4, true));
 }
 
+static bool mock_comm_control_handler(SYN_UDS_CommControlType control_type, uint8_t comm_type,
+                                      void *ctx)
+{
+    (void)ctx;
+    if (control_type == SYN_UDS_COMM_DISABLE_RX_AND_TX && comm_type == 0xFF) {
+        return false; /* Simulate rejection */
+    }
+    return true;
+}
+
+static void test_uds_communication_control(void)
+{
+    syn_uds_init(&g_uds);
+    uint8_t req[16] = {0};
+    uint8_t resp[16] = {0};
+    uint16_t resp_len = 0;
+
+    /* 1. Request in DEFAULT session -> Conditions not correct (NRC 0x22) */
+    req[0] = SYN_UDS_SID_COMMUNICATION_CONTROL;
+    req[1] = SYN_UDS_COMM_ENABLE_RX_AND_TX;
+    req[2] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    /* Switch to EXTENDED session */
+    uint8_t sess_ext[2] = {SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL, SYN_UDS_SESSION_EXTENDED};
+    syn_uds_process_request(&g_uds, sess_ext, 2, resp, sizeof(resp), &resp_len);
+
+    /* 2. Short length check (< 3) -> NRC 0x13 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 3. Invalid subfunction (> 5) -> NRC 0x12 */
+    req[1] = 0x06;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
+
+    /* 4. Zero comm_type -> NRC 0x31 */
+    req[1] = SYN_UDS_COMM_ENABLE_RX_AND_TX;
+    req[2] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
+
+    /* 5. Successful CommunicationControl subfunctions 0x00..0x05 */
+    for (uint8_t sub = 0; sub <= 5; sub++) {
+        req[1] = sub;
+        req[2] = 0x01;
+        TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+        TEST_ASSERT_EQUAL_HEX8(0x68, resp[0]);
+        TEST_ASSERT_EQUAL_HEX8(sub, resp[1]);
+        TEST_ASSERT_EQUAL(sub, g_uds.comm_control_state);
+        TEST_ASSERT_EQUAL_HEX8(0x01, g_uds.comm_type);
+    }
+
+    /* 6. Custom handler registration & failure case */
+    TEST_ASSERT_FALSE(syn_uds_register_comm_control(NULL, mock_comm_control_handler, NULL));
+    TEST_ASSERT_TRUE(syn_uds_register_comm_control(&g_uds, mock_comm_control_handler, NULL));
+
+    req[1] = SYN_UDS_COMM_DISABLE_RX_AND_TX;
+    req[2] = 0xFF;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    /* 7. S3 timeout reverts comm control state back to ENABLE_RX_AND_TX (0x00) */
+    syn_uds_tick(&g_uds, 5000);
+    TEST_ASSERT_EQUAL(SYN_UDS_SESSION_DEFAULT, g_uds.session);
+    TEST_ASSERT_EQUAL(SYN_UDS_COMM_ENABLE_RX_AND_TX, g_uds.comm_control_state);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
     RUN_TEST(test_uds_s3_timer_tick);
     RUN_TEST(test_uds_security_access);
+    RUN_TEST(test_uds_communication_control);
     RUN_TEST(test_uds_did_read_write);
     RUN_TEST(test_uds_ecu_reset_routine_tester_present);
     RUN_TEST(test_uds_bounds_and_null_checks);

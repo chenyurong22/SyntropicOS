@@ -113,6 +113,7 @@ void run_ethercat_tests(void);
 void run_cia401_tests(void);
 void run_canopen_mgr_tests(void);
 void run_dmx512_tests(void);
+void run_ccp_tests(void);
 void run_isotp_tests(void);
 void run_lin_tests(void);
 void run_dali_tests(void);
@@ -249,6 +250,7 @@ int main(void)
     run_cia401_tests();
     run_canopen_mgr_tests();
     run_dmx512_tests();
+    run_ccp_tests();
     run_isotp_tests();
     run_j1939_tests();
     run_motor_ctrl_tests();

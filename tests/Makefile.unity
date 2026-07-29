@@ -41,6 +41,7 @@ SYN_SRCS := \
 	src/syntropic/proto/syn_lss.c src/syntropic/proto/syn_cia401.c \
 	src/syntropic/proto/syn_cia303.c \
 	src/syntropic/proto/syn_dmx512.c \
+	src/syntropic/proto/syn_ccp.c \
 	src/syntropic/proto/syn_isotp.c \
 	src/syntropic/proto/syn_dali.c \
 	src/syntropic/proto/syn_bacnet.c \
@@ -167,7 +168,7 @@ $(BUILD_DIR)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/test_unity: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $@ -lm
+	$(CC) $(CFLAGS) $(OBJS) -o $@ -lm $(LDFLAGS)
 
 test_unity: $(BUILD_DIR)/test_unity
 
@@ -175,6 +176,7 @@ test: test_unity
 	./$(BUILD_DIR)/test_unity
 
 test-cov: CFLAGS += --coverage
+test-cov: LDFLAGS += --coverage
 test-cov: test_unity
 	./$(BUILD_DIR)/test_unity
 	@echo "Coverage data generated."

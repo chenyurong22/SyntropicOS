@@ -481,6 +481,16 @@ static void test_nn_quant_activations_and_avgpool_clamping(void)
     q7_t pool_in[2] = {127, 127};
     q7_t pool_out[1];
     TEST_ASSERT_EQUAL(SYN_OK, syn_nn_avgpool1d_q7(pool_in, 2, 1, pool_out, 2, 1));
+
+    /* Dense null checks and chunk_size=0 protothread test (lines 124, 149, 153) */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_nn_dense_q7(NULL, 2, w, b_sat_pos, out, 2, SYN_NN_ACT_NONE, 0));
+    SYN_PT pt;
+    PT_INIT(&pt);
+    size_t cur = 0;
+    syn_nn_dense_pt(&pt, NULL, 2, w, b_sat_pos, out, 2, SYN_NN_ACT_NONE, 0, &cur, 1);
+    PT_INIT(&pt);
+    syn_nn_dense_pt(&pt, in, 2, w, b_sat_pos, out, 2, SYN_NN_ACT_NONE, 0, &cur, 0);
 }
 
 void run_nn_tests(void)

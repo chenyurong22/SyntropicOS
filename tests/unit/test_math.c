@@ -348,14 +348,16 @@ static void test_qmath_extended_edge_cases(void)
     TEST_ASSERT_INT32_WITHIN(5, 0, q16_exp(-Q16_FROM_INT(30)));
     TEST_ASSERT_INT32_WITHIN(5, 0, q16_exp_fast(-Q16_FROM_INT(30)));
 
-    /* q16_log with 0, negative, and minimum non-zero raw unit input */
-    TEST_ASSERT_EQUAL_INT32(INT32_MIN, q16_log(0));
-    TEST_ASSERT_EQUAL_INT32(INT32_MIN, q16_log(-5));
-    TEST_ASSERT_INT32_WITHIN(65536, -726816, q16_log(1));
+    /* q16_log_fast zero, negative, and fractional (ux < Q16_ONE) */
+    TEST_ASSERT_EQUAL_INT32(INT32_MIN, q16_log_fast(0));
+    TEST_ASSERT_EQUAL_INT32(INT32_MIN, q16_log_fast(-10));
+    TEST_ASSERT_INT32_WITHIN(1000, -90871, q16_log_fast(Q16_ONE / 4));
 
-    /* q16_to_str with decimals > 4 */
+    /* q16_to_str with decimals > 4 and NULL/zero buffer (line 548) */
     char str_buf[32];
     TEST_ASSERT_GREATER_THAN(0, q16_to_str(Q16_FROM_INT(5), str_buf, sizeof(str_buf), 6));
+    TEST_ASSERT_EQUAL_UINT(0, q16_to_str(Q16_FROM_INT(5), NULL, 10, 2));
+    TEST_ASSERT_EQUAL_UINT(0, q16_to_str(Q16_FROM_INT(5), str_buf, 0, 2));
 }
 
 void run_math_tests(void)

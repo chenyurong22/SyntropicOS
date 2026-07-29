@@ -80,6 +80,13 @@ void test_canopen_mgr_sdo_write(void)
 
     syn_canopen_mgr_process_frame(&g_can_mgr, &resp);
     TEST_ASSERT_EQUAL(SYN_SDO_CLIENT_STATE_SUCCESS, g_can_mgr.sdo_client.state);
+
+    /* Test tick with active SDO wait without timeout expiration */
+    g_can_mgr.sdo_client.state = SYN_SDO_CLIENT_STATE_WAIT_READ;
+    g_can_mgr.sdo_client.timeout_ms = 1000;
+    syn_canopen_mgr_step(&g_can_mgr, 100);
+    TEST_ASSERT_EQUAL_UINT32(900, g_can_mgr.sdo_client.timeout_ms);
+    TEST_ASSERT_EQUAL(SYN_SDO_CLIENT_STATE_WAIT_READ, g_can_mgr.sdo_client.state);
 }
 
 void test_canopen_mgr_heartbeat_monitor(void)

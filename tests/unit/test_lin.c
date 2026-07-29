@@ -218,6 +218,18 @@ static void test_lin_edge_cases(void)
     TEST_ASSERT_EQUAL_INT(SYN_LIN_STATE_DATA, slave.state);
     TEST_ASSERT_EQUAL_INT(8, slave.expected_len);
 
+    /* Checksum overflow test (sum > 0xFF) */
+    uint8_t large_data[4] = {0x80, 0x80, 0x80, 0x80};
+    uint8_t cs = syn_lin_calc_checksum(0x00, large_data, 4, SYN_LIN_CHECKSUM_ENHANCED);
+    TEST_ASSERT_NOT_EQUAL(0, cs);
+
+    /* Master step null active slot / not running check */
+    SYN_LIN_Master m;
+    memset(&m, 0, sizeof(m));
+    const SYN_LIN_ScheduleSlot *slot_out = (const SYN_LIN_ScheduleSlot *)0x1234;
+    TEST_ASSERT_FALSE(syn_lin_master_step(&m, 10, &slot_out));
+    TEST_ASSERT_NULL(slot_out);
+
     /* Default state fallback */
     slave.state = (SYN_LIN_State)99;
     TEST_ASSERT_FALSE(syn_lin_slave_process_byte(&slave, 0x00, &frame));

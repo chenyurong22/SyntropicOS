@@ -233,6 +233,17 @@ static void test_bacnet_uncovered_edge_cases(void)
     TEST_ASSERT_EQUAL_INT(SYN_OK,
                           syn_bacnet_node_process(&empty_node, &req_read, &tx_frame, &has_tx));
     TEST_ASSERT_FALSE(has_tx);
+
+    /* 4. Unsupported service choice (0xFF) */
+    SYN_BACnet_MSTP_Frame req_unsupported = {.frame_type =
+                                                 SYN_BACNET_MSTP_FRAME_DATA_EXPECTING_REPLY,
+                                             .destination_mac = 10,
+                                             .source_mac = 3,
+                                             .data_len = 2,
+                                             .payload = {0x00, 0xFF}};
+    TEST_ASSERT_EQUAL_INT(SYN_OK,
+                          syn_bacnet_node_process(&node, &req_unsupported, &tx_frame, &has_tx));
+    TEST_ASSERT_FALSE(has_tx);
 }
 
 void run_bacnet_tests(void)

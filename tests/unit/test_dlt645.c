@@ -226,6 +226,18 @@ static void test_dlt645_additional_error_cases(void)
     /* NULL parameter safety checks */
     TEST_ASSERT_EQUAL_UINT8(0, syn_dlt645_calc_checksum(NULL, 0));
     TEST_ASSERT_EQUAL_INT(0, syn_dlt645_encode(NULL, NULL, 0));
+
+    /* 6. Oversized payload_bytes > 200 */
+    uint8_t huge_datalen[225];
+    memset(huge_datalen, 0x11, sizeof(huge_datalen));
+    huge_datalen[0] = 0x68;
+    huge_datalen[7] = 0x68;
+    huge_datalen[8] = 0x11;
+    huge_datalen[9] = 210; /* data_len = 210, payload_bytes = 210 - 4 = 206 > 200 */
+    huge_datalen[223] = syn_dlt645_calc_checksum(huge_datalen, 223);
+    huge_datalen[224] = 0x16;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_dlt645_parse(huge_datalen, sizeof(huge_datalen),
+                                                      SYN_DLT645_VER_2007, &frame));
 }
 
 void run_dlt645_tests(void)

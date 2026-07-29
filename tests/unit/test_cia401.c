@@ -47,6 +47,12 @@ void test_cia401_analog_delta(void)
     g_cia401_dev.analog_in[0] = 70;
     TEST_ASSERT_TRUE(syn_cia401_check_analog_delta(&g_cia401_dev, &ch));
     TEST_ASSERT_EQUAL(0, ch);
+
+    /* Decrease by more than delta 50 (negative diff) */
+    g_cia401_dev.prev_analog_in[0] = 100;
+    g_cia401_dev.analog_in[0] = 10;
+    TEST_ASSERT_TRUE(syn_cia401_check_analog_delta(&g_cia401_dev, &ch));
+    TEST_ASSERT_EQUAL(0, ch);
 }
 
 void run_cia401_tests(void)

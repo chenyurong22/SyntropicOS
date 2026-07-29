@@ -89,6 +89,10 @@ void test_pmbus_status_word_decoding(void)
 
     /* Zero value conversion check */
     TEST_ASSERT_EQUAL_UINT16(0, syn_pmbus_float_to_linear11(0.0f));
+
+    /* Mantissa overflow / underflow bounds checks */
+    TEST_ASSERT_NOT_EQUAL(0, syn_pmbus_float_to_linear11(1e9f));
+    TEST_ASSERT_NOT_EQUAL(0, syn_pmbus_float_to_linear11(-1e9f));
 }
 
 void run_pmbus_tests(void)

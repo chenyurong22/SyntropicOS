@@ -6,6 +6,8 @@
 #include "syntropic/proto/syn_ibus.h"
 #include "unity/unity.h"
 
+#include <string.h>
+
 void test_ibus_init(void)
 {
     SYN_IBUS_Parser parser;
@@ -75,4 +77,18 @@ void test_ibus_null_and_error_handling(void)
     TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_ibus_parse_byte(&parser, SYN_IBUS_HEADER1, NULL));
     TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_ibus_parse_byte(&parser, 0x00, NULL)); /* Bad header 2 */
     TEST_ASSERT_EQUAL_UINT8(0, parser.idx);                                     /* Reset to 0 */
+
+    /* Complete 32-byte frame with corrupted checksum */
+    uint8_t bad_chk_buf[32];
+    memset(bad_chk_buf, 0, sizeof(bad_chk_buf));
+    bad_chk_buf[0] = SYN_IBUS_HEADER1;
+    bad_chk_buf[1] = SYN_IBUS_HEADER2;
+    SYN_IBUS_Frame frame;
+    syn_ibus_init(&parser);
+    SYN_Status st = SYN_BUSY;
+    for (int i = 0; i < 32; i++) {
+        st = syn_ibus_parse_byte(&parser, bad_chk_buf[i], &frame);
+    }
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, st);
+    TEST_ASSERT_EQUAL_UINT32(1, parser.checksum_errors);
 }

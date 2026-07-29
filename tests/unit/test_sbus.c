@@ -6,6 +6,8 @@
 #include "syntropic/proto/syn_sbus.h"
 #include "unity/unity.h"
 
+#include <string.h>
+
 void test_sbus_init(void)
 {
     SYN_SBUS_Parser parser;
@@ -91,4 +93,15 @@ void test_sbus_null_and_error_handling(void)
     SYN_SBUS_Parser parser;
     syn_sbus_init(&parser);
     TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_sbus_parse_byte(&parser, 0xAA, &frame));
+
+    /* Stream 24 valid bytes starting with 0x0F, corrupt buf[0] before 25th byte */
+    syn_sbus_init(&parser);
+    uint8_t buf[25];
+    memset(buf, 0, sizeof(buf));
+    buf[0] = 0x0F;
+    for (int i = 0; i < 24; i++) {
+        syn_sbus_parse_byte(&parser, buf[i], &frame);
+    }
+    parser.buf[0] = 0x00; /* Corrupt header */
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_sbus_parse_byte(&parser, 0x00, &frame));
 }

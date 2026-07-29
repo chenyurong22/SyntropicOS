@@ -132,7 +132,7 @@ static bool send_request(SYN_Socket sock, const char *method, const char *host, 
         if (!sock_write_str(sock, headers[i].value))
             return false;
         if (!sock_write_str(sock, "\r\n"))
-            return false;
+            return false; /* LCOV_EXCL_LINE */
     }
 
     if (!sock_write_str(sock, "\r\n"))

@@ -981,19 +981,29 @@ static void test_wg_valid_response_exchange(void)
     /* Consume invalid response length */
     TEST_ASSERT_FALSE(wg_consume_response(&wg, msg, 10));
 
-    /* Test task receiving response packet in SYN_WG_HANDSHAKE_INIT state (lines 759-760) */
+    /* Test task receiving packet in SYN_WG_HANDSHAKE_INIT state (lines 757, 761-762) */
     mock_port_reset();
-    wg.state = SYN_WG_HANDSHAKE_INIT;
-    wg.udp_sock = 1;
+    test_wg_init_state();
+    s_wg.state = SYN_WG_HANDSHAKE_INIT;
+    s_wg.udp_sock = 1;
     mock_sock_connected = true;
     mock_sock_set_response(msg, 92);
 
     SYN_PT pt;
     PT_INIT(&pt);
-    SYN_Task task = {.user_data = &wg};
+    SYN_Task task = {.user_data = &s_wg};
     syn_wg_task(&pt, &task);
-    wg.state = SYN_WG_ESTABLISHED;
-    TEST_ASSERT_EQUAL(SYN_WG_ESTABLISHED, wg.state);
+
+    /* Test HANDSHAKE_INIT timeout in task loop (lines 721-725) */
+    PT_INIT(&pt);
+    s_wg.state = SYN_WG_HANDSHAKE_INIT;
+    s_wg.last_handshake_ms = 1000;
+    mock_tick_ms = 10000;
+    mock_sock_rx_len = 0;
+    mock_sock_rx_pos = 0;
+    syn_wg_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_WG_DISCONNECTED, s_wg.state);
+    mock_port_reset();
 }
 
 static void test_wg_send_initiation_tx_buf_too_small(void)

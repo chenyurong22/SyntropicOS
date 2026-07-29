@@ -831,6 +831,21 @@ static void test_mqtt_ping_send_failure_and_packet_id_wraparound(void)
     mock_sock_eof_on_empty = false;
     syn_mqtt_task(&pt, &task);
     TEST_ASSERT_EQUAL(SYN_MQTT_CONNECTED, c.state);
+
+    /* Test DISCARD phase socket EOF (lines 341-347) */
+    PT_INIT(&pt);
+    c.sock = 10;
+    c.state = SYN_MQTT_CONNECTED;
+    c.rx_phase = SYN_MQTT_RX_DISCARD;
+    c.rx_rem_len = 100;
+    c.rx_pos = 0;
+    c.rx_deadline = mock_tick_ms + 10000;
+    mock_sock_connected = true;
+    mock_sock_rx_len = 0;
+    mock_sock_rx_pos = 0;
+    mock_sock_eof_on_empty = true;
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
 }
 
 void run_mqtt_tests(void)

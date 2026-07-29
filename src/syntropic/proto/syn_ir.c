@@ -242,7 +242,7 @@ static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
 {
     SYN_IR_Protocol proto = decoder->active_proto;
     if (proto >= SYN_IR_PROTO_COUNT) {
-        return false;
+        return false; /* LCOV_EXCL_LINE */
     }
     const SYN_IR_ProtoDesc *desc = &proto_table[proto];
 

@@ -228,6 +228,10 @@ static void test_uds_security_access(void)
 
 static void test_uds_did_read_write(void)
 {
+    g_test_did_data[0] = 0xAA;
+    g_test_did_data[1] = 0xBB;
+    g_test_did_data[2] = 0xCC;
+    g_test_did_data[3] = 0xDD;
     syn_uds_init(&g_uds);
     TEST_ASSERT_FALSE(syn_uds_register_did(NULL, 0x1234, g_test_did_data, 4, true));
     TEST_ASSERT_TRUE(syn_uds_register_did(&g_uds, 0x1234, g_test_did_data, 4, true));
@@ -1890,6 +1894,82 @@ static void test_uds_remaining_uncovered_paths(void)
     TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
 }
 
+static bool dummy_sec_cb_fail(const uint8_t *in, uint16_t in_len, uint8_t *out, uint16_t max_out,
+                              uint16_t *out_len, void *ctx)
+{
+    (void)in;
+    (void)in_len;
+    (void)out;
+    (void)max_out;
+    (void)out_len;
+    (void)ctx;
+    return false;
+}
+
+static bool dummy_dtc_cb_fail(uint8_t sub, const uint8_t *req, uint16_t req_len, uint8_t *resp,
+                              uint16_t max_resp, uint16_t *out_len, void *ctx)
+{
+    (void)sub;
+    (void)req;
+    (void)req_len;
+    (void)resp;
+    (void)max_resp;
+    (void)out_len;
+    (void)ctx;
+    return false;
+}
+
+static bool dummy_mem_cb_pass(bool is_write, uint32_t addr, uint32_t len, uint8_t *data, void *ctx)
+{
+    (void)is_write;
+    (void)addr;
+    (void)len;
+    (void)data;
+    (void)ctx;
+    return true;
+}
+
+static void test_uds_remaining_edge_branches(void)
+{
+    SYN_UDS_Server server;
+    syn_uds_init(&server);
+    server.security_state = SYN_UDS_SECURITY_UNLOCKED;
+    uint8_t resp[256];
+    uint16_t resp_len = 0;
+
+    /* Extended session */
+    uint8_t sess[2] = {SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL, SYN_UDS_SESSION_EXTENDED};
+    syn_uds_process_request(&server, sess, 2, resp, sizeof(resp), &resp_len);
+
+    /* 1. SecuredDataTransmission callback returning false (L600) */
+    server.secured_data_cb = dummy_sec_cb_fail;
+    uint8_t sec_req[3] = {SYN_UDS_SID_SECURED_DATA_TRANSMISSION, 0x01, 0x02};
+    syn_uds_process_request(&server, sec_req, 3, resp, sizeof(resp), &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    /* 2. ReadDTCInformation subfunction 0x03 with callback returning false (L921) */
+    server.dtc_cb = dummy_dtc_cb_fail;
+    uint8_t dtc_req[3] = {SYN_UDS_SID_READ_DTC_INFORMATION,
+                          SYN_UDS_DTC_REPORT_SNAPSHOT_IDENTIFICATION, 0x01};
+    syn_uds_process_request(&server, dtc_req, 3, resp, sizeof(resp), &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    /* 3. ControlDTCSetting subfunction > 0x07 (L1042) */
+    uint8_t dtc_set_req[2] = {SYN_UDS_SID_CONTROL_DTC_SETTING, 0x08};
+    syn_uds_process_request(&server, dtc_set_req, 2, resp, sizeof(resp), &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
+
+    /* 4. WriteMemoryByAddress multi-byte size_len (L1381) */
+    server.memory_cb = dummy_mem_cb_pass;
+    uint8_t write_addr_req[8] = {
+        SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS, 0x22, 0x10, 0x00, 0x00, 0x02, 0xAA, 0xBB};
+    syn_uds_process_request(&server, write_addr_req, 8, resp, sizeof(resp), &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS + 0x40, resp[0]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -1914,4 +1994,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_clear_dtc_group_filtering);
     RUN_TEST(test_uds_dtc_iso14229_bit_operations);
     RUN_TEST(test_uds_remaining_uncovered_paths);
+    RUN_TEST(test_uds_remaining_edge_branches);
 }

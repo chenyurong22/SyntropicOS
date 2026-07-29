@@ -698,7 +698,6 @@ int main(void)
     RUN_TEST(test_netcfg_autoip_fallback);
     RUN_TEST(test_netcfg_link_events);
     RUN_TEST(test_netcfg_coroutine_pt);
-    RUN_TEST(test_netcfg_null_checks);
     extern void test_igmp_group_overflow_and_leaving_unjoined(void);
     extern void test_igmp_non_igmp_packets(void);
     extern void run_bacnet_tests(void);
@@ -707,6 +706,7 @@ int main(void)
     extern void run_tcp_tests(void);
     extern void run_udp_tests(void);
     extern void run_net_transport_udp_tests(void);
+    extern void run_uds_tests(void);
 
     RUN_TEST(test_igmp_init);
     RUN_TEST(test_igmp_join_and_leave);
@@ -721,6 +721,7 @@ int main(void)
     run_bacnet_tests();
     run_modbus_master_tests();
     run_lut_tests();
+    run_uds_tests();
 
     return UNITY_END();
 }

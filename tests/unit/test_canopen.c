@@ -168,6 +168,11 @@ static void test_canopen_sdo_abort_codes(void)
 
     /* 4. Write with invalid length to 0x2001:0x01 */
     uint8_t sdo_write_mismatch[8] = {0x23U, 0x01U, 0x20U, 0x01U, 0x11U, 0x22U, 0x33U, 0x44U};
+
+    /* Expedited SDO read of 1-byte entry 0x1001:0x00 (line 321) */
+    uint8_t sdo_read_1byte[8] = {0x40U, 0x01U, 0x10U, 0x00U, 0, 0, 0, 0};
+    syn_canopen_process_rx(&node, 0x605U, sdo_read_1byte, 8);
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
     syn_canopen_process_rx(&node, 0x605U, sdo_write_mismatch, 8);
 
     TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));

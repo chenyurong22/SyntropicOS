@@ -885,6 +885,13 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
                                           resp_len);
         }
+        uint8_t alfid = req[2];
+        uint8_t addr_len = alfid & 0x0FU;
+        uint8_t size_len = (alfid >> 4U) & 0x0FU;
+        if (req_len < (3U + addr_len + size_len)) {
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                          resp_len);
+        }
         if (server->security_state != SYN_UDS_SECURITY_UNLOCKED) {
             return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
                                           resp_len);

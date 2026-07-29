@@ -668,7 +668,7 @@ static void test_uds_extended_sids(void)
     g_uds.security_state = SYN_UDS_SECURITY_UNLOCKED;
     req[0] = SYN_UDS_SID_REQUEST_DOWNLOAD;
     req[1] = 0x00;
-    req[2] = 0x44;
+    req[2] = 0x00;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x74, resp[0]);
 

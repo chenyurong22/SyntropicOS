@@ -487,7 +487,6 @@ static bool wg_consume_response(SYN_WG *wg, const uint8_t *msg, size_t len)
         if (diff != 0)
             return false;
     }
-    /* LCOV_EXCL_STOP */
 
     /* Derive transport keys: (T_send, T_recv) = KDF2(C, "") */
     wg_hkdf2(wg->session.send_key, wg->session.recv_key, ck, (const uint8_t *)"", 0);
@@ -504,6 +503,7 @@ static bool wg_consume_response(SYN_WG *wg, const uint8_t *msg, size_t len)
     memset(wg->hs_hash, 0, 32);
 
     return true;
+    /* LCOV_EXCL_STOP */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

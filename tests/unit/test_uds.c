@@ -1824,7 +1824,7 @@ static void test_uds_remaining_uncovered_paths(void)
 
     /* 2. Read DTC subfunctions with dtc_cb (lines 894-905, 925, 948-956, 974-982, 996-1004) */
     server.dtc_cb = mock_dtc_cb_ok_fn;
-    uint8_t subs[] = {0x06, 0x09, 0x0B, 0x0C, 0x0D, 0x17, 0x18};
+    uint8_t subs[] = {0x05, 0x06, 0x09, 0x0B, 0x0C, 0x0D, 0x17, 0x18};
     for (size_t i = 0; i < sizeof(subs); i++) {
         uint8_t req_dtc[6] = {SYN_UDS_SID_READ_DTC_INFORMATION, subs[i], 0x01, 0x02, 0x03, 0xFF};
         syn_uds_process_request(&server, req_dtc, 6, resp, sizeof(resp), &resp_len);
@@ -1832,7 +1832,7 @@ static void test_uds_remaining_uncovered_paths(void)
     }
 
     server.dtc_cb = mock_dtc_cb_fail_fn;
-    uint8_t subs_nrc[] = {0x06, 0x09, 0x17, 0x18};
+    uint8_t subs_nrc[] = {0x05, 0x06, 0x09, 0x17, 0x18};
     for (size_t i = 0; i < sizeof(subs_nrc); i++) {
         uint8_t req_dtc[6] = {
             SYN_UDS_SID_READ_DTC_INFORMATION, subs_nrc[i], 0x01, 0x02, 0x03, 0xFF};
@@ -1848,10 +1848,18 @@ static void test_uds_remaining_uncovered_paths(void)
     }
     server.dtc_cb = NULL;
 
-    /* 3. Subfunction 0x14/0x15 max_resp_len < 4 (line 1046) */
-    uint8_t req_sf14[2] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x14};
-    syn_uds_process_request(&server, req_sf14, 2, resp, 3, &resp_len);
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SID_READ_DTC_INFORMATION + 0x40, resp[0]);
+    /* 3. ReadDataByIdentifier max_resp_len < 3 (line 209) */
+    uint8_t req_rdbi[3] = {SYN_UDS_SID_READ_DATA_BY_IDENTIFIER, 0xF1, 0x90};
+    TEST_ASSERT_FALSE(syn_uds_process_request(&server, req_rdbi, 3, resp, 2, &resp_len));
+
+    /* 4. WriteDataByIdentifier max_resp_len < 3 (line 209) */
+    uint8_t req_wdbi[4] = {SYN_UDS_SID_WRITE_DATA_BY_IDENTIFIER, 0xF1, 0x90, 0x01};
+    TEST_ASSERT_FALSE(syn_uds_process_request(&server, req_wdbi, 4, resp, 2, &resp_len));
+
+    /* 5. ControlDTCSetting req_len < 2 (line 1019) */
+    uint8_t req_ctrl_dtc[1] = {SYN_UDS_SID_CONTROL_DTC_SETTING};
+    syn_uds_process_request(&server, req_ctrl_dtc, 1, resp, sizeof(resp), &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
 
     /* 4. Transfer data overflow & read mem_cb fail (lines 1135, 1161, 1165-1168) */
     server.transfer_state = SYN_UDS_TRANSFER_DOWNLOAD;

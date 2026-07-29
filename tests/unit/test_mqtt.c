@@ -802,13 +802,23 @@ static void test_mqtt_ping_send_failure_and_packet_id_wraparound(void)
     c.rx_rem_len = 50;
     c.rx_pos = 0;
     mock_sock_connected = true;
+    mock_sock_rx_len = 0;
+    mock_sock_rx_pos = 0;
     mock_sock_eof_on_empty = true;
     syn_mqtt_task(&pt, &task);
     TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, c.sock);
     TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
     TEST_ASSERT_EQUAL(SYN_MQTT_RX_IDLE, c.rx_phase);
 
+    /* Test next_packet_id wrap around (line 403) */
+    c.sock = 10;
+    c.state = SYN_MQTT_CONNECTED;
+    c.next_packet_id = 65535;
+    syn_mqtt_publish(&c, "t", "m", 1, 1, false);
+    TEST_ASSERT_EQUAL_UINT16(1, c.next_packet_id);
+
     /* Test PAYLOAD phase non-blocking recv -1 (line 314) */
+    PT_INIT(&pt);
     c.sock = 10;
     c.state = SYN_MQTT_CONNECTED;
     c.rx_phase = SYN_MQTT_RX_PAYLOAD;

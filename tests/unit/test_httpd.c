@@ -748,7 +748,7 @@ static void test_httpd_uncovered_edge_cases(void)
     /* 7. Header loop without CRLF line ending (line 160) */
     setup_server();
     srv.state = SYN_HTTPD_READING_HEADERS;
-    const char req_no_crlf[] = "GET / HTTP/1.1\r\nContent-Type: text/plain\r\n\r\n";
+    const char req_no_crlf[] = "GET / HTTP/1.1\r\nContent-Type: text/plain";
     memcpy(srv.work_buf, req_no_crlf, sizeof(req_no_crlf));
     srv.rx_total = sizeof(req_no_crlf) - 1;
     syn_httpd_step(&srv);

@@ -86,6 +86,9 @@ void test_pmbus_status_word_decoding(void)
     TEST_ASSERT_TRUE(status_byte & SYN_PMBUS_STATUS_BYTE_VOUT_OV);
     TEST_ASSERT_TRUE(status_byte & SYN_PMBUS_STATUS_BYTE_IOUT_OC);
     TEST_ASSERT_FALSE(status_byte & SYN_PMBUS_STATUS_BYTE_BUSY);
+
+    /* Zero value conversion check */
+    TEST_ASSERT_EQUAL_UINT16(0, syn_pmbus_float_to_linear11(0.0f));
 }
 
 void run_pmbus_tests(void)

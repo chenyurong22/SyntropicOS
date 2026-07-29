@@ -183,6 +183,9 @@ void test_smbus_quick_and_byte_protocols(void)
     for (int i = 0; i < 32; i++)
         pkt.data[i] = (uint8_t)i;
     TEST_ASSERT_EQUAL(SYN_OK, syn_smbus_encode_packet(&pkt, buf, sizeof(buf), &out_len));
+
+    /* Null data check for PEC calculation */
+    TEST_ASSERT_EQUAL_UINT8(0x12, syn_smbus_calc_pec(0x12, NULL, 0));
     TEST_ASSERT_EQUAL(35, out_len);
     TEST_ASSERT_EQUAL_HEX8(32, buf[2]);
 

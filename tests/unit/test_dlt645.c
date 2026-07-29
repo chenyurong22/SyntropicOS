@@ -222,6 +222,10 @@ static void test_dlt645_additional_error_cases(void)
     TEST_ASSERT_EQUAL_INT(
         SYN_INVALID_PARAM,
         syn_dlt645_parse(only_preambles, sizeof(only_preambles), SYN_DLT645_VER_2007, &frame));
+
+    /* NULL parameter safety checks */
+    TEST_ASSERT_EQUAL_UINT8(0, syn_dlt645_calc_checksum(NULL, 0));
+    TEST_ASSERT_EQUAL_INT(0, syn_dlt645_encode(NULL, NULL, 0));
 }
 
 void run_dlt645_tests(void)

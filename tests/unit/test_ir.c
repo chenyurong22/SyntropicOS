@@ -390,6 +390,13 @@ static void test_ir_edge_cases(void)
     decoder.active_proto = (SYN_IR_Protocol)99;
     decoder.bit_idx = 10;
     TEST_ASSERT_FALSE(syn_ir_decode_timeout(&decoder, &rx_frame));
+
+    /* Encode frame with invalid/unknown protocol (SYN_IR_PROTO_UNKNOWN) */
+    SYN_IR_Pulse pulse_buf[100];
+    size_t pulse_count = 0;
+    SYN_IR_Frame invalid_frame = {.protocol = SYN_IR_PROTO_UNKNOWN};
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_ir_encode_frame(&invalid_frame, pulse_buf, 100, &pulse_count));
 }
 
 void run_ir_tests(void)

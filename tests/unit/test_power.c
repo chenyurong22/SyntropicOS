@@ -122,9 +122,36 @@ static void test_power_inverted_thresholds(void)
     TEST_ASSERT_TRUE(syn_power_is_brownout(&pwr));
 }
 
+static void test_power_null_callbacks(void)
+{
+    static SYN_ADC pwr_adc;
+    SYN_ADC_Config pwr_adc_cfg = {.channel = 0, .oversample = 1, .cal_scale = 1};
+    mock_adc_value = 4095;
+    syn_adc_init(&pwr_adc, &pwr_adc_cfg);
+
+    SYN_Power pwr;
+    SYN_Power_Config pcfg = {
+        .adc = &pwr_adc,
+        .brownout_mv = 3000,
+        .restore_mv = 3200,
+        .on_brownout = NULL,
+        .on_restore = NULL,
+    };
+    syn_power_init(&pwr, &pcfg);
+
+    mock_adc_value = 3600; /* Trigger brownout without callback */
+    syn_power_update(&pwr);
+    TEST_ASSERT_TRUE(syn_power_is_brownout(&pwr));
+
+    mock_adc_value = 4095; /* Trigger restore without callback */
+    syn_power_update(&pwr);
+    TEST_ASSERT_FALSE(syn_power_is_brownout(&pwr));
+}
+
 void run_power_tests(void)
 {
     RUN_TEST(test_power);
     RUN_TEST(test_power_errlog);
     RUN_TEST(test_power_inverted_thresholds);
+    RUN_TEST(test_power_null_callbacks);
 }

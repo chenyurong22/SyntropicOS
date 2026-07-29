@@ -162,10 +162,40 @@ static void test_menu_max_depth(void)
     TEST_ASSERT_EQUAL_INT(SYN_MENU_MAX_DEPTH - 1, menu.depth);
 }
 
+static void test_menu_null_item_pointers(void)
+{
+    static const SYN_MenuItem null_items[] = {
+        SYN_MENU_TOGGLE("NullToggle", NULL),
+        SYN_MENU_CALLBACK("NullCb", NULL, NULL),
+        SYN_MENU_VALUE("NullValue", NULL, 0, 100, 1),
+    };
+    SYN_MENU_ROOT(root_null, null_items);
+
+    SYN_Menu menu;
+    syn_menu_init(&menu, &root_null, NULL, NULL); /* NULL render fn */
+
+    /* Toggle with NULL bool pointer */
+    syn_menu_enter(&menu);
+
+    /* Callback with NULL func pointer */
+    syn_menu_down(&menu);
+    syn_menu_enter(&menu);
+
+    /* Value with NULL int32_t pointer: edit mode enter/up/down */
+    syn_menu_down(&menu);
+    syn_menu_enter(&menu);
+    TEST_ASSERT_TRUE(menu.editing);
+    syn_menu_up(&menu);
+    syn_menu_down(&menu);
+    syn_menu_back(&menu);
+    TEST_ASSERT_FALSE(menu.editing);
+}
+
 void run_menu_tests(void)
 {
     RUN_TEST(test_menu);
     RUN_TEST(test_menu_up_wrap);
     RUN_TEST(test_menu_back_while_editing);
     RUN_TEST(test_menu_max_depth);
+    RUN_TEST(test_menu_null_item_pointers);
 }

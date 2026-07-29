@@ -995,6 +995,91 @@ static void test_uds_stateful_data_transfer_sequence(void)
     TEST_ASSERT_EQUAL(SYN_UDS_TRANSFER_IDLE, server.transfer_state);
 }
 
+static bool mock_failing_memory_cb(bool is_write, uint32_t address, uint32_t size,
+                                    uint8_t *data_buf, void *ctx)
+{
+    (void)is_write;
+    (void)address;
+    (void)size;
+    (void)data_buf;
+    (void)ctx;
+    return false;
+}
+
+static bool mock_failing_timing_cb(SYN_UDS_AccessTimingType timing_type, uint16_t *p2_max_ms,
+                                    uint16_t *p2_star_max_10ms, void *ctx)
+{
+    (void)timing_type;
+    (void)p2_max_ms;
+    (void)p2_star_max_10ms;
+    (void)ctx;
+    return false;
+}
+
+static void test_uds_spec_nrc_and_edge_cases(void)
+{
+    SYN_UDS_Server server;
+    TEST_ASSERT_TRUE(syn_uds_init(&server));
+    server.security_state = SYN_UDS_SECURITY_UNLOCKED;
+
+    uint8_t req[32] = {0};
+    uint8_t resp[32] = {0};
+    uint16_t resp_len = 0;
+
+    /* 1. ReadDTCInformation subfunction 0x14 (Fault detection counter) */
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x112233U, 0x01U, 0x20U));
+    req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
+    req[1] = 0x14;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x14, resp[1]);
+
+    /* 2. ReadDTCInformation subfunctions 0x0D & 0x0E (Most recent failed / confirmed) */
+    req[1] = 0x0D;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x0D, resp[1]);
+
+    req[1] = 0x0E;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x0E, resp[1]);
+
+    /* 3. AccessTimingParameter failing callback -> NRC 0x22 */
+    syn_uds_register_access_timing(&server, mock_failing_timing_cb, NULL);
+    req[0] = SYN_UDS_SID_ACCESS_TIMING_PARAMETER;
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    /* 4. RequestDownload length check -> NRC 0x13 */
+    req[0] = SYN_UDS_SID_REQUEST_DOWNLOAD;
+    req[1] = 0x00;
+    req[2] = 0x22; /* 2-byte addr, 2-byte size -> requires 7 bytes */
+    req[3] = 0x10;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 5. TransferData failing memory_cb -> NRC 0x72 */
+    syn_uds_register_memory_handler(&server, mock_failing_memory_cb, NULL);
+    req[0] = SYN_UDS_SID_REQUEST_DOWNLOAD;
+    req[1] = 0x00;
+    req[2] = 0x11; /* 1-byte addr, 1-byte size */
+    req[3] = 0x10;
+    req[4] = 0x04;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 5, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x74, resp[0]);
+
+    req[0] = SYN_UDS_SID_TRANSFER_DATA;
+    req[1] = 0x01;
+    req[2] = 0xFF;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_GENERAL_PROGRAMMING_FAILURE, resp[2]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -1009,5 +1094,6 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_ecu_reset_routine_tester_present);
     RUN_TEST(test_uds_read_dtc_information_subfunctions);
     RUN_TEST(test_uds_stateful_data_transfer_sequence);
+    RUN_TEST(test_uds_spec_nrc_and_edge_cases);
     RUN_TEST(test_uds_bounds_and_null_checks);
 }

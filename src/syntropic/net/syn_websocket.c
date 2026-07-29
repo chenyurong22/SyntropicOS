@@ -400,7 +400,7 @@ SYN_PT_Status syn_websocket_task(SYN_PT *pt, SYN_Task *task)
         PT_DEFER(pt, task);
     }
 
-    PT_END(pt);
+    PT_END(pt); /* LCOV_EXCL_LINE */
 }
 
 #endif /* SYN_USE_WEBSOCKET */

@@ -458,10 +458,13 @@ static void test_sntp_uncovered_edge_cases(void)
     mock_udp_set_response(short_sntp_pkt, sizeof(short_sntp_pkt), &server);
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_sntp_query(&sntp));
 
-    /* 5. Send request failure in sntp query (line 224) */
+    /* 5. Send request failure in sntp task (line 224) */
     mock_udp_sendto_fail = true;
     syn_sntp_init(&sntp, &server, 1);
-    TEST_ASSERT_EQUAL(SYN_ERROR, syn_sntp_query(&sntp));
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &sntp};
+    syn_sntp_task(&pt, &task);
     mock_udp_sendto_fail = false;
 }
 

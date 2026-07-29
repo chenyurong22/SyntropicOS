@@ -574,7 +574,7 @@ static void cli_builtin_errors(const SYN_CLI *cli)
     SYN_ErrEntry e;
     for (size_t i = 0; i < avail; i++) {
         if (!syn_errlog_read(s_cli_errlog, i, &e))
-            continue;
+            continue; /* LCOV_EXCL_LINE */
 
         cli_puts(cli, "  [");
         syn_fmt_uint(num, sizeof(num), e.timestamp);

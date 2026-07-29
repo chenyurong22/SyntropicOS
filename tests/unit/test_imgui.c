@@ -1741,6 +1741,23 @@ static void test_imgui_remaining_uncovered_paths(void)
     syn_imgui_label(&ctx, "S1", 0, 0);
     syn_imgui_scroll_end(&ctx);
 
+    /* 8. Focus cap when last_max_id == 0 (line 81) */
+    ctx.focused_id = 5;
+    ctx.last_max_id = 0;
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+
+    /* 7. Combo with out-of-bounds selected index (lines 448 & 477) */
+    const char *opts[] = {"A", "B"};
+    int32_t sel = 10;
+    syn_imgui_combo(&ctx, "C", opts, 2, &sel, 0, 0, 50, 20);
+
+    /* 9. Layout row with height <= 0 or columns <= 0 (lines 511, 531, 538, 542) */
+    ctx.layout.in_layout = true;
+    const int16_t w_arr[2] = {20, 20};
+    syn_imgui_layout_row(&ctx, 2, w_arr, 0);
+    syn_imgui_layout_row(&ctx, 0, NULL, 15);
+    ctx.layout.in_layout = false;
+
     syn_imgui_end(&ctx);
 }
 

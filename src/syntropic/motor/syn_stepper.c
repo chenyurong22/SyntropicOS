@@ -149,8 +149,10 @@ void syn_stepper_tick(SYN_Stepper *s)
         target_speed = s->speed;
         break;
 
+    /* LCOV_EXCL_START */
     case SYN_STEPPER_IDLE:
-        return; /* LCOV_EXCL_LINE */
+        return;
+        /* LCOV_EXCL_STOP */
     }
 
     /* Compute step interval from speed */

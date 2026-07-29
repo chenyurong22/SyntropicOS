@@ -249,6 +249,7 @@ void test_transport_udp_all_functions(void)
 
     syn_transport_udp_set_instance(&s_udp);
     TEST_ASSERT_EQUAL_PTR(&s_udp, syn_transport_udp_get_instance());
+    syn_transport_udp_set_instance(NULL);
 }
 
 void run_udp_tests(void)

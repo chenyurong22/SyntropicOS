@@ -62,7 +62,9 @@ SYN_Status syn_tcp_listen(SYN_TCP *tcp, uint16_t port)
         if (tcp->conns[i].state == SYN_TCP_CLOSED) {
             tcp->conns[i].state = SYN_TCP_LISTEN;
             tcp->conns[i].local_port = port;
-            tcp->conns[i].local_ip = tcp->eth->ip_addr;
+            if (tcp->eth != NULL) {
+                tcp->conns[i].local_ip = tcp->eth->ip_addr;
+            }
             return SYN_OK;
         }
     }

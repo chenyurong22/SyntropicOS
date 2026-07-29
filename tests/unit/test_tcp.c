@@ -296,7 +296,7 @@ static void test_tcp_null_params_and_non_tcp_proto(void)
 
     /* Test max capacity listeners */
     SYN_TCP full_tcp;
-    syn_tcp_init(&full_tcp, NULL);
+    syn_tcp_init(&full_tcp, &eth);
     for (uint16_t p = 1000; p < 1000 + SYN_TCP_MAX_CONNS; p++) {
         TEST_ASSERT_EQUAL(SYN_OK, syn_tcp_listen(&full_tcp, p));
     }

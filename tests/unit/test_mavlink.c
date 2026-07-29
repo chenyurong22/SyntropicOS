@@ -69,7 +69,7 @@ void test_mavlink_null_and_crc_error(void)
 void test_mavlink_msg_ids_and_invalid_state_fallback(void)
 {
     /* Test encode_msg with sys_status, global_pos_int, vfr_hud, heartbeat, and unknown msg_id */
-    uint8_t payload[8] = {0};
+    uint8_t payload[16] = {0};
     uint8_t buf[32];
     size_t out_len = 0;
     SYN_MAVLINK_Parser parser;

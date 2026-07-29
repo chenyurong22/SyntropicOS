@@ -149,8 +149,8 @@ void test_icmp_process_packet_invalid_headers(void)
     /* 6. Build echo request with oversized payload > 1500 bytes */
     SYN_ETH eth;
     syn_eth_init(&eth, MY_MAC, MY_IP);
-    uint8_t huge_payload[1600] = {0};
-    uint8_t huge_frame[1600];
+    static uint8_t huge_payload[1600] = {0};
+    static uint8_t huge_frame[1600];
     size_t huge_len = 0;
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_icmp_build_echo_request(&icmp, &eth, PEER_IP, PEER_MAC, 1, 1,

@@ -201,8 +201,8 @@ void test_eth_runt_and_oversized_frames(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_process_frame(&eth, runt, 5, tx, &tx_len));
 
     /* Building frame exceeding 1514 bytes maximum length must fail */
-    uint8_t large_payload[1510];
-    uint8_t large_out[1600];
+    static uint8_t large_payload[1510];
+    static uint8_t large_out[1600];
     size_t out_len = 0;
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
                           syn_eth_build_frame(&eth, PEER_MAC, SYN_ETHTYPE_IPV4, large_payload, 1510,
@@ -340,7 +340,7 @@ struct SYN_ICMP *syn_eth_get_icmp_instance(void)
 /** Regression: ETH dispatcher must forward ICMP (proto 1) to the ICMP engine. */
 void test_eth_dispatch_icmp(void)
 {
-    SYN_ETH eth;
+    static SYN_ETH eth;
     syn_eth_init(&eth, MY_MAC, MY_IP);
     syn_icmp_init(&g_test_icmp);
     g_icmp_injected = true;
@@ -387,7 +387,7 @@ struct SYN_TCP *syn_eth_get_tcp_instance(void)
 /** Regression: ETH dispatcher must forward TCP (proto 6) to the TCP engine. */
 void test_eth_dispatch_tcp(void)
 {
-    SYN_ETH eth;
+    static SYN_ETH eth;
     uint8_t mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
     uint32_t ip = 0xA9FE0164;
     syn_eth_init(&eth, mac, ip);
@@ -482,8 +482,8 @@ void test_eth_arp_reply_and_oversized_payload(void)
     TEST_ASSERT_EQUAL_UINT32(1, eth.arp_replies);
 
     /* Oversized payload build frame error */
-    uint8_t payload[1600];
-    uint8_t frame_out[1600];
+    static uint8_t payload[1600];
+    static uint8_t frame_out[1600];
     size_t frame_len = 0;
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
                           syn_eth_build_frame(&eth, PEER_MAC, SYN_ETHTYPE_IPV4, payload,

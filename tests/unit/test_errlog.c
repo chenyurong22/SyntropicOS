@@ -71,6 +71,18 @@ static void test_errlog(void)
 
     /* Out of bounds read returns false (lines 56-57) */
     TEST_ASSERT_FALSE(syn_errlog_read(&elog, 0, &e));
+    TEST_ASSERT_FALSE(syn_errlog_read(&elog, 10, &e));
+
+    /* Test read and count severity across wrapped ring buffer */
+    syn_errlog_record(&elog, 0x0001, SYN_ERR_WARNING, 10);
+    syn_errlog_record(&elog, 0x0002, SYN_ERR_WARNING, 20);
+    syn_errlog_record(&elog, 0x0003, SYN_ERR_ERROR, 30);
+    syn_errlog_record(&elog, 0x0004, SYN_ERR_WARNING, 40);
+    syn_errlog_record(&elog, 0x0005, SYN_ERR_ERROR, 50); /* wraps, total 5, cap 4 */
+
+    TEST_ASSERT_EQUAL_INT(2, syn_errlog_count_severity(&elog, SYN_ERR_WARNING));
+    TEST_ASSERT_EQUAL_INT(2, syn_errlog_count_severity(&elog, SYN_ERR_ERROR));
+    TEST_ASSERT_FALSE(syn_errlog_read(&elog, 4, &e)); /* index >= avail (4) */
 }
 
 void run_errlog_tests(void)

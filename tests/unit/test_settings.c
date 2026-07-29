@@ -492,6 +492,19 @@ static void test_settings_vfs_short_read_write_error(void)
     mock_port_reset();
 }
 
+static void test_settings_init_save_fail(void)
+{
+    mock_port_reset();
+    TestSettings data;
+    SYN_Settings store;
+
+    /* Fail flash erase/write on first save in syn_settings_init (lines 56-57) */
+    mock_flash_write_fail_next = true;
+    TEST_ASSERT_EQUAL(SYN_ERROR,
+                      syn_settings_init(&store, FLASH_BASE, 2, &data, sizeof(data), &defaults));
+    mock_port_reset();
+}
+
 void run_settings_tests(void)
 {
     RUN_TEST(test_settings_init_blank_flash);
@@ -514,4 +527,5 @@ void run_settings_tests(void)
     RUN_TEST(test_settings_dual_bank_neither_bank_valid);
     RUN_TEST(test_settings_init_load_fail);
     RUN_TEST(test_settings_vfs_short_read_write_error);
+    RUN_TEST(test_settings_init_save_fail);
 }

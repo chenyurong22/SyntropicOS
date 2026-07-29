@@ -164,7 +164,29 @@ static void test_uds_security_access(void)
     /* Tick 10s to expire lockout timer */
     syn_uds_tick(&g_uds, 10000);
 
-    /* Seed request now succeeds after lockout expiration */
+    /* Seed request succeeds after lockout expiration (error count decremented to 2) */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+
+    /* Invalid key during this post-lockout attempt -> Error count returns to 3, re-triggering 10s
+     * lockout & NRC 0x36 */
+    req[1] = 0x02;
+    req[2] = 0x00;
+    req[3] = 0x00;
+    req[4] = 0x00;
+    req[5] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_EXCEEDED_NUMBER_OF_ATTEMPTS, resp[2]);
+
+    /* Request Seed during re-triggered 10s lockout fails with NRC 0x37 */
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED, resp[2]);
+
+    /* Expire 10s lockout again */
+    syn_uds_tick(&g_uds, 10000);
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
 

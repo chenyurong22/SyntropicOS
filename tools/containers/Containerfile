@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libclang-rt-dev \
     make \
     cmake \
+    ccache \
     git \
     libasan8 \
     libubsan1 \

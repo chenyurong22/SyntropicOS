@@ -16,11 +16,12 @@ if ! command -v clang-format >/dev/null 2>&1; then
     exit 0
 fi
 
+JOBS=${JOBS:-$(nproc 2>/dev/null || echo 4)}
 FILES=$(find src tests -name "*.c" -o -name "*.h" ! -path "*/unity/*" ! -name "stb_*.h")
 
 if [[ "${MODE}" == "fix" ]]; then
-    echo "Applying formatting fixes..."
-    clang-format -i ${FILES}
+    echo "Applying formatting fixes with ${JOBS} parallel workers..."
+    echo "${FILES}" | xargs -n 20 -P "${JOBS}" clang-format -i
     echo "=== Formatting Complete ==="
 else
     echo "Checking code formatting..."

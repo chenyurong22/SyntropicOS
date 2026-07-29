@@ -1,7 +1,7 @@
 # Unity test build
 # Usage: make -f tests/Makefile.unity [test|clean]
 
-CC      := gcc
+CC      ?= $(shell command -v ccache 2>/dev/null || echo gcc)
 CFLAGS  := -std=c99 -fPIC -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests/unit -Itests/unit/mocks -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_MBUS=1 -DSYN_USE_DLT645=1 -DSYN_USE_AT_PARSER=1 -DSYN_USE_BACNET=1 -DSYN_USE_DEVICENET=1
 
 
@@ -154,7 +154,7 @@ UNITY_SRCS := tests/unit/unity/unity.c
 MOCK_SRCS := tests/unit/mocks/mock_port.c
 
 # Build output directory
-BUILD_DIR := build/tests
+BUILD_DIR ?= build/tests
 
 # All per-module test files
 TEST_SRCS := $(wildcard tests/unit/test_*.c)
@@ -181,7 +181,7 @@ test: test_unity
 test-cov: CFLAGS += --coverage
 test-cov: LDFLAGS += --coverage
 test-cov: test_unity
-	@find . -name "*.gcda" -delete
+	@find $(BUILD_DIR) -name "*.gcda" -delete 2>/dev/null || true
 	./$(BUILD_DIR)/test_unity
 	@echo "Coverage data generated."
 

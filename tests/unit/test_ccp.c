@@ -166,6 +166,19 @@ static void test_ccp_mta_upload_download(void)
     cro[4] = 0x10;
     TEST_ASSERT_TRUE(syn_ccp_process_cro(&g_ccp_slave, cro, dto));
     TEST_ASSERT_EQUAL_HEX8(SYN_CCP_ERR_SUCCESS, dto[1]);
+
+    /* Null MTA setter test */
+    syn_ccp_set_mta(NULL, 0, 0, 0);
+
+    /* DISCONNECT with address mismatch (0x5555) */
+    cro[0] = SYN_CCP_CMD_DISCONNECT;
+    cro[1] = 0x99;
+    cro[2] = 0x00;
+    cro[3] = 0x55;
+    cro[4] = 0x55;
+    TEST_ASSERT_TRUE(syn_ccp_process_cro(&g_ccp_slave, cro, dto));
+    TEST_ASSERT_EQUAL_HEX8(SYN_CCP_ERR_SUCCESS, dto[1]);
+    TEST_ASSERT_TRUE(g_ccp_slave.connected); /* Still connected due to mismatch */
 }
 
 static void test_ccp_daq_list_streaming(void)

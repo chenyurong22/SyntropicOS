@@ -219,6 +219,11 @@ static void test_j1939_dtc_log_null_checks_and_multi_packet_short_last_frame(voi
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_j1939_dtc_add_active(NULL, 100, 1));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_j1939_dtc_clear_active(NULL, 100, 1));
 
+    /* Null guards for name encode/decode and id_unpack */
+    syn_j1939_name_encode(NULL, NULL);
+    syn_j1939_name_decode(NULL, NULL);
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_j1939_id_unpack(0x18FEF100UL, NULL));
+
     /* Multi-packet BAM assembly where final packet bytes are clipped to total_bytes */
     SYN_J1939_Node node;
     SYN_J1939_Name name = {.identity_number = 1U};

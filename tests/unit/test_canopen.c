@@ -258,6 +258,18 @@ static void test_canopen_rpdo_tpdo_emcy(void)
     TEST_ASSERT_EQUAL(0x00U, tx_buf[0]);
     TEST_ASSERT_EQUAL(0x10U, tx_buf[1]);
     TEST_ASSERT_EQUAL(0x01U, tx_buf[2]);
+
+    /* TPDO Trigger error checks */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_tpdo_trigger(NULL, 1));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_tpdo_trigger(&node, 0));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_tpdo_trigger(&node, 5));
+
+    /* TPDO Trigger when disabled/unmapped */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_canopen_tpdo_trigger(&node, 2)); /* TPDO2 disabled */
+
+    /* TPDO Trigger when not in Operational state */
+    node.nmt_state = SYN_CANOPEN_NMT_STATE_PREOP;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_canopen_tpdo_trigger(&node, 1));
 }
 
 static void test_canopen_invalid_params(void)

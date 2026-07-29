@@ -1170,6 +1170,164 @@ static void test_uds_upload_sequence_and_nrc_handling(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp[2]);
 }
 
+static bool mock_failing_file_transfer_cb(uint8_t mode, const char *file_path, uint16_t path_len,
+                                          uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len,
+                                          void *ctx)
+{
+    (void)mode;
+    (void)file_path;
+    (void)path_len;
+    (void)out_buf;
+    (void)max_out_len;
+    (void)out_len;
+    (void)ctx;
+    return false;
+}
+
+static void test_uds_nrc_coverage_sweep(void)
+{
+    SYN_UDS_Server server;
+    TEST_ASSERT_TRUE(syn_uds_init(&server));
+    server.security_state = SYN_UDS_SECURITY_UNLOCKED;
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x010203U, 0x01U, 0x60U));
+
+    uint8_t req[32] = {0};
+    uint8_t resp[64] = {0};
+    uint16_t resp_len = 0;
+
+    /* 1. Small response buffer (NRC 0x14) across ReadDTCInformation (0x19) subfunctions */
+    req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
+    req[1] = 0x01;
+    req[2] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, 5, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    req[1] = 0x02;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, 5, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    req[1] = 0x0A;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, 5, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    req[1] = 0x0B;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, 5, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    req[1] = 0x08;
+    req[2] = 0x60;
+    req[3] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, 5, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    req[1] = 0x14;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, 5, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    /* 2. ReadScalingDataByIdentifier (0x24) small response buffer -> NRC 0x14 */
+    TEST_ASSERT_TRUE(syn_uds_register_did(&server, 0xF190, req, 4, false));
+    req[0] = SYN_UDS_SID_READ_SCALING_DATA_BY_IDENTIFIER;
+    syn_poke_u16(0xF190, req, 1);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, 2, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    /* 3. ReadMemoryByAddress (0x23) small response buffer -> NRC 0x14 */
+    req[0] = SYN_UDS_SID_READ_MEMORY_BY_ADDRESS;
+    req[1] = 0x11;
+    req[2] = 0x10;
+    req[3] = 0x10;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, 5, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    /* 4. Incorrect message lengths across services -> NRC 0x13 */
+    req[0] = SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[0] = SYN_UDS_SID_CONTROL_DTC_SETTING;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 1, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[0] = SYN_UDS_SID_RESPONSE_ON_EVENT;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 1, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[0] = SYN_UDS_SID_READ_DATA_BY_PERIODIC_IDENTIFIER;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 1, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[0] = SYN_UDS_SID_DYNAMICALLY_DEFINE_DATA_IDENTIFIER;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[0] = SYN_UDS_SID_WRITE_DATA_BY_IDENTIFIER;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[0] = SYN_UDS_SID_INPUT_OUTPUT_CONTROL_BY_IDENTIFIER;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[0] = SYN_UDS_SID_ROUTINE_CONTROL;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[0] = SYN_UDS_SID_LINK_CONTROL;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 1, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 5. Subfunction / Mode bounds errors -> NRC 0x12 / NRC 0x31 */
+    req[0] = SYN_UDS_SID_RESPONSE_ON_EVENT;
+    req[1] = 0x99;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
+
+    req[0] = SYN_UDS_SID_ROUTINE_CONTROL;
+    req[1] = 0x99;
+    syn_poke_u16(0x0201, req, 2);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
+
+    req[0] = SYN_UDS_SID_LINK_CONTROL;
+    req[1] = 0x99;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
+
+    req[0] = SYN_UDS_SID_REQUEST_FILE_TRANSFER;
+    req[1] = 0x99;
+    req[2] = 'a';
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
+
+    /* 6. RequestFileTransfer (0x38) failing callback -> NRC 0x22 */
+    syn_uds_register_file_transfer(&server, mock_failing_file_transfer_cb, NULL);
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -1186,5 +1344,6 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_stateful_data_transfer_sequence);
     RUN_TEST(test_uds_spec_nrc_and_edge_cases);
     RUN_TEST(test_uds_upload_sequence_and_nrc_handling);
+    RUN_TEST(test_uds_nrc_coverage_sweep);
     RUN_TEST(test_uds_bounds_and_null_checks);
 }

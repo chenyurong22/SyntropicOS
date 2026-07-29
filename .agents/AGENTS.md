@@ -1,6 +1,7 @@
 # Agent Directives & Workflow Compliance Rules
 
 - **Workflow Execution**: When a slash command or workflow (such as `/checks` or `/coverage`) is triggered, ALWAYS execute EVERY single step and containerized target (`make container-*`) in full. Never truncate steps, skip targets, stop early, or substitute host commands when containerized targets are specified.
+- **Strict Containerized Targets Only**: NEVER execute raw `docker run`, `gcovr`, `gcc`, or `gcov` commands directly in shell terminals. ALL test, build, coverage, lint, and static analysis operations MUST be executed via containerized make targets (`make container-cov`, `make container-test`, `make container-format`, `make container-static`).
 - **Verification Integrity**: Never declare a check, build, or test complete until all defined workflow targets have run to completion and emitted verified success output.
 - **Test Reporting & Error Honesty**: Read stdout/stderr completely. If any test fails or static analysis flags an issue, loudly report `FAILURE:` followed by exact error. Never hide or downplay failing tests.
 - **Anti-Symptom Patching**: Never comment out failing `TEST_ASSERT` lines, return dummy status codes, suppress MISRA/lint warnings with ad-hoc pragmas, or loosen test thresholds just to pass checks. Fix root cause in source.

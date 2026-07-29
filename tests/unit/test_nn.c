@@ -17,6 +17,31 @@
 
 /* ── 1. Q7 & Q15 Boundary Tests ─────────────────────────────────────────── */
 
+static void test_nn_conv1d_quant_q7_and_null_checks(void)
+{
+    q7_t inputs[4 * 1] = {10, 20, 30, 40};
+    q7_t weights[1 * 2 * 1] = {64, 64};
+    q16_t biases[1] = {0};
+    q7_t outputs[3 * 1] = {0};
+
+    syn_nn_quant_t quant = {.multiplier = 32768, .shift = 1, .zero_point = 0};
+
+    /* Conv1d quant test */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_nn_conv1d_quant_q7(inputs, 4, 1, weights, biases, outputs, 1,
+                                                         2, 1, SYN_NN_ACT_NONE, &quant));
+    /* Conv1d quant test with NULL biases */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_nn_conv1d_quant_q7(inputs, 4, 1, weights, NULL, outputs, 1, 2,
+                                                         1, SYN_NN_ACT_NONE, &quant));
+
+    /* Null checks and invalid params for conv1d quant */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_nn_conv1d_quant_q7(NULL, 4, 1, weights, biases, outputs, 1, 2, 1,
+                                                 SYN_NN_ACT_NONE, &quant));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_nn_conv1d_quant_q7(inputs, 2, 1, weights, biases, outputs, 1, 4, 1,
+                                                 SYN_NN_ACT_NONE, &quant)); /* kernel > seq_len */
+}
+
 void test_q7_math_boundaries_and_saturation(void)
 {
     TEST_ASSERT_EQUAL_INT8(127, Q7_FROM_FLOAT(1.5f));
@@ -81,6 +106,19 @@ void test_nn_activations(void)
                           syn_nn_dense_q7(in, 2, weights, biases, out, 2, SYN_NN_ACT_TANH, 0));
     TEST_ASSERT_INT8_WITHIN(4, Q7_FROM_FLOAT(0.25f), out[0]);
     TEST_ASSERT_INT8_WITHIN(4, Q7_FROM_FLOAT(-0.25f), out[1]);
+
+    /* SIGMOID & NONE */
+    TEST_ASSERT_EQUAL_INT(SYN_OK,
+                          syn_nn_dense_q7(in, 2, weights, biases, out, 2, SYN_NN_ACT_SIGMOID, 0));
+    TEST_ASSERT_EQUAL_INT(SYN_OK,
+                          syn_nn_dense_q7(in, 2, weights, biases, out, 2, SYN_NN_ACT_NONE, 0));
+
+    /* Saturated values for Sigmoid and Tanh */
+    q7_t in_sat[2] = {127, -128};
+    q7_t weights_sat[2 * 2] = {127, 0, 0, 127};
+    q16_t biases_sat[2] = {Q16_FROM_INT(5), Q16_FROM_INT(-5)};
+    syn_nn_dense_q7(in_sat, 2, weights_sat, biases_sat, out, 2, SYN_NN_ACT_SIGMOID, 1);
+    syn_nn_dense_q7(in_sat, 2, weights_sat, biases_sat, out, 2, SYN_NN_ACT_TANH, 1);
 }
 
 /* ── 3. Softmax & Attention Tests ───────────────────────────────────────── */
@@ -303,4 +341,133 @@ void test_nn_edge_cases_and_null_checks(void)
     /* ArgMax NULL checks */
     TEST_ASSERT_EQUAL_UINT32(0, syn_nn_argmax_q7(NULL, 10));
     TEST_ASSERT_EQUAL_UINT32(0, syn_nn_argmax_q7(buf, 0));
+}
+
+void test_nn_conv1d_coroutine(void)
+{
+    q7_t inputs[4 * 1] = {10, 20, 30, 40};
+    q7_t weights[1 * 2 * 1] = {64, 64}; /* 0.5, 0.5 */
+    q16_t biases[1] = {0};
+    q7_t outputs[3 * 1] = {0};
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    size_t current_step = 0;
+
+    /* Execute with chunk_size = 1 so it yields every step */
+    SYN_PT_Status status;
+    status = syn_nn_conv1d_pt(&pt, inputs, 4, 1, weights, biases, outputs, 1, 2, 1, SYN_NN_ACT_NONE,
+                              0, &current_step, 1);
+    TEST_ASSERT_EQUAL_INT(PT_YIELDED, status);
+
+    status = syn_nn_conv1d_pt(&pt, inputs, 4, 1, weights, biases, outputs, 1, 2, 1, SYN_NN_ACT_NONE,
+                              0, &current_step, 1);
+    TEST_ASSERT_EQUAL_INT(PT_YIELDED, status);
+
+    status = syn_nn_conv1d_pt(&pt, inputs, 4, 1, weights, biases, outputs, 1, 2, 1, SYN_NN_ACT_NONE,
+                              0, &current_step, 1);
+    TEST_ASSERT_EQUAL_INT(PT_EXITED, status);
+
+    TEST_ASSERT_INT8_WITHIN(2, 15, outputs[0]);
+    TEST_ASSERT_INT8_WITHIN(2, 25, outputs[1]);
+    TEST_ASSERT_INT8_WITHIN(2, 35, outputs[2]);
+}
+
+static void test_nn_conv1d_quant_q7_param_validation_failures(void)
+{
+    q7_t inputs[10] = {0};
+    q7_t weights[10] = {0};
+    q7_t outputs[10] = {0};
+    syn_nn_quant_t q = {.multiplier = 1, .shift = 0, .zero_point = 0};
+
+    /* kernel_size > seq_len */
+    TEST_ASSERT_EQUAL(
+        SYN_INVALID_PARAM,
+        syn_nn_conv1d_quant_q7(inputs, 2, 1, weights, NULL, outputs, 1, 5, 1, SYN_NN_ACT_NONE, &q));
+
+    /* stride == 0 */
+    TEST_ASSERT_EQUAL(
+        SYN_INVALID_PARAM,
+        syn_nn_conv1d_quant_q7(inputs, 5, 1, weights, NULL, outputs, 1, 2, 0, SYN_NN_ACT_NONE, &q));
+
+    /* num_filters == 0 */
+    TEST_ASSERT_EQUAL(
+        SYN_INVALID_PARAM,
+        syn_nn_conv1d_quant_q7(inputs, 5, 1, weights, NULL, outputs, 0, 2, 1, SYN_NN_ACT_NONE, &q));
+}
+
+static void test_nn_activation_functions_coverage_branches(void)
+{
+    q7_t inputs[2] = {Q7_FROM_FLOAT(-0.8f), Q7_FROM_FLOAT(0.8f)};
+    q7_t weights[2 * 2] = {127, 0, 0, 127};
+    q16_t biases[2] = {0, 0};
+    q7_t outputs[2];
+
+    /* Test Leaky ReLU with negative input */
+    syn_nn_dense_q7(inputs, 2, weights, biases, outputs, 2, SYN_NN_ACT_LEAKY_RELU, 0);
+
+    /* Test Sigmoid with large inputs */
+    biases[0] = Q16_FROM_INT(-10);
+    biases[1] = Q16_FROM_INT(10);
+    syn_nn_dense_q7(inputs, 2, weights, biases, outputs, 2, SYN_NN_ACT_SIGMOID, 0);
+
+    /* Test Tanh with large inputs */
+    syn_nn_dense_q7(inputs, 2, weights, biases, outputs, 2, SYN_NN_ACT_TANH, 0);
+}
+
+static void test_nn_conv1d_quant_q7_valid_conv_with_biases(void)
+{
+    q7_t inputs[4 * 1] = {Q7_FROM_FLOAT(0.5f), Q7_FROM_FLOAT(0.2f), Q7_FROM_FLOAT(-0.3f),
+                          Q7_FROM_FLOAT(0.8f)};
+    q7_t weights[2 * 2 * 1] = {Q7_FROM_FLOAT(0.5f), Q7_FROM_FLOAT(0.5f), Q7_FROM_FLOAT(-0.5f),
+                               Q7_FROM_FLOAT(0.5f)};
+    q16_t biases[2] = {Q16_FROM_INT(1), Q16_FROM_INT(-1)};
+    q7_t outputs[3 * 2];
+    syn_nn_quant_t q = {.multiplier = 1, .shift = 0, .zero_point = 0};
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_nn_conv1d_quant_q7(inputs, 4, 1, weights, biases, outputs, 2, 2,
+                                                     1, SYN_NN_ACT_RELU, &q));
+}
+
+static void test_nn_conv1d_quant_q7_invalid_params(void)
+{
+    q7_t in[4] = {10, 20, 30, 40};
+    q7_t w[4] = {1, 2, 3, 4};
+    q7_t out[4];
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_nn_conv1d_quant_q7(NULL, 4, 1, w, NULL, out, 1, 2, 1,
+                                                                SYN_NN_ACT_NONE, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_nn_conv1d_quant_q7(in, 0, 1, w, NULL, out, 1, 2, 1,
+                                                                SYN_NN_ACT_NONE, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_nn_conv1d_quant_q7(in, 4, 1, w, NULL, out, 1, 5, 1,
+                                                                SYN_NN_ACT_NONE, NULL));
+}
+
+static void test_nn_softmax_q7_null_and_basic(void)
+{
+    q7_t in[3] = {10, 20, 30};
+    q7_t out[3];
+    TEST_ASSERT_EQUAL(SYN_OK, syn_nn_softmax_q7(in, out, 3));
+    TEST_ASSERT_TRUE(out[2] >= out[1]);
+    TEST_ASSERT_TRUE(out[1] >= out[0]);
+}
+
+void run_nn_tests(void)
+{
+    RUN_TEST(test_nn_activations);
+    RUN_TEST(test_nn_softmax);
+    RUN_TEST(test_nn_attention);
+    RUN_TEST(test_nn_dct_transformer_pipeline);
+    RUN_TEST(test_nn_protothread_coroutine);
+    RUN_TEST(test_nn_conv1d_and_coroutine);
+    RUN_TEST(test_nn_affine_quantization);
+    RUN_TEST(test_nn_pooling_layers);
+    RUN_TEST(test_nn_edge_cases_and_null_checks);
+    RUN_TEST(test_nn_conv1d_coroutine);
+    RUN_TEST(test_nn_conv1d_quant_q7_and_null_checks);
+    RUN_TEST(test_nn_conv1d_quant_q7_param_validation_failures);
+    RUN_TEST(test_nn_activation_functions_coverage_branches);
+    RUN_TEST(test_nn_conv1d_quant_q7_valid_conv_with_biases);
+    RUN_TEST(test_nn_conv1d_quant_q7_invalid_params);
+    RUN_TEST(test_nn_softmax_q7_null_and_basic);
 }

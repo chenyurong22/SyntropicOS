@@ -193,10 +193,50 @@ static void test_kalman_predict_grows_P(void)
 
 /* ── Runner ─────────────────────────────────────────────────────────────── */
 
+static void test_kalman_singular_S_matrix_update_fail(void)
+{
+    SYN_Kalman kf;
+    SYN_Kalman_Config cfg;
+
+    SYN_MAT_DECL(x, 1, 1);
+    SYN_MAT_DECL(P, 1, 1);
+    SYN_MAT_DECL(F, 1, 1);
+    SYN_MAT_DECL(Qn, 1, 1);
+    SYN_MAT_DECL(H, 1, 1);
+    SYN_MAT_DECL(R, 1, 1);
+    SYN_MAT_DECL(z, 1, 1);
+
+    SYN_KALMAN_SCRATCH_DECL(s, 1, 1);
+
+    syn_matrix_identity(&F);
+    syn_matrix_zero(&H); /* H=0 makes S = 0 + R */
+    syn_matrix_zero(&x);
+    syn_matrix_zero(&P);
+    syn_matrix_zero(&Qn);
+    syn_matrix_zero(&R); /* R=0 makes S singular (0) */
+
+    cfg.x = &x;
+    cfg.P = &P;
+    cfg.F = &F;
+    cfg.Q = &Qn;
+    cfg.H = &H;
+    cfg.R = &R;
+    cfg.n_state = 1;
+    cfg.n_meas = 1;
+
+    syn_kalman_init(&kf, &cfg);
+    SYN_KALMAN_SCRATCH_ASSIGN(&kf, s);
+
+    z.data[0] = 100;
+    /* Updating with singular covariance matrix returns SYN_ERROR */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_kalman_update(&kf, &z));
+}
+
 void run_kalman_tests(void)
 {
     RUN_TEST(test_kalman_init_valid);
     RUN_TEST(test_kalman_init_bad_dims);
     RUN_TEST(test_kalman_constant_converge);
     RUN_TEST(test_kalman_predict_grows_P);
+    RUN_TEST(test_kalman_singular_S_matrix_update_fail);
 }

@@ -161,20 +161,20 @@ void syn_cbor_skip(SYN_CborReader *r)
         } else if (major == 4u) {
             /* array: push 'arg' items */
             uint64_t n = decode_arg(r, info);
-            depth++;
-            if (depth >= SKIP_MAX_DEPTH) {
+            if (depth + 1u >= SKIP_MAX_DEPTH) {
                 r->ok = false;
                 return;
             }
+            depth++;
             pending[depth] = (size_t)n;
         } else if (major == 5u) {
             /* map: push 'arg * 2' items (each pair = key + value) */
             uint64_t n = decode_arg(r, info);
-            depth++;
-            if (depth >= SKIP_MAX_DEPTH) {
+            if (depth + 1u >= SKIP_MAX_DEPTH) {
                 r->ok = false;
                 return;
             }
+            depth++;
             pending[depth] = (size_t)(n * 2u);
         } else {
             /* major type 0 or 1: uint/int, arg is the value, no data bytes */

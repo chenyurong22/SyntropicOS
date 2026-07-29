@@ -165,6 +165,37 @@ void test_nmea_edge_cases(void)
     TEST_ASSERT_TRUE(zda.valid);
 }
 
+static void test_nmea_lowercase_checksum_and_overflow(void)
+{
+    /* Lowercase checksum hex 'a'-'f' */
+    const char *gga_lc = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*4a";
+    TEST_ASSERT_FALSE(syn_nmea_validate(gga_lc));
+
+    /* Sentence buffer overflow */
+    SYN_NMEA_Parser parser;
+    syn_nmea_parser_init(&parser);
+    syn_nmea_parser_feed(&parser, '$', NULL);
+    for (int i = 0; i < 150; i++) {
+        syn_nmea_parser_feed(&parser, 'A', NULL);
+    }
+    TEST_ASSERT_FALSE(parser.in_sentence);
+}
+
+static void test_nmea_checksum_null_and_short_stars(void)
+{
+    TEST_ASSERT_EQUAL_UINT8(0, syn_nmea_checksum(NULL));
+    TEST_ASSERT_FALSE(syn_nmea_validate(NULL));
+    TEST_ASSERT_FALSE(syn_nmea_validate("GPGGA,123456*47")); /* Missing leading $ */
+    TEST_ASSERT_FALSE(syn_nmea_validate("$GPGGA,123456*4")); /* Short star string < 3 chars */
+
+    TEST_ASSERT_EQUAL(SYN_NMEA_SENTENCE_UNKNOWN, syn_nmea_get_type(NULL));
+    TEST_ASSERT_EQUAL(SYN_NMEA_SENTENCE_UNKNOWN,
+                      syn_nmea_get_type("$XX*00")); /* Length < 3 after talker */
+
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, 0.0, syn_nmea_parse_coord(NULL, 'N'));
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, 0.0, syn_nmea_parse_coord("12", 'N')); /* Length < 4 */
+}
+
 void run_nmea_tests(void)
 {
     RUN_TEST(test_nmea_checksum_and_validate);
@@ -174,4 +205,6 @@ void run_nmea_tests(void)
     RUN_TEST(test_nmea_parse_vtg_gsa_zda);
     RUN_TEST(test_nmea_streaming_parser);
     RUN_TEST(test_nmea_edge_cases);
+    RUN_TEST(test_nmea_lowercase_checksum_and_overflow);
+    RUN_TEST(test_nmea_checksum_null_and_short_stars);
 }

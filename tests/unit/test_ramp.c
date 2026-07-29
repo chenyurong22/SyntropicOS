@@ -125,6 +125,30 @@ static void test_ramp_scurve_done_at_diff_zero(void)
     TEST_ASSERT_TRUE(r.done);
 }
 
+static void test_ramp_fixed_point_and_negative_rate_clamp(void)
+{
+    SYN_Ramp r;
+    syn_ramp_init(&r, 0);
+
+    /* Negative rate and accel clamped to 1 */
+    syn_ramp_set_target(&r, 100, -5);
+    TEST_ASSERT_EQUAL_INT(1, r.rate);
+
+    syn_ramp_set_target_trapezoid(&r, 100, -10, -5);
+    TEST_ASSERT_EQUAL_INT(1, r.rate);
+    TEST_ASSERT_EQUAL_INT(1, r.accel);
+
+    /* Fixed-point mode (frac_bits = 4 -> Q4.4) */
+    syn_ramp_set_target_trapezoid_fp(&r, 10, 16, 1, 4);
+    int iters = 0;
+    while (!syn_ramp_done(&r) && iters < 500) {
+        syn_ramp_update(&r);
+        iters++;
+    }
+    TEST_ASSERT_TRUE(syn_ramp_done(&r));
+    TEST_ASSERT_EQUAL_INT(10, syn_ramp_value(&r));
+}
+
 void run_ramp_tests(void)
 {
     RUN_TEST(test_ramp);
@@ -133,4 +157,5 @@ void run_ramp_tests(void)
     RUN_TEST(test_ramp_scurve_at_target);
     RUN_TEST(test_ramp_linear_done_at_diff_zero);
     RUN_TEST(test_ramp_scurve_done_at_diff_zero);
+    RUN_TEST(test_ramp_fixed_point_and_negative_rate_clamp);
 }

@@ -328,6 +328,13 @@ static void test_lfs_vfs_dir_errors(void)
     }
 }
 
+static void test_lfs_init_config_invalid_params(void)
+{
+    struct lfs_config cfg;
+    SYN_LfsConfig syn_cfg = {.block_size = 0};
+    syn_lfs_init_config(&cfg, &syn_cfg);
+}
+
 void run_lfs_tests(void)
 {
     RUN_TEST(test_lfs_init_config);
@@ -336,4 +343,5 @@ void run_lfs_tests(void)
     RUN_TEST(test_lfs_vfs_file_errors);
     RUN_TEST(test_lfs_vfs_dir);
     RUN_TEST(test_lfs_vfs_dir_errors);
+    RUN_TEST(test_lfs_init_config_invalid_params);
 }

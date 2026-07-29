@@ -213,6 +213,70 @@ static void test_j1939_dtc_log_manager(void)
     TEST_ASSERT_EQUAL(0, log.prev_count);
 }
 
+static void test_j1939_dtc_log_null_checks_and_multi_packet_short_last_frame(void)
+{
+    /* Null guards for DTC log operations */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_j1939_dtc_add_active(NULL, 100, 1));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_j1939_dtc_clear_active(NULL, 100, 1));
+
+    /* Multi-packet BAM assembly where final packet bytes are clipped to total_bytes */
+    SYN_J1939_Node node;
+    SYN_J1939_Name name = {.identity_number = 1U};
+    syn_j1939_node_init(&node, 0x10, &name);
+
+    /* Initiate 10-byte BAM transfer (2 packets: pkt1=7 bytes, pkt2=3 bytes) */
+    SYN_CAN_Frame bam_frame;
+    syn_j1939_build_tp_bam(0x20, SYN_J1939_PGN_DM1, 10, &bam_frame);
+
+    uint32_t out_pgn = 0;
+    const uint8_t *out_data = NULL;
+    size_t out_len = 0;
+    syn_j1939_process_frame(&node, &bam_frame, &out_pgn, &out_data, &out_len);
+
+    /* Send packet 1 (seq = 1, 7 bytes payload) */
+    SYN_CAN_Frame dt1;
+    uint8_t d1[7] = {1, 2, 3, 4, 5, 6, 7};
+    syn_j1939_build_tp_dt(0x20, 1, d1, 7, &dt1);
+    syn_j1939_process_frame(&node, &dt1, &out_pgn, &out_data, &out_len);
+
+    /* Send packet 2 (seq = 2, 7 bytes provided, but total_bytes=10 so 3 bytes copied) */
+    SYN_CAN_Frame dt2;
+    uint8_t d2[7] = {8, 9, 10, 11, 12, 13, 14};
+    syn_j1939_build_tp_dt(0x20, 2, d2, 7, &dt2);
+    SYN_Status st = syn_j1939_process_frame(&node, &dt2, &out_pgn, &out_data, &out_len);
+
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+    TEST_ASSERT_EQUAL_UINT32(10, out_len);
+}
+
+static void test_j1939_single_frame_rx_and_dm2_encoding(void)
+{
+    SYN_J1939_Node node;
+    SYN_J1939_Name name = {.identity_number = 1U};
+    syn_j1939_node_init(&node, 0x10, &name);
+
+    /* Construct single-frame CAN packet (e.g. EEC1 PGN 61444, SA=0x20) */
+    uint32_t can_id = syn_j1939_id_pack(3, SYN_J1939_PGN_EEC1, 0x20, SYN_J1939_ADDR_GLOBAL);
+    uint8_t payload[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+    SYN_CAN_Frame frame = {.id = can_id, .dlc = 8, .extended = true};
+    memcpy(frame.data, payload, 8);
+
+    uint32_t out_pgn = 0;
+    const uint8_t *out_data = NULL;
+    size_t out_len = 0;
+
+    SYN_Status st = syn_j1939_process_frame(&node, &frame, &out_pgn, &out_data, &out_len);
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+    TEST_ASSERT_EQUAL_UINT32(SYN_J1939_PGN_EEC1, out_pgn);
+    TEST_ASSERT_EQUAL(8, out_len);
+    TEST_ASSERT_EQUAL_MEMORY(payload, out_data, 8);
+
+    /* DM2 encoding test */
+    uint8_t dm2_buf[32];
+    size_t len = syn_j1939_encode_dm2(dm2_buf, sizeof(dm2_buf), NULL, 0, 0);
+    TEST_ASSERT_EQUAL(6, len);
+}
+
 void run_j1939_tests(void)
 {
     RUN_TEST(test_j1939_id_pack_unpack_pdu1_pdu2);
@@ -222,4 +286,6 @@ void run_j1939_tests(void)
     RUN_TEST(test_j1939_tp_bam_multi_packet_assembly);
     RUN_TEST(test_j1939_dm2_encoding);
     RUN_TEST(test_j1939_dtc_log_manager);
+    RUN_TEST(test_j1939_dtc_log_null_checks_and_multi_packet_short_last_frame);
+    RUN_TEST(test_j1939_single_frame_rx_and_dm2_encoding);
 }

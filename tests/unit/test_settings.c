@@ -276,6 +276,11 @@ static void test_settings_edge_cases(void)
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_settings_import_vfs(NULL, "/cfg/set.bin", false));
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_settings_export_vfs(&store, "/invalid/path"));
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_settings_import_vfs(&store, "/invalid/path", false));
+
+    /* Import without save parameter (save = false) */
+    TestSettings new_vals = {.velocity = 1234, .accel = 567, .mode = 2};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_import(&store, &new_vals, sizeof(new_vals), false));
+    TEST_ASSERT_EQUAL_INT32(1234, settings.velocity);
 }
 
 static uint8_t ram_vfs_buf[128];
@@ -347,6 +352,48 @@ static void test_settings_vfs_export_import(void)
     TEST_ASSERT_EQUAL_INT32(333, settings2.accel);
 }
 
+static void test_settings_dual_bank_fallback_to_defaults(void)
+{
+    TestSettings data;
+    SYN_DualBankSettings db;
+
+    /* Initialize dual bank where both banks default to defaults */
+    SYN_Status st = syn_settings_dual_bank_init(&db, FLASH_BASE, FLASH_BASE + 4096, SECTOR_COUNT,
+                                                &data, sizeof(data), &defaults);
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+    TEST_ASSERT_EQUAL(0, db.active_bank);
+    TEST_ASSERT_EQUAL_INT32(500, data.velocity);
+}
+
+static void test_settings_null_and_invalid_param_checks(void)
+{
+    TestSettings data;
+    SYN_Settings store;
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_settings_init(NULL, FLASH_BASE, SECTOR_COUNT, &data,
+                                                           sizeof(data), &defaults));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, NULL,
+                                                           sizeof(data), &defaults));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &data, 0, &defaults));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_settings_save(NULL));
+}
+
+static void test_settings_vfs_import_no_save(void)
+{
+    TestSettings settings;
+    SYN_Settings store;
+    syn_settings_init(&store, FLASH_BASE, SECTOR_COUNT, &settings, sizeof(settings), &defaults);
+    settings.velocity = 5555;
+    syn_settings_export_vfs(&store, "/cfg/nosave.bin");
+
+    TestSettings settings2;
+    SYN_Settings store2;
+    syn_settings_init(&store2, FLASH_BASE, SECTOR_COUNT, &settings2, sizeof(settings2), &defaults);
+    TEST_ASSERT_EQUAL(SYN_OK, syn_settings_import_vfs(&store2, "/cfg/nosave.bin", false));
+    TEST_ASSERT_EQUAL_INT32(5555, settings2.velocity);
+}
+
 void run_settings_tests(void)
 {
     RUN_TEST(test_settings_init_blank_flash);
@@ -361,4 +408,7 @@ void run_settings_tests(void)
     RUN_TEST(test_settings_dual_bank);
     RUN_TEST(test_settings_edge_cases);
     RUN_TEST(test_settings_vfs_export_import);
+    RUN_TEST(test_settings_dual_bank_fallback_to_defaults);
+    RUN_TEST(test_settings_null_and_invalid_param_checks);
+    RUN_TEST(test_settings_vfs_import_no_save);
 }

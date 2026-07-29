@@ -110,8 +110,9 @@ typedef struct {
 #define SYN_DALI_CMD_STEP_DOWN_AND_OFF 0x07U    /**< Step down and turn off */
 #define SYN_DALI_CMD_ON_AND_STEP_UP 0x08U       /**< Turn on and step up */
 #define SYN_DALI_CMD_ENABLE_DAPC_SEQUENCE 0x09U /**< Enable DAPC sequence */
-#define SYN_DALI_CMD_GO_TO_SCENE_BASE 0x10U /**< Base command for Go To Scene 0..15 (0x10..0x1F) \
-                                             */
+#define SYN_DALI_CMD_GO_TO_SCENE_BASE                          \
+    0x10U /**< Base command for Go To Scene 0..15 (0x10..0x1F) \
+           */
 
 #define SYN_DALI_CMD_RESET 0x20U /**< Reset control gear parameters to defaults */
 #define SYN_DALI_CMD_STORE_ACTUAL_LEVEL_IN_DTR 0x21U   /**< Store current actual level in DTR */

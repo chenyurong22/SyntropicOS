@@ -146,6 +146,18 @@ static void test_bacnet_edge_cases_and_nulls(void)
     TEST_ASSERT_FALSE(has_tx);
 }
 
+static void test_bacnet_add_object_max_capacity(void)
+{
+    SYN_BACnet_Node node;
+    syn_bacnet_node_init(&node, 1, 10);
+    for (int i = 0; i < SYN_BACNET_MAX_OBJECTS - 1; i++) {
+        TEST_ASSERT_EQUAL_INT(
+            SYN_OK, syn_bacnet_add_object(&node, SYN_BACNET_OBJ_ANALOG_INPUT, i, 1.0f, "AI"));
+    }
+    TEST_ASSERT_EQUAL_INT(
+        SYN_ERROR, syn_bacnet_add_object(&node, SYN_BACNET_OBJ_ANALOG_INPUT, 99, 1.0f, "AI"));
+}
+
 void run_bacnet_tests(void)
 {
     RUN_TEST(test_bacnet_crc8);
@@ -156,4 +168,5 @@ void run_bacnet_tests(void)
     RUN_TEST(test_bacnet_poll_for_master);
     RUN_TEST(test_bacnet_read_property);
     RUN_TEST(test_bacnet_edge_cases_and_nulls);
+    RUN_TEST(test_bacnet_add_object_max_capacity);
 }

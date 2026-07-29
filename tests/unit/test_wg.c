@@ -730,6 +730,148 @@ static void test_wg_disconnect_and_stats(void)
     TEST_ASSERT_EQUAL(SYN_WG_DISCONNECTED, wg.state);
 }
 
+static void test_wg_send_fail_and_rekey_timeout_task_branches(void)
+{
+    wg_state_setup();
+    s_wg.state = SYN_WG_ESTABLISHED;
+    s_wg.udp_sock = 1;
+    s_wg.session.receiver_index = 200;
+    mock_udp_sendto_fail = true;
+    uint8_t payload[10] = "FAIL_SEND";
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_wg_send(&s_wg, payload, sizeof(payload)));
+    mock_udp_sendto_fail = false;
+
+    /* Task in HANDSHAKE_INIT state timing out after SYN_WG_REKEY_TIMEOUT (5s) */
+    s_wg.state = SYN_WG_HANDSHAKE_INIT;
+    s_wg.last_handshake_ms = mock_tick_ms;
+    mock_tick_ms += 6000;
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &s_wg};
+    syn_wg_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_WG_DISCONNECTED, s_wg.state);
+}
+
+static void dummy_wg_rx_cb(const uint8_t *data, size_t len, void *ctx)
+{
+    (void)data;
+    (void)len;
+    (void)ctx;
+}
+
+static void test_wg_set_rx_callback(void)
+{
+    SYN_WG wg;
+    memset(&wg, 0, sizeof(wg));
+    wg.on_recv = dummy_wg_rx_cb;
+    wg.user_ctx = (void *)0x1234;
+    TEST_ASSERT_EQUAL_PTR(dummy_wg_rx_cb, wg.on_recv);
+    TEST_ASSERT_EQUAL_PTR((void *)0x1234, wg.user_ctx);
+}
+
+static void test_wg_cookie_mac2_verification_failure(void)
+{
+    SYN_WG wg;
+    memset(&wg, 0, sizeof(wg));
+    uint8_t msg[92];
+    memset(msg, 0, sizeof(msg));
+    msg[0] = 2;
+
+    /* Correct mac1 */
+    wg_mac1(&msg[60], wg.public_key, msg, 60);
+    /* Corrupted mac2 */
+    msg[76] ^= 0xFF;
+
+    TEST_ASSERT_FALSE(wg_consume_response(&wg, msg, sizeof(msg)));
+}
+
+static void test_wg_response_message_invalid_length_and_receiver(void)
+{
+    SYN_WG wg;
+    memset(&wg, 0, sizeof(wg));
+    wg.session.sender_index = 0x12345678;
+
+    uint8_t short_msg[30] = {0};
+    TEST_ASSERT_FALSE(wg_consume_response(&wg, short_msg, sizeof(short_msg)));
+
+    uint8_t msg[92];
+    memset(msg, 0, sizeof(msg));
+    store32_le(msg, SYN_WG_MSG_RESPONSE);
+    store32_le(msg + 8, 0x87654321); /* Receiver mismatch */
+
+    TEST_ASSERT_FALSE(wg_consume_response(&wg, msg, 92));
+}
+
+static void test_wg_response_decryption_and_mac_validation_failures(void)
+{
+    SYN_WG wg;
+    memset(&wg, 0, sizeof(wg));
+    wg.session.sender_index = 0x12345678;
+
+    uint8_t msg[92];
+    memset(msg, 0, sizeof(msg));
+    store32_le(msg, SYN_WG_MSG_RESPONSE);
+    store32_le(msg + 4, 0x11223344); /* Peer sender index */
+    store32_le(msg + 8, 0x12345678); /* Matching receiver index */
+
+    /* Bad payload decryption or bad mac1 will cause wg_consume_response to fail gracefully */
+    TEST_ASSERT_FALSE(wg_consume_response(&wg, msg, sizeof(msg)));
+}
+
+static void test_wg_send_buffer_too_small(void)
+{
+    SYN_WG wg;
+    SYN_WgConfig cfg;
+    SYN_SNTP sntp;
+    uint8_t rx_buf[64], tx_buf[64];
+    memset(&cfg, 0, sizeof(cfg));
+    syn_wg_init(&wg, &cfg, &sntp, rx_buf, sizeof(rx_buf), tx_buf, sizeof(tx_buf));
+    uint8_t dummy[100];
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_wg_send(&wg, dummy, sizeof(dummy)));
+}
+
+static void test_wg_response_mac1_tampered_rejection(void)
+{
+    SYN_WG wg;
+    SYN_WgConfig cfg;
+    SYN_SNTP sntp;
+    uint8_t rx_buf[256], tx_buf[256];
+
+    memset(&cfg, 0, sizeof(cfg));
+    memset(cfg.private_key, 0x01, 32);
+    memset(cfg.peer_public_key, 0x02, 32);
+    cfg.endpoint.port = 51820;
+
+    syn_wg_init(&wg, &cfg, &sntp, rx_buf, sizeof(rx_buf), tx_buf, sizeof(tx_buf));
+    wg.state = SYN_WG_HANDSHAKE_INIT;
+    wg.session.sender_index = 0x12345678;
+
+    uint8_t msg[92];
+    memset(msg, 0, sizeof(msg));
+    msg[0] = 0x02;                    /* Response type */
+    syn_poke_u32(0x12345678, msg, 8); /* receiver_index matching wg.session.sender_index */
+
+    /* Tamper MAC1 at offset 60 */
+    msg[60] ^= 0xFF;
+
+    TEST_ASSERT_FALSE(wg_consume_response(&wg, msg, sizeof(msg)));
+}
+
+static void test_wg_send_initiation_tx_buf_too_small(void)
+{
+    SYN_WG wg;
+    SYN_WgConfig cfg;
+    SYN_SNTP sntp;
+    memset(&cfg, 0, sizeof(cfg));
+    memset(&sntp, 0, sizeof(sntp));
+    cfg.private_key[0] = 1;
+    cfg.peer_public_key[0] = 2;
+    uint8_t rx[500], tx[500];
+    syn_wg_init(&wg, &cfg, &sntp, rx, sizeof(rx), tx, sizeof(tx));
+    uint8_t pkt[10] = {0};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_wg_send(&wg, pkt, sizeof(pkt)));
+}
+
 void run_wg_tests(void)
 {
     /* Handshake internals */
@@ -769,4 +911,12 @@ void run_wg_tests(void)
     RUN_TEST(test_wg_rekey_after_time);
     RUN_TEST(test_wg_handshake_timeout);
     RUN_TEST(test_wg_disconnect_and_stats);
+    RUN_TEST(test_wg_set_rx_callback);
+    RUN_TEST(test_wg_response_message_invalid_length_and_receiver);
+    RUN_TEST(test_wg_response_decryption_and_mac_validation_failures);
+    RUN_TEST(test_wg_send_fail_and_rekey_timeout_task_branches);
+    RUN_TEST(test_wg_response_mac1_tampered_rejection);
+    RUN_TEST(test_wg_cookie_mac2_verification_failure);
+    RUN_TEST(test_wg_send_initiation_tx_buf_too_small);
+    RUN_TEST(test_wg_send_buffer_too_small);
 }

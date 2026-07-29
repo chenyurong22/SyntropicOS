@@ -117,6 +117,31 @@ void test_quaternion_matrix_and_inverse(void)
     ASSERT_Q16_NEAR(Q16_ONE, SYN_MAT_AT(&mat, 1, 0), Q16_TOL * 20);
 }
 
+void test_quaternion_extended_edge_cases(void)
+{
+    /* Gimbal lock pitch testing (sinp >= 1.0) */
+    SYN_Quaternion q_gimbal, q_out;
+    syn_quat_from_euler(&q_gimbal, 0, Q16_PI_2, 0);
+    q16_t roll, pitch, yaw;
+    syn_quat_to_euler(&q_gimbal, &roll, &pitch, &yaw);
+    TEST_ASSERT_INT32_WITHIN(100, 81290, pitch);
+
+    /* Slerp with negative dot product (opposite orientation quaternions) */
+    SYN_Quaternion q1, q2_neg;
+    syn_quat_identity(&q1);
+    syn_quat_identity(&q2_neg);
+    q2_neg.w = -Q16_ONE; /* opposite sign representation of identity */
+    syn_quat_slerp(&q1, &q2_neg, Q16_HALF, &q_out);
+    TEST_ASSERT_EQUAL_INT32(Q16_ONE, q16_abs(q_out.w));
+
+    /* Slerp with very small angle (dot > 0.999) triggering linear fallback */
+    SYN_Quaternion q_near1, q_near2;
+    syn_quat_identity(&q_near1);
+    syn_quat_from_euler(&q_near2, 0, 0, Q16_FROM_FRAC(1, 100)); /* 0.01 rad */
+    syn_quat_slerp(&q_near1, &q_near2, Q16_HALF, &q_out);
+    TEST_ASSERT_TRUE(syn_quat_norm(&q_out) > 0);
+}
+
 void run_quaternion_tests(void)
 {
     RUN_TEST(test_quaternion_identity_and_init);
@@ -124,4 +149,5 @@ void run_quaternion_tests(void)
     RUN_TEST(test_quaternion_euler_roundtrip);
     RUN_TEST(test_quaternion_slerp);
     RUN_TEST(test_quaternion_matrix_and_inverse);
+    RUN_TEST(test_quaternion_extended_edge_cases);
 }

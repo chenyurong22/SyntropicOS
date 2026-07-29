@@ -653,7 +653,109 @@ static void test_cbor_write_uint64(void)
     TEST_ASSERT_EQUAL_size_t(9u, syn_cbor_writer_len(&w));
 }
 
+static void test_cbor_skip_floats_and_nested(void)
+{
+    SYN_CborReader cr;
+    /* Float16 (0xF9 0x00 0x00), Float64 (0xFB 0x00..0x00 8 bytes) */
+    uint8_t float16_buf[] = {0xF9, 0x3C, 0x00};
+    syn_cbor_reader_init(&cr, float16_buf, sizeof(float16_buf));
+    syn_cbor_skip(&cr);
+    TEST_ASSERT_TRUE(syn_cbor_reader_ok(&cr));
+
+    uint8_t float64_buf[] = {0xFB, 0x40, 0x09, 0x21, 0xFB, 0x54, 0x44, 0x2D, 0x18};
+    syn_cbor_reader_init(&cr, float64_buf, sizeof(float64_buf));
+    syn_cbor_skip(&cr);
+    TEST_ASSERT_TRUE(syn_cbor_reader_ok(&cr));
+}
+
 /* ── Registration ────────────────────────────────────────────────────────── */
+
+static void test_cbor_read_overflows_and_mismatches(void)
+{
+    /* Empty reader (pos >= len) */
+    SYN_CborReader er;
+    syn_cbor_reader_init(&er, buf, 0);
+
+    TEST_ASSERT_EQUAL_size_t(0, syn_cbor_read_map_begin(&er));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&er));
+
+    syn_cbor_reader_init(&er, buf, 0);
+    TEST_ASSERT_EQUAL_size_t(0, syn_cbor_read_array_begin(&er));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&er));
+
+    syn_cbor_reader_init(&er, buf, 0);
+    TEST_ASSERT_EQUAL_UINT64(0, syn_cbor_read_uint(&er));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&er));
+
+    syn_cbor_reader_init(&er, buf, 0);
+    TEST_ASSERT_EQUAL_INT64(0, syn_cbor_read_int(&er));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&er));
+
+    syn_cbor_reader_init(&er, buf, 0);
+    TEST_ASSERT_EQUAL_FLOAT(0.0f, syn_cbor_read_float(&er));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&er));
+}
+
+static void test_cbor_read_text_and_bytes_overrun_and_mismatch(void)
+{
+    /* Read text when pos >= len */
+    SYN_CborReader cr;
+    syn_cbor_reader_init(&cr, buf, 0);
+    char text_out[16];
+    TEST_ASSERT_EQUAL_size_t(0, syn_cbor_read_text(&cr, text_out, sizeof(text_out)));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&cr));
+
+    /* Read text with major type mismatch (e.g. integer 0x01) */
+    uint8_t not_text[] = {0x01};
+    syn_cbor_reader_init(&cr, not_text, sizeof(not_text));
+    TEST_ASSERT_EQUAL_size_t(0, syn_cbor_read_text(&cr, text_out, sizeof(text_out)));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&cr));
+
+    /* Read bytes when pos >= len */
+    syn_cbor_reader_init(&cr, buf, 0);
+    uint8_t bytes_out[16];
+    TEST_ASSERT_EQUAL_size_t(0, syn_cbor_read_bytes(&cr, bytes_out, sizeof(bytes_out)));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&cr));
+}
+
+static void test_cbor_write_text_cstr(void)
+{
+    uint8_t buf[32];
+    SYN_CborWriter w;
+    syn_cbor_writer_init(&w, buf, sizeof(buf));
+    syn_cbor_write_text_cstr(&w, "hello");
+    TEST_ASSERT_EQUAL(6, syn_cbor_writer_len(&w));
+}
+
+static void test_cbor_skip_truncated_strings_and_floats(void)
+{
+    /* Truncated float (major type 7, info 26 -> 4 bytes payload required, only 2 provided) */
+    uint8_t trunc_float[] = {0xFA, 0x41, 0xBC};
+    syn_cbor_reader_init(&r, trunc_float, sizeof(trunc_float));
+    syn_cbor_skip(&r);
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&r));
+
+    /* Truncated string (major type 3, text string length 10, only 3 payload bytes provided) */
+    uint8_t trunc_str[] = {0x6A, 0x61, 0x62, 0x63};
+    syn_cbor_reader_init(&r, trunc_str, sizeof(trunc_str));
+    syn_cbor_skip(&r);
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&r));
+}
+
+static void test_cbor_read_type_mismatch_type_error_branches(void)
+{
+    /* Try reading array_len on a CBOR uint byte (0x17) */
+    uint8_t uint_byte[] = {0x17};
+    syn_cbor_reader_init(&r, uint_byte, sizeof(uint_byte));
+    TEST_ASSERT_EQUAL(0, syn_cbor_read_array_begin(&r));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&r));
+
+    /* Try reading uint on a CBOR array byte (0x82) */
+    uint8_t array_byte[] = {0x82};
+    syn_cbor_reader_init(&r, array_byte, sizeof(array_byte));
+    TEST_ASSERT_EQUAL(0, syn_cbor_read_uint(&r));
+    TEST_ASSERT_FALSE(syn_cbor_reader_ok(&r));
+}
 
 void run_cbor_tests(void)
 {
@@ -701,4 +803,10 @@ void run_cbor_tests(void)
     RUN_TEST(test_cbor_read_bytes_value);
     RUN_TEST(test_cbor_read_scalar_mismatch);
     RUN_TEST(test_cbor_skip_edge_cases);
+    RUN_TEST(test_cbor_skip_floats_and_nested);
+    RUN_TEST(test_cbor_read_overflows_and_mismatches);
+    RUN_TEST(test_cbor_read_text_and_bytes_overrun_and_mismatch);
+    RUN_TEST(test_cbor_skip_truncated_strings_and_floats);
+    RUN_TEST(test_cbor_read_type_mismatch_type_error_branches);
+    RUN_TEST(test_cbor_write_text_cstr);
 }

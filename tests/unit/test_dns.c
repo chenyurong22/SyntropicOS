@@ -312,6 +312,196 @@ static void test_mdns_no_match(void)
     syn_mdns_task(&pt, &task);
 }
 
+static void test_dns_resolve_malformed_responses(void)
+{
+    mock_port_reset();
+
+    /* Response shorter than 12 bytes */
+    uint8_t short_rx[] = {0x00, 0x01, 0x81};
+    mock_udp_set_response(short_rx, sizeof(short_rx), NULL);
+
+    SYN_SockAddr resolved;
+    SYN_DnsResolver r;
+    r.dns_server = NULL;
+    r.hostname = "google.com";
+    r.addr_out = &resolved;
+    r.timeout_ms = 50;
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task;
+    task.user_data = &r;
+
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        syn_port_delay_ms(1);
+    }
+    TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
+}
+
+static void test_dns_resolve_rcode_error_and_txid_mismatch(void)
+{
+    mock_port_reset();
+
+    /* Response with RCODE=3 (NXDOMAIN error response) */
+    uint8_t err_resp[] = {0x00, 0x00, /* ID (will match generated ID) */
+                          0x81, 0x83, /* Flags: Response + RCODE=3 (NXDomain) */
+                          0x00, 0x01, /* Questions: 1 */
+                          0x00, 0x00, /* Answers: 0 */
+                          0x00, 0x00, 0x00, 0x00, 6,   'g', 'o',  'o',  'g',  'l',
+                          'e',  3,    'c',  'o',  'm', 0,   0x00, 0x01, 0x00, 0x01};
+
+    /* Intercept tx_id from sent query to test TXID check */
+    mock_udp_set_response(err_resp, sizeof(err_resp), NULL);
+
+    SYN_SockAddr resolved;
+    SYN_DnsResolver r;
+    r.dns_server = NULL;
+    r.hostname = "google.com";
+    r.addr_out = &resolved;
+    r.timeout_ms = 50;
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task;
+    task.user_data = &r;
+
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        syn_port_delay_ms(1);
+    }
+    TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
+}
+
+static void test_mdns_qname_local_mismatch_branches(void)
+{
+    mock_port_reset();
+
+    SYN_Mdns mdns;
+    uint8_t ip[] = {192, 168, 1, 100};
+    syn_mdns_init(&mdns, "mydevice", ip);
+
+    /* 1. Mismatched hostname length (h_len != host_len) */
+    uint8_t q_bad_len[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+                           0x00, 0x00, 0x00, 3,    'b',  'a',  'd',  5,    'l',
+                           'o',  'c',  'a',  'l',  0,    0x00, 0x01, 0x00, 0x01};
+    SYN_SockAddr from = {.ip = {192, 168, 1, 50}, .port = 5353};
+    mock_udp_set_response(q_bad_len, sizeof(q_bad_len), &from);
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &mdns};
+    syn_mdns_task(&pt, &task);
+
+    /* 2. Mismatched domain (not "local", e.g. "other") */
+    uint8_t q_bad_domain[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+                              0x00, 8,    'm',  'y',  'd',  'e',  'v',  'i',  'c',  'e',  5,
+                              'o',  't',  'h',  'e',  'r',  0,    0x00, 0x01, 0x00, 0x01};
+    mock_udp_set_response(q_bad_domain, sizeof(q_bad_domain), &from);
+    PT_INIT(&pt);
+    syn_mdns_task(&pt, &task);
+}
+
+static void test_dns_parse_response_error_branches(void)
+{
+    mock_port_reset();
+    SYN_SockAddr from = {.port = 53};
+    SYN_SockAddr resolved;
+    SYN_DnsResolver r = {
+        .dns_server = NULL, .hostname = "example.com", .addr_out = &resolved, .timeout_ms = 1000};
+    SYN_PT pt;
+    SYN_Task task = {.user_data = &r};
+
+    /* 1. TxID mismatch (line 99) */
+    uint8_t rx_bad_txid[12] = {0xFF, 0xFF, 0x81, 0x80, 0, 0, 0, 1, 0, 0, 0, 0};
+    mock_udp_set_response(rx_bad_txid, sizeof(rx_bad_txid), &from);
+    PT_INIT(&pt);
+    syn_dns_resolve_task(&pt, &task);
+
+    /* 2. Answers == 0 (line 107) */
+    uint8_t rx_no_answers[12] = {0x00, 0x00, 0x81, 0x80, 0, 1, 0, 0, 0, 0, 0, 0};
+    mock_udp_set_response(rx_no_answers, sizeof(rx_no_answers), &from);
+    PT_INIT(&pt);
+    syn_dns_resolve_task(&pt, &task);
+}
+
+static void test_dns_resolve_malformed_qname_and_truncated_records(void)
+{
+    mock_port_reset();
+    SYN_SockAddr from = {.ip = {8, 8, 8, 8}, .port = 53};
+    SYN_SockAddr resolved;
+    SYN_DnsResolver r = {
+        .dns_server = &from, .hostname = "myhost.com", .addr_out = &resolved, .timeout_ms = 1000};
+    SYN_PT pt;
+    SYN_Task task = {.user_data = &r};
+
+    /* 1. Malformed QNAME in question section: offset 12 has invalid label length 0x80 */
+    uint8_t rx_bad_qname[20] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0, 0,
+                                0,    0,    0x80, 0x01, 0,    0,    0,    0,    0, 0};
+    mock_udp_set_response(rx_bad_qname, sizeof(rx_bad_qname), &from);
+    PT_INIT(&pt);
+    syn_dns_resolve_task(&pt, &task);
+
+    /* 2. Truncated answer header (< 10 bytes after QNAME) */
+    uint8_t rx_trunc_ans[18] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x00, 0x00, 0x01, 0,
+                                0,    0,    0,    0x03, 'f',  'o',  'o',  0x00, 0x01};
+    mock_udp_set_response(rx_trunc_ans, sizeof(rx_trunc_ans), &from);
+    PT_INIT(&pt);
+    syn_dns_resolve_task(&pt, &task);
+}
+
+static void test_dns_mdns_match_qname_local_boundary_mismatches(void)
+{
+    SYN_Mdns mdns;
+    uint8_t ip[4] = {192, 168, 1, 100};
+    syn_mdns_init(&mdns, "myhost", ip);
+    SYN_SockAddr from = {.ip = {192, 168, 1, 50}, .port = 5353};
+    SYN_PT pt;
+    SYN_Task task = {.user_data = &mdns};
+
+    /* Truncated buffer right before host label */
+    uint8_t buf1[12] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
+    mock_udp_set_response(buf1, sizeof(buf1), &from);
+    PT_INIT(&pt);
+    syn_mdns_task(&pt, &task);
+
+    /* "local" length mismatch (e.g. 0x04 instead of 0x05) */
+    uint8_t buf2[] = {0,   0,   0,   0,   0, 1,   0,   0,   0,   0, 0, 0, 6, 'm', 'y',
+                      'h', 'o', 's', 't', 4, 'l', 'o', 'c', 'a', 0, 0, 1, 0, 1};
+    mock_udp_set_response(buf2, sizeof(buf2), &from);
+    PT_INIT(&pt);
+    syn_mdns_task(&pt, &task);
+}
+
+static void test_dns_mdns_invalid_qtype(void)
+{
+    SYN_Mdns mdns;
+    uint8_t ip[4] = {10, 0, 0, 1};
+    syn_mdns_init(&mdns, "device", ip);
+
+    SYN_SockAddr from = {.port = 5353};
+    uint8_t query[] = {0,   0,   0,   0,   0, 1,   0,   0,   0,   0,   0, 0, 6,  'd', 'e',
+                       'v', 'i', 'c', 'e', 5, 'l', 'o', 'c', 'a', 'l', 0, 0, 16, 0,   1};
+    mock_udp_set_response(query, sizeof(query), &from);
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &mdns};
+    syn_mdns_task(&pt, &task);
+}
+
+static void test_dns_resolve_null_params(void)
+{
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_DnsResolver res;
+    memset(&res, 0, sizeof(res));
+    res.hostname = "example.com";
+    SYN_Task task;
+    memset(&task, 0, sizeof(task));
+    task.user_data = &res;
+    syn_dns_resolve_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_TIMEOUT, res.status);
+}
+
 void run_dns_tests(void)
 {
     RUN_TEST(test_dns_resolve);
@@ -324,4 +514,12 @@ void run_dns_tests(void)
     RUN_TEST(test_mdns_join_fail);
     RUN_TEST(test_mdns_malformed_query);
     RUN_TEST(test_mdns_no_match);
+    RUN_TEST(test_dns_resolve_malformed_responses);
+    RUN_TEST(test_dns_resolve_rcode_error_and_txid_mismatch);
+    RUN_TEST(test_mdns_qname_local_mismatch_branches);
+    RUN_TEST(test_dns_parse_response_error_branches);
+    RUN_TEST(test_dns_resolve_malformed_qname_and_truncated_records);
+    RUN_TEST(test_dns_mdns_match_qname_local_boundary_mismatches);
+    RUN_TEST(test_dns_mdns_invalid_qtype);
+    RUN_TEST(test_dns_resolve_null_params);
 }

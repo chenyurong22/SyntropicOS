@@ -2151,6 +2151,132 @@ static void test_modbus_truncated_frame_protection(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_MB_EX_ILLEGAL_VALUE, mock_uart_tx_buf[2]);
 }
 
+static void test_modbus_broadcast_read_and_diagnostic_rejection(void)
+{
+    static uint16_t holding[4] = {0};
+    static uint8_t mb_buf[256];
+
+    SYN_Modbus mb;
+    SYN_Modbus_Config cfg = {
+        .slave_addr = 1,
+        .holding_regs = holding,
+        .holding_count = 4,
+    };
+    syn_modbus_init(&mb, &cfg, mb_buf, sizeof(mb_buf));
+
+    /* Broadcast address = 0 */
+    uint8_t req[8];
+    req[0] = 0; /* broadcast */
+    req[1] = SYN_MB_FC_READ_EXCEPTION_STATUS;
+    uint16_t crc = syn_crc16_modbus(req, 2);
+    req[2] = (uint8_t)(crc & 0xFF);
+    req[3] = (uint8_t)(crc >> 8);
+    memcpy(mb.buf, req, 4);
+    mb.rx_len = 4;
+
+    /* Broadcast read exception status should be silently ignored (returns false) */
+    TEST_ASSERT_FALSE(syn_modbus_process(&mb));
+
+    /* Broadcast FC 0x08 Diagnostics */
+    req[1] = SYN_MB_FC_DIAGNOSTICS;
+    req[2] = 0;
+    req[3] = 0;
+    req[4] = 0;
+    req[5] = 0;
+    crc = syn_crc16_modbus(req, 6);
+    req[6] = (uint8_t)(crc & 0xFF);
+    req[7] = (uint8_t)(crc >> 8);
+    memcpy(mb.buf, req, 8);
+    mb.rx_len = 8;
+    TEST_ASSERT_FALSE(syn_modbus_process(&mb));
+}
+
+static void test_modbus_broadcast_additional_fc_rejection(void)
+{
+    SYN_Modbus mb;
+    SYN_Modbus_Config cfg = {.slave_addr = 1};
+    uint8_t mb_buf[256];
+    syn_modbus_init(&mb, &cfg, mb_buf, sizeof(mb_buf));
+
+    /* Broadcast (addr 0) rejection for read/get function codes */
+    uint8_t fcs[] = {SYN_MB_FC_READ_COILS,         SYN_MB_FC_READ_DISCRETE_INPUTS,
+                     SYN_MB_FC_GET_COMM_EVENT_CNT, SYN_MB_FC_GET_COMM_EVENT_LOG,
+                     SYN_MB_FC_REPORT_SERVER_ID,   SYN_MB_FC_READ_FILE_RECORD,
+                     SYN_MB_FC_READ_FIFO_QUEUE,    SYN_MB_FC_READ_DEVICE_INFO};
+
+    for (size_t i = 0; i < sizeof(fcs); i++) {
+        uint8_t req[8] = {0, fcs[i], 0, 0, 0, 0, 0, 0};
+        uint16_t crc = syn_crc16_modbus(req, 6);
+        req[6] = (uint8_t)(crc & 0xFF);
+        req[7] = (uint8_t)(crc >> 8);
+        memcpy(mb.buf, req, 8);
+        mb.rx_len = 8;
+        TEST_ASSERT_FALSE(syn_modbus_process(&mb));
+    }
+}
+
+static void test_modbus_short_frame_exceptions(void)
+{
+    static uint8_t coils[2] = {0};
+    static uint8_t mb_buf[256];
+    SYN_Modbus mb;
+    SYN_Modbus_Config cfg = {
+        .slave_addr = 1,
+        .coils = coils,
+        .coils_count = 16,
+    };
+    syn_modbus_init(&mb, &cfg, mb_buf, sizeof(mb_buf));
+
+    /* 1. Read Coils frame_len < 8 */
+    uint8_t req_short_rc[7] = {1, SYN_MB_FC_READ_COILS, 0, 0, 0, 1, 0};
+    uint16_t crc = syn_crc16_modbus(req_short_rc, 5);
+    req_short_rc[5] = (uint8_t)(crc & 0xFF);
+    req_short_rc[6] = (uint8_t)(crc >> 8);
+    memcpy(mb.buf, req_short_rc, 7);
+    mb.rx_len = 7;
+    syn_modbus_process(&mb);
+    TEST_ASSERT_EQUAL_UINT32(1, mb.frames_tx);
+
+    /* 2. Write Single Coil frame_len < 8 */
+    uint8_t req_short_wsc[7] = {1, SYN_MB_FC_WRITE_SINGLE_COIL, 0, 0, 0, 0, 0};
+    crc = syn_crc16_modbus(req_short_wsc, 5);
+    req_short_wsc[5] = (uint8_t)(crc & 0xFF);
+    req_short_wsc[6] = (uint8_t)(crc >> 8);
+    memcpy(mb.buf, req_short_wsc, 7);
+    mb.rx_len = 7;
+    syn_modbus_process(&mb);
+
+    /* 3. Write Multiple Coils frame_len < 9 */
+    uint8_t req_short_wmc[8] = {1, SYN_MB_FC_WRITE_MULTIPLE_COILS, 0, 0, 0, 1, 1, 0};
+    crc = syn_crc16_modbus(req_short_wmc, 6);
+    req_short_wmc[6] = (uint8_t)(crc & 0xFF);
+    req_short_wmc[7] = (uint8_t)(crc >> 8);
+    memcpy(mb.buf, req_short_wmc, 8);
+    mb.rx_len = 8;
+    syn_modbus_process(&mb);
+}
+
+static void test_modbus_write_multiple_short_frame_exception(void)
+{
+    static uint8_t mb_buf[256];
+    SYN_Modbus mb;
+    SYN_Modbus_Config cfg = {.slave_addr = 1};
+    syn_modbus_init(&mb, &cfg, mb_buf, sizeof(mb_buf));
+
+    /* Short FC 16 frame: len = 8 < 9 */
+    uint8_t req[8] = {1, SYN_MB_FC_WRITE_MULTIPLE, 0, 0, 0, 1, 0, 0};
+    uint16_t crc = syn_crc16_modbus(req, 6);
+    req[6] = (uint8_t)(crc & 0xFF);
+    req[7] = (uint8_t)(crc >> 8);
+    memcpy(mb.buf, req, 8);
+    mb.rx_len = 8;
+
+    mock_port_reset();
+    TEST_ASSERT_TRUE(syn_modbus_process(&mb));
+    TEST_ASSERT_EQUAL(0x90, mock_uart_tx_buf[1]);
+    TEST_ASSERT_EQUAL(SYN_MB_EX_ILLEGAL_VALUE, mock_uart_tx_buf[2]);
+}
+
 void run_modbus_tests(void)
 {
     RUN_TEST(test_modbus_basic);
@@ -2169,4 +2295,8 @@ void run_modbus_tests(void)
     RUN_TEST(test_modbus_100_percent_coverage);
     RUN_TEST(test_modbus_tight_loop_streaming);
     RUN_TEST(test_modbus_truncated_frame_protection);
+    RUN_TEST(test_modbus_broadcast_read_and_diagnostic_rejection);
+    RUN_TEST(test_modbus_broadcast_additional_fc_rejection);
+    RUN_TEST(test_modbus_short_frame_exceptions);
+    RUN_TEST(test_modbus_write_multiple_short_frame_exception);
 }

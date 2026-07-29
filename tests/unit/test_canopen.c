@@ -469,6 +469,60 @@ static void test_canopen_sdo_segmented_transfer(void)
     TEST_ASSERT_EQUAL_HEX8(0x22, val_bytes[7]);
 }
 
+static void test_canopen_sdo_segmented_toggle_bit_mismatch(void)
+{
+    SYN_CANOpenNode node;
+    SYN_CANOpenNodeConfig cfg = {.node_id = 5, .heartbeat_ms = 0};
+    syn_canopen_init(&node, &cfg, test_od, sizeof(test_od) / sizeof(test_od[0]));
+
+    uint32_t tx_id;
+    uint8_t tx_buf[8], tx_len;
+    syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len);
+
+    /* Initiate segmented upload of 0x2003:0x00 */
+    uint8_t up_init[8] = {0x40U, 0x03U, 0x20U, 0x00U, 0, 0, 0, 0};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, up_init, 8));
+    syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len);
+
+    /* Send Upload Segment Request with incorrect toggle bit t=1 (expected t=0) */
+    uint8_t seg_req_bad_t[8] = {0x70U, 0, 0, 0, 0, 0, 0, 0};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, seg_req_bad_t, 8));
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]); /* Abort response */
+
+    /* Initiate segmented download of 0x2003:0x00 */
+    uint8_t dn_init[8] = {0x20U, 0x03U, 0x20U, 0x00U, 8, 0, 0, 0};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, dn_init, 8));
+    syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len);
+
+    /* Send Download Segment Request with incorrect toggle bit t=1 (expected t=0) */
+    uint8_t seg_dn_bad_t[8] = {0x10U, 0, 0, 0, 0, 0, 0, 0};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_process_rx(&node, 0x605U, seg_dn_bad_t, 8));
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]); /* Abort response */
+}
+
+static void test_canopen_sdo_segmented_download_invalid_data(void)
+{
+    SYN_CANOpenNode node;
+    SYN_CANOpenNodeConfig cfg = {.node_id = 5, .heartbeat_ms = 0};
+    syn_canopen_init(&node, &cfg, test_od, sizeof(test_od) / sizeof(test_od[0]));
+
+    uint32_t tx_id;
+    uint8_t tx_buf[8], tx_len;
+
+    /* Initiate segmented download of 0x2003:0x00 */
+    uint8_t dn_init[8] = {0x20U, 0x03U, 0x20U, 0x00U, 8, 0, 0, 0};
+    syn_canopen_process_rx(&node, 0x605U, dn_init, 8);
+    syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len); /* Drain initiation ACK frame */
+
+    /* Send download segment request with wrong toggle bit t=1 (expected t=0) */
+    uint8_t invalid_cmd[8] = {0x10U, 0, 0, 0, 0, 0, 0, 0};
+    syn_canopen_process_rx(&node, 0x605U, invalid_cmd, 8);
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]); /* Abort response */
+}
+
 void run_canopen_tests(void)
 {
     RUN_TEST(test_canopen_init_and_bootup);
@@ -480,4 +534,6 @@ void run_canopen_tests(void)
     RUN_TEST(test_cia303_indicators);
     RUN_TEST(test_canopen_tpdo_trigger);
     RUN_TEST(test_canopen_sdo_segmented_transfer);
+    RUN_TEST(test_canopen_sdo_segmented_toggle_bit_mismatch);
+    RUN_TEST(test_canopen_sdo_segmented_download_invalid_data);
 }

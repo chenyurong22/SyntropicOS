@@ -538,11 +538,13 @@ int main(void)
     extern void test_dhcp_process_offer_and_ack(void);
     extern void test_dhcp_coroutine_pt(void);
     extern void test_dhcp_null_checks(void);
+    extern void test_dhcp_extended_option_parsing(void);
     extern void test_icmp_init(void);
     extern void test_icmp_checksum(void);
     extern void test_icmp_build_echo_request(void);
     extern void test_icmp_process_echo_request(void);
     extern void test_icmp_null_checks(void);
+    extern void test_icmp_process_packet_invalid_headers(void);
     extern void test_autoip_init(void);
     extern void test_autoip_probe_and_announce(void);
     extern void test_autoip_process_arp_binding(void);
@@ -571,6 +573,8 @@ int main(void)
     RUN_TEST(test_nn_affine_quantization);
     RUN_TEST(test_nn_pooling_layers);
     RUN_TEST(test_nn_edge_cases_and_null_checks);
+    extern void test_nn_conv1d_coroutine(void);
+    RUN_TEST(test_nn_conv1d_coroutine);
     RUN_TEST(test_dsp_dct2_null_params);
     RUN_TEST(test_dsp_dct2_dc_constant);
     RUN_TEST(test_bldc_6step_init_defaults);
@@ -605,11 +609,15 @@ int main(void)
     RUN_TEST(test_rc_curve_deadband);
     RUN_TEST(test_rc_curve_expo_and_dual_rate);
     RUN_TEST(test_rc_curve_null_config);
+    extern void test_rc_curve_extended_edge_cases(void);
+    RUN_TEST(test_rc_curve_extended_edge_cases);
     RUN_TEST(test_rc_failsafe_init);
     RUN_TEST(test_rc_failsafe_timeout_trigger);
     RUN_TEST(test_rc_failsafe_null_and_error);
     RUN_TEST(test_dshot_gcr_decode);
     RUN_TEST(test_dshot_telemetry_erpm_parsing);
+    extern void test_dshot_telemetry_extended_edge_cases(void);
+    RUN_TEST(test_dshot_telemetry_extended_edge_cases);
     RUN_TEST(test_flight_init);
     RUN_TEST(test_flight_hover);
     RUN_TEST(test_flight_roll_correction);
@@ -621,6 +629,8 @@ int main(void)
     RUN_TEST(test_mavlink_init);
     RUN_TEST(test_mavlink_encode_and_parse_attitude);
     RUN_TEST(test_mavlink_null_and_crc_error);
+    extern void test_mavlink_msg_ids_and_invalid_state_fallback(void);
+    RUN_TEST(test_mavlink_msg_ids_and_invalid_state_fallback);
     RUN_TEST(test_blackbox_init);
     RUN_TEST(test_blackbox_varint);
     RUN_TEST(test_blackbox_encode_intra_and_delta);
@@ -633,6 +643,8 @@ int main(void)
     RUN_TEST(test_usb_cdc_setup_requests);
     RUN_TEST(test_usb_cdc_read_write);
     RUN_TEST(test_usb_cdc_null_checks);
+    extern void test_usb_cdc_extended_edge_cases(void);
+    RUN_TEST(test_usb_cdc_extended_edge_cases);
     RUN_TEST(test_eth_generate_mac);
     RUN_TEST(test_eth_init);
     RUN_TEST(test_eth_arp_cache);
@@ -657,11 +669,13 @@ int main(void)
     RUN_TEST(test_dhcp_process_offer_and_ack);
     RUN_TEST(test_dhcp_coroutine_pt);
     RUN_TEST(test_dhcp_null_checks);
+    RUN_TEST(test_dhcp_extended_option_parsing);
     RUN_TEST(test_icmp_init);
     RUN_TEST(test_icmp_checksum);
     RUN_TEST(test_icmp_build_echo_request);
     RUN_TEST(test_icmp_process_echo_request);
     RUN_TEST(test_icmp_null_checks);
+    RUN_TEST(test_icmp_process_packet_invalid_headers);
     RUN_TEST(test_autoip_init);
     RUN_TEST(test_autoip_probe_and_announce);
     RUN_TEST(test_autoip_process_arp_binding);
@@ -679,6 +693,7 @@ int main(void)
     extern void run_lut_tests(void);
     extern void run_tcp_tests(void);
     extern void run_udp_tests(void);
+    extern void run_net_transport_udp_tests(void);
 
     RUN_TEST(test_igmp_init);
     RUN_TEST(test_igmp_join_and_leave);
@@ -689,11 +704,10 @@ int main(void)
 
     run_tcp_tests();
     run_udp_tests();
+    run_net_transport_udp_tests();
     run_bacnet_tests();
     run_modbus_master_tests();
     run_lut_tests();
-
-    return UNITY_END();
 
     return UNITY_END();
 }

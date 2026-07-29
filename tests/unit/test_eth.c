@@ -7,6 +7,7 @@
 #include "syntropic/net/syn_eth.h"
 #include "syntropic/net/syn_icmp.h"
 #include "syntropic/net/syn_tcp.h"
+#include "syntropic/net/syn_transport_udp.h"
 #include "unity/unity.h"
 
 #include <string.h>
@@ -419,6 +420,95 @@ void test_eth_multiprotocol_interleaving(void)
     TEST_ASSERT_EQUAL_UINT32(2, eth.frames_rx);
 }
 
+void test_eth_arp_reply_and_oversized_payload(void)
+{
+    SYN_ETH eth;
+    syn_eth_init(&eth, MY_MAC, MY_IP);
+
+    /* Construct ARP Reply frame */
+    uint8_t arp_reply_frame[60] = {0};
+    memcpy(&arp_reply_frame[0], MY_MAC, 6);
+    memcpy(&arp_reply_frame[6], PEER_MAC, 6);
+    arp_reply_frame[12] = 0x08;
+    arp_reply_frame[13] = 0x06; /* EtherType = ARP */
+    arp_reply_frame[14] = 0x00;
+    arp_reply_frame[15] = 0x01; /* HW = Ethernet */
+    arp_reply_frame[16] = 0x08;
+    arp_reply_frame[17] = 0x00; /* Proto = IPv4 */
+    arp_reply_frame[20] = 0x00;
+    arp_reply_frame[21] = 0x02; /* Oper = Reply */
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, arp_reply_frame, 60, NULL, NULL));
+    TEST_ASSERT_EQUAL_UINT32(1, eth.arp_replies);
+
+    /* Oversized payload build frame error */
+    uint8_t payload[1600];
+    uint8_t frame_out[1600];
+    size_t frame_len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_eth_build_frame(&eth, PEER_MAC, SYN_ETHTYPE_IPV4, payload,
+                                              sizeof(payload), frame_out, &frame_len));
+}
+
+static void test_eth_weak_hooks_and_udp_dispatch(void)
+{
+    TEST_ASSERT_NULL(syn_transport_udp_get_instance());
+    TEST_ASSERT_NULL(syn_eth_get_icmp_instance());
+    TEST_ASSERT_NULL(syn_eth_get_tcp_instance());
+
+    SYN_ETH eth;
+    syn_eth_init(&eth, MY_MAC, MY_IP);
+
+    /* Construct IPv4 UDP frame (proto=17) */
+    uint8_t udp_frame[60] = {0};
+    memcpy(&udp_frame[0], MY_MAC, 6);
+    memcpy(&udp_frame[6], PEER_MAC, 6);
+    udp_frame[12] = 0x08;
+    udp_frame[13] = 0x00; /* IPv4 */
+    udp_frame[14] = 0x45;
+    udp_frame[23] = 17; /* UDP */
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, udp_frame, 60, NULL, NULL));
+
+    /* Construct ARP Reply frame (oper=2) */
+    uint8_t arp_reply[42] = {0};
+    memcpy(&arp_reply[0], MY_MAC, 6);
+    memcpy(&arp_reply[6], PEER_MAC, 6);
+    arp_reply[12] = 0x08;
+    arp_reply[13] = 0x06; /* ARP */
+    arp_reply[20] = 0x00;
+    arp_reply[21] = 0x02; /* Reply */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, arp_reply, 42, NULL, NULL));
+    TEST_ASSERT_EQUAL_UINT32(1, eth.arp_replies);
+}
+
+static void test_eth_generate_mac_null_checks(void)
+{
+    uint8_t mac[6];
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_eth_generate_mac(NULL, 4, mac));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_eth_generate_mac("uid", 0, mac));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_eth_generate_mac("uid", 3, NULL));
+}
+
+static void test_eth_weak_instance_getters(void)
+{
+    TEST_ASSERT_NULL(syn_eth_get_icmp_instance());
+    TEST_ASSERT_NULL(syn_eth_get_tcp_instance());
+}
+
+#include "syntropic/util/syn_pack.h"
+
+static void test_eth_runt_arp_frame(void)
+{
+    SYN_ETH eth;
+    uint8_t mac[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01};
+    syn_eth_init(&eth, mac, 0x0A000001);
+    uint8_t runt[20] = {0};
+    syn_poke_u16(SYN_ETHTYPE_ARP, runt, 12);
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_eth_process_frame(&eth, runt, sizeof(runt), NULL, NULL));
+}
+
 void run_eth_tests(void)
 {
     RUN_TEST(test_eth_generate_mac);
@@ -436,4 +526,9 @@ void run_eth_tests(void)
     RUN_TEST(test_eth_dispatch_icmp);
     RUN_TEST(test_eth_dispatch_tcp);
     RUN_TEST(test_eth_multiprotocol_interleaving);
+    RUN_TEST(test_eth_arp_reply_and_oversized_payload);
+    RUN_TEST(test_eth_weak_hooks_and_udp_dispatch);
+    RUN_TEST(test_eth_generate_mac_null_checks);
+    RUN_TEST(test_eth_weak_instance_getters);
+    RUN_TEST(test_eth_runt_arp_frame);
 }

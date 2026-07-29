@@ -174,6 +174,29 @@ static void test_fmt_concat_truncation(void)
     TEST_ASSERT_EQUAL('\0', buf[4]);
 }
 
+static void test_fmt_hex_parse_and_bounds(void)
+{
+    char buf[32];
+    uint8_t bin[4];
+
+    /* Upper case hex parse */
+    TEST_ASSERT_EQUAL_size_t(2, syn_fmt_hex_parse("DEAD", bin, 4));
+    TEST_ASSERT_EQUAL_HEX8(0xDE, bin[0]);
+    TEST_ASSERT_EQUAL_HEX8(0xAD, bin[1]);
+
+    /* min_digits > 8 capped at 8 */
+    syn_fmt_hex(buf, sizeof(buf), 0x123, 16);
+    TEST_ASSERT_EQUAL_STRING("00000123", buf);
+
+    /* frac_digits > 6 capped at 6 */
+    syn_fmt_q16(buf, sizeof(buf), Q16_ONE, 10);
+
+    /* Null & zero checks */
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hex_parse(NULL, bin, 4));
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hex_parse("FF", NULL, 4));
+    TEST_ASSERT_EQUAL_size_t(0, syn_fmt_hex_parse("FF", bin, 0));
+}
+
 void run_fmt_tests(void)
 {
     RUN_TEST(test_fmt);
@@ -187,4 +210,5 @@ void run_fmt_tests(void)
     RUN_TEST(test_fmt_hexdump_truncation);
     RUN_TEST(test_fmt_fixed_truncation);
     RUN_TEST(test_fmt_concat_truncation);
+    RUN_TEST(test_fmt_hex_parse_and_bounds);
 }

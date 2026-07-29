@@ -107,8 +107,19 @@ static void test_sequencer_update_when_done(void)
     TEST_ASSERT_FALSE(result);
 }
 
+static void test_sequencer_getters_and_uninitialized_update(void)
+{
+    TEST_ASSERT_FALSE(syn_seq_update(NULL));
+
+    SYN_Sequencer seq;
+    memset(&seq, 0, sizeof(seq));
+    TEST_ASSERT_EQUAL_UINT16(0, syn_seq_current_step(&seq));
+    TEST_ASSERT_FALSE(syn_seq_update(&seq)); /* steps is NULL */
+}
+
 void run_sequencer_tests(void)
 {
     RUN_TEST(test_sequencer);
     RUN_TEST(test_sequencer_update_when_done);
+    RUN_TEST(test_sequencer_getters_and_uninitialized_update);
 }

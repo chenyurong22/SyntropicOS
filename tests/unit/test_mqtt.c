@@ -670,6 +670,66 @@ static void test_mqtt_explicit_ping(void)
     TEST_ASSERT_EQUAL(SYN_OK, syn_mqtt_ping(&c));
 }
 
+static void test_mqtt_mid_packet_rx_stalling_timeout(void)
+{
+    mock_port_reset();
+    SYN_MqttClient c;
+    uint8_t rx[32], tx[32];
+    syn_mqtt_init(&c, "broker", 1883, "client", NULL, NULL, 60, rx, sizeof(rx), tx, sizeof(tx));
+
+    c.state = SYN_MQTT_CONNECTED;
+    c.sock = 10;
+    c.rx_phase = SYN_MQTT_RX_REMAINING_LEN;
+    c.rx_deadline = 100;
+
+    mock_tick_ms = 200; /* Past deadline */
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+
+    SYN_Task task;
+    task.user_data = &c;
+
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
+    TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, c.sock);
+    TEST_ASSERT_EQUAL(SYN_MQTT_RX_IDLE, c.rx_phase);
+}
+
+static void test_mqtt_connection_closed_during_payload_discard(void)
+{
+    mock_port_reset();
+    SYN_MqttClient c;
+    uint8_t rx[32], tx[32];
+    syn_mqtt_init(&c, "broker", 1883, "client", NULL, NULL, 60, rx, sizeof(rx), tx, sizeof(tx));
+
+    c.state = SYN_MQTT_CONNECTED;
+    c.sock = 10;
+    c.rx_phase = SYN_MQTT_RX_DISCARD;
+    c.rx_rem_len = 100;
+    c.rx_pos = 0;
+
+    mock_sock_connected = false; /* Simulate socket closed by remote */
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &c};
+
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
+    TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, c.sock);
+    TEST_ASSERT_EQUAL(SYN_MQTT_RX_IDLE, c.rx_phase);
+}
+
+static void test_mqtt_topic_and_client_id_null_or_empty(void)
+{
+    SYN_MqttClient c;
+    uint8_t rx[128], tx[128];
+    TEST_ASSERT_EQUAL(SYN_OK, syn_mqtt_init(&c, "127.0.0.1", 1883, "client", NULL, NULL, 60, rx,
+                                            sizeof(rx), tx, sizeof(tx)));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_mqtt_publish(&c, "", "msg", 3, 0, false));
+}
+
 void run_mqtt_tests(void)
 {
     RUN_TEST(test_mqtt_connect);
@@ -685,4 +745,7 @@ void run_mqtt_tests(void)
     RUN_TEST(test_mqtt_ping_and_mismatch);
     RUN_TEST(test_mqtt_pt_end);
     RUN_TEST(test_mqtt_explicit_ping);
+    RUN_TEST(test_mqtt_mid_packet_rx_stalling_timeout);
+    RUN_TEST(test_mqtt_connection_closed_during_payload_discard);
+    RUN_TEST(test_mqtt_topic_and_client_id_null_or_empty);
 }

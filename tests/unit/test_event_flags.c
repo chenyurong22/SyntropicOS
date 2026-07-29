@@ -58,8 +58,22 @@ void test_event_flags_null_and_invalid_params(void)
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_event_flags_wait(&ef, 0x01U, SYN_EVENT_FLAGS_WAIT_ANY, NULL));
 }
 
+static void test_event_flags_wait_any_auto_clear(void)
+{
+    SYN_EventFlags ef;
+    syn_event_flags_init(&ef);
+    syn_event_flags_set(&ef, 0x0CU);
+    uint32_t matched = 0;
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_event_flags_wait(
+                    &ef, 0x0EU, SYN_EVENT_FLAGS_WAIT_ANY | SYN_EVENT_FLAGS_AUTO_CLEAR, &matched));
+    TEST_ASSERT_EQUAL_UINT32(0x0CU, matched);
+    TEST_ASSERT_EQUAL_UINT32(0x00U, syn_event_flags_get(&ef));
+}
+
 void run_event_flags_tests(void)
 {
     RUN_TEST(test_event_flags_set_clear_wait);
     RUN_TEST(test_event_flags_null_and_invalid_params);
+    RUN_TEST(test_event_flags_wait_any_auto_clear);
 }

@@ -355,6 +355,109 @@ static void test_isotp_canfd_multi_frame(void)
         TEST_ASSERT_EQUAL_MEMORY(payload_b_to_a, recv_a, 40);
     }
 
+    static void test_isotp_wait_fc_state(void)
+    {
+        SYN_ISOTP_Link sender;
+        syn_isotp_init(&sender, 0x7E8, 0x7E0, rx_buf_a, sizeof(rx_buf_a), tx_buf_a,
+                       sizeof(tx_buf_a));
+
+        uint8_t payload[20] = {0};
+        syn_isotp_send(&sender, payload, sizeof(payload));
+
+        SYN_CAN_Frame ff;
+        TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&sender, &ff));
+        TEST_ASSERT_EQUAL(SYN_ISOTP_TX_WAIT_FC, sender.tx_state);
+
+        /* While waiting for FC, get_tx_frame returns false */
+        SYN_CAN_Frame dummy;
+        TEST_ASSERT_FALSE(syn_isotp_get_tx_frame(&sender, &dummy));
+    }
+
+    static void test_isotp_flow_control_overflow_rejection(void)
+    {
+        SYN_ISOTP_Link sender;
+        syn_isotp_init(&sender, 0x7E8, 0x7E0, rx_buf_a, sizeof(rx_buf_a), tx_buf_a,
+                       sizeof(tx_buf_a));
+
+        uint8_t payload[20] = {0};
+        syn_isotp_send(&sender, payload, sizeof(payload));
+
+        SYN_CAN_Frame ff;
+        syn_isotp_get_tx_frame(&sender, &ff);
+
+        /* Ingest FC with status = SYN_ISOTP_FC_OVERFLOW (0x32), CAN ID = 0x7E8 (rx_id) */
+        SYN_CAN_Frame fc_overflow = {.id = 0x7E8, .dlc = 8, .data = {0x32, 0, 0, 0, 0, 0, 0, 0}};
+        syn_isotp_process_rx_frame(&sender, &fc_overflow);
+
+        TEST_ASSERT_EQUAL(SYN_ISOTP_TX_IDLE, sender.tx_state);
+    }
+
+    static void test_isotp_null_receive_and_large_len_clamping(void)
+    {
+        SYN_ISOTP_Link link;
+        syn_isotp_init(&link, 0x7E8, 0x7E0, rx_buf_a, sizeof(rx_buf_a), tx_buf_a, sizeof(tx_buf_a));
+
+        uint8_t out[16];
+        TEST_ASSERT_EQUAL(-1, syn_isotp_receive(NULL, out, sizeof(out)));
+        TEST_ASSERT_EQUAL(-1, syn_isotp_receive(&link, NULL, sizeof(out)));
+
+        /* Clamping test: set link.rx_state = COMPLETE and rx_len = 40000 */
+        link.rx_state = SYN_ISOTP_RX_COMPLETE;
+        link.rx_len = 40000;
+        uint8_t large_out[64];
+        ssize_t ret = syn_isotp_receive(&link, large_out, sizeof(large_out));
+        TEST_ASSERT_EQUAL(64, ret);
+    }
+
+    static void test_isotp_stmin_decoding_and_null_timeouts(void)
+    {
+        syn_isotp_set_timeouts(NULL, 100, 100);
+
+        SYN_ISOTP_Link sender;
+        syn_isotp_init(&sender, 0x7E8, 0x7E0, rx_buf_a, sizeof(rx_buf_a), tx_buf_a,
+                       sizeof(tx_buf_a));
+        uint8_t payload[20] = {0};
+        syn_isotp_send(&sender, payload, sizeof(payload));
+
+        /* FC with STmin in 0xF1..0xF9 range (0xF5 = 500 us timer) */
+        sender.tx_state = SYN_ISOTP_TX_WAIT_FC;
+        SYN_CAN_Frame fc_stmin = {.id = 0x7E8, .dlc = 8, .data = {0x30, 0, 0xF5, 0, 0, 0, 0, 0}};
+        syn_isotp_process_rx_frame(&sender, &fc_stmin);
+        TEST_ASSERT_EQUAL_UINT8(0xF5, sender.tx_st_min);
+
+        /* FC with STmin out of valid bounds (0x85) */
+        sender.tx_state = SYN_ISOTP_TX_WAIT_FC;
+        SYN_CAN_Frame fc_invalid = {.id = 0x7E8, .dlc = 8, .data = {0x30, 0, 0x85, 0, 0, 0, 0, 0}};
+        syn_isotp_process_rx_frame(&sender, &fc_invalid);
+        TEST_ASSERT_EQUAL_UINT8(0x85, sender.tx_st_min);
+    }
+
+    static void test_isotp_tx_send_cf_zero_remaining_idle(void)
+    {
+        SYN_ISOTP_Link link;
+        syn_isotp_init(&link, 0x700, 0x708, rx_buf_a, sizeof(rx_buf_a), tx_buf_a, sizeof(tx_buf_a));
+
+        link.tx_state = SYN_ISOTP_TX_SEND_CF;
+        link.tx_len = 10;
+        link.tx_offset = 10;
+
+        SYN_CAN_Frame frame;
+        TEST_ASSERT_FALSE(syn_isotp_get_tx_frame(&link, &frame));
+        TEST_ASSERT_EQUAL(SYN_ISOTP_TX_IDLE, link.tx_state);
+    }
+
+    static void test_isotp_32bit_extended_first_frame_parsing(void)
+    {
+        SYN_ISOTP_Link link;
+        syn_isotp_init(&link, 0x700, 0x708, rx_buf_a, sizeof(rx_buf_a), tx_buf_a, sizeof(tx_buf_a));
+
+        SYN_CAN_Frame frame = {
+            .id = 0x700, .dlc = 8, .data = {0x10, 0x00, 0x00, 0x00, 0x00, 0x50, 0xAA, 0xBB}};
+        syn_isotp_process_rx_frame(&link, &frame);
+        TEST_ASSERT_EQUAL(80, link.rx_expected);
+        TEST_ASSERT_EQUAL(SYN_ISOTP_RX_WAIT_CF, link.rx_state);
+    }
+
     void run_isotp_tests(void)
     {
         RUN_TEST(test_isotp_single_frame);
@@ -362,6 +465,12 @@ static void test_isotp_canfd_multi_frame(void)
         RUN_TEST(test_isotp_full_duplex);
         RUN_TEST(test_isotp_errors_and_edge_cases);
         RUN_TEST(test_isotp_network_layer_timeouts);
+        RUN_TEST(test_isotp_wait_fc_state);
+        RUN_TEST(test_isotp_flow_control_overflow_rejection);
+        RUN_TEST(test_isotp_null_receive_and_large_len_clamping);
+        RUN_TEST(test_isotp_stmin_decoding_and_null_timeouts);
+        RUN_TEST(test_isotp_tx_send_cf_zero_remaining_idle);
+        RUN_TEST(test_isotp_32bit_extended_first_frame_parsing);
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
         RUN_TEST(test_isotp_canfd_single_frame);
         RUN_TEST(test_isotp_canfd_multi_frame);

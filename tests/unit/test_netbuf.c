@@ -76,8 +76,27 @@ void test_netbuf_pool_exhaustion_and_invalid(void)
     TEST_ASSERT_EQUAL_UINT32(0, syn_netbuf_len(NULL));
 }
 
+void test_netbuf_auto_pool_free_and_headroom_overflow(void)
+{
+    SYN_NetBufPool pool;
+    SYN_NetBuf bufs[2];
+    uint8_t raw_mem[2 * 64];
+
+    syn_netbuf_pool_init(&pool, bufs, raw_mem, 2, 64);
+
+    /* Headroom larger than buffer size defaults headroom to 0 */
+    SYN_NetBuf *b1 = syn_netbuf_alloc(&pool, 200);
+    TEST_ASSERT_NOT_NULL(b1);
+    TEST_ASSERT_EQUAL_PTR(b1->head, b1->data);
+
+    /* Free buffer using NULL pool (retrieves pool pointer from buf->pool) */
+    syn_netbuf_free(NULL, b1);
+    TEST_ASSERT_EQUAL_UINT32(2, pool.free_count);
+}
+
 void run_netbuf_tests(void)
 {
     RUN_TEST(test_netbuf_alloc_push_pull_free);
     RUN_TEST(test_netbuf_pool_exhaustion_and_invalid);
+    RUN_TEST(test_netbuf_auto_pool_free_and_headroom_overflow);
 }

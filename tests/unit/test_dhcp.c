@@ -147,6 +147,58 @@ void test_dhcp_coroutine_pt(void)
     TEST_ASSERT_EQUAL_INT(PT_EXITED, dhcp_coroutine_task(&pt, &dhcp));
 }
 
+void test_dhcp_extended_option_parsing(void)
+{
+    SYN_DHCP dhcp;
+    syn_dhcp_init(&dhcp, XID);
+
+    /* Construct DHCPOFFER with pad option (0), Option 51 (lease time = 3600), Option 54 (server IP
+     * = 192.168.1.254) */
+    uint8_t offer_pkt[300] = {0};
+    offer_pkt[0] = 2;
+    offer_pkt[4] = (uint8_t)(XID >> 24);
+    offer_pkt[5] = (uint8_t)(XID >> 16);
+    offer_pkt[6] = (uint8_t)(XID >> 8);
+    offer_pkt[7] = (uint8_t)(XID);
+    offer_pkt[16] = 10;
+    offer_pkt[17] = 0;
+    offer_pkt[18] = 0;
+    offer_pkt[19] = 50;
+
+    /* Magic Cookie */
+    offer_pkt[236] = 0x63;
+    offer_pkt[237] = 0x82;
+    offer_pkt[238] = 0x53;
+    offer_pkt[239] = 0x63;
+
+    size_t idx = 240;
+    offer_pkt[idx++] = 0; /* Option 0: Pad */
+    offer_pkt[idx++] = 53;
+    offer_pkt[idx++] = 1;
+    offer_pkt[idx++] = SYN_DHCP_OFFER;
+    offer_pkt[idx++] = 51; /* Option 51: Lease Time */
+    offer_pkt[idx++] = 4;
+    offer_pkt[idx++] = 0;
+    offer_pkt[idx++] = 0;
+    offer_pkt[idx++] = 0x0E;
+    offer_pkt[idx++] = 0x10; /* 3600 */
+    offer_pkt[idx++] = 54;   /* Option 54: Server Identifier */
+    offer_pkt[idx++] = 4;
+    offer_pkt[idx++] = 192;
+    offer_pkt[idx++] = 168;
+    offer_pkt[idx++] = 1;
+    offer_pkt[idx++] = 254;
+    offer_pkt[idx++] = 255; /* END */
+
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, offer_pkt, idx));
+    TEST_ASSERT_EQUAL_UINT32(3600, dhcp.lease_time_sec);
+    TEST_ASSERT_EQUAL_UINT32(0xC0A801FE, dhcp.server_ip);
+
+    /* Test XID mismatch */
+    offer_pkt[4] = 0xFF;
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_process_packet(&dhcp, NULL, offer_pkt, idx));
+}
+
 void test_dhcp_null_checks(void)
 {
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_init(NULL, 0));

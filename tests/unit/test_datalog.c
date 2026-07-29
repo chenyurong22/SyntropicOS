@@ -101,6 +101,36 @@ void test_datalog_read_empty(void)
     TEST_ASSERT_EQUAL_size_t(0, n);
 }
 
+void test_datalog_zero_len_payload_and_incomplete_header(void)
+{
+    syn_datalog_init(&datalog, backing, sizeof(backing));
+
+    /* Write 0-byte payload log entry (header only) */
+    TEST_ASSERT_TRUE(syn_datalog_write(&datalog, 0x5555, NULL, 0));
+
+    uint16_t out_id = 0;
+    uint8_t out_buf[16];
+    size_t read_bytes = syn_datalog_read(&datalog, &out_id, out_buf, sizeof(out_buf));
+    TEST_ASSERT_EQUAL_size_t(0, read_bytes);
+    TEST_ASSERT_EQUAL_HEX16(0x5555, out_id);
+
+    /* Incomplete header: manually write 2 bytes into ringbuf (less than 4-byte header) */
+    uint8_t partial[2] = {0x01, 0x02};
+    syn_ringbuf_write(&datalog.rb, partial, 2);
+    read_bytes = syn_datalog_read(&datalog, &out_id, out_buf, sizeof(out_buf));
+    TEST_ASSERT_EQUAL_size_t(0, read_bytes);
+}
+
+void test_datalog_clear(void)
+{
+    syn_datalog_init(&datalog, backing, sizeof(backing));
+    uint8_t payload[4] = {1, 2, 3, 4};
+    syn_datalog_write(&datalog, 0x1234, payload, sizeof(payload));
+    syn_datalog_reset(&datalog);
+    TEST_ASSERT_EQUAL_size_t(0, syn_datalog_available(&datalog));
+    TEST_ASSERT_EQUAL_UINT32(0, syn_datalog_get_dropped(&datalog));
+}
+
 void run_datalog_tests(void)
 {
     RUN_TEST(test_datalog_init);
@@ -108,4 +138,6 @@ void run_datalog_tests(void)
     RUN_TEST(test_datalog_overflow);
     RUN_TEST(test_datalog_read_buffer_too_small);
     RUN_TEST(test_datalog_read_empty);
+    RUN_TEST(test_datalog_zero_len_payload_and_incomplete_header);
+    RUN_TEST(test_datalog_clear);
 }

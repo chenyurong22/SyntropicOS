@@ -264,8 +264,9 @@ size_t syn_j1939_encode_dm2(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *
                             size_t dtc_count, uint8_t mil_lamp_status);
 
 #ifndef SYN_J1939_MAX_LOGGED_DTCS
-#define SYN_J1939_MAX_LOGGED_DTCS 16 /**< Maximum capacity of active/previously active DTC arrays \
-                                      */
+#define SYN_J1939_MAX_LOGGED_DTCS                                   \
+    16 /**< Maximum capacity of active/previously active DTC arrays \
+        */
 #endif
 
 /** @brief J1939 active and previously active DTC log container. */

@@ -1000,6 +1000,146 @@ void test_http_chunked_boundary_cases(void)
 
 /* ── Runner ─────────────────────────────────────────────────────────────── */
 
+static void on_custom_port_redirect_connect(const char *host, uint16_t port)
+{
+    (void)host;
+    (void)port;
+    if (s_redirect_count == 0) {
+        const char *redirect = "HTTP/1.1 302 Found\r\n"
+                               "Location: http://other.com:8080/path\r\n"
+                               "Content-Length: 0\r\n"
+                               "\r\n";
+        mock_sock_set_response(redirect, strlen(redirect));
+    } else {
+        const char *ok = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+        mock_sock_set_response(ok, strlen(ok));
+    }
+    s_redirect_count++;
+}
+
+static void test_http_custom_port_and_long_host_redirect(void)
+{
+    mock_port_reset();
+    reset_accum();
+    s_redirect_count = 0;
+    mock_sock_connect_cb = on_custom_port_redirect_connect;
+
+    SYN_HttpClient client;
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+
+    run_client_task(&client);
+
+    TEST_ASSERT_EQUAL_STRING("other.com", client.cur_host);
+    TEST_ASSERT_EQUAL_UINT16(8080, client.cur_port);
+    TEST_ASSERT_EQUAL_STRING("/path", client.cur_path);
+}
+
+static void test_http_custom_headers_and_payload_send_fail(void)
+{
+    mock_port_reset();
+    reset_accum();
+
+    SYN_HttpHeader extra_headers[] = {{"X-Custom-1", "Value1"}, {"X-Custom-2", "Value2"}};
+
+    SYN_HttpClient client;
+    const uint8_t dummy_body[] = "{\"key\":\"value\"}";
+    syn_http_client_init(&client, "POST", "example.com", 80, "/api", "application/json", dummy_body,
+                         sizeof(dummy_body) - 1, extra_headers, 2, body_accumulate, NULL, work_buf,
+                         sizeof(work_buf));
+
+    /* Set send_fail = true so send_request returns false */
+    mock_sock_send_fail = true;
+    SYN_Status st = run_client_task(&client);
+    TEST_ASSERT_EQUAL(SYN_ERROR, st);
+}
+
+static void test_http_long_redirect_host_clamping(void)
+{
+    mock_port_reset();
+    reset_accum();
+
+    /* Redirect with explicit port and very long host */
+    const char *resp1 =
+        "HTTP/1.1 302 Found\r\n"
+        "Location: http://thisisareallylonghostnameexceedingthehostbuffersize:8080/path\r\n"
+        "\r\n";
+    mock_sock_set_response(resp1, strlen(resp1));
+
+    SYN_HttpClient client;
+    syn_http_client_init(&client, "GET", "orig.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    run_client_task(&client);
+
+    /* Redirect without port and very long host */
+    mock_port_reset();
+    const char *resp2 =
+        "HTTP/1.1 302 Found\r\n"
+        "Location: http://thisisareallylonghostnameexceedingthehostbuffersize/path\r\n"
+        "\r\n";
+    mock_sock_set_response(resp2, strlen(resp2));
+    syn_http_client_init(&client, "GET", "orig.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    run_client_task(&client);
+}
+
+static void test_http_send_fail_after_method_write(void)
+{
+    mock_port_reset();
+    reset_accum();
+    mock_sock_send_fail_after_bytes = 3; /* Fail after writing "GET" */
+
+    SYN_HttpClient client;
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    SYN_Status st = run_client_task(&client);
+    TEST_ASSERT_EQUAL(SYN_ERROR, st);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+}
+
+static void test_http_custom_headers_write_fail(void)
+{
+    mock_port_reset();
+    reset_accum();
+
+    SYN_HttpHeader headers[1] = {{"X-Custom", "Value"}};
+    mock_sock_send_fail_after_bytes = 40;
+
+    SYN_HttpClient client;
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, headers, 1,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    SYN_Status st = run_client_task(&client);
+    TEST_ASSERT_EQUAL(SYN_ERROR, st);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+}
+
+static void test_http_content_length_write_fail(void)
+{
+    mock_port_reset();
+    reset_accum();
+
+    uint8_t payload[] = "123";
+    mock_sock_send_fail_after_bytes = 20; /* Fail during Content-Length header write */
+
+    SYN_HttpClient client;
+    syn_http_client_init(&client, "POST", "example.com", 80, "/", "text/plain", payload, 3, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    SYN_Status st = run_client_task(&client);
+    TEST_ASSERT_EQUAL(SYN_ERROR, st);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+}
+
+static void test_http_connect_fail_branch(void)
+{
+    mock_port_reset();
+    mock_sock_connect_fail = true;
+    SYN_HttpClient client;
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    TEST_ASSERT_EQUAL(SYN_ERROR, run_client_task(&client));
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+}
+
 void run_http_tests(void)
 {
     RUN_TEST(test_http_get_200);
@@ -1021,4 +1161,11 @@ void run_http_tests(void)
     RUN_TEST(test_http_extra_data_in_buffer);
     RUN_TEST(test_http_custom_headers);
     RUN_TEST(test_http_chunked_boundary_cases);
+    RUN_TEST(test_http_custom_port_and_long_host_redirect);
+    RUN_TEST(test_http_custom_headers_and_payload_send_fail);
+    RUN_TEST(test_http_long_redirect_host_clamping);
+    RUN_TEST(test_http_send_fail_after_method_write);
+    RUN_TEST(test_http_custom_headers_write_fail);
+    RUN_TEST(test_http_content_length_write_fail);
+    RUN_TEST(test_http_connect_fail_branch);
 }

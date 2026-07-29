@@ -99,3 +99,40 @@ void test_icmp_null_checks(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_icmp_build_echo_request(NULL, NULL, 0, NULL, 0, 0,
                                                                          NULL, 0, NULL, NULL));
 }
+
+void test_icmp_process_packet_invalid_headers(void)
+{
+    SYN_ICMP icmp;
+    syn_icmp_init(&icmp);
+
+    /* 1. EtherType not IPv4 (e.g. 0x0806 ARP) */
+    uint8_t arp_pkt[60] = {0};
+    arp_pkt[12] = 0x08;
+    arp_pkt[13] = 0x06;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_icmp_process_packet(&icmp, arp_pkt, sizeof(arp_pkt), NULL, NULL));
+
+    /* 2. Truncated IP header (ip_hl < 20) */
+    uint8_t trunc_ip[60] = {0};
+    trunc_ip[12] = 0x08;
+    trunc_ip[13] = 0x00;
+    trunc_ip[14] = 0x43; /* ihl = 3 -> 12 bytes < 20 */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_icmp_process_packet(&icmp, trunc_ip, sizeof(trunc_ip), NULL, NULL));
+
+    /* 3. Non-ICMP protocol (proto = 17 UDP) */
+    uint8_t udp_pkt[60] = {0};
+    udp_pkt[12] = 0x08;
+    udp_pkt[13] = 0x00;
+    udp_pkt[14] = 0x45; /* ihl = 5 */
+    udp_pkt[23] = 17;   /* UDP */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_icmp_process_packet(&icmp, udp_pkt, sizeof(udp_pkt), NULL, NULL));
+
+    /* 4. Truncated ICMP header (packet length shorter than 14 + 20 + 8) */
+    uint8_t short_icmp[30] = {0};
+    short_icmp[12] = 0x08;
+    short_icmp[13] = 0x00;
+    short_icmp[14] = 0x45;
+    short_icmp[23] = 1; /* ICMP */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_icmp_process_packet(&icmp, short_icmp, sizeof(short_icmp), NULL, NULL));
+}

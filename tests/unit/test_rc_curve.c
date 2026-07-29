@@ -47,3 +47,21 @@ void test_rc_curve_null_config(void)
 {
     TEST_ASSERT_EQUAL_UINT16(1750, syn_rc_curve_apply(1750, NULL));
 }
+
+void test_rc_curve_extended_edge_cases(void)
+{
+    SYN_RCCurve_Config cfg = {
+        .deadband_us = 50, .expo = Q16_FROM_FLOAT(0.2f), .dual_rate = Q16_ONE};
+
+    /* Clamping inputs outside 1000..2000 us range */
+    TEST_ASSERT_EQUAL_UINT16(1000, syn_rc_curve_apply(800, &cfg));
+    TEST_ASSERT_EQUAL_UINT16(2000, syn_rc_curve_apply(2200, &cfg));
+
+    /* Negative offset inside and outside deadband */
+    TEST_ASSERT_EQUAL_UINT16(1500, syn_rc_curve_apply(1480, &cfg));     /* Inside 50us deadband */
+    TEST_ASSERT_LESS_THAN_UINT16(1500, syn_rc_curve_apply(1300, &cfg)); /* Outside deadband */
+
+    /* Deadband >= 500 us (span <= 0) */
+    cfg.deadband_us = 500;
+    TEST_ASSERT_EQUAL_UINT16(1500, syn_rc_curve_apply(1800, &cfg));
+}

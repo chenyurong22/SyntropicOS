@@ -131,10 +131,21 @@ static void test_boot_log_events_with_errlog(void)
     TEST_ASSERT_TRUE(syn_errlog_count(&errlog) > 0);
 }
 
+static void test_boot_null_checks(void)
+{
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_boot_init(NULL, NULL, 0));
+    syn_boot_mark_healthy(NULL);
+    syn_boot_set_reset_reason(NULL, SYN_RESET_POWER_ON);
+    syn_boot_set_errlog(NULL, NULL);
+    syn_boot_log_events(NULL);
+    TEST_ASSERT_FALSE(syn_boot_is_safe_mode(NULL));
+}
+
 void run_boot_tests(void)
 {
     RUN_TEST(test_boot);
     RUN_TEST(test_boot_set_reset_reason);
     RUN_TEST(test_boot_log_events_no_errlog);
     RUN_TEST(test_boot_log_events_with_errlog);
+    RUN_TEST(test_boot_null_checks);
 }

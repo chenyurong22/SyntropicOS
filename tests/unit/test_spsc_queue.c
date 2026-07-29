@@ -110,9 +110,21 @@ void test_spsc_queue_full_overflow_and_wraparound(void)
     TEST_ASSERT_TRUE(syn_spsc_queue_is_empty(&q));
 }
 
+static void test_spsc_queue_peek_and_clear(void)
+{
+    SYN_SPSC_Queue q;
+    TestMsg buf[4];
+    TEST_ASSERT_EQUAL(SYN_OK, syn_spsc_queue_init(&q, buf, sizeof(TestMsg), 4));
+    TEST_ASSERT_FALSE(syn_spsc_queue_is_full(&q));
+    TestMsg m1 = {10, 100};
+    syn_spsc_queue_push(&q, &m1);
+    TEST_ASSERT_EQUAL_size_t(1, syn_spsc_queue_count(&q));
+}
+
 void run_spsc_queue_tests(void)
 {
     RUN_TEST(test_spsc_queue_push_pop_count);
     RUN_TEST(test_spsc_queue_null_params_and_capacity);
     RUN_TEST(test_spsc_queue_full_overflow_and_wraparound);
+    RUN_TEST(test_spsc_queue_peek_and_clear);
 }

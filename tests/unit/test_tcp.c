@@ -201,6 +201,84 @@ void test_tcp_rx_buf_full_no_false_ack(void)
     TEST_ASSERT_EQUAL_UINT16((uint16_t)SYN_TCP_BUF_SIZE, tcp.conns[0].rx_len);
 }
 
+static void test_tcp_fin_close_handshake(void)
+{
+    uint8_t mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
+    uint32_t ip = 0xA9FE0164;
+
+    syn_eth_init(&eth, mac, ip);
+    syn_tcp_init(&tcp, &eth);
+    syn_tcp_listen(&tcp, 80);
+
+    /* Move connection to ESTABLISHED */
+    tcp.conns[0].state = SYN_TCP_ESTABLISHED;
+    tcp.conns[0].remote_port = 49152;
+    tcp.conns[0].remote_ip = 0xA9FE0101;
+    task.state = SYN_TASK_BLOCKED;
+    tcp.conns[0].blocked_task = &task;
+
+    /* Build raw FIN frame */
+    uint8_t fin_frame[54];
+    memset(fin_frame, 0, sizeof(fin_frame));
+    memcpy(&fin_frame[0], mac, 6);
+    fin_frame[12] = 0x08;
+    fin_frame[13] = 0x00;
+    fin_frame[14] = 0x45;
+    fin_frame[17] = 40;
+    fin_frame[23] = 6;
+    fin_frame[26] = 169;
+    fin_frame[27] = 254;
+    fin_frame[28] = 1;
+    fin_frame[29] = 1;
+    fin_frame[30] = 169;
+    fin_frame[31] = 254;
+    fin_frame[32] = 1;
+    fin_frame[33] = 100;
+    fin_frame[34] = 0xC0;
+    fin_frame[35] = 0x00;
+    fin_frame[36] = 0x00;
+    fin_frame[37] = 80;
+    fin_frame[38] = 0x00;
+    fin_frame[39] = 0x00;
+    fin_frame[40] = 0x01;
+    fin_frame[41] = 0x00; /* seq = 256 */
+    fin_frame[46] = 0x50;
+    fin_frame[47] = SYN_TCP_FLAG_FIN;
+
+    uint8_t tx_out[128];
+    size_t tx_len = 0;
+
+    SYN_Status st = syn_tcp_process_packet(&tcp, fin_frame, sizeof(fin_frame), tx_out, &tx_len);
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+    TEST_ASSERT_EQUAL(SYN_TCP_CLOSED, tcp.conns[0].state);
+    TEST_ASSERT_EQUAL_UINT32(257, tcp.conns[0].ack_nxt);
+    TEST_ASSERT_EQUAL(SYN_TASK_READY, task.state);
+}
+
+static void test_tcp_null_params_and_non_tcp_proto(void)
+{
+    SYN_TCP tcp;
+    uint8_t frame[64] = {0};
+    uint8_t tx_out[64];
+    size_t tx_len = 0;
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_tcp_process_packet(NULL, frame, sizeof(frame), tx_out, &tx_len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_tcp_process_packet(&tcp, NULL, sizeof(frame), tx_out, &tx_len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_tcp_process_packet(&tcp, frame, 50, tx_out, &tx_len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_tcp_process_packet(&tcp, frame, sizeof(frame), NULL, &tx_len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_tcp_process_packet(&tcp, frame, sizeof(frame), tx_out, NULL));
+
+    /* Non-TCP frame (proto != 6) */
+    memset(frame, 0, sizeof(frame));
+    frame[23] = 17; /* UDP */
+    TEST_ASSERT_EQUAL(SYN_ERROR,
+                      syn_tcp_process_packet(&tcp, frame, sizeof(frame), tx_out, &tx_len));
+}
+
 void run_tcp_tests(void)
 {
     RUN_TEST(test_tcp_init_and_listen);
@@ -208,4 +286,6 @@ void run_tcp_tests(void)
     RUN_TEST(test_tcp_syn_ack_handshake);
     RUN_TEST(test_tcp_task_unblock_on_data);
     RUN_TEST(test_tcp_rx_buf_full_no_false_ack);
+    RUN_TEST(test_tcp_fin_close_handshake);
+    RUN_TEST(test_tcp_null_params_and_non_tcp_proto);
 }

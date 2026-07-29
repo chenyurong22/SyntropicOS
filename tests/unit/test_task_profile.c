@@ -48,8 +48,31 @@ void test_task_profile_enable_disable(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_task_profile_get(&mgr, 0, &prof));
 }
 
+void test_task_profile_unnamed_and_zero_window(void)
+{
+    SYN_TaskProfileManager mgr;
+    syn_task_profile_init(&mgr);
+
+    /* Null task name defaults to "unnamed" */
+    syn_task_profile_step_start(&mgr, 0, NULL, 500);
+    syn_task_profile_step_end(&mgr, 0, 600);
+
+    /* Zero window duration does not perform divide-by-zero */
+    syn_task_profile_update(&mgr, 0);
+
+    SYN_TaskProfile prof;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_task_profile_get(&mgr, 0, &prof));
+    TEST_ASSERT_EQUAL_STRING("unnamed", prof.task_name);
+
+    /* Null parameter checks */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_task_profile_init(NULL));
+    syn_task_profile_enable(NULL, true);
+    syn_task_profile_update(NULL, 100);
+}
+
 void run_task_profile_tests(void)
 {
     RUN_TEST(test_task_profile_init_and_step);
     RUN_TEST(test_task_profile_enable_disable);
+    RUN_TEST(test_task_profile_unnamed_and_zero_window);
 }

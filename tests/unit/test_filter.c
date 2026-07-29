@@ -143,6 +143,14 @@ static void test_biquad_process_block(void)
     }
 }
 
+static void test_filter_biquad_highpass(void)
+{
+    SYN_FilterBiquad f;
+    syn_filter_biquad_highpass(&f, Q16_FROM_INT(100), Q16_FROM_INT(1000));
+    q16_t out = syn_filter_biquad_update(&f, Q16_ONE);
+    TEST_ASSERT_NOT_EQUAL(0, out);
+}
+
 void run_filter_tests(void)
 {
     RUN_TEST(test_filters);
@@ -150,4 +158,5 @@ void run_filter_tests(void)
     RUN_TEST(test_filter_median_reset);
     RUN_TEST(test_filter_fir);
     RUN_TEST(test_biquad_process_block);
+    RUN_TEST(test_filter_biquad_highpass);
 }

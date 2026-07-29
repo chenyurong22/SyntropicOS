@@ -80,6 +80,14 @@ void test_backoff_reset(void)
     TEST_ASSERT_EQUAL_UINT32(100, b.current_ms);
 }
 
+static void test_backoff_null_checks(void)
+{
+    syn_backoff_init(NULL, 0, 0, 0, 0);
+    TEST_ASSERT_EQUAL_UINT32(0, syn_backoff_next_ms(NULL));
+    TEST_ASSERT_TRUE(syn_backoff_exhausted(NULL));
+    syn_backoff_reset(NULL);
+}
+
 void run_backoff_tests(void)
 {
     RUN_TEST(test_backoff_initial_state);
@@ -87,4 +95,5 @@ void run_backoff_tests(void)
     RUN_TEST(test_backoff_capping);
     RUN_TEST(test_backoff_exhaustion);
     RUN_TEST(test_backoff_reset);
+    RUN_TEST(test_backoff_null_checks);
 }

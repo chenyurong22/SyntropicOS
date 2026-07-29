@@ -99,8 +99,16 @@ void test_slab_edge_cases_and_exhaustion(void)
     syn_slab_free(&slab, b3);
 }
 
+static void test_slab_null_params(void)
+{
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_slab_init(NULL, NULL, 0, NULL, NULL, 0));
+    TEST_ASSERT_NULL(syn_slab_alloc(NULL, 16));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_slab_free(NULL, NULL));
+}
+
 void run_slab_tests(void)
 {
     RUN_TEST(test_slab_alloc_free_stats);
     RUN_TEST(test_slab_edge_cases_and_exhaustion);
+    RUN_TEST(test_slab_null_params);
 }

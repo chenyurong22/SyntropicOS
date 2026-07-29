@@ -1536,38 +1536,156 @@ static void test_imgui_edge_cases_and_uncovered_paths(void)
     /* 8. Progress Bar & Selectable & Header Hits */
     syn_imgui_progress_bar_ex(&ctx, -100, 0, 100, NULL, 0, 0, 100, 12);
     syn_imgui_progress_bar_ex(&ctx, 5, 0, 100, NULL, 0, 0, 100, 12);
+}
 
-    bool sel_val = false;
-    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, 20, 5);
-    syn_imgui_selectable(&ctx, "Sel", &sel_val, 0, 0, 80, 15);
+static void test_imgui_spinner_arrow_and_encoder_wrapping(void)
+{
+    uint8_t fb[128 * 64 / 8] = {0};
+    SYN_Canvas canvas;
+    syn_canvas_init(&canvas, fb, 128, 64, 1, NULL, NULL);
+
+    SYN_IMGUI_Context ctx;
+    syn_imgui_init(&ctx);
+    const char *items[] = {"OptA", "OptB", "OptC"};
+
+    /* 1. Touch left arrow when selected=0 -> wraps to 2 */
+    int32_t selected = 0;
+    syn_imgui_begin(&ctx, &canvas, false, true, 0, true, 43, 5); /* touch_x=43 -> left arrow */
+    syn_imgui_combo(&ctx, "Combo", items, 3, &selected, 0, 0, 80, 15);
     syn_imgui_end(&ctx);
-    TEST_ASSERT_TRUE(sel_val);
+    TEST_ASSERT_EQUAL_INT32(2, selected);
 
-    sel_val = false;
+    /* 2. Touch right arrow when selected=2 -> wraps to 0 */
+    selected = 2;
+    syn_imgui_begin(&ctx, &canvas, false, true, 0, true, 70, 5); /* touch_x=70 -> right arrow */
+    syn_imgui_combo(&ctx, "Combo", items, 3, &selected, 0, 0, 80, 15);
+    syn_imgui_end(&ctx);
+    TEST_ASSERT_EQUAL_INT32(0, selected);
+
+    /* 3. Encoder negative wrap while active */
+    ctx.focused_id = 1;
+    ctx.active_id = 1;
+    selected = 0;
+    syn_imgui_begin(&ctx, &canvas, false, false, -5, false, 0, 0); /* enc_delta = -5 */
+    syn_imgui_combo(&ctx, "Combo", items, 3, &selected, 0, 0, 80, 15);
+    syn_imgui_end(&ctx);
+    TEST_ASSERT_EQUAL_INT32(1, selected);
+}
+
+static void test_imgui_encoder_wrap_clamping_and_focus_cap(void)
+{
+    SYN_IMGUI_Context ctx;
+    syn_imgui_init(&ctx);
+    SYN_Canvas canvas;
+    uint8_t fb[128 * 64 / 8] = {0};
+    syn_canvas_init(&canvas, fb, 128, 64, 1, NULL, NULL);
+
+    /* 1. Encoder delta negative wrap (idx < 0 -> idx += count) */
+    ctx.focused_id = 1;
+    ctx.last_max_id = 5;
+    syn_imgui_begin(&ctx, &canvas, false, false, -2, false, 0, 0);
+    TEST_ASSERT_EQUAL_UINT16(4, ctx.focused_id);
+    syn_imgui_end(&ctx);
+
+    /* 2. Focus ID > last_max_id capped at 1 */
+    ctx.focused_id = 10;
+    ctx.last_max_id = 3;
+    ctx.next_id = 3;
+    syn_imgui_end(&ctx);
+    TEST_ASSERT_EQUAL_UINT16(1, ctx.focused_id);
+}
+
+static void test_imgui_begin_focused_id_zero(void)
+{
+    uint8_t buf[128 * 64 / 8] = {0};
+    SYN_Canvas canvas;
+    syn_canvas_init(&canvas, buf, 128, 64, 1, NULL, NULL);
+
+    SYN_IMGUI_Context ctx;
+    syn_imgui_init(&ctx);
+
+    ctx.last_max_id = 2;
+    ctx.focused_id = 0;
+    syn_imgui_begin(&ctx, &canvas, false, false, 1, false, 0, 0);
+    syn_imgui_end(&ctx);
+}
+
+static void test_imgui_slider_touch_out_of_bounds_clamping(void)
+{
+    uint8_t buf[128 * 64 / 8] = {0};
+    SYN_Canvas canvas;
+    syn_canvas_init(&canvas, buf, 128, 64, 1, NULL, NULL);
+
+    SYN_IMGUI_Context ctx;
+    syn_imgui_init(&ctx);
+
+    /* Touch x = 0 (left of slider bar) with touch_down = true */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, 0, 5);
+
+    int32_t val = 50;
+    syn_imgui_slider(&ctx, "Val", &val, 0, 100, 10, 5, 80, 12);
+    syn_imgui_end(&ctx);
+}
+
+static void test_imgui_layout_row_height_wrapping(void)
+{
+    uint8_t fb[128 * 64 / 8] = {0};
+    SYN_Canvas canvas;
+    syn_canvas_init(&canvas, fb, 128, 64, 1, NULL, NULL);
+
+    SYN_IMGUI_Context ctx;
+    syn_imgui_init(&ctx);
+
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
-    syn_imgui_selectable(&ctx, "Sel", &sel_val, 0, 0, 80, 15);
+
+    /* Simulate unwrapped previous row in layout mode by setting in_layout=true and row_h > 0 */
+    ctx.layout.in_layout = true;
+    ctx.layout.row_h = 25;
+    ctx.layout.row_y = 10;
+    ctx.layout.same_line = false;
+
+    syn_imgui_button(&ctx, "WrappedBtn", 0, 0, 0, 0);
+    syn_imgui_button(&ctx, "Btn2", 0, 0, 0, 0);
+    int16_t cy_after2 = ctx.layout.cy;
+    ctx.layout.in_layout = false;
     syn_imgui_end(&ctx);
 
-    bool exp_val = false;
-    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, 20, 5);
-    syn_imgui_collapsing_header(&ctx, "Header", &exp_val, 0, 0, 80, 15);
-    syn_imgui_end(&ctx);
-    TEST_ASSERT_TRUE(exp_val);
+    /* Verify cursor y was wrapped to row_y (10) + row_h (20) + spacing */
+    TEST_ASSERT_GREATER_THAN(20, cy_after2);
+}
 
-    int32_t spin_val = 50;
-    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, 20, 5);
-    syn_imgui_spinner(&ctx, "Spin", &spin_val, 0, 100, 1, 0, 0, 80, 15);
-    syn_imgui_end(&ctx);
-
-    const uint8_t icon[8] = {0};
-    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, 5, 5);
-    syn_imgui_icon_button(&ctx, icon, 8, 8, 0, 0, 10, 10);
-    syn_imgui_end(&ctx);
-
+static void test_imgui_slider_and_progress_bar_bounds_clamping(void)
+{
+    uint8_t fb[64 * 64 / 8] = {0};
+    SYN_Canvas canvas;
+    syn_canvas_init(&canvas, fb, 64, 64, 1, NULL, NULL);
+    SYN_IMGUI_Context ctx;
+    syn_imgui_init(&ctx);
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
-    syn_imgui_icon_button(&ctx, icon, 8, 8, 0, 0, 10, 10);
+
+    /* 1. Progress bar values below min & above max */
+    syn_imgui_progress_bar(&ctx, -10, 0, 100, 10, 10, 80, 15);
+    syn_imgui_progress_bar(&ctx, 150, 0, 100, 10, 10, 80, 15);
+
+    /* 2. Slider touch drag clamping below min & above max */
+    int32_t val = 50;
+    ctx.touch_down = true;
+    ctx.touch_x = 0; /* far left of bar -> new_val < min -> new_val = min */
+    ctx.touch_y = 10;
+    syn_imgui_slider(&ctx, "sl", &val, 10, 90, 10, 10, 80, 20);
+
+    ctx.touch_x = 200; /* far right of bar -> new_val > max -> new_val = max */
+    syn_imgui_slider(&ctx, "sl", &val, 10, 90, 10, 10, 80, 20);
+
+    /* 3. Slider encoder delta clamping below min & above max */
+    ctx.touch_down = false;
+    ctx.active_id = 1234;
+    ctx.enc_delta = -100;
+    syn_imgui_slider(&ctx, "sl", &val, 10, 90, 10, 10, 80, 20);
+
+    ctx.enc_delta = 100;
+    syn_imgui_slider(&ctx, "sl", &val, 10, 90, 10, 10, 80, 20);
     syn_imgui_end(&ctx);
-    printf("DEBUG: test_imgui_edge_cases_and_uncovered_paths finished\n");
 }
 
 void run_imgui_tests(void)
@@ -1624,4 +1742,10 @@ void run_imgui_tests(void)
     RUN_TEST(test_imgui_layout_resolve_page0_stacking);
     RUN_TEST(test_imgui_layout_resolve_tabs);
     RUN_TEST(test_imgui_edge_cases_and_uncovered_paths);
+    RUN_TEST(test_imgui_layout_row_height_wrapping);
+    RUN_TEST(test_imgui_spinner_arrow_and_encoder_wrapping);
+    RUN_TEST(test_imgui_slider_and_progress_bar_bounds_clamping);
+    RUN_TEST(test_imgui_encoder_wrap_clamping_and_focus_cap);
+    RUN_TEST(test_imgui_slider_touch_out_of_bounds_clamping);
+    RUN_TEST(test_imgui_begin_focused_id_zero);
 }

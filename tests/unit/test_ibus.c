@@ -62,5 +62,10 @@ void test_ibus_null_and_error_handling(void)
 
     SYN_IBUS_Parser parser;
     syn_ibus_init(&parser);
-    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_ibus_parse_byte(&parser, 0x00, NULL)); /* Bad header */
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_ibus_parse_byte(&parser, 0x00, NULL)); /* Bad header 1 */
+
+    /* Header 1 correct, header 2 mismatch */
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_ibus_parse_byte(&parser, SYN_IBUS_HEADER1, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_ibus_parse_byte(&parser, 0x00, NULL)); /* Bad header 2 */
+    TEST_ASSERT_EQUAL_UINT8(0, parser.idx);                                     /* Reset to 0 */
 }

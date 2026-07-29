@@ -471,6 +471,47 @@ static void test_modbus_master_queue_retries(void)
     TEST_ASSERT_EQUAL(SYN_MB_MASTER_STATE_IDLE, master.state);
 }
 
+static void test_modbus_master_parameter_bounds(void)
+{
+    SYN_ModbusMaster m;
+    syn_modbus_master_init(&m, 100);
+
+    /* Null guards and invalid slave address (0) */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_read_holding(NULL, 1, 0, 1));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_read_holding(&m, 0, 0, 1));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_read_holding(&m, 1, 0, 0));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_read_holding(&m, 1, 0, 126));
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_read_input(&m, 0, 0, 1));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_read_input(&m, 1, 0, 126));
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_write_single(&m, 0, 0, 123));
+
+    uint16_t vals[2] = {1, 2};
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_write_multiple(&m, 0, 0, 2, vals));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_write_multiple(&m, 1, 0, 0, vals));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_write_multiple(&m, 1, 0, 124, vals));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_write_multiple(&m, 1, 0, 2, NULL));
+}
+
+static void test_modbus_master_queue_null_and_full_checks(void)
+{
+    syn_modbus_master_queue_init(NULL, 1);
+
+    SYN_ModbusMasterQueue q;
+    SYN_ModbusMasterQuery q_item = {
+        .slave_addr = 1, .func_code = SYN_MB_FC_READ_HOLDING, .start_addr = 0, .count = 1};
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_queue_push(NULL, &q_item));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_queue_push(&q, NULL));
+
+    syn_modbus_master_queue_init(&q, 1);
+    for (int i = 0; i < SYN_MODBUS_QUEUE_SIZE; i++) {
+        TEST_ASSERT_EQUAL(SYN_OK, syn_modbus_master_queue_push(&q, &q_item));
+    }
+    /* Overflow push */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_modbus_master_queue_push(&q, &q_item));
+}
+
 void run_modbus_master_tests(void)
 {
     RUN_TEST(test_modbus_master_read_holding);
@@ -482,4 +523,6 @@ void run_modbus_master_tests(void)
     RUN_TEST(test_modbus_master_queue);
     RUN_TEST(test_modbus_master_queue_fc_variants);
     RUN_TEST(test_modbus_master_queue_retries);
+    RUN_TEST(test_modbus_master_parameter_bounds);
+    RUN_TEST(test_modbus_master_queue_null_and_full_checks);
 }

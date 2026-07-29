@@ -119,7 +119,7 @@ void syn_boot_set_reset_reason(SYN_Boot *boot, uint8_t reason);
  */
 static inline bool syn_boot_is_safe_mode(const SYN_Boot *boot)
 {
-    return boot->safe_mode;
+    return (boot != NULL) && boot->safe_mode;
 }
 
 /**

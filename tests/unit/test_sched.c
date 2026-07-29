@@ -1036,6 +1036,32 @@ static void test_block_condition_and_primitives(void)
     TEST_ASSERT_EQUAL_INT((uint8_t)SYN_TASK_DEAD, task.state);
 }
 
+static void test_sched_next_wakeup_blocked_event_fired(void)
+{
+    SYN_Task task;
+    SYN_Sched sched;
+    syn_task_create(&task, "evt_task", suspend_task_func, 0, NULL);
+    syn_sched_init(&sched, &task, 1);
+
+    SYN_EventFlags flags;
+    syn_event_flags_init(&flags);
+
+    /* Set task to BLOCKED state with wait_event and wait_mask */
+    task.state = (uint8_t)SYN_TASK_BLOCKED;
+    task.wait_event = &flags;
+    task.wait_mask = 0x01;
+    task.delay_until = syn_port_get_tick_ms() + 1000;
+
+    /* Fire event flags */
+    syn_event_flags_set(&flags, 0x01);
+
+    uint32_t now = syn_port_get_tick_ms();
+    uint32_t wakeup = syn_sched_next_wakeup(&sched);
+
+    /* Since wait_event fired, next_wakeup returns 'now' (no sleep) */
+    TEST_ASSERT_EQUAL_UINT32(now, wakeup);
+}
+
 void run_sched_tests(void)
 {
     RUN_TEST(test_scheduler);
@@ -1067,4 +1093,5 @@ void run_sched_tests(void)
     RUN_TEST(test_two_deferring_high_pri_tasks_starve_lower);
     RUN_TEST(test_pt_delay_us);
     RUN_TEST(test_block_condition_and_primitives);
+    RUN_TEST(test_sched_next_wakeup_blocked_event_fired);
 }

@@ -114,9 +114,56 @@ static void test_param_sector_wrap(void)
     TEST_ASSERT_EQUAL_UINT16(slots_per_sec, loaded.brightness);
 }
 
+static void test_param_load_crc_corrupted_slot(void)
+{
+    mock_port_reset();
+    SYN_ParamStore store;
+    TestParams p = {.brightness = 100, .offset = 20, .mode = 1};
+
+    syn_param_init(&store, 0, 2, sizeof(TestParams));
+    syn_param_save(&store, &p);
+
+    /* Corrupt payload CRC in flash */
+    mock_flash[sizeof(SYN_ParamSlotHeader)] ^= 0xFF;
+
+    TestParams loaded = {0};
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_load(&store, &loaded));
+}
+
+static void test_param_corrupt_header_data_size(void)
+{
+    mock_port_reset();
+    SYN_ParamStore store;
+    TestParams p = {.brightness = 100, .offset = 20, .mode = 1};
+
+    syn_param_init(&store, 0, 2, sizeof(p));
+    syn_param_save(&store, &p);
+
+    /* Corrupt slot header data_size in flash */
+    SYN_ParamSlotHeader *hdr = (SYN_ParamSlotHeader *)mock_flash;
+    hdr->data_size = (uint16_t)(sizeof(p) + 5);
+
+    TestParams loaded;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_load(&store, &loaded));
+}
+
+static void test_param_flash_erase_error_returns_failure(void)
+{
+    mock_port_reset();
+    SYN_ParamStore store;
+    TestParams p = {.brightness = 100, .offset = 20, .mode = 1};
+    syn_param_init(&store, 0, 2, sizeof(p));
+    mock_flash_fail_at = 0;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_erase_all(&store));
+    mock_flash_fail_at = -1;
+}
+
 void run_param_tests(void)
 {
     RUN_TEST(test_param_store);
     RUN_TEST(test_param_data_too_large);
     RUN_TEST(test_param_sector_wrap);
+    RUN_TEST(test_param_load_crc_corrupted_slot);
+    RUN_TEST(test_param_corrupt_header_data_size);
+    RUN_TEST(test_param_flash_erase_error_returns_failure);
 }

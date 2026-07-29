@@ -442,6 +442,15 @@ static void test_fwupdate_sector_erase_fail(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 }
 
+static void test_fwupdate_abort_inactive_returns_early(void)
+{
+    SYN_FwUpdate upd;
+    memset(&upd, 0, sizeof(upd));
+    upd.active = false;
+    syn_fwupdate_abort(&upd);
+    TEST_ASSERT_FALSE(upd.active);
+}
+
 void run_fwupdate_tests(void)
 {
     /* Image header */
@@ -469,4 +478,5 @@ void run_fwupdate_tests(void)
     RUN_TEST(test_fwupdate_finish_flush_fail);
     RUN_TEST(test_fwupdate_finish_erase_fail);
     RUN_TEST(test_fwupdate_sector_erase_fail);
+    RUN_TEST(test_fwupdate_abort_inactive_returns_early);
 }

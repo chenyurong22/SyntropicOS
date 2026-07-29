@@ -641,6 +641,65 @@ static void test_httpd_body_str_direct(void)
     TEST_ASSERT_TRUE(resp.headers_sent);
 }
 
+static void test_httpd_invalid_state_and_null_status(void)
+{
+    SYN_Httpd srv;
+    syn_httpd_init(&srv, 80, test_routes, 1, work_buf, sizeof(work_buf));
+    srv.running = true;
+    srv.state = 99; /* Invalid state */
+
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_httpd_step(&srv));
+    TEST_ASSERT_EQUAL_INT(SYN_HTTPD_IDLE, srv.state);
+
+    /* Null status calls */
+    syn_httpd_status(NULL, 200, "OK");
+    SYN_HttpdResponse resp = {0};
+    syn_httpd_status(&resp, 200, NULL);
+}
+
+static void upgrade_handler(const SYN_HttpdRequest *req, SYN_HttpdResponse *resp, void *ctx)
+{
+    (void)req;
+    (void)ctx;
+    resp->upgraded = true;
+    resp->headers_sent = true;
+}
+
+static void test_httpd_connection_upgrade_handler(void)
+{
+    mock_port_reset();
+    SYN_HttpdRoute u_routes[] = {
+        {.method = SYN_HTTP_GET, .path = "/ws", .handler = upgrade_handler, .ctx = NULL}};
+
+    SYN_Httpd srv;
+    syn_httpd_init(&srv, 80, u_routes, 1, work_buf, sizeof(work_buf));
+    srv.running = true;
+
+    /* Simulate client connected in SYN_HTTPD_DISPATCHING state with /ws request */
+    srv.client = 10;
+    srv.state = SYN_HTTPD_DISPATCHING;
+    const char req[] = "GET /ws HTTP/1.1\r\nHost: localhost\r\n\r\n";
+    memcpy(srv.work_buf, req, strlen(req));
+    srv.rx_total = strlen(req);
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_httpd_step(&srv));
+    TEST_ASSERT_EQUAL(SYN_HTTPD_IDLE, srv.state);
+    TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, srv.client);
+}
+
+static void test_httpd_bad_request_malformed_headers(void)
+{
+    setup_server();
+    srv.state = SYN_HTTPD_DISPATCHING;
+    /* Request with no space in request line */
+    const char req[] = "GET/HTTP/1.1\r\nHost: localhost\r\n\r\n";
+    memcpy(srv.work_buf, req, strlen(req));
+    srv.rx_total = strlen(req);
+
+    syn_httpd_step(&srv);
+    TEST_ASSERT_EQUAL(SYN_HTTPD_IDLE, srv.state);
+}
+
 void run_httpd_tests(void)
 {
     RUN_TEST(test_httpd_get_root);
@@ -674,4 +733,7 @@ void run_httpd_tests(void)
     RUN_TEST(test_httpd_task_protothread);
     RUN_TEST(test_httpd_extra_coverage);
     RUN_TEST(test_httpd_body_str_direct);
+    RUN_TEST(test_httpd_invalid_state_and_null_status);
+    RUN_TEST(test_httpd_connection_upgrade_handler);
+    RUN_TEST(test_httpd_bad_request_malformed_headers);
 }

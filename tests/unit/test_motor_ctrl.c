@@ -881,6 +881,126 @@ static void test_motor_ctrl_open_loop(void)
     TEST_ASSERT_EQUAL(SYN_MCTRL_MODE_IDLE, syn_motor_ctrl_mode(&ctrl));
 }
 
+static void test_motor_ctrl_soft_limits_and_mid_move_retarget(void)
+{
+    SYN_DCMotor dc;
+    syn_dc_motor_init(&dc, 6, 7, SYN_DC_MODE_PWM_DIR);
+
+    SYN_MotorCtrl ctrl;
+    SYN_MotorCtrl_Config cfg;
+    memset(&cfg, 0, sizeof(cfg));
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.update_hz = 1000;
+    cfg.position_min = 100;
+    cfg.position_max = 500;
+    cfg.output_min = -255;
+    cfg.output_max = 255;
+
+    syn_motor_ctrl_init(&ctrl, &cfg);
+
+    /* Move to position below min -> clamped to min (100) */
+    mock_ctrl_position = 200;
+    syn_motor_ctrl_move_to(&ctrl, 50, 1000, 100);
+    TEST_ASSERT_EQUAL_INT32(100, ctrl.target_position);
+
+    /* Move to position above max -> clamped to max (500) */
+    syn_motor_ctrl_move_to(&ctrl, 800, 1000, 100);
+    TEST_ASSERT_EQUAL_INT32(500, ctrl.target_position);
+
+    /* Mid-move retarget (while profile_active is true) */
+    syn_motor_ctrl_move_to(&ctrl, 300, 1000, 100);
+    TEST_ASSERT_EQUAL_INT32(300, ctrl.target_position);
+    TEST_ASSERT_TRUE(ctrl.profile_active);
+
+    /* Move to S-curve soft limit clamping (< min and > max) */
+    syn_motor_ctrl_move_to_scurve(&ctrl, 10, 100, 10, 2);
+    TEST_ASSERT_EQUAL_INT32(100, ctrl.target_position);
+
+    syn_motor_ctrl_move_to_scurve(&ctrl, 900, 100, 10, 2);
+    TEST_ASSERT_EQUAL_INT32(500, ctrl.target_position);
+}
+
+static void test_motor_ctrl_profile_completion_deactivation(void)
+{
+    SYN_DCMotor dc;
+    syn_dc_motor_init(&dc, 1, 2, SYN_DC_MODE_PWM_DIR);
+
+    SYN_MotorCtrl ctrl;
+    SYN_MotorCtrl_Config cfg = {
+        .read_pos = mock_encoder_feedback,
+        .motor = syn_dc_motor_output(&dc),
+        .update_hz = 1000,
+    };
+    syn_motor_ctrl_init(&ctrl, &cfg);
+
+    /* Move to position with high velocity/accel so ramp finishes quickly */
+    mock_ctrl_position = 0;
+    syn_motor_ctrl_move_to(&ctrl, 10, 10000, 10000);
+    TEST_ASSERT_TRUE(ctrl.profile_active);
+
+    /* Run update steps until ramp finishes */
+    for (int i = 0; i < 200; i++) {
+        mock_tick_advance(1);
+        syn_motor_ctrl_update(&ctrl);
+    }
+    TEST_ASSERT_FALSE(ctrl.profile_active);
+
+    /* Move with S-curve and step until scurve finishes */
+    syn_motor_ctrl_move_to_scurve(&ctrl, 50, 1000, 500, 10);
+    TEST_ASSERT_TRUE(ctrl.scurve_active);
+
+    for (int i = 0; i < 2000; i++) {
+        mock_tick_advance(1);
+        syn_motor_ctrl_update(&ctrl);
+    }
+    TEST_ASSERT_FALSE(ctrl.scurve_active);
+}
+
+static void test_motor_ctrl_feedforward_negative_saturation_swap(void)
+{
+    SYN_DCMotor dc;
+    syn_dc_motor_init(&dc, 6, 7, SYN_DC_MODE_PWM_DIR);
+
+    SYN_MotorCtrl ctrl;
+    SYN_MotorCtrl_Config cfg;
+    memset(&cfg, 0, sizeof(cfg));
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.motor = syn_dc_motor_output(&dc);
+    cfg.update_hz = 1000;
+    cfg.output_min = -100;
+    cfg.output_max = 100;
+    cfg.ff_kv = -1000; /* Large negative feedforward -> min_pid > max_pid */
+    cfg.pid_kp = 10;
+    syn_motor_ctrl_init(&ctrl, &cfg);
+    syn_motor_ctrl_set_velocity(&ctrl, 500);
+
+    /* Update to trigger max_pid < min_pid swap branch in saturation handling */
+    mock_tick_advance(1);
+    syn_motor_ctrl_update(&ctrl);
+}
+
+static void test_motor_ctrl_integrator_anti_windup_clamping(void)
+{
+    SYN_MotorCtrl ctrl;
+    SYN_MotorCtrl_Config cfg;
+    memset(&cfg, 0, sizeof(cfg));
+    cfg.read_pos = mock_encoder_feedback;
+    cfg.update_hz = 1000;
+    cfg.output_min = -10;
+    cfg.output_max = 10;
+    cfg.pid_kp = 100;
+    cfg.pid_ki = 50;
+    cfg.ff_ka = 500; /* Force ff > output_max to trigger max_pid < min_pid swap */
+
+    syn_motor_ctrl_init(&ctrl, &cfg);
+    ctrl.pid.integral = 500;
+    syn_motor_ctrl_set_velocity(&ctrl, 500);
+
+    mock_tick_advance(1);
+    syn_motor_ctrl_update(&ctrl);
+}
+
 void run_motor_ctrl_tests(void)
 {
     RUN_TEST(test_motor_ctrl);
@@ -897,4 +1017,8 @@ void run_motor_ctrl_tests(void)
     RUN_TEST(test_motor_ctrl_defaults);
     RUN_TEST(test_motor_ctrl_move_to_scurve);
     RUN_TEST(test_motor_ctrl_open_loop);
+    RUN_TEST(test_motor_ctrl_soft_limits_and_mid_move_retarget);
+    RUN_TEST(test_motor_ctrl_profile_completion_deactivation);
+    RUN_TEST(test_motor_ctrl_feedforward_negative_saturation_swap);
+    RUN_TEST(test_motor_ctrl_integrator_anti_windup_clamping);
 }

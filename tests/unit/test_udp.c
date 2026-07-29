@@ -149,10 +149,66 @@ void test_udp_transport_bridge_transmits(void)
     TEST_ASSERT_EQUAL_UINT8(17, mock_eth_tx_buf[23]);   /* Protocol: UDP */
 }
 
+void test_udp_extended_edge_cases(void)
+{
+    /* Null & invalid init/bind checks */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_udp_init(NULL, NULL));
+    TEST_ASSERT_NULL(syn_udp_bind(NULL, 5000));
+    TEST_ASSERT_NULL(syn_udp_bind(&s_udp, 0));
+
+    /* Null & invalid checksum checks */
+    TEST_ASSERT_EQUAL_UINT16(0, syn_udp_checksum(0, 0, NULL, 0));
+    /* Odd payload length for checksum calculation */
+    uint8_t odd_payload[9] = {0x12, 0x34, 0x56, 0x78, 0x00, 0x09, 0x00, 0x00, 0xAA};
+    TEST_ASSERT_NOT_EQUAL(
+        0, syn_udp_checksum(0x0A000001, 0x0A000002, odd_payload, sizeof(odd_payload)));
+
+    /* Truncated IP packet processing */
+    uint8_t short_pkt[20] = {0};
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_udp_process_packet(&s_udp, short_pkt, sizeof(short_pkt)));
+
+    /* Invalid EtherType (0x0806 ARP) */
+    uint8_t arp_pkt[64] = {0};
+    syn_poke_u16(0x0806, arp_pkt, 12);
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_udp_process_packet(&s_udp, arp_pkt, sizeof(arp_pkt)));
+
+    /* Invalid Protocol (TCP = 6) */
+    uint8_t tcp_pkt[64] = {0};
+    syn_poke_u16(0x0800, tcp_pkt, 12);
+    tcp_pkt[23] = 6;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_udp_process_packet(&s_udp, tcp_pkt, sizeof(tcp_pkt)));
+
+    /* Unbound destination port */
+    uint8_t unbound_pkt[64] = {0};
+    syn_poke_u16(0x0800, unbound_pkt, 12);
+    unbound_pkt[23] = 17;
+    syn_poke_u16(9999, &unbound_pkt[34], 2); /* Dst port 9999 */
+    syn_poke_u16(16, &unbound_pkt[34], 4);   /* UDP length 16 */
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR,
+                          syn_udp_process_packet(&s_udp, unbound_pkt, sizeof(unbound_pkt)));
+
+    /* Over-sized payload sendto */
+    uint8_t tx_out[2000];
+    size_t tx_len = 0;
+    TEST_ASSERT_EQUAL_INT(
+        -1, syn_udp_sendto(&s_udp, 5000, 0x0A000002, 6000, tx_out, 1600, tx_out, &tx_len));
+
+    /* sendto with null eth instance */
+    SYN_UDP no_eth_udp;
+    syn_udp_init(&no_eth_udp, NULL);
+    TEST_ASSERT_GREATER_THAN(0, syn_udp_sendto(&no_eth_udp, 5000, 0x0A000002, 6000,
+                                               (const uint8_t *)"TEST", 4, tx_out, &tx_len));
+
+    /* unbind NULL check */
+    syn_udp_unbind(NULL);
+}
+
 void run_udp_tests(void)
 {
     RUN_TEST(test_udp_init_and_bind);
     RUN_TEST(test_udp_process_packet_demux_and_task_wake);
     RUN_TEST(test_udp_sendto_framing);
     RUN_TEST(test_udp_transport_bridge_transmits);
+    RUN_TEST(test_udp_extended_edge_cases);
 }

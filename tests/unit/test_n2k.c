@@ -168,6 +168,73 @@ void test_n2k_fast_packet_reassembly(void)
                           syn_n2k_fastpacket_process(NULL, &f2, target_pgn, &payload, &len));
 }
 
+void test_n2k_fast_packet_single_frame_and_sequence_error(void)
+{
+    SYN_N2K_FastPacketRx rx;
+    memset(&rx, 0, sizeof(rx));
+
+    uint32_t target_pgn = 129029U;
+    uint32_t can_id = syn_j1939_id_pack(6, target_pgn, 0x10, SYN_J1939_ADDR_GLOBAL);
+
+    /* Single frame fastpacket (total bytes <= 6) */
+    SYN_CAN_Frame f0 = {.id = can_id, .dlc = 8, .extended = true};
+    f0.data[0] = (2U << 5) | 0U; /* seq_id=2, index=0 */
+    f0.data[1] = 4;              /* 4 bytes total */
+    memcpy(&f0.data[2], "MINI", 4);
+
+    const uint8_t *payload = NULL;
+    size_t len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_n2k_fastpacket_process(&rx, &f0, target_pgn, &payload, &len));
+    TEST_ASSERT_EQUAL_UINT32(4, len);
+    TEST_ASSERT_EQUAL_MEMORY("MINI", payload, 4);
+
+    /* Out of sequence frame index error */
+    SYN_CAN_Frame f_bad = {.id = can_id, .dlc = 8, .extended = true};
+    f_bad.data[0] = (2U << 5) | 5U; /* expected index 1, got 5 */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_n2k_fastpacket_process(&rx, &f_bad, target_pgn, &payload, &len));
+}
+
+static void test_n2k_fastpacket_invalid_id_pgn_and_overflow(void)
+{
+    SYN_N2K_FastPacketRx rx;
+    memset(&rx, 0, sizeof(rx));
+
+    uint32_t target_pgn = 129029U;
+    uint32_t can_id = syn_j1939_id_pack(6, target_pgn, 0x10, SYN_J1939_ADDR_GLOBAL);
+    const uint8_t *payload = NULL;
+    size_t len = 0;
+
+    /* 1. Standard (11-bit) CAN ID fails J1939 id unpack */
+    SYN_CAN_Frame f_std = {.id = 0x7E0, .dlc = 8, .extended = false};
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_n2k_fastpacket_process(&rx, &f_std, target_pgn, &payload, &len));
+
+    /* 2. PGN mismatch */
+    SYN_CAN_Frame f_wrong_pgn = {.id = can_id, .dlc = 8, .extended = true};
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_n2k_fastpacket_process(&rx, &f_wrong_pgn, 99999U, &payload, &len));
+
+    /* 3. total_bytes > sizeof(rx.data) (223 bytes max) */
+    SYN_CAN_Frame f_overflow = {.id = can_id, .dlc = 8, .extended = true};
+    f_overflow.data[0] = 0x00;
+    f_overflow.data[1] = 250; /* > 223 */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_n2k_fastpacket_process(&rx, &f_overflow, target_pgn, &payload, &len));
+}
+
+static void test_n2k_encode_decode_null_checks(void)
+{
+    SYN_CAN_Frame f;
+    SYN_N2K_CogSogRapid cs;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_cog_sog_rapid(0x10, NULL, &f));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_cog_sog_rapid(0x10, &cs, NULL));
+
+    f.dlc = 4; /* < 6 */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_decode_cog_sog_rapid(&f, &cs));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_decode_cog_sog_rapid(NULL, &cs));
+}
+
 void run_n2k_tests(void)
 {
     RUN_TEST(test_n2k_position_rapid_encode_decode);
@@ -175,4 +242,7 @@ void run_n2k_tests(void)
     RUN_TEST(test_n2k_heading_and_battery_status);
     RUN_TEST(test_n2k_environmental_parameters);
     RUN_TEST(test_n2k_fast_packet_reassembly);
+    RUN_TEST(test_n2k_fast_packet_single_frame_and_sequence_error);
+    RUN_TEST(test_n2k_fastpacket_invalid_id_pgn_and_overflow);
+    RUN_TEST(test_n2k_encode_decode_null_checks);
 }

@@ -7,6 +7,8 @@
 #include "syntropic/util/syn_ringbuf.h"
 #include "unity/unity.h"
 
+#include <string.h>
+
 static void test_ringbuf_init_empty(void)
 {
     uint8_t buf[16];
@@ -358,6 +360,27 @@ static void test_ringbuf_barriers_invoked(void)
 #endif
 }
 
+static void test_ringbuf_uninitialized_and_zero_len(void)
+{
+    SYN_RingBuf rb;
+    memset(&rb, 0, sizeof(rb));
+
+    TEST_ASSERT_EQUAL_size_t(0, syn_ringbuf_count(&rb));
+    TEST_ASSERT_EQUAL_size_t(0, syn_ringbuf_free(&rb));
+    TEST_ASSERT_EQUAL_size_t(0, syn_ringbuf_write(&rb, (const uint8_t *)"a", 1));
+
+    uint8_t out[4];
+    TEST_ASSERT_EQUAL_size_t(0, syn_ringbuf_read(&rb, out, 1));
+    TEST_ASSERT_EQUAL_size_t(0, syn_ringbuf_peek_n(&rb, out, 1));
+
+    /* Zero len operations */
+    uint8_t b[16];
+    syn_ringbuf_init(&rb, b, sizeof(b));
+    TEST_ASSERT_EQUAL_size_t(0, syn_ringbuf_write(&rb, (const uint8_t *)"a", 0));
+    TEST_ASSERT_EQUAL_size_t(0, syn_ringbuf_read(&rb, out, 0));
+    TEST_ASSERT_EQUAL_size_t(0, syn_ringbuf_peek_n(&rb, out, 0));
+}
+
 void run_ringbuf_tests(void)
 {
     RUN_TEST(test_ringbuf_init_empty);
@@ -379,4 +402,5 @@ void run_ringbuf_tests(void)
     RUN_TEST(test_ringbuf_peek_n_wraparound);
     /* Barrier validation */
     RUN_TEST(test_ringbuf_barriers_invoked);
+    RUN_TEST(test_ringbuf_uninitialized_and_zero_len);
 }

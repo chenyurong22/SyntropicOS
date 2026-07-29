@@ -257,18 +257,116 @@ void test_json_read_unterminated_string(void)
 }
 
 /** Unexpected char in parse_object — exercises line 249 */
-void test_json_read_unexpected_char(void)
+void test_json_read_extended_edge_cases(void)
 {
-    /* Value followed by unexpected character — parser still reads "a":1 */
-    char json[] = "{\"a\":1!}";
     SYN_JsonReader r;
-    bool ok = syn_json_parse(&r, json, strlen(json));
-    /* Parser accepts the first key:value pair before hitting '!' */
-    TEST_ASSERT_TRUE(ok);
-    TEST_ASSERT_TRUE(r.token_count >= 1);
+
+    /* Parse valid JSON and test dot notation parent not found */
+    char json[] = "{\"wifi\":{\"ssid\":\"Net\"},\"escaped\":\"line\\nbreak\"}";
+    TEST_ASSERT_TRUE(syn_json_parse(&r, json, strlen(json)));
+
+    TEST_ASSERT_NULL(syn_json_find(&r, "nonexistent.child"));
+    TEST_ASSERT_NULL(syn_json_find(&r, "wifi.missing"));
+
+    /* Truncation of string into small buffer */
+    char small_buf[3];
+    TEST_ASSERT_TRUE(syn_json_get_str(&r, "wifi.ssid", small_buf, sizeof(small_buf)));
+    TEST_ASSERT_EQUAL_STRING("Ne", small_buf);
+
+    /* Malformed JSON syntax key without value */
+    char bad1[] = "{\"key\"}";
+    char bad2[] = "{invalid}";
+    syn_json_parse(&r, bad1, strlen(bad1));
+    TEST_ASSERT_EQUAL(SYN_JSON_NONE, syn_json_get_type(&r, "key"));
+    TEST_ASSERT_FALSE(syn_json_parse(&r, bad2, strlen(bad2)));
+
+    /* Type mismatches on getters */
+    char json2[] = "{\"str\":\"hello\",\"num\":123}";
+    int32_t val;
+    bool bval;
+    TEST_ASSERT_TRUE(syn_json_parse(&r, json2, strlen(json2)));
+    TEST_ASSERT_FALSE(syn_json_get_int(&r, "str", &val));
+    TEST_ASSERT_FALSE(syn_json_get_bool(&r, "str", &bval));
 }
 
 /* ── Test group ────────────────────────────────────────────────────────── */
+
+static void test_json_read_escaped_skip_value_and_nested_array(void)
+{
+    SYN_JsonReader r;
+
+    /* JSON with string escapes in skipped values and nested arrays */
+    char json[] = "{\"skip_str\":\"escaped\\\"quote\",\"nested_arr\":[[1,2],[3,4]],\"target\":100}";
+    TEST_ASSERT_TRUE(syn_json_parse(&r, json, strlen(json)));
+
+    int32_t val;
+    TEST_ASSERT_TRUE(syn_json_get_int(&r, "target", &val));
+    TEST_ASSERT_EQUAL(100, val);
+}
+
+static void test_json_read_skipped_string_escapes_and_unterminated(void)
+{
+    SYN_JsonReader r;
+    /* Unterminated string inside array skip */
+    char bad_arr[] = "[ \"unterminated_string_without_close_quote ]";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, bad_arr, strlen(bad_arr)));
+
+    /* Unterminated string inside object key skip */
+    char bad_obj[] = "{ \"bad_key : 123 }";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, bad_obj, strlen(bad_obj)));
+}
+
+static void test_json_read_escaped_string_inside_token_overflow_skip(void)
+{
+    static char json[2048];
+    int pos = 0;
+    pos += snprintf(json + pos, sizeof(json) - pos, "{");
+    for (int i = 0; i < 32; i++) {
+        pos += snprintf(json + pos, sizeof(json) - pos, "\"k%d\":%d,", i, i);
+    }
+    /* 33rd key has escaped quotes inside string and inside nested object */
+    pos += snprintf(json + pos, sizeof(json) - pos, "\"str\":\"val\\\"escaped\",");
+    pos += snprintf(json + pos, sizeof(json) - pos, "\"obj\":{\"key\\\"sub\":\"val\\\"sub\"}}");
+
+    SYN_JsonReader r;
+    syn_json_parse(&r, json, strlen(json));
+}
+
+static void test_json_get_str_null_and_missing_key(void)
+{
+    SYN_JsonReader r;
+    char out[16];
+    TEST_ASSERT_FALSE(syn_json_get_str(NULL, "k", out, sizeof(out)));
+    TEST_ASSERT_FALSE(syn_json_get_str(&r, NULL, out, sizeof(out)));
+    TEST_ASSERT_FALSE(syn_json_get_str(&r, "k", NULL, sizeof(out)));
+    TEST_ASSERT_FALSE(syn_json_get_str(&r, "k", out, 0));
+
+    char json[] = "{\"int_key\":123}";
+    syn_json_parse(&r, json, strlen(json));
+    TEST_ASSERT_FALSE(syn_json_get_str(&r, "int_key", out, sizeof(out)));
+}
+
+static void test_json_read_skip_value_unterminated_string(void)
+{
+    SYN_JsonReader r;
+
+    /* Unterminated string as value for skipped key */
+    char json1[] = "{\"k1\":\"unterminated";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, json1, strlen(json1)));
+
+    /* Unterminated string inside array */
+    char json2[] = "[\"unterminated";
+    TEST_ASSERT_FALSE(syn_json_parse(&r, json2, strlen(json2)));
+}
+
+static void test_json_read_unterminated_object_key(void)
+{
+    char json[] = "{\"key";
+    SYN_JsonReader r;
+    syn_json_parse(&r, json, strlen(json));
+    char out[16];
+    TEST_ASSERT_FALSE(syn_json_get_str(&r, "key", out, sizeof(out)));
+}
 
 void run_json_read_tests(void)
 {
@@ -290,5 +388,11 @@ void run_json_read_tests(void)
     RUN_TEST(test_json_read_token_overflow_skip_string);
     RUN_TEST(test_json_read_token_overflow_skip_object);
     RUN_TEST(test_json_read_unterminated_string);
-    RUN_TEST(test_json_read_unexpected_char);
+    RUN_TEST(test_json_read_extended_edge_cases);
+    RUN_TEST(test_json_read_escaped_skip_value_and_nested_array);
+    RUN_TEST(test_json_read_skipped_string_escapes_and_unterminated);
+    RUN_TEST(test_json_read_escaped_string_inside_token_overflow_skip);
+    RUN_TEST(test_json_get_str_null_and_missing_key);
+    RUN_TEST(test_json_read_skip_value_unterminated_string);
+    RUN_TEST(test_json_read_unterminated_object_key);
 }

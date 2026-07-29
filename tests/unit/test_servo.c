@@ -112,10 +112,33 @@ static void test_servo_edge_cases_and_nulls(void)
     TEST_ASSERT_TRUE(syn_servo_at_target(NULL));
 }
 
+static void test_servo_reverse_move_and_zero_dt(void)
+{
+    mock_tick_ms = 100;
+    SYN_Servo servo;
+    syn_servo_init(&servo, 1000, 2000, 180);
+    syn_servo_set_angle(&servo, 180); /* 2000µs */
+
+    /* Move reverse from 180° to 0° over 1000ms */
+    syn_servo_move_to(&servo, 0, 1000);
+    TEST_ASSERT_FALSE(syn_servo_at_target(&servo));
+
+    /* dt = 0 -> no update */
+    syn_servo_update(&servo);
+    TEST_ASSERT_EQUAL_INT(2000, syn_servo_get_pulse_us(&servo));
+
+    /* Advance time to complete move */
+    mock_tick_advance(1000);
+    syn_servo_update(&servo);
+    TEST_ASSERT_TRUE(syn_servo_at_target(&servo));
+    TEST_ASSERT_EQUAL_INT(1000, syn_servo_get_pulse_us(&servo));
+}
+
 void run_servo_tests(void)
 {
     RUN_TEST(test_servo);
     RUN_TEST(test_servo_move_immediate);
     RUN_TEST(test_servo_rate_clamp);
     RUN_TEST(test_servo_edge_cases_and_nulls);
+    RUN_TEST(test_servo_reverse_move_and_zero_dt);
 }

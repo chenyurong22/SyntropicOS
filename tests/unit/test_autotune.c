@@ -648,6 +648,96 @@ static void test_autotune_calc_relay_gains(void)
     TEST_ASSERT_EQUAL_INT32(29, kd);
 }
 
+static void test_autotune_ka_identification_calculation(void)
+{
+    mock_tick_ms = 200;
+    mock_pos = 1;
+    last_mock_output = 0;
+
+    SYN_MotorCtrl ctrl;
+    SYN_MotorCtrl_Config mcfg =
+        SYN_MOTOR_CTRL_DEFAULTS(((SYN_MotorOutput){.set_output = mock_set_output, .ctx = NULL}),
+                                mock_read_pos, NULL, 1000, 100);
+    mcfg.ff_scale = 8;
+    syn_motor_ctrl_init(&ctrl, &mcfg);
+    ctrl.last_position = 0;
+
+    SYN_AutoTune at;
+    memset(&at, 0, sizeof(at));
+    at.ctrl = &ctrl;
+    at.cfg.flags = SYN_ATUNE_FLAG_IDENT_KA;
+    at.cfg.test_output = 500;
+    at.cfg.measure_ms = 100;
+    at.cfg.limits.position_max = 10000;
+    at.cfg.limits.position_min = -10000;
+
+    at.ka_t1 = 100;
+    at.ka_t2 = 300;
+    at.ka_v1 = 10;
+    at.ka_v2 = 500;
+    at.result.steady_velocity_1 = 100;
+    at.velocity_sum = 0;
+    at.velocity_samples = 0;
+    at.state = SYN_ATUNE_MEASURING_2;
+    at.phase_start_tick = 50;
+
+    syn_autotune_update(&at);
+    TEST_ASSERT_TRUE(at.result.ff_ka > 0);
+}
+
+static void test_autotune_zn_no_overshoot_and_tyreus_luyben(void)
+{
+    SYN_MotorCtrl ctrl;
+    SYN_MotorCtrl_Config mcfg =
+        SYN_MOTOR_CTRL_DEFAULTS(((SYN_MotorOutput){.set_output = mock_set_output, .ctx = NULL}),
+                                mock_read_pos, NULL, 1000, 100);
+    syn_motor_ctrl_init(&ctrl, &mcfg);
+
+    SYN_AutoTune at;
+    memset(&at, 0, sizeof(at));
+    at.ctrl = &ctrl;
+    at.cfg.relay_cycles = 1;
+    at.cfg.test_output = 100;
+    at.cfg.gain_multiplier_pct = 100;
+    at.period_sum = 200;
+    at.period_count = 1;
+    at.amplitude_sum = 50;
+    at.amplitude_count = 1;
+    at.half_cycles = 2;
+    at.state = SYN_ATUNE_RELAY;
+
+    /* 1. ZN No Overshoot */
+    at.cfg.method = SYN_ATUNE_ZN_NO_OVERSHOOT;
+    syn_autotune_update(&at);
+    TEST_ASSERT_EQUAL(SYN_ATUNE_RAMP_DOWN, at.state);
+    TEST_ASSERT_TRUE(at.result.kp > 0);
+
+    /* 2. Tyreus Luyben */
+    at.state = SYN_ATUNE_RELAY;
+    at.cfg.method = SYN_ATUNE_TYREUS_LUYBEN;
+    syn_autotune_update(&at);
+    TEST_ASSERT_EQUAL(SYN_ATUNE_RAMP_DOWN, at.state);
+    TEST_ASSERT_TRUE(at.result.kp > 0);
+}
+
+static void test_autotune_calc_relay_gains_zero_tu_and_default_state(void)
+{
+    int32_t kp = 0, ki = 0, kd = 0;
+    syn_autotune_calc_relay_gains(100, 0, SYN_ATUNE_ZN_CLASSIC, 100, &kp, &ki, &kd);
+    TEST_ASSERT_EQUAL(0, kp);
+
+    SYN_MotorCtrl ctrl;
+    SYN_MotorCtrl_Config mcfg =
+        SYN_MOTOR_CTRL_DEFAULTS(((SYN_MotorOutput){.set_output = mock_set_output, .ctx = NULL}),
+                                mock_read_pos, NULL, 1000, 100);
+    syn_motor_ctrl_init(&ctrl, &mcfg);
+    SYN_AutoTune at;
+    SYN_AutoTune_Config cfg = {.mode = SYN_ATUNE_MODE_AUTO};
+    syn_autotune_init(&at, &ctrl, &cfg);
+    at.state = (SYN_AutoTune_State)99;
+    TEST_ASSERT_EQUAL((SYN_AutoTune_State)99, syn_autotune_update(&at));
+}
+
 void run_autotune_tests(void)
 {
     RUN_TEST(test_autotune_probe_phase);
@@ -670,4 +760,7 @@ void run_autotune_tests(void)
     RUN_TEST(test_autotune_ka_tuning);
     RUN_TEST(test_autotune_relay_zero_crossings);
     RUN_TEST(test_autotune_calc_relay_gains);
+    RUN_TEST(test_autotune_ka_identification_calculation);
+    RUN_TEST(test_autotune_zn_no_overshoot_and_tyreus_luyben);
+    RUN_TEST(test_autotune_calc_relay_gains_zero_tu_and_default_state);
 }

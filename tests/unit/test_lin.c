@@ -224,6 +224,14 @@ static void test_lin_edge_cases(void)
     TEST_ASSERT_EQUAL_INT(SYN_LIN_STATE_IDLE, slave.state);
 }
 
+static void test_lin_null_checks(void)
+{
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_lin_slave_init(NULL, 0));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_lin_slave_add_frame(NULL, 0, 0, SYN_LIN_SLOT_SUBSCRIBE,
+                                                                 SYN_LIN_CHECKSUM_CLASSIC));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_lin_slave_set_publish_data(NULL, 0, NULL, 0));
+}
+
 void run_lin_tests(void)
 {
     RUN_TEST(test_lin_pid_parity);
@@ -231,6 +239,7 @@ void run_lin_tests(void)
     RUN_TEST(test_lin_master_schedule);
     RUN_TEST(test_lin_slave_byte_parser);
     RUN_TEST(test_lin_edge_cases);
+    RUN_TEST(test_lin_null_checks);
 }
 
 #endif /* SYN_USE_LIN */

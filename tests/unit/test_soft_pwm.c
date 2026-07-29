@@ -99,10 +99,21 @@ static void test_soft_pwm_service(void)
     TEST_ASSERT_EQUAL_INT(1, channels[2].counter);
 }
 
+static void test_soft_pwm_null_and_zero_resolution(void)
+{
+    SYN_SoftPWM pwm;
+    syn_soft_pwm_init(&pwm, 1, 10);
+    pwm.resolution = 0;
+    syn_soft_pwm_tick(&pwm);
+
+    syn_soft_pwm_service(NULL, 0);
+}
+
 void run_soft_pwm_tests(void)
 {
     RUN_TEST(test_soft_pwm);
     RUN_TEST(test_soft_pwm_duty_clamp);
     RUN_TEST(test_soft_pwm_active_low);
     RUN_TEST(test_soft_pwm_service);
+    RUN_TEST(test_soft_pwm_null_and_zero_resolution);
 }

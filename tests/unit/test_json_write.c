@@ -220,6 +220,68 @@ static void test_json_val_uint(void)
 
 /* ── Test group ────────────────────────────────────────────────────────── */
 
+static void test_json_write_max_depth_overflow_and_null_checks(void)
+{
+    reset();
+    /* Open object up to SYN_JSON_MAX_DEPTH */
+    for (int i = 0; i < 16; i++) {
+        syn_json_obj_open(&w);
+    }
+    /* 17th open triggers max depth overflow */
+    syn_json_obj_open(&w);
+    TEST_ASSERT_FALSE(syn_json_ok(&w));
+
+    reset();
+    for (int i = 0; i < 16; i++) {
+        syn_json_arr_open(&w);
+    }
+    syn_json_arr_open(&w);
+    TEST_ASSERT_FALSE(syn_json_ok(&w));
+}
+
+static void test_json_null_writer_and_comma_checks(void)
+{
+    /* Array containing objects to test needs_comma on obj_open */
+    reset();
+    syn_json_arr_open(&w);
+    syn_json_obj_open(&w);
+    syn_json_obj_close(&w);
+    syn_json_obj_open(&w);
+    syn_json_obj_close(&w);
+    syn_json_arr_close(&w);
+    TEST_ASSERT_EQUAL_STRING("[{},{}]", syn_json_str(&w));
+
+    /* Array containing nested arrays to test needs_comma on arr_open */
+    reset();
+    syn_json_arr_open(&w);
+    syn_json_arr_open(&w);
+    syn_json_arr_close(&w);
+    syn_json_arr_open(&w);
+    syn_json_arr_close(&w);
+    syn_json_arr_close(&w);
+    TEST_ASSERT_EQUAL_STRING("[[],[]]", syn_json_str(&w));
+}
+
+static void test_json_write_jw_puts_overflow_branch(void)
+{
+    char buf[12];
+    SYN_JsonWriter w;
+    syn_json_init(&w, buf, sizeof(buf));
+    syn_json_key_str(&w, "key", "very long string value exceeding buffer");
+    TEST_ASSERT_TRUE(w.overflow);
+}
+
+static void test_json_write_max_depth_overflow(void)
+{
+    char buf[256];
+    SYN_JsonWriter w;
+    syn_json_init(&w, buf, sizeof(buf));
+    for (int i = 0; i < 16; i++) {
+        syn_json_obj_open(&w);
+    }
+    TEST_ASSERT_TRUE(w.overflow);
+}
+
 void run_json_write_tests(void)
 {
     RUN_TEST(test_json_empty_object);
@@ -241,4 +303,8 @@ void run_json_write_tests(void)
     RUN_TEST(test_json_extra_escapes);
     RUN_TEST(test_json_write_puts_overflow);
     RUN_TEST(test_json_val_uint);
+    RUN_TEST(test_json_write_max_depth_overflow_and_null_checks);
+    RUN_TEST(test_json_null_writer_and_comma_checks);
+    RUN_TEST(test_json_write_jw_puts_overflow_branch);
+    RUN_TEST(test_json_write_max_depth_overflow);
 }

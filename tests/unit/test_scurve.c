@@ -136,6 +136,32 @@ void test_scurve_tj_reduction(void)
     TEST_ASSERT_EQUAL(10, sc.p);
 }
 
+void test_scurve3d_path_planning(void)
+{
+    SYN_SCurve3D sc3d;
+    syn_scurve3d_plan(&sc3d, 0, 0, 0, 30, 40, 0, 50, 10, 2); /* 3D vector length 50 */
+    TEST_ASSERT_EQUAL_UINT32(50, sc3d.total_dist);
+
+    int32_t x = 0, y = 0, z = 0;
+    int ticks = 0;
+    while (syn_scurve3d_update(&sc3d, &x, &y, &z) && ticks < 2000) {
+        ticks++;
+    }
+
+    /* Verify 3D target reached */
+    syn_scurve3d_update(&sc3d, &x, &y, &z);
+    TEST_ASSERT_EQUAL_INT(30, x);
+    TEST_ASSERT_EQUAL_INT(40, y);
+    TEST_ASSERT_EQUAL_INT(0, z);
+
+    /* Zero movement 3D plan */
+    syn_scurve3d_plan(&sc3d, 10, 20, 30, 10, 20, 30, 50, 10, 2);
+    TEST_ASSERT_FALSE(syn_scurve3d_update(&sc3d, &x, &y, &z));
+    TEST_ASSERT_EQUAL_INT(10, x);
+    TEST_ASSERT_EQUAL_INT(20, y);
+    TEST_ASSERT_EQUAL_INT(30, z);
+}
+
 void run_scurve_tests(void)
 {
     RUN_TEST(test_scurve_init);
@@ -145,4 +171,5 @@ void run_scurve_tests(void)
     RUN_TEST(test_scurve_cruise_phase);
     RUN_TEST(test_scurve_isqrt_branch);
     RUN_TEST(test_scurve_tj_reduction);
+    RUN_TEST(test_scurve3d_path_planning);
 }

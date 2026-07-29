@@ -193,6 +193,137 @@ static void test_q16_exp_log_fast(void)
     TEST_ASSERT_INT32_WITHIN(1000, Q16_LN2, lf);
 }
 
+static void test_q16_q7_q15_edge_cases(void)
+{
+    /* q16_div by zero */
+    TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_div(Q16_FROM_INT(5), 0));
+    TEST_ASSERT_EQUAL_INT32(INT32_MIN, q16_div(-Q16_FROM_INT(5), 0));
+
+    /* q16_sqrt negative input */
+    TEST_ASSERT_EQUAL_INT32(0, q16_sqrt(-Q16_FROM_INT(4)));
+    TEST_ASSERT_EQUAL_INT32(Q16_FROM_INT(2), q16_sqrt(Q16_FROM_INT(4)));
+
+    /* q16_atan2 all 4 quadrants and origin */
+    TEST_ASSERT_EQUAL_INT32(0, q16_atan2(0, 0));
+    TEST_ASSERT_INT32_WITHIN(500, Q16_PI / 4, q16_atan2(Q16_ONE, Q16_ONE));
+    TEST_ASSERT_INT32_WITHIN(500, (3 * Q16_PI) / 4, q16_atan2(Q16_ONE, -Q16_ONE));
+    TEST_ASSERT_INT32_WITHIN(500, -(3 * Q16_PI) / 4, q16_atan2(-Q16_ONE, -Q16_ONE));
+    TEST_ASSERT_INT32_WITHIN(500, -Q16_PI / 4, q16_atan2(-Q16_ONE, Q16_ONE));
+
+    /* Q7 & Q15 conversions */
+    q7_t q7_val = 64; /* 0.5 in Q7 */
+    q16_t q16_conv = q7_to_q16(q7_val);
+    TEST_ASSERT_EQUAL_INT32(Q16_HALF, q16_conv);
+    TEST_ASSERT_EQUAL_INT8(q7_val, q16_to_q7(q16_conv));
+
+    q15_t q15_val = 16384; /* 0.5 in Q15 */
+    q16_t q16_q15 = q15_to_q16(q15_val);
+    TEST_ASSERT_EQUAL_INT32(Q16_HALF, q16_q15);
+    TEST_ASSERT_EQUAL_INT16(q15_val, q16_to_q15(q16_q15));
+
+    TEST_ASSERT_EQUAL_INT8(32, q7_mul(64, 64)); /* 0.5 * 0.5 = 0.25 in Q7 */
+
+    /* q16_inv edge cases */
+    TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_inv(0));
+    TEST_ASSERT_EQUAL_INT32(-32768, q16_inv(-Q16_FROM_INT(2)));
+    TEST_ASSERT_EQUAL_INT32(0, q16_inv(INT32_MIN));
+
+    /* q16_rsqrt edge cases */
+    TEST_ASSERT_EQUAL_INT32(0, q16_rsqrt(0));
+    TEST_ASSERT_EQUAL_INT32(0, q16_rsqrt(-100));
+
+    /* q16_hypot large values triggering shift branch: sqrt(200^2 + 200^2) ≈ 282.84 */
+    q16_t large_hypot = q16_hypot(Q16_FROM_INT(200), Q16_FROM_INT(200));
+    TEST_ASSERT_INT32_WITHIN(2000, 18536380, large_hypot);
+
+    /* q16_exp overflow and underflow shift branches */
+    TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_exp(Q16_FROM_INT(12)));
+    TEST_ASSERT_INT32_WITHIN(5, 0, q16_exp(-Q16_FROM_INT(20)));
+
+    /* q16_exp_fast negative, overflow, underflow */
+    TEST_ASSERT_INT32_WITHIN(1000, Q16_ONE, q16_exp_fast(0));
+    TEST_ASSERT_INT32_WITHIN(1000, 24109, q16_exp_fast(-Q16_ONE)); /* exp(-1) ~ 0.3678 in Q16.16 */
+    TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_exp_fast(Q16_FROM_INT(12)));
+    TEST_ASSERT_INT32_WITHIN(5, 0, q16_exp_fast(-Q16_FROM_INT(20)));
+}
+
+static void test_q16_str_conversion_branches(void)
+{
+    char buf[4];
+    q16_t val;
+    /* 1. q16_to_str with too small output buffer */
+    TEST_ASSERT_EQUAL(0, q16_to_str(Q16_FROM_INT(12345), buf, sizeof(buf), 2));
+
+    /* 2. q16_from_str null check */
+    TEST_ASSERT_EQUAL(0, q16_from_str(NULL, &val));
+    TEST_ASSERT_EQUAL(0, q16_from_str("1.5", NULL));
+
+    /* 3. q16_from_str explicit '+' sign */
+    TEST_ASSERT_GREATER_THAN(0, q16_from_str("+1.5", &val));
+    TEST_ASSERT_INT32_WITHIN(100, Q16_FROM_INT(1) + 32768, val);
+
+    /* 4. q16_from_str invalid non-digit start */
+    TEST_ASSERT_EQUAL(0, q16_from_str("abc", &val));
+
+    /* 5. q16_from_str precision limit (> 5 fractional digits) */
+    TEST_ASSERT_GREATER_THAN(0, q16_from_str("1.12345678", &val));
+}
+
+static void test_q16_exp_clamping_and_underflow_branches(void)
+{
+    /* Underflow k < -16 in q16_exp and q16_exp_fast */
+    TEST_ASSERT_INT32_WITHIN(5, 2, q16_exp(-Q16_FROM_INT(25)));
+    TEST_ASSERT_INT32_WITHIN(5, 2, q16_exp_fast(-Q16_FROM_INT(25)));
+
+    /* Negative exp_fast returning inverse of INT32_MAX */
+    TEST_ASSERT_INT32_WITHIN(5, 2, q16_exp_fast(-Q16_FROM_INT(15)));
+}
+
+static void test_q16_exp_remainder_boundary_branches(void)
+{
+    /* Test x close to integer multiples of Q16_LN2 */
+    q16_t x1 = Q16_LN2 - 1;
+    q16_t x2 = Q16_LN2 + 1;
+    q16_exp(x1);
+    q16_exp(x2);
+    q16_exp_fast(x1);
+    q16_exp_fast(x2);
+
+    /* Test k >= 15 overflow in q16_exp_fast */
+    TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_exp_fast(Q16_FROM_INT(12)));
+}
+
+static void test_q16_saturating_arithmetic_overflow_underflow(void)
+{
+    /* q16_add_sat underflow */
+    TEST_ASSERT_EQUAL_INT32(INT32_MIN, q16_add_sat(INT32_MIN, -100));
+
+    /* q16_sub_sat overflow */
+    TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_sub_sat(INT32_MAX, -100));
+
+    /* q16_mul_sat underflow */
+    TEST_ASSERT_EQUAL_INT32(INT32_MIN, q16_mul_sat(INT32_MAX, -Q16_FROM_INT(2)));
+}
+
+static void test_q16_exp_large_k_clamping_and_underflow(void)
+{
+    /* k >= 15 overflow */
+    TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_exp(Q16_FROM_INT(12)));
+
+    /* Negative exp returning inverse of INT32_MAX */
+    TEST_ASSERT_INT32_WITHIN(5, 2, q16_exp(-Q16_FROM_INT(20)));
+}
+
+static void test_q16_exp_fast_k_overflow(void)
+{
+    TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_exp_fast(Q16_FROM_INT(12)));
+}
+
+static void test_q16_exp_fast_negative_underflow(void)
+{
+    TEST_ASSERT_INT32_WITHIN(5, 2, q16_exp_fast(-Q16_FROM_INT(20)));
+}
+
 void run_math_tests(void)
 {
     RUN_TEST(test_qmath);
@@ -203,5 +334,13 @@ void run_math_tests(void)
     RUN_TEST(test_q16_trig_fast);
     RUN_TEST(test_q16_inv_and_rsqrt);
     RUN_TEST(test_q16_exp_log_fast);
+    RUN_TEST(test_q16_q7_q15_edge_cases);
     RUN_TEST(test_rate_limit);
+    RUN_TEST(test_q16_str_conversion_branches);
+    RUN_TEST(test_q16_exp_clamping_and_underflow_branches);
+    RUN_TEST(test_q16_exp_remainder_boundary_branches);
+    RUN_TEST(test_q16_saturating_arithmetic_overflow_underflow);
+    RUN_TEST(test_q16_exp_large_k_clamping_and_underflow);
+    RUN_TEST(test_q16_exp_fast_k_overflow);
+    RUN_TEST(test_q16_exp_fast_negative_underflow);
 }

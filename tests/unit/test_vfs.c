@@ -401,10 +401,19 @@ static void test_vfs_unmount_stat_rename(void)
     TEST_ASSERT_EQUAL_INT(-1, syn_vfs_open("/flash/data.bin", SYN_O_RDONLY));
 }
 
+static void test_vfs_duplicate_mount_and_unmount_nonexistent(void)
+{
+    syn_vfs_init();
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/flash", &mock_full_ops, NULL));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_vfs_mount("/flash", &mock_full_ops, NULL));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_vfs_unmount("/nonexistent"));
+}
+
 void run_vfs_tests(void)
 {
     RUN_TEST(test_vfs_basic);
     RUN_TEST(test_vfs_exhaustion);
     RUN_TEST(test_vfs_edge_cases);
     RUN_TEST(test_vfs_unmount_stat_rename);
+    RUN_TEST(test_vfs_duplicate_mount_and_unmount_nonexistent);
 }

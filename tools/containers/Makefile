@@ -103,8 +103,14 @@ endif
 container-volume:
 	$(CONTAINER_VOLUME_CMD)
 
+ifeq ($(OS),Windows_NT)
+  BUILD_FLAGS :=
+else
+  BUILD_FLAGS := $(shell "$(CONTAINER_ENGINE)" build --help 2>&1 | grep -q -- "--format" && echo "--format docker" || true)
+endif
+
 container-build:
-	@"$(CONTAINER_ENGINE)" build -t syntropicos-test -f $(ROOT_DIR)/tools/containers/Containerfile $(ROOT_DIR)
+	@"$(CONTAINER_ENGINE)" build $(BUILD_FLAGS) -t syntropicos-test -f $(ROOT_DIR)/tools/containers/Containerfile $(ROOT_DIR)
 
 container-format: container-build
 	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers format FIX=$(FIX) JOBS=$(JOBS)

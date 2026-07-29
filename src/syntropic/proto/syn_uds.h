@@ -52,6 +52,35 @@ extern "C" {
 #define SYN_UDS_SID_RESPONSE_ON_EVENT 0x86U
 #define SYN_UDS_SID_LINK_CONTROL 0x87U
 
+/* UDS Service 0x19 ReadDTCInformation Sub-functions */
+#define SYN_UDS_DTC_REPORT_NUMBER_BY_STATUS_MASK 0x01U
+#define SYN_UDS_DTC_REPORT_BY_STATUS_MASK 0x02U
+#define SYN_UDS_DTC_REPORT_SNAPSHOT_IDENTIFICATION 0x03U
+#define SYN_UDS_DTC_REPORT_SNAPSHOT_RECORD_BY_DTC 0x04U
+#define SYN_UDS_DTC_REPORT_STORED_DATA_BY_RECORD_NUM 0x05U
+#define SYN_UDS_DTC_REPORT_EXT_DATA_RECORD_BY_DTC 0x06U
+#define SYN_UDS_DTC_REPORT_NUMBER_BY_SEVERITY_MASK 0x07U
+#define SYN_UDS_DTC_REPORT_BY_SEVERITY_MASK 0x08U
+#define SYN_UDS_DTC_REPORT_SEVERITY_INFO 0x09U
+#define SYN_UDS_DTC_REPORT_SUPPORTED 0x0AU
+#define SYN_UDS_DTC_REPORT_FIRST_TEST_FAILED 0x0BU
+#define SYN_UDS_DTC_REPORT_FIRST_CONFIRMED 0x0CU
+#define SYN_UDS_DTC_REPORT_MOST_RECENT_TEST_FAILED 0x0DU
+#define SYN_UDS_DTC_REPORT_MOST_RECENT_CONFIRMED 0x0EU
+#define SYN_UDS_DTC_REPORT_MIRROR_MEMORY_BY_STATUS_MASK 0x0FU
+#define SYN_UDS_DTC_REPORT_MIRROR_MEMORY_EXT_DATA 0x10U
+#define SYN_UDS_DTC_REPORT_NUMBER_MIRROR_MEMORY_BY_STATUS_MASK 0x11U
+#define SYN_UDS_DTC_REPORT_NUMBER_EMISSIONS_OBD_BY_STATUS_MASK 0x12U
+#define SYN_UDS_DTC_REPORT_EMISSIONS_OBD_BY_STATUS_MASK 0x13U
+#define SYN_UDS_DTC_REPORT_FAULT_DETECTION_COUNTER 0x14U
+#define SYN_UDS_DTC_REPORT_WITH_PERMANENT_STATUS 0x15U
+#define SYN_UDS_DTC_REPORT_EXT_DATA_RECORD_BY_RECORD_NUM 0x16U
+#define SYN_UDS_DTC_REPORT_USER_DEF_MEMORY_BY_STATUS_MASK 0x17U
+#define SYN_UDS_DTC_REPORT_USER_DEF_MEMORY_SNAPSHOT_BY_DTC 0x18U
+#define SYN_UDS_DTC_REPORT_USER_DEF_MEMORY_EXT_DATA_BY_DTC 0x19U
+#define SYN_UDS_DTC_REPORT_WWH_OBD_BY_MASK_RECORD 0x42U
+#define SYN_UDS_DTC_REPORT_WWH_OBD_WITH_PERMANENT_STATUS 0x55U
+
 /* UDS Response Identifiers */
 #define SYN_UDS_RESPONSE_NEGATIVE 0x7FU
 
@@ -151,6 +180,30 @@ typedef struct {
 } SYN_UDS_DIDEntry;
 
 /* UDS Timing & Security Constants */
+#ifndef SYN_UDS_MAX_DTCS
+#define SYN_UDS_MAX_DTCS 32U
+#endif
+
+#define SYN_UDS_DTC_STATUS_AVAILABILITY_MASK 0xFFU
+#define SYN_UDS_DTC_FORMAT_ISO14229_1 0x01U
+
+/**
+ * @brief Diagnostic Trouble Code (DTC) Registry Entry.
+ */
+typedef struct {
+    uint32_t dtc;     /**< 24-bit Diagnostic Trouble Code (e.g., 0x012345). */
+    uint8_t status;   /**< DTCStatusByte bitmask.                           */
+    uint8_t severity; /**< DTCSeverityByte (High 3 bits severity, low 5 bits class). */
+    int8_t fault_cnt; /**< Fault detection counter (-128 to 127).          */
+} SYN_UDS_DTCEntry;
+
+/**
+ * @brief ReadDTCInformation (0x19) callback function signature.
+ */
+typedef bool (*SYN_UDS_DTCHandler)(uint8_t subfunction, const uint8_t *in_data, uint16_t in_len,
+                                   uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len,
+                                   void *ctx);
+
 #ifndef SYN_UDS_S3_TIMEOUT_MS
 #define SYN_UDS_S3_TIMEOUT_MS 5000U
 #endif
@@ -190,9 +243,13 @@ typedef struct {
     SYN_UDS_AuthHandler auth_cb;                  /**< Authentication (0x29) callback. */
     void *auth_ctx;                               /**< Context pointer for auth callback. */
     SYN_UDS_FileTransferHandler file_transfer_cb; /**< File transfer (0x38) callback. */
-    void *file_transfer_ctx; /**< Context pointer for file transfer callback. */
+    void *file_transfer_ctx;   /**< Context pointer for file transfer callback. */
+    SYN_UDS_DTCHandler dtc_cb; /**< ReadDTCInformation (0x19) callback. */
+    void *dtc_ctx;             /**< Context pointer for DTC callback. */
     SYN_UDS_DIDEntry did_table[SYN_UDS_MAX_DIDS];
     uint8_t did_count;
+    SYN_UDS_DTCEntry dtc_table[SYN_UDS_MAX_DTCS];
+    uint8_t dtc_count;
     uint8_t reset_type_requested;
 } SYN_UDS_Server;
 
@@ -225,6 +282,27 @@ void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms);
  */
 bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
                           bool writable);
+
+/**
+ * @brief Register Diagnostic Trouble Code (DTC) in UDS Server table.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param dtc 24-bit Diagnostic Trouble Code (e.g., 0x012345).
+ * @param status Initial DTCStatusByte bitmask.
+ * @param severity DTCSeverityByte (severity & class).
+ * @return true on success, false if table full or invalid params.
+ */
+bool syn_uds_register_dtc(SYN_UDS_Server *server, uint32_t dtc, uint8_t status, uint8_t severity);
+
+/**
+ * @brief Register ReadDTCInformation (0x19) callback handler.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param handler Callback function invoked for custom DTC subfunctions.
+ * @param ctx User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_dtc_handler(SYN_UDS_Server *server, SYN_UDS_DTCHandler handler, void *ctx);
 
 /**
  * @brief Register CommunicationControl (0x28) callback handler.

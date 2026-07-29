@@ -647,7 +647,8 @@ static void test_uds_extended_sids(void)
     /* ReadDTCInformation (0x19) */
     req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
     req[1] = 0x02;
-    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    req[2] = 0xFF;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(0x02, resp[1]);
 
@@ -830,6 +831,109 @@ static void test_uds_complete_27_sids(void)
     TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
 }
 
+static bool mock_dtc_custom_cb(uint8_t subfunction, const uint8_t *in_data, uint16_t in_len,
+                               uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len, void *ctx)
+{
+    (void)in_data;
+    (void)in_len;
+    (void)max_out_len;
+    (void)ctx;
+    if (subfunction == 0x03) {
+        out_buf[0] = 0x01;
+        out_buf[1] = 0x23;
+        out_buf[2] = 0x45;
+        out_buf[3] = 0x01;
+        *out_len = 4;
+        return true;
+    }
+    return false;
+}
+
+static void test_uds_read_dtc_information_subfunctions(void)
+{
+    SYN_UDS_Server server;
+    TEST_ASSERT_TRUE(syn_uds_init(&server));
+
+    /* Register test DTCs */
+    TEST_ASSERT_TRUE(
+        syn_uds_register_dtc(&server, 0x012345U, 0x09U, 0x60U)); /* testFailed | confirmedDTC */
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x023456U, 0x01U, 0x80U)); /* testFailed */
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x034567U, 0x00U, 0x10U)); /* clear */
+
+    uint8_t req[16] = {0};
+    uint8_t resp[32] = {0};
+    uint16_t resp_len = 0;
+
+    /* 1. reportNumberOfDTCByStatusMask (0x01) */
+    req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
+    req[1] = 0x01;
+    req[2] = 0x01; /* Mask: testFailed */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0xFF, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[3]);
+    TEST_ASSERT_EQUAL_UINT16(2, ((uint16_t)resp[4] << 8) | resp[5]);
+
+    /* 2. reportDTCByStatusMask (0x02) */
+    req[1] = 0x02;
+    req[2] = 0x01; /* Mask: testFailed */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(11, resp_len); /* 3 + 4 * 2 */
+
+    /* 3. reportSupportedDTC (0x0A) */
+    req[1] = 0x0A;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x0A, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(15, resp_len); /* 3 + 4 * 3 */
+
+    /* 4. reportFirstTestFailedDTC (0x0B) */
+    req[1] = 0x0B;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x0B, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[3]);
+    TEST_ASSERT_EQUAL_HEX8(0x23, resp[4]);
+
+    /* 5. reportFirstConfirmedDTC (0x0C) */
+    req[1] = 0x0C;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x0C, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[3]);
+    TEST_ASSERT_EQUAL_HEX8(0x23, resp[4]);
+
+    /* 6. reportNumberOfDTCBySeverityMaskRecord (0x07) */
+    req[1] = 0x07;
+    req[2] = 0x60; /* Severity mask */
+    req[3] = 0x01; /* Status mask */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x07, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(1, ((uint16_t)resp[4] << 8) | resp[5]);
+
+    /* 7. reportDTCBySeverityMaskRecord (0x08) */
+    req[1] = 0x08;
+    req[2] = 0x60;
+    req[3] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x08, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(9, resp_len); /* 3 + 6 * 1 */
+
+    /* 8. Custom DTC callback (0x03) */
+    syn_uds_register_dtc_handler(&server, mock_dtc_custom_cb, NULL);
+    req[1] = 0x03;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x03, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x23, resp[3]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -842,5 +946,6 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_complete_27_sids);
     RUN_TEST(test_uds_did_read_write);
     RUN_TEST(test_uds_ecu_reset_routine_tester_present);
+    RUN_TEST(test_uds_read_dtc_information_subfunctions);
     RUN_TEST(test_uds_bounds_and_null_checks);
 }

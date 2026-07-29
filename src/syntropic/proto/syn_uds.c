@@ -35,7 +35,10 @@ bool syn_uds_init(SYN_UDS_Server *server)
     server->auth_ctx = NULL;
     server->file_transfer_cb = NULL;
     server->file_transfer_ctx = NULL;
+    server->dtc_cb = NULL;
+    server->dtc_ctx = NULL;
     server->did_count = 0U;
+    server->dtc_count = 0U;
     server->reset_type_requested = 0U;
 
     return true;
@@ -158,6 +161,29 @@ bool syn_uds_register_file_transfer(SYN_UDS_Server *server, SYN_UDS_FileTransfer
     }
     server->file_transfer_cb = handler;
     server->file_transfer_ctx = ctx;
+    return true;
+}
+
+bool syn_uds_register_dtc(SYN_UDS_Server *server, uint32_t dtc, uint8_t status, uint8_t severity)
+{
+    if (server == NULL || server->dtc_count >= SYN_UDS_MAX_DTCS) {
+        return false;
+    }
+    server->dtc_table[server->dtc_count].dtc = dtc & 0xFFFFFFU;
+    server->dtc_table[server->dtc_count].status = status;
+    server->dtc_table[server->dtc_count].severity = severity;
+    server->dtc_table[server->dtc_count].fault_cnt = 0;
+    server->dtc_count++;
+    return true;
+}
+
+bool syn_uds_register_dtc_handler(SYN_UDS_Server *server, SYN_UDS_DTCHandler handler, void *ctx)
+{
+    if (server == NULL) {
+        return false;
+    }
+    server->dtc_cb = handler;
+    server->dtc_ctx = ctx;
     return true;
 }
 
@@ -599,11 +625,227 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                           resp_len);
         }
         uint8_t sub = req[1] & 0x7FU;
-        resp_buf[0] = sid + 0x40U;
-        resp_buf[1] = sub;
-        resp_buf[2] = 0x00U;
-        *resp_len = 3U;
-        success = true;
+        switch (sub) {
+        case SYN_UDS_DTC_REPORT_NUMBER_BY_STATUS_MASK:
+        case SYN_UDS_DTC_REPORT_NUMBER_MIRROR_MEMORY_BY_STATUS_MASK:
+        case SYN_UDS_DTC_REPORT_NUMBER_EMISSIONS_OBD_BY_STATUS_MASK: {
+            if (req_len < 3U) {
+                return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                              resp_len);
+            }
+            if (max_resp_len < 6U) {
+                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                              resp_len);
+            }
+            uint8_t mask = req[2];
+            uint16_t match_cnt = 0U;
+            for (uint8_t i = 0U; i < server->dtc_count; i++) {
+                if ((server->dtc_table[i].status & mask) != 0U) {
+                    match_cnt++;
+                }
+            }
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            resp_buf[2] = SYN_UDS_DTC_STATUS_AVAILABILITY_MASK;
+            resp_buf[3] = SYN_UDS_DTC_FORMAT_ISO14229_1;
+            syn_poke_u16(match_cnt, resp_buf, 4);
+            *resp_len = 6U;
+            success = true;
+            break;
+        }
+
+        case SYN_UDS_DTC_REPORT_BY_STATUS_MASK:
+        case SYN_UDS_DTC_REPORT_MIRROR_MEMORY_BY_STATUS_MASK:
+        case SYN_UDS_DTC_REPORT_EMISSIONS_OBD_BY_STATUS_MASK: {
+            if (req_len < 3U) {
+                return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                              resp_len);
+            }
+            uint8_t mask = req[2];
+            uint16_t pos = 3U;
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            resp_buf[2] = SYN_UDS_DTC_STATUS_AVAILABILITY_MASK;
+            for (uint8_t i = 0U; i < server->dtc_count; i++) {
+                if ((server->dtc_table[i].status & mask) != 0U) {
+                    if (pos + 4U > max_resp_len) {
+                        return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                                      resp_len);
+                    }
+                    resp_buf[pos] = (uint8_t)(server->dtc_table[i].dtc >> 16U);
+                    resp_buf[pos + 1U] = (uint8_t)(server->dtc_table[i].dtc >> 8U);
+                    resp_buf[pos + 2U] = (uint8_t)(server->dtc_table[i].dtc);
+                    resp_buf[pos + 3U] = server->dtc_table[i].status;
+                    pos += 4U;
+                }
+            }
+            *resp_len = pos;
+            success = true;
+            break;
+        }
+
+        case SYN_UDS_DTC_REPORT_SUPPORTED:
+        case SYN_UDS_DTC_REPORT_WITH_PERMANENT_STATUS:
+        case SYN_UDS_DTC_REPORT_WWH_OBD_WITH_PERMANENT_STATUS: {
+            uint16_t pos = 3U;
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            resp_buf[2] = SYN_UDS_DTC_STATUS_AVAILABILITY_MASK;
+            for (uint8_t i = 0U; i < server->dtc_count; i++) {
+                if (pos + 4U > max_resp_len) {
+                    return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                                  resp_len);
+                }
+                resp_buf[pos] = (uint8_t)(server->dtc_table[i].dtc >> 16U);
+                resp_buf[pos + 1U] = (uint8_t)(server->dtc_table[i].dtc >> 8U);
+                resp_buf[pos + 2U] = (uint8_t)(server->dtc_table[i].dtc);
+                resp_buf[pos + 3U] = server->dtc_table[i].status;
+                pos += 4U;
+            }
+            *resp_len = pos;
+            success = true;
+            break;
+        }
+
+        case SYN_UDS_DTC_REPORT_FIRST_TEST_FAILED:
+        case SYN_UDS_DTC_REPORT_MOST_RECENT_TEST_FAILED:
+        case SYN_UDS_DTC_REPORT_FIRST_CONFIRMED:
+        case SYN_UDS_DTC_REPORT_MOST_RECENT_CONFIRMED: {
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            resp_buf[2] = SYN_UDS_DTC_STATUS_AVAILABILITY_MASK;
+            uint8_t match_idx = 0xFFU;
+            uint8_t target_mask = (sub == SYN_UDS_DTC_REPORT_FIRST_TEST_FAILED ||
+                                   sub == SYN_UDS_DTC_REPORT_MOST_RECENT_TEST_FAILED)
+                                      ? 0x01U
+                                      : 0x08U;
+
+            for (uint8_t i = 0U; i < server->dtc_count; i++) {
+                if ((server->dtc_table[i].status & target_mask) != 0U) {
+                    match_idx = i;
+                    if (sub == SYN_UDS_DTC_REPORT_FIRST_TEST_FAILED ||
+                        sub == SYN_UDS_DTC_REPORT_FIRST_CONFIRMED) {
+                        break;
+                    }
+                }
+            }
+
+            if (match_idx != 0xFFU) {
+                if (max_resp_len < 7U) {
+                    return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                                  resp_len);
+                }
+                resp_buf[3] = (uint8_t)(server->dtc_table[match_idx].dtc >> 16U);
+                resp_buf[4] = (uint8_t)(server->dtc_table[match_idx].dtc >> 8U);
+                resp_buf[5] = (uint8_t)(server->dtc_table[match_idx].dtc);
+                resp_buf[6] = server->dtc_table[match_idx].status;
+                *resp_len = 7U;
+            } else {
+                *resp_len = 3U;
+            }
+            success = true;
+            break;
+        }
+
+        case SYN_UDS_DTC_REPORT_NUMBER_BY_SEVERITY_MASK: {
+            if (req_len < 4U) {
+                return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                              resp_len);
+            }
+            uint8_t sev_mask = req[2];
+            uint8_t stat_mask = req[3];
+            uint16_t match_cnt = 0U;
+            for (uint8_t i = 0U; i < server->dtc_count; i++) {
+                if (((server->dtc_table[i].severity & sev_mask) != 0U) &&
+                    ((server->dtc_table[i].status & stat_mask) != 0U)) {
+                    match_cnt++;
+                }
+            }
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            resp_buf[2] = SYN_UDS_DTC_STATUS_AVAILABILITY_MASK;
+            resp_buf[3] = SYN_UDS_DTC_FORMAT_ISO14229_1;
+            syn_poke_u16(match_cnt, resp_buf, 4);
+            *resp_len = 6U;
+            success = true;
+            break;
+        }
+
+        case SYN_UDS_DTC_REPORT_BY_SEVERITY_MASK: {
+            if (req_len < 4U) {
+                return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
+                                              resp_len);
+            }
+            uint8_t sev_mask = req[2];
+            uint8_t stat_mask = req[3];
+            uint16_t pos = 3U;
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            resp_buf[2] = SYN_UDS_DTC_STATUS_AVAILABILITY_MASK;
+            for (uint8_t i = 0U; i < server->dtc_count; i++) {
+                if (((server->dtc_table[i].severity & sev_mask) != 0U) &&
+                    ((server->dtc_table[i].status & stat_mask) != 0U)) {
+                    if (pos + 6U > max_resp_len) {
+                        return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                                      resp_len);
+                    }
+                    resp_buf[pos] = server->dtc_table[i].severity;
+                    resp_buf[pos + 1U] = 0x00U;
+                    resp_buf[pos + 2U] = (uint8_t)(server->dtc_table[i].dtc >> 16U);
+                    resp_buf[pos + 3U] = (uint8_t)(server->dtc_table[i].dtc >> 8U);
+                    resp_buf[pos + 4U] = (uint8_t)(server->dtc_table[i].dtc);
+                    resp_buf[pos + 5U] = server->dtc_table[i].status;
+                    pos += 6U;
+                }
+            }
+            *resp_len = pos;
+            success = true;
+            break;
+        }
+
+        case SYN_UDS_DTC_REPORT_FAULT_DETECTION_COUNTER: {
+            uint16_t pos = 3U;
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            resp_buf[2] = SYN_UDS_DTC_STATUS_AVAILABILITY_MASK;
+            for (uint8_t i = 0U; i < server->dtc_count; i++) {
+                if (pos + 4U > max_resp_len) {
+                    return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                                  resp_len);
+                }
+                resp_buf[pos] = (uint8_t)(server->dtc_table[i].dtc >> 16U);
+                resp_buf[pos + 1U] = (uint8_t)(server->dtc_table[i].dtc >> 8U);
+                resp_buf[pos + 2U] = (uint8_t)(server->dtc_table[i].dtc);
+                resp_buf[pos + 3U] = (uint8_t)server->dtc_table[i].fault_cnt;
+                pos += 4U;
+            }
+            *resp_len = pos;
+            success = true;
+            break;
+        }
+
+        default: {
+            uint16_t cb_out_len = 0U;
+            if (server->dtc_cb != NULL) {
+                if (!server->dtc_cb(sub, &req[2], req_len - 2U, &resp_buf[2], max_resp_len - 2U,
+                                    &cb_out_len, server->dtc_ctx)) {
+                    return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                                  resp_len);
+                }
+                resp_buf[0] = sid + 0x40U;
+                resp_buf[1] = sub;
+                *resp_len = 2U + cb_out_len;
+                success = true;
+            } else {
+                resp_buf[0] = sid + 0x40U;
+                resp_buf[1] = sub;
+                resp_buf[2] = SYN_UDS_DTC_STATUS_AVAILABILITY_MASK;
+                *resp_len = 3U;
+                success = true;
+            }
+            break;
+        }
+        }
         break;
     }
 

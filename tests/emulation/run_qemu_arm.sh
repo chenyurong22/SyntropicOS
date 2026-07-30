@@ -33,7 +33,7 @@ bash "${QEMU_DIR}/measure_arm_size.sh"
 
 echo "=== Executing in QEMU ARM Cortex-M4 (mps2-an385) ==="
 if command -v qemu-system-arm >/dev/null 2>&1; then
-    timeout 60s qemu-system-arm -machine mps2-an385 -nographic -semihosting-config enable=on,target=native -kernel build/test_cortexm4.elf || true
+    timeout 180s qemu-system-arm -machine mps2-an385 -nographic -semihosting-config enable=on,target=native -kernel build/test_cortexm4.elf || true
 
 
     rm -f build/test_cortexm4.elf

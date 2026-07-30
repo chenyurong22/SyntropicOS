@@ -35,10 +35,34 @@
  *       PT_BEGIN(pt);
  *       // ...
  *       PT_END(pt);
- *   }
- * @endcode
- * @ingroup syn_sched
- */
+ * @par Macro expansion (Duff's device continuation)
+ * @code
+ *   /* High-level C code */
+*SYN_PT_Status my_task(SYN_PT *pt)
+{
+    *PT_BEGIN(pt);
+    *PT_WAIT_UNTIL(pt, flag == 1);
+    *PT_END(pt);
+    *
+}
+** /* Expands preprocessor output to: */
+ *SYN_PT_Status my_task(SYN_PT *pt)
+{
+    *char _pt_yield_flag = 1;
+    *switch (pt->lc)
+    {
+    *case 0:
+        *pt->lc = 12;
+    case 12:
+        *if (!(flag == 1)) return PT_WAITING;
+        *
+    }
+    *_pt_yield_flag = 0;
+    *PT_INIT(pt);
+    *return PT_EXITED;
+    *
+}
+*@endcode *@ingroup syn_sched * /
 
 #ifndef SYN_PT_H
 #define SYN_PT_H
@@ -47,32 +71,33 @@
 #include "../common/syn_defs.h"
 
 #ifdef __cplusplus
-extern "C" {
+    extern "C"
+{
 #endif
 
-/* ── Protothread continuation ───────────────────────────────────────────── */
+    /* ── Protothread continuation ───────────────────────────────────────────── */
 
-/**
- * @brief Protothread control block.
- *
- * Stores the line-continuation used to resume the coroutine. Costs
- * exactly 2 bytes of RAM.
- */
-typedef struct {
-    uint16_t lc; /**< Line continuation — stores __LINE__ at last yield */
-} SYN_PT;
+    /**
+     * @brief Protothread control block.
+     *
+     * Stores the line-continuation used to resume the coroutine. Costs
+     * exactly 2 bytes of RAM.
+     */
+    typedef struct {
+        uint16_t lc; /**< Line continuation — stores __LINE__ at last yield */
+    } SYN_PT;
 
-/* ── Return status ──────────────────────────────────────────────────────── */
+    /* ── Return status ──────────────────────────────────────────────────────── */
 
-/**
- * @brief Return value from a protothread function.
- */
-typedef enum {
-    PT_WAITING = 0, /**< Thread is blocked (condition not yet met)  */
-    PT_YIELDED = 1, /**< Thread voluntarily yielded — call again    */
-    PT_EXITED = 2,  /**< Thread ran to PT_END — normal completion   */
-    PT_ENDED = 3,   /**< Thread was explicitly ended via PT_EXIT    */
-} SYN_PT_Status;
+    /**
+     * @brief Return value from a protothread function.
+     */
+    typedef enum {
+        PT_WAITING = 0, /**< Thread is blocked (condition not yet met)  */
+        PT_YIELDED = 1, /**< Thread voluntarily yielded — call again    */
+        PT_EXITED = 2,  /**< Thread ran to PT_END — normal completion   */
+        PT_ENDED = 3,   /**< Thread was explicitly ended via PT_EXIT    */
+    } SYN_PT_Status;
 
 /* ── Core macros ────────────────────────────────────────────────────────── */
 

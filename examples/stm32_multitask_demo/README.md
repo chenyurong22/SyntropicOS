@@ -38,6 +38,45 @@ Demonstrates four concurrent stackless coroutine protothreads (`SYN_PT`) coordin
 3. **`task_ipc` (Global Resource Coordinator)**: Inter-task coordinator monitoring the shared thread-safe `App_GlobalResources` struct. Translates button gestures and CLI commands into system mode state transitions.
 4. **`task_led` (Status LED Task)**: Dynamic LED pattern driver (`PA5`). Adjusts flash frequency (`1Hz` slow blink, `4Hz` active blink, `10Hz` rapid alert, or solid ON config) based on `current_mode`.
 
+## Under the Hood: Protothread Macro Expansion (Duff's Device)
+
+Protothreads save execution position using a 2-byte line continuation variable (`lc`) and C `switch`/`case` jump tables:
+
+```c
+/* High-Level C Code */
+SYN_PT_Status task_led_func(SYN_PT *pt) {
+    PT_BEGIN(pt);
+    while (1) {
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+        PT_WAIT_UNTIL(pt, (syn_port_get_tick_ms() - last_tick) >= 500);
+        last_tick = syn_port_get_tick_ms();
+    }
+    PT_END(pt);
+}
+
+/* Preprocessor Macro Expansion */
+SYN_PT_Status task_led_func(SYN_PT *pt) {
+    char _pt_yield_flag = 1;
+    switch (pt->lc) {
+        case 0:
+            while (1) {
+                HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+
+                /* PT_WAIT_UNTIL expansion */
+                pt->lc = 236; case 236:
+                if (!((syn_port_get_tick_ms() - last_tick) >= 500)) {
+                    return PT_WAITING;
+                }
+
+                last_tick = syn_port_get_tick_ms();
+            }
+    }
+    _pt_yield_flag = 0;
+    pt->lc = 0;
+    return PT_EXITED;
+}
+```
+
 ## Hardware Wiring
 
 ```

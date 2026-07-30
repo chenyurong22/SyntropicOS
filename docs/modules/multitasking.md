@@ -29,6 +29,49 @@ Protothreads are stackless cooperative coroutines implemented via the Duff's dev
 | `PT_BLOCK_CONDITION(pt, task, cond)` | Block task execution (`SYN_TASK_BLOCKED`) until condition expression becomes true |
 | `PT_BLOCK_EVENT(pt, task, grp, mask)` | Block task execution (`SYN_TASK_BLOCKED`) until event bit fires |
 
+### Macro Expansion Under the Hood (Duff's Device)
+
+Protothreads save execution position using a 2-byte line continuation variable (`uint16_t lc`) and C `switch`/`case` jump tables:
+
+=== "High-Level C Code"
+    ```c
+    SYN_PT_Status blink_task(SYN_PT *pt)
+    {
+        PT_BEGIN(pt);
+        while (1) {
+            HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+            PT_WAIT_UNTIL(pt, (syn_port_get_tick_ms() - last_tick) >= 500);
+            last_tick = syn_port_get_tick_ms();
+        }
+        PT_END(pt);
+    }
+    ```
+
+=== "Preprocessor Macro Expansion"
+    ```c
+    SYN_PT_Status blink_task(SYN_PT *pt)
+    {
+        char _pt_yield_flag = 1;
+        switch (pt->lc) {
+            case 0:
+                while (1) {
+                    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+
+                    /* PT_WAIT_UNTIL expansion */
+                    pt->lc = 10; case 10:
+                    if (!((syn_port_get_tick_ms() - last_tick) >= 500)) {
+                        return PT_WAITING;
+                    }
+
+                    last_tick = syn_port_get_tick_ms();
+                }
+        }
+        _pt_yield_flag = 0;
+        pt->lc = 0;
+        return PT_EXITED;
+    }
+    ```
+
 ### Writing Tasks: Rules and Gotchas
 
 Protothreads use a `switch`/`__LINE__` continuation technique (sometimes

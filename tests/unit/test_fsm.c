@@ -44,7 +44,7 @@ static void test_fsm(void)
 {
     /* Re-init log so FSM can log transitions */
     log_capture_pos = 0;
-    syn_log_init(SYN_LOG_DEBUG);
+    syn_log_init(NULL, SYN_LOG_DEBUG);
 
     SYN_FSM fsm;
     syn_fsm_init(&fsm, test_fsm_table, FSM_ST_IDLE, "fsm");
@@ -145,7 +145,7 @@ static void test_fsm_edge_cases(void)
 
     /* Transition with guard_allow (returns true) */
     log_capture_pos = 0;
-    syn_log_init(SYN_LOG_DEBUG);
+    syn_log_init(NULL, SYN_LOG_DEBUG);
 
     bool took = syn_fsm_dispatch(&fsm, FSM_EV_START);
     TEST_ASSERT_TRUE(took);

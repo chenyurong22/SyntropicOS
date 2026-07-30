@@ -20,7 +20,7 @@ static void test_logging_basic(void)
     log_capture_pos = 0;
     log_capture_buf[0] = '\0';
 
-    syn_log_init(SYN_LOG_DEBUG);
+    syn_log_init(NULL, SYN_LOG_DEBUG);
 
     syn_log(SYN_LOG_DEBUG, "test", "hello %d", 42);
     TEST_ASSERT_TRUE(log_capture_pos > 0);
@@ -68,7 +68,7 @@ static void test_log_hexdump(void)
     log_capture_pos = 0;
     log_capture_buf[0] = '\0';
 
-    syn_log_init(SYN_LOG_DEBUG);
+    syn_log_init(NULL, SYN_LOG_DEBUG);
 
     uint8_t data[20];
     for (int i = 0; i < 20; i++) {
@@ -93,18 +93,30 @@ static void test_log_invalid_level(void)
 {
     log_capture_pos = 0;
     log_capture_buf[0] = '\0';
-    syn_log_init(SYN_LOG_TRACE);
+    syn_log_init(NULL, SYN_LOG_TRACE);
 
     syn_log((SYN_LogLevel)10, "test", "invalid level message");
     TEST_ASSERT_TRUE(log_capture_pos > 0);
     TEST_ASSERT_NOT_NULL(strstr(log_capture_buf, "?/test:"));
 }
 
+static int custom_output_count = 0;
+static char custom_output_last[128];
+
+static void custom_log_output(const char *str, size_t len)
+{
+    custom_output_count++;
+    if (len < sizeof(custom_output_last)) {
+        memcpy(custom_output_last, str, len);
+        custom_output_last[len] = '\0';
+    }
+}
+
 static void test_log_null_tag(void)
 {
     log_capture_pos = 0;
     log_capture_buf[0] = '\0';
-    syn_log_init(SYN_LOG_DEBUG);
+    syn_log_init(NULL, SYN_LOG_DEBUG);
 
     syn_log(SYN_LOG_DEBUG, NULL, "no tag message");
     TEST_ASSERT_TRUE(log_capture_pos > 0);
@@ -115,6 +127,14 @@ static void test_log_null_tag(void)
     syn_log(SYN_LOG_DEBUG, "", "empty tag message");
     TEST_ASSERT_TRUE(log_capture_pos > 0);
     TEST_ASSERT_NOT_NULL(strstr(log_capture_buf, "D: empty tag message"));
+
+    /* Test custom log output callback */
+    custom_output_count = 0;
+    custom_output_last[0] = '\0';
+    syn_log_init(custom_log_output, SYN_LOG_DEBUG);
+    syn_log(SYN_LOG_INFO, "custom", "test callback");
+    TEST_ASSERT_EQUAL_INT(1, custom_output_count);
+    TEST_ASSERT_NOT_NULL(strstr(custom_output_last, "I/custom: test callback"));
 }
 
 void run_log_tests(void)

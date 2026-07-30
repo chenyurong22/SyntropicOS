@@ -78,8 +78,8 @@ int main(void)
     HAL_Init();
     /* MCU Clock & USART2 (115200 8N1) initialization here */
 
-    /* Step 1: Initialize syn_log with minimum log level */
-    syn_log_init(SYN_LOG_TRACE);
+    /* Step 1: Initialize syn_log with custom STM32 UART output callback and minimum level */
+    syn_log_init(stm32_log_output, SYN_LOG_TRACE);
 
     /* Log startup message */
     SYN_LOG_I(TAG, "SyntropicOS syn_log console initialized on USART2 @ 115200 baud");

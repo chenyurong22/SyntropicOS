@@ -28,6 +28,16 @@
 
 static SYN_LogLevel s_level = SYN_LOG_DEBUG; /**< Current minimum log level.  */
 static bool s_inited = false;                /**< Init flag.                  */
+static SYN_LogOutputFn s_output_fn = NULL;   /**< Custom output callback.     */
+
+static void emit_log(const char *str, size_t len)
+{
+    if (s_output_fn != NULL) {
+        s_output_fn(str, len);
+    } else {
+        syn_port_serial_write((const uint8_t *)str, len);
+    }
+}
 
 /* ── Level labels ─────────────────────────────────────────────────────────────── */
 
@@ -48,8 +58,9 @@ static const char *const s_level_colors[] = {
 
 /* ── API ────────────────────────────────────────────────────────────────── */
 
-void syn_log_init(SYN_LogLevel min_level)
+void syn_log_init_backend(SYN_LogOutputFn output_fn, SYN_LogLevel min_level)
 {
+    s_output_fn = output_fn;
     s_level = min_level;
     s_inited = true;
 }
@@ -160,7 +171,7 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
         pos = (int)sizeof(buf) - 1; /* LCOV_EXCL_LINE */
     buf[pos] = '\0';
 
-    syn_port_serial_write((const uint8_t *)buf, (size_t)pos);
+    emit_log(buf, (size_t)pos);
 }
 
 void syn_log(SYN_LogLevel level, const char *tag, const char *fmt, ...)
@@ -176,7 +187,7 @@ void syn_log_raw(const char *str)
     if (!s_inited || str == NULL) {
         return;
     }
-    syn_port_serial_write((const uint8_t *)str, strlen(str));
+    emit_log(str, strlen(str));
 }
 
 void syn_log_hexdump(const char *tag, const void *data, size_t len)

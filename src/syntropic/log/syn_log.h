@@ -93,17 +93,33 @@ typedef enum {
 
 /* ── Output function type ───────────────────────────────────────────────── */
 
-/* ── API ────────────────────────────────────────────────────────────────── */
+/**
+ * @brief Output function signature for custom log backends (e.g. UART, ITM, RTT, file).
+ * @param str Null-terminated string to transmit.
+ * @param len Byte length of string.
+ */
+typedef void (*SYN_LogOutputFn)(const char *str, size_t len);
+
+/**
+ * @brief Core log initialization implementation function.
+ *
+ * Use syn_log_init() macro which supports both:
+ * - syn_log_init(min_level)
+ * - syn_log_init(output_fn, min_level)
+ */
+void syn_log_init_backend(SYN_LogOutputFn output_fn, SYN_LogLevel min_level);
+
+#define _SYN_LOG_INIT_1(level) syn_log_init_backend(NULL, (level))
+#define _SYN_LOG_INIT_2(fn, level) syn_log_init_backend((fn), (level))
+#define _SYN_LOG_INIT_GET_MACRO(_1, _2, NAME, ...) NAME
 
 /**
  * @brief Initialize the logging system.
  *
- * Output goes directly to syn_port_serial_write — no callback needed.
- *
- * @param min_level Minimum runtime log level (messages below this are
- *                  suppressed at runtime). Compile-time level still applies.
+ * Supports 1 argument (min_level) or 2 arguments (output_fn, min_level).
  */
-void syn_log_init(SYN_LogLevel min_level);
+#define syn_log_init(...) \
+    _SYN_LOG_INIT_GET_MACRO(__VA_ARGS__, _SYN_LOG_INIT_2, _SYN_LOG_INIT_1)(__VA_ARGS__)
 
 /**
  * @brief Change the runtime minimum log level.

@@ -357,6 +357,8 @@ static void test_biquad_cascade(void)
 {
     SYN_FilterBiquadCascade cascade;
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_filter_biquad_cascade_init(&cascade, 0));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_filter_biquad_cascade_init(&cascade, SYN_BIQUAD_CASCADE_MAX_STAGES + 1));
     TEST_ASSERT_EQUAL(SYN_OK, syn_filter_biquad_cascade_init(&cascade, 2));
 
     /* Stage 0: lowpass filter at 100Hz, sample rate 1000Hz */

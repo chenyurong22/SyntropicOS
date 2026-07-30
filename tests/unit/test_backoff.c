@@ -86,6 +86,15 @@ static void test_backoff_null_checks(void)
     TEST_ASSERT_EQUAL_UINT32(0, syn_backoff_next_ms(NULL));
     TEST_ASSERT_TRUE(syn_backoff_exhausted(NULL));
     syn_backoff_reset(NULL);
+
+    /* Test factor < 1 clamping to 1 */
+    SYN_Backoff b;
+    syn_backoff_init(&b, 1, 10, 0, 5);
+    TEST_ASSERT_EQUAL_UINT8(1, b.factor);
+
+    /* Test min_ms = 1 where jitter_max = 1 / 2 = 0 */
+    uint32_t d = syn_backoff_next_ms(&b);
+    TEST_ASSERT_EQUAL_UINT32(1, d);
 }
 
 void run_backoff_tests(void)

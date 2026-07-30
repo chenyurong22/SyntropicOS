@@ -210,8 +210,22 @@ static void test_nmea_uncovered_edge_cases(void)
     const char *non_hex = "$GPGGA*ZZ";
     TEST_ASSERT_FALSE(syn_nmea_validate(non_hex));
 
-    /* 4. Parse coordinate with invalid direction fallback */
+    /* 4. Parse coordinate with South direction and invalid direction fallback */
+    double lat_s = syn_nmea_parse_coord("4807.038", 'S');
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, -48.1173, lat_s);
     TEST_ASSERT_DOUBLE_WITHIN(0.0001, 12.576, syn_nmea_parse_coord("1234.56", 'X'));
+
+    /* 5. Streaming parser feed with NULL out_sentence pointer */
+    SYN_NMEA_Parser parser;
+    syn_nmea_parser_init(&parser);
+    const char *frame = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+    bool parsed = false;
+    for (size_t i = 0; i < strlen(frame); i++) {
+        if (syn_nmea_parser_feed(&parser, frame[i], NULL)) {
+            parsed = true;
+        }
+    }
+    TEST_ASSERT_TRUE(parsed);
 }
 
 void run_nmea_tests(void)

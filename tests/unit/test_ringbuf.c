@@ -379,6 +379,20 @@ static void test_ringbuf_uninitialized_and_zero_len(void)
     TEST_ASSERT_EQUAL_size_t(0, syn_ringbuf_write(&rb, (const uint8_t *)"a", 0));
     TEST_ASSERT_EQUAL_size_t(0, syn_ringbuf_read(&rb, out, 0));
     TEST_ASSERT_EQUAL_size_t(0, syn_ringbuf_peek_n(&rb, out, 0));
+
+    /* Test exact array end wrap (new_head == size & new_tail == size) */
+    uint8_t b8[8];
+    syn_ringbuf_init(&rb, b8, sizeof(b8));
+    /* Write 4 bytes: head moves to 4 */
+    syn_ringbuf_write(&rb, (const uint8_t *)"1234", 4);
+    /* Read 4 bytes: tail moves to 4 */
+    syn_ringbuf_read(&rb, out, 4);
+    /* Write 4 bytes: head moves 4 + 4 = 8 == rb->size => wraps to 0 */
+    syn_ringbuf_write(&rb, (const uint8_t *)"5678", 4);
+    TEST_ASSERT_EQUAL_size_t(0, rb.head);
+    /* Read 4 bytes: tail moves 4 + 4 = 8 == rb->size => wraps to 0 */
+    syn_ringbuf_read(&rb, out, 4);
+    TEST_ASSERT_EQUAL_size_t(0, rb.tail);
 }
 
 void run_ringbuf_tests(void)

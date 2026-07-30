@@ -88,13 +88,13 @@ int16_t syn_filter_ema_update(SYN_FilterEMA *f, int16_t sample)
 
     if (!f->primed) {
         /* First sample — initialize directly */
-        f->value = (int32_t)sample << 8;
+        f->value = (int32_t)sample * 256;
         f->primed = true;
         return sample;
     }
 
     /* EMA: out = alpha * sample + (256 - alpha) * prev, all in Q8 */
-    int32_t sample_q8 = (int32_t)sample << 8;
+    int32_t sample_q8 = (int32_t)sample * 256;
     f->value += ((int32_t)f->alpha * (sample_q8 - f->value)) >> 8;
 
     return (int16_t)(f->value >> 8);

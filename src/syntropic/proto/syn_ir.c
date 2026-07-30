@@ -378,6 +378,9 @@ bool syn_ir_decode_pulse(SYN_IR_Decoder *decoder, uint16_t duration_us, bool is_
     /* Manchester bit phase tracking */
     if (decoder->state == SYN_IR_STATE_DATA) {
         SYN_IR_Protocol proto = decoder->active_proto;
+        if (proto >= SYN_IR_PROTO_COUNT) {
+            return false;
+        }
         const SYN_IR_ProtoDesc *desc = &proto_table[proto];
         if (desc->encoding == SYN_IR_ENC_MANCHESTER) {
             bool is_full = timing_match(duration_us, desc->half_bit_us * 2, desc->tolerance_us);

@@ -157,7 +157,7 @@ static void test_dma_ringbuf(void)
     syn_dma_init(&dma, &cfg);
 
     uint8_t rx_buf[64] = {0};
-    uint8_t dummy_periph = 0xAA;
+    uint8_t dummy_periph[64] = {0xAA};
 
     SYN_DMA_RingBuf rbuf;
     /* NULL guards */

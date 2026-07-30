@@ -36,18 +36,16 @@ static SYN_RouterHandler handlers[4];
 
 /* ── 1. Custom Transport (UART Transmit) ────────────────────────────────── */
 
-static SYN_Status uart_send_pkt(const uint8_t *data, size_t len, void *ctx)
+static bool uart_send_pkt(const uint8_t *data, size_t len, void *ctx)
 {
     (void)ctx;
-
-    /* Encode payload with COBS and append trailing 0x00 delimiter */
-    uint8_t enc_buf[140];
+    uint8_t enc_buf[256];
     size_t enc_len = syn_cobs_encode(data, len, enc_buf);
     enc_buf[enc_len++] = 0x00; /* Framing delimiter */
 
     /* Transmit framed packet via HAL UART */
     HAL_UART_Transmit(&huart2, enc_buf, (uint16_t)enc_len, 100);
-    return SYN_OK;
+    return true;
 }
 
 static SYN_Transport uart_transport = {
@@ -60,8 +58,10 @@ static SYN_Transport uart_transport = {
 static void on_cobs_frame_received(const uint8_t *data, size_t len, void *ctx)
 {
     (void)ctx;
-    /* Feed assembled frame into router for packet parsing & dispatch */
-    syn_router_feed(&router, data, len);
+    (void)data;
+    (void)len;
+    /* Dispatch via router poll */
+    syn_router_poll(&router);
 }
 
 /* ── 3. Single-Byte UART RX Interrupt (No DMA) ──────────────────────────── */

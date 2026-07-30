@@ -48,12 +48,8 @@ void TIM2_IRQHandler(void)
         if (__HAL_TIM_GET_IT_SOURCE(&htim2, TIM_IT_UPDATE) != RESET) {
             __HAL_TIM_CLEAR_IT_FLAG(&htim2, TIM_FLAG_UPDATE);
 
-            /* Step Stepper Motion State Machine */
+            /* Step Stepper Motion State Machine & update outputs */
             syn_stepper_tick(&stepper);
-
-            /* Output physical STEP & DIR pin states */
-            HAL_GPIO_WritePin(STEPPER_PORT, STEP_PIN, stepper.step_state ? GPIO_PIN_SET : GPIO_PIN_RESET);
-            HAL_GPIO_WritePin(STEPPER_PORT, DIR_PIN,  stepper.direction == SYN_STEPPER_CW ? GPIO_PIN_SET : GPIO_PIN_RESET);
         }
     }
 }

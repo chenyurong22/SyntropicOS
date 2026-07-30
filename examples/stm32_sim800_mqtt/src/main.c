@@ -7,6 +7,7 @@
  */
 
 #include "syntropic/syntropic.h"
+#include "syntropic/net/syn_mqtt.h"
 #include "stm32f4xx_hal.h" /* Or stm32f1xx_hal.h / stm32g4xx_hal.h */
 
 #include <stdio.h>

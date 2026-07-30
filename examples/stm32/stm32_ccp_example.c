@@ -7,14 +7,16 @@
  * DAQ list measurement streaming.
  */
 
-#include "syntropic/proto/syn_ccp.h"
-#include "syntropic/drivers/syn_can.h"
+#include "syntropic/syntropic.h"
 #include "syntropic/control/syn_pid.h"
+#include "syntropic/drivers/syn_can.h"
 #include "syntropic/log/syn_log.h"
+#include "syntropic/proto/syn_ccp.h"
 #include "syntropic/sched/syn_sched.h"
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #define STM32_CCP_STATION_ADDR 0x0100U
 
@@ -29,6 +31,10 @@ static float g_process_var = 0.0f;
 /* CCP Slave Instance */
 static SYN_CCP_Slave g_ccp;
 
+/* Scheduler & Task Handles */
+static SYN_Task g_task;
+static SYN_Sched g_sched;
+
 /* Simulated CAN hardware receive hook */
 static void on_can_frame_received(uint32_t can_id, const uint8_t data[8], uint8_t len)
 {
@@ -38,15 +44,20 @@ static void on_can_frame_received(uint32_t can_id, const uint8_t data[8], uint8_
         uint8_t dto[8] = {0};
         if (syn_ccp_process_cro(&g_ccp, data, dto)) {
             /* Transmit Command Return Message (DTO/CRM) on CAN ID = 0x101 */
-            syn_can_send(0, 0x101U, dto, 8);
+            SYN_CAN_Frame tx_frame;
+            tx_frame.id = 0x101U;
+            tx_frame.dlc = 8;
+            memcpy(tx_frame.data, dto, 8);
+            syn_can_send(NULL, &tx_frame);
         }
     }
 }
 
 /* Periodic 10ms timer task servicing live DAQ streaming & PID control */
-static void app_10ms_task(void *arg)
+static SYN_PT_Status app_10ms_task(SYN_PT *pt, SYN_Task *task)
 {
-    (void)arg;
+    (void)task;
+    PT_BEGIN(pt);
 
     /* Update simulated system & compute PID */
     float control_output = syn_pid_update(&g_pid, g_setpoint, g_process_var, 0.010f);
@@ -58,29 +69,29 @@ static void app_10ms_task(void *arg)
     uint8_t odt_idx = 0;
     if (syn_ccp_service_daq(&g_ccp, 0x01U, daq_dto, &list_idx, &odt_idx)) {
         /* Send DAQ packet on CAN ID = 0x102 + list_idx */
-        syn_can_send(0, 0x102U + list_idx, daq_dto, 8);
+        SYN_CAN_Frame tx_frame;
+        tx_frame.id = 0x102U + list_idx;
+        tx_frame.dlc = 8;
+        memcpy(tx_frame.data, daq_dto, 8);
+        syn_can_send(NULL, &tx_frame);
     }
+
+    PT_END(pt);
 }
 
-int main(void)
+void stm32_ccp_example_init(void)
 {
-    /* Initialize SyntropicOS Scheduler & CAN Driver */
-    syn_can_init(0, 500000U);
-    syn_can_set_rx_callback(0, on_can_frame_received);
+    (void)on_can_frame_received;
 
     /* Initialize live tunable PID controller */
-    syn_pid_init(&g_pid, g_kp, g_ki, g_kd, -100.0f, 100.0f);
+    SYN_PID_Config pid_cfg = {
+        .kp = g_kp, .ki = g_ki, .kd = g_kd, .out_min = -100.0f, .out_max = 100.0f};
+    syn_pid_init(&g_pid, &pid_cfg);
 
     /* Initialize CCP v2.1 slave stack */
     syn_ccp_init(&g_ccp, STM32_CCP_STATION_ADDR);
 
-    SYN_LOG_INFO("STM32 CCP v2.1 Calibration Example Started (Station Addr: 0x%04X)",
-                 STM32_CCP_STATION_ADDR);
-
-    /* Main event loop */
-    while (1) {
-        app_10ms_task(NULL);
-    }
-
-    return 0;
+    /* Initialize task and scheduler */
+    syn_task_create(&g_task, "ccp_task", app_10ms_task, 1, NULL);
+    syn_sched_init(&g_sched, &g_task, 1);
 }

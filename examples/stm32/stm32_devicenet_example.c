@@ -7,6 +7,7 @@
  * Assembly 0x04), Polled I/O assembly data exchange, and QuickConnect™ hot-swapping.
  */
 
+#include "syntropic/syntropic.h"
 #include "syntropic/drivers/syn_can.h"
 #include "syntropic/log/syn_log.h"
 #include "syntropic/proto/syn_devicenet.h"
@@ -14,11 +15,16 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #define STM32_DEVICENET_MAC_ID 0x06U /* DeviceNet Node Address: 6 */
 
 /* DeviceNet Node Instance Context */
 static SYN_DeviceNet_Node g_dnet;
+
+/* Scheduler & Task Handles */
+static SYN_Task g_task;
+static SYN_Sched g_sched;
 
 /* Assembly Object (Class 0x04) Buffers */
 static uint8_t g_sensor_inputs[4] = {0x01, 0x02, 0x03, 0x04};
@@ -34,24 +40,33 @@ static void on_can_frame_received(uint32_t can_id, const uint8_t data[8], uint8_
     /* Process incoming CAN frame through DeviceNet stack */
     if (syn_devicenet_on_can_rx(&g_dnet, can_id, data, len, &tx_can_id, tx_data, &tx_len)) {
         /* Transmit DeviceNet response frame over STM32 bxCAN / FDCAN driver */
-        syn_can_send(0, tx_can_id, tx_data, tx_len);
+        SYN_CAN_Frame tx_frame;
+        tx_frame.id = tx_can_id;
+        tx_frame.dlc = tx_len;
+        memcpy(tx_frame.data, tx_data, tx_len);
+        syn_can_send(NULL, &tx_frame);
     }
 }
 
 /* Periodic 10ms timer task servicing DeviceNet state machine */
-static void app_10ms_task(void *arg)
+static SYN_PT_Status app_10ms_task(SYN_PT *pt, SYN_Task *task)
 {
-    (void)arg;
+    (void)task;
+    PT_BEGIN(pt);
 
     /* Advance DeviceNet timers (Duplicate MAC check & QuickConnect) */
     syn_devicenet_poll(&g_dnet, 10);
 
     /* Update simulated sensor input assembly data */
     g_sensor_inputs[0]++;
+
+    PT_END(pt);
 }
 
 void stm32_devicenet_example_init(void)
 {
+    (void)on_can_frame_received;
+
     /* Initialize DeviceNet Node at MAC ID 6, 500kbps Baud Rate */
     syn_devicenet_init(&g_dnet, STM32_DEVICENET_MAC_ID, SYN_DEVICENET_BAUD_500K);
 
@@ -62,10 +77,7 @@ void stm32_devicenet_example_init(void)
     /* Enable QuickConnect™ for fast hot-swap tool changing */
     syn_devicenet_set_quickconnect(&g_dnet, true);
 
-    SYN_LOG_INFO(
-        "STM32 DeviceNet Slave Node initialized at MAC ID: %u (Baud: 500k, QuickConnect: Enabled)",
-        STM32_DEVICENET_MAC_ID);
-
-    /* Register periodic 10ms timer task */
-    syn_sched_register_task("dnet_task", app_10ms_task, NULL, 10);
+    /* Initialize task and scheduler */
+    syn_task_create(&g_task, "dnet_task", app_10ms_task, 1, NULL);
+    syn_sched_init(&g_sched, &g_task, 1);
 }

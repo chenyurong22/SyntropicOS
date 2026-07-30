@@ -48,8 +48,26 @@ static bool uart_send_pkt(const uint8_t *data, size_t len, void *ctx)
     return true;
 }
 
+static uint8_t rx_pkt_buf[128];
+static size_t rx_pkt_len = 0;
+static bool rx_pkt_ready = false;
+
+static bool uart_recv_pkt(uint8_t *data, size_t max_len, size_t *out_len, void *ctx)
+{
+    (void)ctx;
+    if (!rx_pkt_ready) {
+        return false;
+    }
+    size_t copy_len = (rx_pkt_len < max_len) ? rx_pkt_len : max_len;
+    memcpy(data, rx_pkt_buf, copy_len);
+    *out_len = copy_len;
+    rx_pkt_ready = false;
+    return true;
+}
+
 static SYN_Transport uart_transport = {
     .send = uart_send_pkt,
+    .recv = uart_recv_pkt,
     .ctx = NULL,
 };
 
@@ -58,10 +76,11 @@ static SYN_Transport uart_transport = {
 static void on_cobs_frame_received(const uint8_t *data, size_t len, void *ctx)
 {
     (void)ctx;
-    (void)data;
-    (void)len;
-    /* Dispatch via router poll */
-    syn_router_poll(&router);
+    if (len <= sizeof(rx_pkt_buf)) {
+        memcpy(rx_pkt_buf, data, len);
+        rx_pkt_len = len;
+        rx_pkt_ready = true;
+    }
 }
 
 /* ── 3. Single-Byte UART RX Interrupt (No DMA) ──────────────────────────── */

@@ -44,6 +44,14 @@ static void test_can(void)
     syn_can_poll(&can);
     TEST_ASSERT_EQUAL_INT(1, can_rx_n);
 
+    /* Poll with NULL on_rx callback */
+    syn_can_on_receive(&can, NULL, NULL);
+    mock_can_rx.id = 0x300;
+    mock_can_rx.dlc = 1;
+    mock_can_rx_avail = true;
+    syn_can_poll(&can);
+    TEST_ASSERT_EQUAL_INT(2, can.rx_count);
+
     syn_can_set_filter(&can, 0x100, 0x7FF);
 }
 

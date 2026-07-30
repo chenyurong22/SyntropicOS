@@ -40,6 +40,7 @@ This directory contains MCU HAL and bare-metal C example projects demonstrating 
 - **[`stm32_dlt645_meter`](stm32_dlt645_meter)** `[STM32 Bare-Metal]` — DLT645 Smart Electricity Meter protocol parser.
 
 ### Microcontroller Peripheral HAL & CLI Shell
+- **[`stm32_multitask_demo`](stm32_multitask_demo)** `[STM32 Bare-Metal]` — Integrated 4-task protothreads (`SYN_PT`) demo (LED, USART CLI, Button Gestures, Global IPC).
 - **[`stm32_cli_shell`](stm32_cli_shell)** `[STM32 Bare-Metal]` — Interactive USART CLI Shell (`led`, `status`, `temp`).
 - **[`SerialCLI`](SerialCLI)** `[Arduino / Portable C]` — Generic serial command-line interpreter over UART.
 - **[`stm32_rtc`](stm32_rtc)** `[STM32 Bare-Metal]` — Real-Time Clock (RTC) perpetual calendar & USART protocol reader/setter.

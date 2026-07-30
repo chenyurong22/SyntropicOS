@@ -124,7 +124,7 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
             buf[pos++] = '/';
             size_t tl = strlen(tag);
             if (tl > (size_t)(remaining - pos - 3))
-                tl = (size_t)(remaining - pos - 3); /* LCOV_EXCL_LINE */
+                tl = (size_t)(remaining - pos - 3);
             memcpy(buf + pos, tag, tl);
             pos += (int)tl;
         }
@@ -139,7 +139,7 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
         if (n > 0) {
             pos += n;
             if (pos > remaining)
-                pos = remaining; /* LCOV_EXCL_LINE */
+                pos = remaining;
         }
 #else
         /* No printf: copy format string literally */
@@ -157,7 +157,7 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
         const char *rst = LOG_COLOR_RESET "\n";
         size_t rl = strlen(rst);
         if (rl > sizeof(buf) - (size_t)pos - 1)
-            rl = sizeof(buf) - (size_t)pos - 1; /* LCOV_EXCL_LINE */
+            rl = sizeof(buf) - (size_t)pos - 1;
         memcpy(buf + pos, rst, rl);
         pos += (int)rl;
     }
@@ -168,7 +168,7 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
 
     /* Null-terminate */
     if (pos >= (int)sizeof(buf))
-        pos = (int)sizeof(buf) - 1; /* LCOV_EXCL_LINE */
+        pos = (int)sizeof(buf) - 1;
     buf[pos] = '\0';
 
     emit_log(buf, (size_t)pos);

@@ -234,6 +234,39 @@ static void test_lin_edge_cases(void)
     slave.state = (SYN_LIN_State)99;
     TEST_ASSERT_FALSE(syn_lin_slave_process_byte(&slave, 0x00, &frame));
     TEST_ASSERT_EQUAL_INT(SYN_LIN_STATE_IDLE, slave.state);
+
+    /* LIN master zero dt_ms test */
+    SYN_LIN_Master master_dt;
+    SYN_LIN_ScheduleSlot dt_slot = {.id = 0x01, .len = 2, .delay_ms = 100};
+    syn_lin_master_init(&master_dt, &dt_slot, 1);
+    TEST_ASSERT_FALSE(syn_lin_master_step(&master_dt, 0, NULL));
+
+    /* LIN slave rx_idx >= SYN_LIN_DATA_MAX overflow check in STATE_DATA */
+    SYN_LIN_Slave ov_slave;
+    syn_lin_slave_init(&ov_slave, 0x01);
+    syn_lin_slave_add_frame(&ov_slave, 0x02, 8, SYN_LIN_SLOT_SUBSCRIBE, SYN_LIN_CHECKSUM_CLASSIC);
+    ov_slave.state = SYN_LIN_STATE_DATA;
+    ov_slave.rx_idx = SYN_LIN_DATA_MAX;
+    ov_slave.expected_len = 8;
+    TEST_ASSERT_FALSE(syn_lin_slave_process_byte(&ov_slave, 0x55, &frame));
+    TEST_ASSERT_EQUAL_INT(SYN_LIN_STATE_CHECKSUM, ov_slave.state);
+
+    /* Process byte with NULL out_frame */
+    slave.state = SYN_LIN_STATE_CHECKSUM;
+    slave.rx_frame.pid = syn_lin_calc_pid(0x01);
+    slave.rx_frame.data[0] = 0x11;
+    slave.rx_frame.len = 1;
+    slave.expected_checksum_mode = SYN_LIN_CHECKSUM_CLASSIC;
+    uint8_t chk =
+        syn_lin_calc_checksum(slave.rx_frame.pid, slave.rx_frame.data, 1, SYN_LIN_CHECKSUM_CLASSIC);
+    TEST_ASSERT_TRUE(syn_lin_slave_process_byte(&slave, chk, NULL));
+
+    /* Attempt setting publish data on SUBSCRIBE slot */
+    SYN_LIN_Slave sub_slave;
+    syn_lin_slave_init(&sub_slave, 0x02);
+    syn_lin_slave_add_frame(&sub_slave, 0x05, 2, SYN_LIN_SLOT_SUBSCRIBE, SYN_LIN_CHECKSUM_CLASSIC);
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR,
+                          syn_lin_slave_set_publish_data(&sub_slave, 0x05, large_data, 2));
 }
 
 static void test_lin_null_checks(void)

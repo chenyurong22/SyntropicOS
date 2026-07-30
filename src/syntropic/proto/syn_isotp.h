@@ -250,6 +250,16 @@ void syn_isotp_step_us(SYN_ISOTP_Link *link, uint32_t dt_us);
  */
 bool syn_isotp_is_tx_idle(const SYN_ISOTP_Link *link);
 
+/**
+ * @brief Alias for syn_isotp_is_tx_idle - checks if all pending transmit frames have flushed.
+ * @param link  Link handle.
+ * @return true if transmission queue is flushed and idle.
+ */
+static inline bool syn_isotp_flush_tx(const SYN_ISOTP_Link *link)
+{
+    return syn_isotp_is_tx_idle(link);
+}
+
 #ifdef __cplusplus
 }
 #endif

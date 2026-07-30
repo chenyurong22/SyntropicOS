@@ -470,10 +470,12 @@ static void test_isotp_canfd_multi_frame(void)
         SYN_ISOTP_Link link;
         syn_isotp_init(&link, 0x700, 0x708, rx_buf_a, sizeof(rx_buf_a), tx_buf_a, sizeof(tx_buf_a));
         TEST_ASSERT_TRUE(syn_isotp_is_tx_idle(&link));
+        TEST_ASSERT_TRUE(syn_isotp_flush_tx(&link));
 
         uint8_t payload[32] = {0};
         syn_isotp_send(&link, payload, sizeof(payload));
         TEST_ASSERT_FALSE(syn_isotp_is_tx_idle(&link));
+        TEST_ASSERT_FALSE(syn_isotp_flush_tx(&link));
     }
 
     void run_isotp_tests(void)

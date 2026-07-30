@@ -649,8 +649,31 @@ static void test_canopen_uncovered_edge_cases(void)
     SYN_CANOpenNode node_valid_tpdo;
     syn_canopen_init(&node_valid_tpdo, &cfg_valid_tpdo, test_od,
                      sizeof(test_od) / sizeof(test_od[0]));
-    syn_canopen_process_rx(&node_valid_tpdo, 0x000U, nmt_start, 2);
+    uint8_t nmt_start_cmd[2] = {0x01, 0x05};
+    syn_canopen_process_rx(&node_valid_tpdo, 0x000U, nmt_start_cmd, 2);
     TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_tpdo_trigger(&node_valid_tpdo, 1));
+
+    /* 13. SDO Download to non-existent index with existing index but wrong subindex */
+    SYN_CANOpenNode node_sub_err;
+    SYN_CANOpenNodeConfig cfg_sub_err = {.node_id = 5};
+    syn_canopen_init(&node_sub_err, &cfg_sub_err, test_od, sizeof(test_od) / sizeof(test_od[0]));
+    uint8_t sdo_down_sub_err[8] = {0x2BU, 0x01U, 0x20U, 0x99U, 0x00U, 0x00U, 0x00U, 0x00U};
+    syn_canopen_process_rx(&node_sub_err, 0x605U, sdo_down_sub_err, 8);
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node_sub_err, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]);
+
+    /* 14. SDO Upload from non-existent subindex with existing index */
+    uint8_t sdo_up_sub_err[8] = {0x40U, 0x01U, 0x20U, 0x99U, 0, 0, 0, 0};
+    syn_canopen_process_rx(&node_sub_err, 0x605U, sdo_up_sub_err, 8);
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node_sub_err, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]);
+
+    /* 15. Emergency send check */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_canopen_send_emcy(NULL, 0x1000, 0x01));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_send_emcy(&node_sub_err, 0x1000, 0x01));
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node_sub_err, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x085U, tx_id);
+    TEST_ASSERT_EQUAL(8, tx_len);
 }
 
 void run_canopen_tests(void)

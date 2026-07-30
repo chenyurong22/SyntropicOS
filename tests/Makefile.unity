@@ -145,7 +145,8 @@ SYN_SRCS := \
 	src/syntropic/net/syn_netcfg.c \
 	src/syntropic/net/syn_igmp.c \
 	src/syntropic/util/syn_nn.c \
-	src/syntropic/util/syn_dsp.c
+	src/syntropic/util/syn_dsp.c \
+	src/syntropic/vm/syn_wasm.c
 
 # Unity framework
 UNITY_SRCS := tests/unit/unity/unity.c

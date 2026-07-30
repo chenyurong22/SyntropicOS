@@ -92,6 +92,7 @@ set(SYN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/sensor/syn_lux.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/drivers/syn_rfid.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/sensor/syn_biometric.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/vm/syn_wasm.c
 )
 
 # Optional: weak stubs (link these so unimplemented port functions assert

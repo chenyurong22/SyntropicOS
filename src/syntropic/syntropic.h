@@ -644,6 +644,10 @@ extern "C" {
 #include "system/syn_power.h"
 #endif
 
+#if !defined(SYN_USE_WASM) || SYN_USE_WASM
+#include "vm/syn_wasm.h"
+#endif
+
 #include "system/syn_sleep.h"
 #include "system/syn_version.h"
 

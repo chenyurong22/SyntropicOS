@@ -46,8 +46,10 @@
 
 /* ── Services ───────────────────────────────────────────────────────────── */
 
-#define SYN_USE_LOG 1 /**< Logging system (requires: FMT)      */
-#define SYN_USE_CLI 1 /**< Command-line interface              */
+#define SYN_USE_LOG 1        /**< Logging system (requires: FMT)      */
+#define SYN_USE_CLI 1        /**< Command-line interface              */
+#define SYN_USE_WASM 1       /**< [EXPERIMENTAL] WebAssembly MVP interpreter */
+#define SYN_WASM_USE_FIXED 0 /**< f32 opcodes use Q16.16 fixed-point */
 
 /* ── Logging tuning ─────────────────────────────────────────────────────── */
 

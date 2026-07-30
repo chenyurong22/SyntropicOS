@@ -243,6 +243,13 @@ void syn_isotp_step(SYN_ISOTP_Link *link, uint32_t dt_ms);
  */
 void syn_isotp_step_us(SYN_ISOTP_Link *link, uint32_t dt_us);
 
+/**
+ * @brief Check if ISO-TP transmission channel is idle (all frames transmitted).
+ * @param link  Link handle.
+ * @return true if tx_state is SYN_ISOTP_TX_IDLE, false if transmission active.
+ */
+bool syn_isotp_is_tx_idle(const SYN_ISOTP_Link *link);
+
 #ifdef __cplusplus
 }
 #endif

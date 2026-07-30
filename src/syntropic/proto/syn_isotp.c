@@ -460,4 +460,12 @@ void syn_isotp_step_us(SYN_ISOTP_Link *link, uint32_t dt_us)
     }
 }
 
+bool syn_isotp_is_tx_idle(const SYN_ISOTP_Link *link)
+{
+    if (link == NULL) {
+        return true;
+    }
+    return link->tx_state == SYN_ISOTP_TX_IDLE;
+}
+
 #endif /* SYN_USE_ISOTP */

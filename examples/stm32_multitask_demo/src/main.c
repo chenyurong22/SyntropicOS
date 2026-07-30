@@ -273,13 +273,40 @@ int main(void)
     PT_INIT(&pt_ipc);
     PT_INIT(&pt_led);
 
-    /* Cooperative Protothread Execution Super-Loop */
+    /* ── Option A: Bare-Metal Cooperative Super-Loop (Used Here) ────────────────
+     * In this standalone mode, the super-loop polls each protothread round-robin.
+     * Each task returns PT_YIELDED or PT_WAITING immediately when blocked, allowing
+     * CPU cycles to pass to the next task in nanoseconds (~3-5 cycles context switch).
+     */
     while (1) {
         task_button_func(&pt_button);
         task_usart_func(&pt_usart);
         task_ipc_func(&pt_ipc);
         task_led_func(&pt_led);
     }
+
+    /* ── Option B: SyntropicOS Kernel Scheduler (syn_sched) Alternative ───────
+     * If using the full SyntropicOS kernel scheduler (syn_sched.h), manual loop
+     * polling is replaced by priority-driven scheduling and event blocking:
+     *
+     *   static SYN_Task tasks[4];
+     *   static SYN_Sched sched;
+     *
+     *   syn_task_create(&tasks[0], "button", task_button_adapter, 3, NULL); // Priority 3
+     *   syn_task_create(&tasks[1], "usart",  task_usart_adapter,  2, NULL); // Priority 2
+     *   syn_task_create(&tasks[2], "ipc",    task_ipc_adapter,    1, NULL); // Priority 1
+     *   syn_task_create(&tasks[3], "led",    task_led_adapter,    0, NULL); // Priority 0
+     *
+     *   syn_sched_init(&sched, tasks, 4);
+     *   syn_sched_run_forever(&sched);
+     *
+     * Key Scheduler Operational Differences:
+     *  1. Priority Preemption & Sorting: Higher priority ready tasks run before lower ones.
+     *  2. Event-Driven Sleeping: Tasks call PT_BLOCK_EVENT() or PT_TASK_DELAY_MS(),
+     *     marking their state SYN_TASK_BLOCKED/WAITING so the kernel skips polling them.
+     *  3. Tickless Low-Power Sleep: When all tasks are waiting/blocked, syn_sched
+     *     automatically invokes MCU WFI (Wait For Interrupt) to save power.
+     */
 
     return 0;
 }

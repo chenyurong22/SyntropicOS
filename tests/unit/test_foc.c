@@ -131,6 +131,32 @@ static void test_foc_fast_and_field_weakening(void)
 
     bool inactive = syn_foc_field_weakening(Q16_FROM_INT(1), Q16_FROM_INT(1), v_max, &id_cmd);
     TEST_ASSERT_FALSE(inactive);
+
+    /* Boundary condition: v_mag == v_max */
+    bool boundary = syn_foc_field_weakening(Q16_FROM_INT(10), 0, v_max, &id_cmd);
+    TEST_ASSERT_FALSE(boundary);
+}
+
+static void test_foc_edge_cases(void)
+{
+    SYN_FOC_AB ab = {Q16_FROM_INT(5), Q16_FROM_INT(3)};
+    q16_t duty_a = 0, duty_b = 0, duty_c = 0;
+
+    /* SVPWM with low vs high valid bus voltages */
+    syn_foc_svpwm(&ab, Q16_FROM_INT(6), &duty_a, &duty_b, &duty_c);
+    TEST_ASSERT_TRUE(duty_a >= 0 && duty_a <= Q16_ONE);
+
+    syn_foc_svpwm(&ab, Q16_FROM_INT(48), &duty_a, &duty_b, &duty_c);
+    TEST_ASSERT_TRUE(duty_a >= 0 && duty_a <= Q16_ONE);
+
+    /* Negative theta Park transforms */
+    SYN_FOC_DQ dq;
+    syn_foc_park(&ab, -Q16_PI, &dq);
+    TEST_ASSERT_TRUE(dq.d < 0);
+
+    SYN_FOC_AB ab_out;
+    syn_foc_inv_park(&dq, -Q16_PI, &ab_out);
+    ASSERT_Q16_NEAR(ab.alpha, ab_out.alpha, Q16_TOL * 2);
 }
 
 void run_foc_tests(void)
@@ -141,4 +167,5 @@ void run_foc_tests(void)
     RUN_TEST(test_clarke_inv_roundtrip);
     RUN_TEST(test_svpwm_duty_range);
     RUN_TEST(test_foc_fast_and_field_weakening);
+    RUN_TEST(test_foc_edge_cases);
 }

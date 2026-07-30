@@ -18,14 +18,14 @@ make -j"${JOBS}" -f tests/Makefile.unity test-cov BUILD_DIR=build/cov
 echo "=== Generating HTML Coverage Report ==="
 mkdir -p coverage_html
 if command -v lcov >/dev/null 2>&1; then
-    lcov --capture --ignore-errors inconsistent,path --directory build/cov --output-file build/cov/coverage.info --quiet
-    lcov --extract build/cov/coverage.info "*/src/*" --ignore-errors inconsistent,path --output-file build/cov/coverage_src.info --quiet
-    genhtml build/cov/coverage_src.info --ignore-errors inconsistent,path --output-directory build/cov/html --title "SyntropicOS Coverage" --quiet
+    lcov --capture --rc lcov_branch_coverage=1 --ignore-errors inconsistent,path --directory build/cov --output-file build/cov/coverage.info --quiet
+    lcov --extract build/cov/coverage.info "*/src/*" --rc lcov_branch_coverage=1 --ignore-errors inconsistent,path --output-file build/cov/coverage_src.info --quiet
+    genhtml build/cov/coverage_src.info --branch-coverage --ignore-errors inconsistent,path --output-directory build/cov/html --title "SyntropicOS Coverage" --quiet
     cp -r build/cov/html/* coverage_html/ 2>/dev/null || true
     echo "=== Coverage HTML report generated in coverage_html/index.html ==="
 elif command -v gcovr >/dev/null 2>&1; then
     mkdir -p build/cov/html
-    gcovr -r . --object-directory build/cov --html --html-details -o build/cov/html/index.html -e "tests/.*" -e "tools/.*"
+    gcovr -r . --object-directory build/cov --html --html-details --branch -o build/cov/html/index.html -e "tests/.*" -e "tools/.*"
     cp -r build/cov/html/* coverage_html/ 2>/dev/null || true
     echo "=== Coverage HTML report generated via gcovr in coverage_html/index.html ==="
 else

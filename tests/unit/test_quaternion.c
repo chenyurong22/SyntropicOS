@@ -128,7 +128,14 @@ void test_quaternion_extended_edge_cases(void)
     q_gimbal.y = 46342;
     q16_t roll, pitch, yaw;
     syn_quat_to_euler(&q_gimbal, &roll, &pitch, &yaw);
-    TEST_ASSERT_EQUAL_INT32(102944, pitch);
+    TEST_ASSERT_EQUAL_INT32(Q16_PI_2, pitch);
+
+    /* Negative gimbal lock pitch testing (sinp <= -1.0) */
+    memset(&q_gimbal, 0, sizeof(q_gimbal));
+    q_gimbal.w = 46342;
+    q_gimbal.y = -46342;
+    syn_quat_to_euler(&q_gimbal, &roll, &pitch, &yaw);
+    TEST_ASSERT_EQUAL_INT32(-Q16_PI_2, pitch);
 
     /* Slerp with negative dot product (opposite orientation quaternions) */
     SYN_Quaternion q1, q2_neg;
@@ -143,6 +150,13 @@ void test_quaternion_extended_edge_cases(void)
     syn_quat_identity(&q_near1);
     syn_quat_from_euler(&q_near2, 0, 0, Q16_FROM_FRAC(1, 100)); /* 0.01 rad */
     syn_quat_slerp(&q_near1, &q_near2, Q16_HALF, &q_out);
+    TEST_ASSERT_TRUE(syn_quat_norm(&q_out) > 0);
+
+    /* Slerp with large angle (dot <= 0.999) triggering spherical interpolation */
+    SYN_Quaternion q_far1, q_far2;
+    syn_quat_identity(&q_far1);
+    syn_quat_from_euler(&q_far2, Q16_PI / 4, Q16_PI / 4, Q16_PI / 4);
+    syn_quat_slerp(&q_far1, &q_far2, Q16_HALF, &q_out);
     TEST_ASSERT_TRUE(syn_quat_norm(&q_out) > 0);
 }
 

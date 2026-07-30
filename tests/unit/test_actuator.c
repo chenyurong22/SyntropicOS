@@ -76,6 +76,11 @@ static void test_actuator_clear_stall(void)
     act.ctrl.stall_active = true;
     syn_actuator_clear_stall(&act);
     TEST_ASSERT_FALSE(syn_actuator_is_stalled(&act));
+
+    /* Test default pid_kp fallback branch (pid_kp <= 0) */
+    cfg.pid_kp = 0;
+    syn_actuator_init(&act, &cfg);
+    TEST_ASSERT_EQUAL_INT32(100, act.ctrl.pid.cfg.kp);
 }
 
 void run_actuator_tests(void)

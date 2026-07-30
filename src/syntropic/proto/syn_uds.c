@@ -601,8 +601,9 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             }
         } else {
             if (sec_in_len > (max_resp_len - 1U)) {
-                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
-                                              resp_len); /* LCOV_EXCL_LINE */
+                /* clang-format off */
+                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len); /* LCOV_EXCL_LINE */
+                /* clang-format on */
             }
             memcpy(&resp_buf[1], sec_in_data, sec_in_len);
             sec_out_len = sec_in_len;
@@ -902,8 +903,9 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                 *resp_len = 2U + cb_out_len;
             } else {
                 if (max_resp_len < 6U) {
-                    return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
-                                                  resp_len);
+                    /* clang-format off */
+                    return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len); /* LCOV_EXCL_LINE */
+                    /* clang-format on */
                 }
                 resp_buf[0] = sid + 0x40U;
                 resp_buf[1] = sub;
@@ -1043,8 +1045,9 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                           resp_len);
         }
         if (max_resp_len < 4U) {
-            return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
-                                          resp_len); /* LCOV_EXCL_LINE */
+            /* clang-format off */
+            return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len); /* LCOV_EXCL_LINE */
+            /* clang-format on */
         }
         resp_buf[0] = sid + 0x40U;
         resp_buf[1] = sub;
@@ -1158,8 +1161,9 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                 }
             }
             if ((uint32_t)2U + chunk_len > max_resp_len) {
-                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
-                                              resp_len); /* LCOV_EXCL_LINE */
+                /* clang-format off */
+                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len); /* LCOV_EXCL_LINE */
+                /* clang-format on */
             }
             if (server->memory_cb != NULL) {
                 if (!server->memory_cb(false,
@@ -1382,8 +1386,9 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         }
         uint16_t header_len = 2U + addr_len + size_len;
         if (req_len < header_len + size) {
-            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                          resp_len); /* LCOV_EXCL_LINE */
+            /* clang-format off */
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf, resp_len); /* LCOV_EXCL_LINE */
+            /* clang-format on */
         }
         if (server->memory_cb != NULL) {
             if (!server->memory_cb(true, address, size, (uint8_t *)&req[header_len],

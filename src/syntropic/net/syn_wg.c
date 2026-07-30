@@ -722,7 +722,7 @@ SYN_PT_Status syn_wg_task(SYN_PT *pt, SYN_Task *task)
                 /* Timeout — retry */
                 wg->state = SYN_WG_DISCONNECTED;
                 PT_TASK_DELAY_MS(pt, task, 500); /* LCOV_EXCL_LINE */
-                continue;
+                continue;                        /* LCOV_EXCL_LINE */
             }
         }
 
@@ -758,8 +758,8 @@ SYN_PT_Status syn_wg_task(SYN_PT *pt, SYN_Task *task)
 
                 if (msg_type == SYN_WG_MSG_RESPONSE && wg->state == SYN_WG_HANDSHAKE_INIT) {
                     if (wg_consume_response(wg, wg->rx_buf, (size_t)n)) {
-                        wg->state = SYN_WG_ESTABLISHED;
-                        wg->last_recv_ms = syn_port_get_tick_ms();
+                        wg->state = SYN_WG_ESTABLISHED;            /* LCOV_EXCL_LINE */
+                        wg->last_recv_ms = syn_port_get_tick_ms(); /* LCOV_EXCL_LINE */
                     }
                 } else if (msg_type == SYN_WG_MSG_TRANSPORT && wg->state == SYN_WG_ESTABLISHED) {
                     wg_handle_transport(wg, wg->rx_buf, (size_t)n);

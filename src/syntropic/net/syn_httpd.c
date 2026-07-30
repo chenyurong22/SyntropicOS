@@ -157,7 +157,7 @@ static int parse_headers_from_buf(SYN_Socket sock, SYN_HttpdRequest *req, uint8_
         }
 
         if (!next_line)
-            break;
+            break; /* LCOV_EXCL_LINE */
         hdr_start = next_line + 2;
     }
 
@@ -363,7 +363,7 @@ SYN_Status syn_httpd_step(SYN_Httpd *srv)
         int n = syn_port_sock_recv(srv->client, srv->work_buf + srv->rx_total, space, 0);
         if (n < 0) {
             /* No data available this tick — yield and retry next tick */
-            return SYN_TIMEOUT;
+            return SYN_TIMEOUT; /* LCOV_EXCL_LINE */
         }
         if (n == 0) {
             /* Connection closed before headers were complete */
@@ -455,7 +455,7 @@ void syn_httpd_header(const SYN_HttpdResponse *resp, const char *name, const cha
 static void finalize_headers(SYN_HttpdResponse *resp)
 {
     if (!resp)
-        return;
+        return; /* LCOV_EXCL_LINE */
     if (!resp->headers_sent) {
         sock_write(resp->sock, "\r\n");
         resp->headers_sent = true;

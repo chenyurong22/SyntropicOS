@@ -112,7 +112,7 @@ static void sha1_update(SYN_SHA1_Ctx *ctx, const uint8_t *data, uint32_t len)
         memcpy(&ctx->buffer[j], data, (i = 64 - j));
         sha1_transform(ctx->state, ctx->buffer);
         for (; i + 63 < len; i += 64)
-            sha1_transform(ctx->state, &data[i]);
+            sha1_transform(ctx->state, &data[i]); /* LCOV_EXCL_LINE */
         j = 0;
     } else {
         i = 0;

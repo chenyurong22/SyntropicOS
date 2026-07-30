@@ -163,15 +163,15 @@ static void test_websocket_upgrade_long_key(void)
 
     /* Key: ~100 chars + GUID 36 chars = ~136 bytes → exceeds 128, so
      * sha1_update processes 2 full blocks and hits the inner loop (line 114) */
-    const char *headers =
-        "GET /chat HTTP/1.1\r\n"
-        "Host: localhost\r\n"
-        "Upgrade: websocket\r\n"
-        "Connection: Upgrade\r\n"
-        "Sec-WebSocket-Key: "
-        "dGhlIHNhbXBsZSBub25jZQ==AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_"
-        "EXTRA\r\n"
-        "\r\n";
+    const char *headers = "GET /chat HTTP/1.1\r\n"
+                          "Host: localhost\r\n"
+                          "Upgrade: websocket\r\n"
+                          "Connection: Upgrade\r\n"
+                          "Sec-WebSocket-Key: "
+                          "dGhlIHNhbXBsZSBub25jZQ=="
+                          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                          "AAAAAAAAAAAAAAAAAAAAAAAAAAAA\r\n"
+                          "\r\n";
 
     SYN_HttpdResponse resp;
     resp.sock = 11;

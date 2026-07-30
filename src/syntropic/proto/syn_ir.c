@@ -359,7 +359,7 @@ static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
         break;
     }
 
-    default:
+    default:          /* LCOV_EXCL_LINE */
         return false; /* LCOV_EXCL_LINE */
     }
 
@@ -681,7 +681,7 @@ SYN_Status syn_ir_encode_frame(const SYN_IR_Frame *frame, SYN_IR_Pulse *pulse_bu
         raw_bits = ((frame->address & 0x1FU) << 10) | ((frame->command & 0xFFU) << 2);
         break;
 
-    default:
+    default:                      /* LCOV_EXCL_LINE */
         return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
     }
 

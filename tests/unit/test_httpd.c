@@ -745,15 +745,27 @@ static void test_httpd_uncovered_edge_cases(void)
     mock_sock_eof_on_empty = false;
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, syn_httpd_step(&srv));
 
-    /* 7. Content-Type header with CRLF (line 156) */
+    /* 7. Content-Type header with following header (line 156) */
     setup_server();
     srv.state = SYN_HTTPD_READING_HEADERS;
-    const char req_content_type[] = "GET / HTTP/1.1\r\nContent-Type: text/plain\r\n\r\n";
+    const char req_content_type[] =
+        "GET / HTTP/1.1\r\nContent-Type: text/plain\r\nHost: localhost\r\n\r\n";
     memcpy(srv.work_buf, req_content_type, sizeof(req_content_type) - 1);
     srv.rx_total = sizeof(req_content_type) - 1;
     syn_httpd_step(&srv);
 
-    /* 8. NULL resp in finalize_headers (line 458) */
+    /* 8. Socket recv returns -1 (line 366) */
+    setup_server();
+    srv.state = SYN_HTTPD_READING_HEADERS;
+    srv.client = 1;
+    mock_sock_connected = true;
+    mock_sock_rx_len = 0;
+    mock_sock_rx_pos = 0;
+    mock_sock_eof_on_empty = false;
+    srv.rx_total = 0;
+    TEST_ASSERT_EQUAL(SYN_TIMEOUT, syn_httpd_step(&srv));
+
+    /* 9. NULL resp in finalize_headers (line 458) */
     syn_httpd_body(NULL, "data", 4);
 }
 

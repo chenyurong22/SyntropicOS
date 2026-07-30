@@ -1768,6 +1768,86 @@ static void test_imgui_remaining_uncovered_paths(void)
     syn_imgui_end(&ctx);
 }
 
+static void test_imgui_remaining_42_lines(void)
+{
+    uint8_t fb[128 * 64 / 8];
+    SYN_Canvas canvas;
+    syn_canvas_init(&canvas, fb, 128, 64, 1, NULL, NULL);
+
+    SYN_IMGUI_Context ctx;
+    syn_imgui_init(&ctx);
+
+    /* 1. Stale focus reset (line 75) */
+    ctx.focused_id = 2;
+    ctx.last_max_id = 5;
+    ctx.updated_focus = false;
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    syn_imgui_button(&ctx, "B1", 0, 0, 30, 10);
+    syn_imgui_end(&ctx);
+
+    /* 2. Slider touch bounds clamping (lines 276 & 278) */
+    syn_imgui_begin(&ctx, &canvas, false, true, 0, false, 0, 10); /* Touch X=0 */
+    int32_t sl_val = 50;
+    syn_imgui_slider(&ctx, "S", &sl_val, 0, 100, 10, 10, 50, 15);
+    syn_imgui_end(&ctx);
+
+    syn_imgui_begin(&ctx, &canvas, false, true, 0, false, 100, 10); /* Touch X=100 */
+    syn_imgui_slider(&ctx, "S", &sl_val, 0, 100, 10, 10, 50, 15);
+    syn_imgui_end(&ctx);
+
+    /* 3. Combo with count == 0 and enc_delta wrapping (lines 396, 448, 477) */
+    syn_imgui_begin(&ctx, &canvas, false, false, 5, false, 0, 0);
+    const char *c_opts[2] = {"O1", "O2"};
+    int32_t combo_sel = -1;
+    TEST_ASSERT_FALSE(syn_imgui_combo(&ctx, "C0", c_opts, 0, &combo_sel, 0, 0, 50, 15));
+    combo_sel = -1;
+    syn_imgui_combo(&ctx, "C1", c_opts, 2, &combo_sel, 0, 0, 50, 15);
+    syn_imgui_end(&ctx);
+
+    /* 4. Graph zero bounds & empty data & invalid range (lines 511, 531, 538, 542) */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    syn_imgui_graph(&ctx, "G0", NULL, 0, 0, 0, 0, 0, 0, 0);
+    syn_imgui_graph(&ctx, "G1", NULL, 0, 100, 0, 0, 0, 50, 10);
+    int32_t g_val = 5;
+    syn_imgui_graph(&ctx, "G2", &g_val, 1, 10, 10, 0, 0, 50, 20);
+    syn_imgui_end(&ctx);
+
+    /* 5. Gauge radius <= 0 (line 606) */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    syn_imgui_gauge(&ctx, "G0", 50, 0, 100, 20, 20, 0);
+    syn_imgui_end(&ctx);
+
+    /* 6. Same line not in layout (line 818) */
+    ctx.layout.in_layout = false;
+    syn_imgui_same_line(&ctx);
+
+    /* 7. Unwrapped row layout resolve (lines 859-861) */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    syn_imgui_layout_begin(&ctx, 0, 0, 50);
+    ctx.layout.row_h = 15;
+    syn_imgui_button(&ctx, "B2", 0, 0, 30, 10);
+    syn_imgui_layout_end(&ctx);
+    syn_imgui_end(&ctx);
+
+    /* 8. Spinner hit test focus & enc underflow & negative formatting (lines 959, 972, 997, 998) */
+    int32_t sp_val = -10;
+    syn_imgui_begin(&ctx, &canvas, false, true, -1, false, 15, 15); /* Touch on spinner */
+    syn_imgui_spinner(&ctx, "SP", &sp_val, -100, 100, 1, 10, 10, 60, 15);
+    syn_imgui_end(&ctx);
+
+    /* 9. Scroll region overflow with small thumb_h < 3 (lines 1100, 1104) */
+    int16_t sc_y = 0;
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    syn_imgui_scroll_begin(&ctx, 0, 0, 50, 10, &sc_y);
+    syn_imgui_layout_begin(&ctx, 0, 0, 50);
+    for (int i = 0; i < 50; i++) {
+        syn_imgui_label(&ctx, "L", 0, 0);
+    }
+    syn_imgui_layout_end(&ctx);
+    syn_imgui_scroll_end(&ctx);
+    syn_imgui_end(&ctx);
+}
+
 void run_imgui_tests(void)
 {
     RUN_TEST(test_imgui_navigation);
@@ -1828,4 +1908,5 @@ void run_imgui_tests(void)
     RUN_TEST(test_imgui_slider_touch_out_of_bounds_clamping);
     RUN_TEST(test_imgui_begin_focused_id_zero);
     RUN_TEST(test_imgui_remaining_uncovered_paths);
+    RUN_TEST(test_imgui_remaining_42_lines);
 }

@@ -113,9 +113,24 @@ void test_netcfg_coroutine_pt(void)
 
 void test_netcfg_null_checks(void)
 {
+    SYN_NETCFG netcfg;
+    SYN_ETH eth;
+    uint8_t mac[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01};
+
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_init(NULL, 0, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_init(&netcfg, 0, NULL));
+
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_set_static(NULL, NULL, 0, 0, 0));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_set_static(&netcfg, &eth, 0, 0, 0));
+
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_trigger_autoip_fallback(NULL, NULL, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_netcfg_trigger_autoip_fallback(&netcfg, &eth, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_netcfg_trigger_autoip_fallback(&netcfg, &eth, mac));
+
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_set_link_callback(NULL, NULL, NULL));
+
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_set_link_state(NULL, NULL, 0));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_netcfg_set_link_state(&netcfg, NULL, 0));
 }

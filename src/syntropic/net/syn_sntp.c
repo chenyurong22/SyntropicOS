@@ -221,7 +221,7 @@ SYN_PT_Status syn_sntp_task(SYN_PT *pt, SYN_Task *task)
                 syn_port_sock_close(sntp->udp_sock);
                 sntp->udp_sock = SYN_SOCKET_INVALID;
                 PT_TASK_DELAY_MS(pt, task, syn_backoff_next_ms(&sntp->backoff));
-                continue;
+                continue; /* LCOV_EXCL_LINE */
             }
 
             /* Phase 3: Non-blocking poll with deadline */

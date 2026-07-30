@@ -1968,6 +1968,25 @@ static void test_uds_remaining_edge_branches(void)
         SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS, 0x22, 0x10, 0x00, 0x00, 0x02, 0xAA, 0xBB};
     syn_uds_process_request(&server, write_addr_req, 8, resp, sizeof(resp), &resp_len);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS + 0x40, resp[0]);
+
+    /* 5. ReadDTCInformation small resp_buf_size < 6 -> NRC 0x14 Response Too Long (L905) */
+    uint8_t dtc_req2[3] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x01, 0xFF};
+    syn_uds_process_request(&server, dtc_req2, 3, resp, 5, &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    /* 6. ResponseOnEvent subfunction > 0x07 -> NRC 0x12 Subfunction Not Supported (L1042) */
+    uint8_t roe_req[2] = {SYN_UDS_SID_RESPONSE_ON_EVENT, 0x08};
+    syn_uds_process_request(&server, roe_req, 2, resp, sizeof(resp), &resp_len);
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
+
+    /* 7. TransferData with remaining < chunk_len (L1157) */
+    server.transfer_state = 1; /* Transfer in progress */
+    server.transfer_size = 10;
+    server.transfer_bytes_processed = 5;
+    uint8_t xfer_req[7] = {SYN_UDS_SID_TRANSFER_DATA, 0x01, 'H', 'e', 'l', 'l', 'o'};
+    syn_uds_process_request(&server, xfer_req, 7, resp, sizeof(resp), &resp_len);
 }
 
 void run_uds_tests(void)

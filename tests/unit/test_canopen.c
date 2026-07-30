@@ -628,6 +628,29 @@ static void test_canopen_uncovered_edge_cases(void)
     uint8_t nmt_start[2] = {0x01, 0x05};
     syn_canopen_process_rx(&node_bad_tpdo, 0x000U, nmt_start, 2);
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_canopen_tpdo_trigger(&node_bad_tpdo, 1));
+
+    /* 11. SDO Upload request for non-existent OD entry -> SDO abort (line 325) */
+    SYN_CANOpenNode node_sdo;
+    SYN_CANOpenNodeConfig cfg_sdo = {.node_id = 5};
+    syn_canopen_init(&node_sdo, &cfg_sdo, test_od, sizeof(test_od) / sizeof(test_od[0]));
+    uint8_t sdo_up_invalid[8] = {0x40U, 0x99U, 0x99U, 0x00U, 0, 0, 0, 0};
+    syn_canopen_process_rx(&node_sdo, 0x605U, sdo_up_invalid, 8);
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node_sdo, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]);
+
+    /* 12. Valid TPDO trigger in Operational state (line 497) */
+    SYN_CANOpenNodeConfig cfg_valid_tpdo;
+    memset(&cfg_valid_tpdo, 0, sizeof(cfg_valid_tpdo));
+    cfg_valid_tpdo.node_id = 5;
+    cfg_valid_tpdo.tpdo[0].enabled = 1;
+    cfg_valid_tpdo.tpdo[0].cob_id = 0x185;
+    cfg_valid_tpdo.tpdo[0].od_index = 0x2001;
+    cfg_valid_tpdo.tpdo[0].od_subindex = 0x01;
+    SYN_CANOpenNode node_valid_tpdo;
+    syn_canopen_init(&node_valid_tpdo, &cfg_valid_tpdo, test_od,
+                     sizeof(test_od) / sizeof(test_od[0]));
+    syn_canopen_process_rx(&node_valid_tpdo, 0x000U, nmt_start, 2);
+    TEST_ASSERT_EQUAL(SYN_OK, syn_canopen_tpdo_trigger(&node_valid_tpdo, 1));
 }
 
 void run_canopen_tests(void)

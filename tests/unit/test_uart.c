@@ -108,6 +108,13 @@ static void test_uart_rx_isr_feed(void)
     syn_uart_init(&uart, 0, 115200);
     bool ok = syn_uart_rx_isr_feed(&uart, 0x42);
     TEST_ASSERT_TRUE(ok);
+
+    /* Fill buffer until overflow */
+    for (size_t i = 0; i < sizeof(uart.rx_buf) - 2; i++) {
+        syn_uart_rx_isr_feed(&uart, (uint8_t)i);
+    }
+    /* Next feed should fail because rx_rb is full */
+    TEST_ASSERT_FALSE(syn_uart_rx_isr_feed(&uart, 0xFF));
 }
 
 /** Init: port fails */

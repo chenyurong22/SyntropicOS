@@ -342,7 +342,9 @@ static void test_uds_ecu_reset_routine_tester_present(void)
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x51, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
-    TEST_ASSERT_EQUAL_HEX8(0x01, g_uds.reset_type_requested);
+    TEST_ASSERT_EQUAL_HEX8(0x01, syn_uds_get_pending_reset(&g_uds));
+    syn_uds_clear_pending_reset(&g_uds);
+    TEST_ASSERT_EQUAL_HEX8(0x00, syn_uds_get_pending_reset(&g_uds));
 
     /* RoutineControl short req */
     req[0] = SYN_UDS_SID_ROUTINE_CONTROL;

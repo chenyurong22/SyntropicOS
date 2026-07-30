@@ -205,4 +205,41 @@ void app_init(const uint8_t mac[6]) {
 }
 ```
 
+---
+
+## 7. Unified Diagnostic Services (UDS / ISO 14229 & ISO 15765-2) (`syn_uds.h`, `syn_isotp.h`)
+
+SyntropicOS includes a zero-heap UDS ISO 14229 diagnostic server engine operating over CAN / ISO 15765-2 transport.
+
+### 0x11 ECU Reset Deferred Integration
+
+When handling `0x11 ECUReset` requests, the ECU **must** transmit the positive ACK payload (`0x51 <sub-function>`) over CAN/ISO-TP **before** resetting the MCU.
+
+```c
+#include <syntropic/proto/syn_uds.h>
+
+static SYN_UDS_Server uds;
+
+void process_uds_frame(const uint8_t *req, uint16_t req_len) {
+    uint8_t resp_buf[64];
+    uint16_t resp_len = 0;
+
+    if (syn_uds_process_request(&uds, req, req_len, resp_buf, sizeof(resp_buf), &resp_len)) {
+        /* 1. Transmit UDS response over ISO-TP FIRST */
+        isotp_send_response(resp_buf, resp_len);
+
+        /* 2. Check if 0x11 ECU Reset was requested */
+        uint8_t reset_type = syn_uds_get_pending_reset(&uds);
+        if (reset_type > 0) {
+            syn_uds_clear_pending_reset(&uds);
+            
+            /* 3. Wait for ISO-TP TX completion, then trigger system reset */
+            isotp_flush_tx();
+            syn_port_system_reset();
+        }
+    }
+}
+```
+
+
 

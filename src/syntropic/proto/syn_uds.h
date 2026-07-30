@@ -317,6 +317,21 @@ bool syn_uds_init(SYN_UDS_Server *server);
 void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms);
 
 /**
+ * @brief Get pending ECU reset sub-function requested by 0x11 service.
+ *
+ * @param server Pointer to UDS server instance.
+ * @return Pending reset type (e.g. 0x01 = hard, 0x02 = keyOffOn, 0x03 = soft), or 0 if none.
+ */
+uint8_t syn_uds_get_pending_reset(const SYN_UDS_Server *server);
+
+/**
+ * @brief Clear pending ECU reset flag after executing reset or transmitting response.
+ *
+ * @param server Pointer to UDS server instance.
+ */
+void syn_uds_clear_pending_reset(SYN_UDS_Server *server);
+
+/**
  * @brief Register Data Identifier (DID) mapping in UDS Server table.
  *
  * @param server Pointer to UDS server instance.

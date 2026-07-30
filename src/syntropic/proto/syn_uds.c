@@ -84,6 +84,21 @@ void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms)
     }
 }
 
+uint8_t syn_uds_get_pending_reset(const SYN_UDS_Server *server)
+{
+    if (server == NULL) {
+        return 0U;
+    }
+    return server->reset_type_requested;
+}
+
+void syn_uds_clear_pending_reset(SYN_UDS_Server *server)
+{
+    if (server != NULL) {
+        server->reset_type_requested = 0U;
+    }
+}
+
 bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
                           bool writable)
 {

@@ -25,6 +25,7 @@ This directory contains MCU HAL and bare-metal C example projects demonstrating 
 
 ### Automotive & Marine Fieldbus
 - **[`stm32_canopen`](stm32_canopen)** `[STM32 Bare-Metal]` — STM32 CANopen (CiA 301) Node with SDO/PDO dictionary maps.
+- **[`stm32_canopen_master`](stm32_canopen_master)** `[STM32 Bare-Metal]` — STM32 CANopen (CiA 302/301) Network Manager, SDO Client & NMT Master.
 - **[`stm32_canopen_nmea2k_gateway`](stm32_canopen_nmea2k_gateway)** `[STM32 Bare-Metal]` — CANopen to NMEA 2000 Marine CAN gateway broadcasting battery, DC status, and alerts (1500ms).
 - **[`stm32_can_isotp`](stm32_can_isotp)** `[STM32 Bare-Metal]` — STM32 ISO-TP (ISO 15765-2) CAN multi-frame transport layer.
 - **[`stm32_j1939`](stm32_j1939)** `[STM32 Bare-Metal]` — SAE J1939 Heavy-Duty Vehicle CAN protocol & DM1 diagnostics.

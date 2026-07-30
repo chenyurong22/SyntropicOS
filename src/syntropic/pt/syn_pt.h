@@ -52,6 +52,7 @@
  *       char _pt_yield_flag = 1;
  *       switch (pt->lc) {
  *       case 0:
+ *           // On resume, switch(pt->lc) jumps directly to case 12:
  *           pt->lc = 12; case 12:
  *           if (!(flag == 1)) return PT_WAITING;
  *       }

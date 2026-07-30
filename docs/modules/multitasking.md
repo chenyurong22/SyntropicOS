@@ -57,7 +57,9 @@ Protothreads save execution position using a 2-byte line continuation variable (
                 while (1) {
                     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 
-                    /* PT_WAIT_UNTIL expansion */
+                    /* PT_WAIT_UNTIL expansion: saves __LINE__ (10) into pt->lc before returning.
+                     * On next function invocation, switch(pt->lc) jumps directly to 'case 10:' 
+                     * inside the while loop, bypassing function re-entry and resuming execution! */
                     pt->lc = 10; case 10:
                     if (!((syn_port_get_tick_ms() - last_tick) >= 500)) {
                         return PT_WAITING;

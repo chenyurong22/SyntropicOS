@@ -62,7 +62,8 @@ SYN_PT_Status task_led_func(SYN_PT *pt) {
             while (1) {
                 HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 
-                /* PT_WAIT_UNTIL expansion */
+                /* PT_WAIT_UNTIL expansion: saves __LINE__ (236) into pt->lc before returning.
+                 * On next call, switch(pt->lc) jumps directly to 'case 236:' inside the while loop! */
                 pt->lc = 236; case 236:
                 if (!((syn_port_get_tick_ms() - last_tick) >= 500)) {
                     return PT_WAITING;

@@ -257,6 +257,30 @@ static void test_devicenet_polled_io_output_overflow(void)
     TEST_ASSERT_EQUAL_HEX8(0xDD, g_out_buf[3]); /* Only 4 bytes copied */
 }
 
+static void test_devicenet_additional_edge_cases(void)
+{
+    syn_devicenet_init(&g_dnet, 6, SYN_DEVICENET_BAUD_500K);
+    syn_devicenet_set_assembly(&g_dnet, g_in_buf, 4, g_out_buf, 4);
+
+    /* 1. Timer decrement branch in DUP_MAC_CHECK state */
+    syn_devicenet_poll(&g_dnet, 50);
+    TEST_ASSERT_EQUAL(SYN_DEVICENET_STATE_DUP_MAC_CHECK, g_dnet.state);
+    TEST_ASSERT_EQUAL_UINT32(950, g_dnet.dup_mac_timer_ms);
+
+    g_dnet.state = SYN_DEVICENET_STATE_ONLINE;
+    uint32_t exp_req_id = 0x400 | (6 << 3) | 4;
+    uint32_t tx_can_id = 0;
+    uint8_t tx_data[8] = {0};
+    uint8_t tx_len = 0;
+
+    /* 2. Get_Attribute_Single for Class 0x01 Attr 1 (Vendor ID) */
+    uint8_t req_get_vendor[4] = {6, 0x0E, 0x01, 1};
+    TEST_ASSERT_TRUE(syn_devicenet_on_can_rx(&g_dnet, exp_req_id, req_get_vendor, 4, &tx_can_id,
+                                             tx_data, &tx_len));
+    TEST_ASSERT_EQUAL_HEX8(0x5A, tx_data[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, tx_data[3]);
+}
+
 void run_devicenet_tests(void)
 {
     RUN_TEST(test_devicenet_init_and_config);
@@ -265,4 +289,5 @@ void run_devicenet_tests(void)
     RUN_TEST(test_devicenet_explicit_and_polled_messaging);
     RUN_TEST(test_devicenet_error_branches_and_nulls);
     RUN_TEST(test_devicenet_polled_io_output_overflow);
+    RUN_TEST(test_devicenet_additional_edge_cases);
 }

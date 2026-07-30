@@ -47,7 +47,7 @@ static SYN_PT_Status log_demo_task(SYN_PT *pt, SYN_Task *task)
         SYN_LOG_D(TAG, "ADC raw sample channel 0 = %u", 2048 + (uint16_t)(counter & 0xFF));
 
         /* 3. Informational log */
-        SYN_LOG_I(TAG, "Heartbeat active, uptime = %lu ms", (unsigned long)syn_port_get_ticks_ms());
+        SYN_LOG_I(TAG, "Heartbeat active, uptime = %lu ms", (unsigned long)syn_port_get_tick_ms());
 
         /* 4. Warning log */
         if (counter % 3 == 0) {
@@ -61,7 +61,7 @@ static SYN_PT_Status log_demo_task(SYN_PT *pt, SYN_Task *task)
 
         /* 6. Binary Hex Dump log */
         if (counter % 4 == 0) {
-            SYN_LOG_HEX(TAG, "RS-485 Buffer", sample_packet, sizeof(sample_packet));
+            syn_log_hexdump(TAG, sample_packet, sizeof(sample_packet));
         }
 
         /* Non-blocking delay for 1500ms */
@@ -78,8 +78,8 @@ int main(void)
     HAL_Init();
     /* MCU Clock & USART2 (115200 8N1) initialization here */
 
-    /* Step 1: Initialize syn_log with STM32 UART output function and minimum level */
-    syn_log_init(stm32_log_output, SYN_LOG_TRACE);
+    /* Step 1: Initialize syn_log with minimum log level */
+    syn_log_init(SYN_LOG_TRACE);
 
     /* Log startup message */
     SYN_LOG_I(TAG, "SyntropicOS syn_log console initialized on USART2 @ 115200 baud");

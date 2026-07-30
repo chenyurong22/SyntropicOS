@@ -23,11 +23,11 @@ static uint8_t tx_buffer[512];
 void isotp_app_init(void)
 {
     /*
-     * Initialize link:
-     *   - Rx CAN ID: 0x7E8 (incoming response from ECU)
-     *   - Tx CAN ID: 0x7E0 (outgoing request to ECU)
+     * Initialize link for ECU Diagnostic Server:
+     *   - Rx CAN ID: 0x7E0 (incoming UDS request from diagnostic tester)
+     *   - Tx CAN ID: 0x7E8 (outgoing UDS response to diagnostic tester)
      */
-    syn_isotp_init(&isotp_link, 0x7E8, 0x7E0,
+    syn_isotp_init(&isotp_link, 0x7E0, 0x7E8,
                    rx_buffer, sizeof(rx_buffer),
                    tx_buffer, sizeof(tx_buffer));
 

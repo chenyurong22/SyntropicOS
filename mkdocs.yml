@@ -88,6 +88,7 @@ nav:
     - Crypto & VPN: modules/crypto.md
     - Storage: modules/storage.md
     - System: modules/system.md
+    - WebAssembly VM: modules/wasm.md
     - Debug: modules/debug.md
     - Cross-Module Integration: modules/integration.md
   - API Reference:

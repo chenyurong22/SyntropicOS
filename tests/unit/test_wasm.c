@@ -8,7 +8,7 @@
 
 #include <string.h>
 
-static uint8_t g_linear_mem[256];
+static uint8_t g_linear_mem[4096];
 static SYN_WASM_Module g_wasm_mod;
 static SYN_WASM_Context g_wasm_ctx;
 
@@ -61,7 +61,7 @@ static const uint8_t g_wasm_loop_binary[] = {
 
 /* Host function callback counter */
 static uint32_t g_host_call_count = 0;
-static uint32_t mock_host_func(SYN_WASM_Context *ctx, const uint32_t *args, uint8_t argc)
+static uint64_t mock_host_func(SYN_WASM_Context *ctx, const uint64_t *args, uint8_t argc)
 {
     (void)ctx;
     (void)args;
@@ -141,6 +141,217 @@ static void test_wasm_host_function_registration(void)
     TEST_ASSERT_EQUAL_UINT32(1, g_host_call_count);
 }
 
+static void test_wasm_float_and_bulk_memory(void)
+{
+    TEST_ASSERT_TRUE(syn_wasm_init(&g_wasm_ctx, &g_wasm_mod, g_linear_mem, sizeof(g_linear_mem)));
+    memset(g_linear_mem, 0, sizeof(g_linear_mem));
+    memcpy(&g_linear_mem[100], "WORLD", 5);
+
+    /* Test 0xFC subop 10 memory.copy in linear_mem */
+    g_wasm_ctx.sp = 0;
+    g_wasm_ctx.stack[g_wasm_ctx.sp++] = 0;   /* dst = 0 */
+    g_wasm_ctx.stack[g_wasm_ctx.sp++] = 100; /* src = 100 */
+    g_wasm_ctx.stack[g_wasm_ctx.sp++] = 5;   /* len = 5 */
+
+    static const uint8_t code_copy[] = {0xFC, 0x0A, 0x00, 0x00, 0x0B};
+    SYN_WASM_Module mod_copy;
+    memset(&mod_copy, 0, sizeof(mod_copy));
+    mod_copy.bytes = code_copy;
+    mod_copy.size = sizeof(code_copy);
+    mod_copy.func_count = 1;
+    mod_copy.funcs[0].code_offset = 0;
+    mod_copy.funcs[0].code_size = sizeof(code_copy);
+
+    g_wasm_ctx.module = &mod_copy;
+    g_wasm_ctx.call_depth = 1;
+    g_wasm_ctx.call_stack[0].func_idx = 0;
+    g_wasm_ctx.call_stack[0].return_pc = 0;
+    g_wasm_ctx.pc = 0;
+    g_wasm_ctx.status = SYN_WASM_OK;
+
+    TEST_ASSERT_EQUAL(SYN_WASM_HALTED, syn_wasm_step(&g_wasm_ctx, 100));
+    TEST_ASSERT_EQUAL_MEMORY("WORLD", g_linear_mem, 5);
+}
+
+static void test_wasm_fixed_point_float_ops(void)
+{
+    TEST_ASSERT_TRUE(syn_wasm_init(&g_wasm_ctx, &g_wasm_mod, g_linear_mem, sizeof(g_linear_mem)));
+
+    /* Test F32 opcodes in bytecode: f32.const 3.0f, f32.const 4.0f, f32.add */
+    static const uint8_t code_f32_add[] = {0x43, 0x00, 0x00, 0x40, 0x40, 0x43,
+                                           0x00, 0x00, 0x80, 0x40, 0x92, 0x0B};
+    SYN_WASM_Module mod_add;
+    memset(&mod_add, 0, sizeof(mod_add));
+    mod_add.bytes = code_f32_add;
+    mod_add.size = sizeof(code_f32_add);
+    mod_add.func_count = 1;
+    mod_add.funcs[0].code_offset = 0;
+    mod_add.funcs[0].code_size = sizeof(code_f32_add);
+
+    g_wasm_ctx.module = &mod_add;
+    g_wasm_ctx.call_depth = 1;
+    g_wasm_ctx.call_stack[0].func_idx = 0;
+    g_wasm_ctx.call_stack[0].return_pc = 0;
+    g_wasm_ctx.pc = 0;
+    g_wasm_ctx.sp = 0;
+    g_wasm_ctx.status = SYN_WASM_OK;
+
+    TEST_ASSERT_EQUAL(SYN_WASM_HALTED, syn_wasm_step(&g_wasm_ctx, 100));
+#if defined(SYN_WASM_USE_FIXED) && SYN_WASM_USE_FIXED
+    /* 3.0 + 4.0 = 7.0 in Q16.16 (7 * 65536 = 458752) */
+    TEST_ASSERT_EQUAL_UINT32(458752, syn_wasm_result(&g_wasm_ctx));
+#else
+    /* 3.0f + 4.0f = 7.0f in IEEE 754 (0x40e00000) */
+    TEST_ASSERT_EQUAL_HEX32(0x40e00000, (uint32_t)syn_wasm_result(&g_wasm_ctx));
+#endif
+}
+
+#include "wasm/test_arithmetic.wasm.h"
+#include "wasm/test_control_flow.wasm.h"
+#include "wasm/test_conversions.wasm.h"
+#include "wasm/test_embedded.wasm.h"
+#include "wasm/test_functions.wasm.h"
+#include "wasm/test_host_api.wasm.h"
+#include "wasm/test_memory.wasm.h"
+#include "wasm/test_recursion.wasm.h"
+#include "wasm/test_structs.wasm.h"
+#include "wasm/test_traps.wasm.h"
+
+static uint32_t g_host_log_called = 0;
+static uint32_t g_host_log_code = 0;
+static uint32_t g_host_log_val = 0;
+
+static uint64_t mock_host_log(SYN_WASM_Context *ctx, const uint64_t *args, uint8_t argc)
+{
+    (void)ctx;
+    (void)argc;
+    g_host_log_called++;
+    g_host_log_code = (uint32_t)args[0];
+    g_host_log_val = (uint32_t)args[1];
+    return g_host_log_code + g_host_log_val;
+}
+
+static uint32_t run_wasm_fixture(const uint8_t *bytes, uint32_t size)
+{
+    TEST_ASSERT_TRUE(syn_wasm_module_load(&g_wasm_mod, bytes, size));
+    TEST_ASSERT_TRUE(syn_wasm_init(&g_wasm_ctx, &g_wasm_mod, g_linear_mem, sizeof(g_linear_mem)));
+
+    int32_t fn = syn_wasm_find_export(&g_wasm_mod, "run_tests");
+    TEST_ASSERT_TRUE(fn >= 0);
+
+    TEST_ASSERT_TRUE(syn_wasm_call(&g_wasm_ctx, (uint16_t)fn));
+    SYN_WASM_Status st = syn_wasm_step(&g_wasm_ctx, 10000);
+    TEST_ASSERT_EQUAL(SYN_WASM_HALTED, st);
+    return (uint32_t)syn_wasm_result(&g_wasm_ctx);
+}
+
+static void test_wasm_fixture_arithmetic(void)
+{
+    uint32_t res = run_wasm_fixture(test_arithmetic_wasm, test_arithmetic_wasm_len);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, res, "WASM test_arithmetic failed at case #");
+}
+
+static void test_wasm_fixture_memory(void)
+{
+    uint32_t res = run_wasm_fixture(test_memory_wasm, test_memory_wasm_len);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, res, "WASM test_memory failed at case #");
+}
+
+static void test_wasm_fixture_functions(void)
+{
+    uint32_t res = run_wasm_fixture(test_functions_wasm, test_functions_wasm_len);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, res, "WASM test_functions failed at case #");
+}
+
+static void test_wasm_fixture_structs(void)
+{
+    uint32_t res = run_wasm_fixture(test_structs_wasm, test_structs_wasm_len);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, res, "WASM test_structs failed at case #");
+}
+
+static void test_wasm_fixture_control_flow(void)
+{
+    uint32_t res = run_wasm_fixture(test_control_flow_wasm, test_control_flow_wasm_len);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, res, "WASM test_control_flow failed at case #");
+}
+
+static void test_wasm_fixture_conversions(void)
+{
+    uint32_t res = run_wasm_fixture(test_conversions_wasm, test_conversions_wasm_len);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, res, "WASM test_conversions failed at case #");
+}
+
+static void test_wasm_fixture_recursion(void)
+{
+    uint32_t res = run_wasm_fixture(test_recursion_wasm, test_recursion_wasm_len);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, res, "WASM test_recursion failed at case #");
+}
+
+static void test_wasm_fixture_embedded(void)
+{
+    uint32_t res = run_wasm_fixture(test_embedded_wasm, test_embedded_wasm_len);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(0, res, "WASM test_embedded failed at case #");
+}
+
+static void test_wasm_fixture_host_api(void)
+{
+    g_host_log_called = 0;
+    TEST_ASSERT_TRUE(syn_wasm_module_load(&g_wasm_mod, test_host_api_wasm, test_host_api_wasm_len));
+    TEST_ASSERT_TRUE(syn_wasm_init(&g_wasm_ctx, &g_wasm_mod, g_linear_mem, sizeof(g_linear_mem)));
+    TEST_ASSERT_TRUE(syn_wasm_register_host(&g_wasm_ctx, 0, mock_host_log));
+
+    int32_t fn = syn_wasm_find_export(&g_wasm_mod, "run_tests");
+    TEST_ASSERT_TRUE(fn >= 0);
+
+    TEST_ASSERT_TRUE(syn_wasm_call(&g_wasm_ctx, (uint16_t)fn));
+    SYN_WASM_Status st = syn_wasm_step(&g_wasm_ctx, 10000);
+    TEST_ASSERT_EQUAL(SYN_WASM_HALTED, st);
+    TEST_ASSERT_EQUAL_UINT32(0, syn_wasm_result(&g_wasm_ctx));
+    TEST_ASSERT_EQUAL_UINT32(1, g_host_log_called);
+    TEST_ASSERT_EQUAL_UINT32(42, g_host_log_code);
+    TEST_ASSERT_EQUAL_UINT32(150, g_host_log_val);
+}
+
+static void test_wasm_fixture_traps(void)
+{
+    TEST_ASSERT_TRUE(syn_wasm_module_load(&g_wasm_mod, test_traps_wasm, test_traps_wasm_len));
+    TEST_ASSERT_TRUE(syn_wasm_init(&g_wasm_ctx, &g_wasm_mod, g_linear_mem, sizeof(g_linear_mem)));
+
+    /* 1. Divide by zero trap */
+    int32_t fn_div = syn_wasm_find_export(&g_wasm_mod, "trigger_div_zero");
+    TEST_ASSERT_TRUE(fn_div >= 0);
+    TEST_ASSERT_TRUE(syn_wasm_call(&g_wasm_ctx, (uint16_t)fn_div));
+    TEST_ASSERT_EQUAL(SYN_WASM_TRAP_DIV_ZERO, syn_wasm_step(&g_wasm_ctx, 1000));
+
+    /* 2. Out of bounds memory access trap */
+    TEST_ASSERT_TRUE(syn_wasm_init(&g_wasm_ctx, &g_wasm_mod, g_linear_mem, sizeof(g_linear_mem)));
+    int32_t fn_oob = syn_wasm_find_export(&g_wasm_mod, "trigger_oob_read");
+    TEST_ASSERT_TRUE(fn_oob >= 0);
+    TEST_ASSERT_TRUE(syn_wasm_call(&g_wasm_ctx, (uint16_t)fn_oob));
+    TEST_ASSERT_EQUAL(SYN_WASM_TRAP_OUT_OF_BOUNDS, syn_wasm_step(&g_wasm_ctx, 1000));
+}
+
+static void test_wasm_fixture_yield_resume(void)
+{
+    TEST_ASSERT_TRUE(
+        syn_wasm_module_load(&g_wasm_mod, test_control_flow_wasm, test_control_flow_wasm_len));
+    TEST_ASSERT_TRUE(syn_wasm_init(&g_wasm_ctx, &g_wasm_mod, g_linear_mem, sizeof(g_linear_mem)));
+
+    int32_t fn = syn_wasm_find_export(&g_wasm_mod, "run_tests");
+    TEST_ASSERT_TRUE(fn >= 0);
+
+    TEST_ASSERT_TRUE(syn_wasm_call(&g_wasm_ctx, (uint16_t)fn));
+
+    /* Step 3 instructions -> Expect YIELDED */
+    SYN_WASM_Status st = syn_wasm_step(&g_wasm_ctx, 3);
+    TEST_ASSERT_EQUAL(SYN_WASM_YIELDED, st);
+
+    /* Resume execution -> Expect HALTED */
+    st = syn_wasm_step(&g_wasm_ctx, 10000);
+    TEST_ASSERT_EQUAL(SYN_WASM_HALTED, st);
+    TEST_ASSERT_EQUAL_UINT32(0, syn_wasm_result(&g_wasm_ctx));
+}
+
 void run_wasm_tests(void)
 {
     RUN_TEST(test_wasm_load_null_and_invalid);
@@ -148,4 +359,18 @@ void run_wasm_tests(void)
     RUN_TEST(test_wasm_init_and_execution);
     RUN_TEST(test_wasm_loop_and_yielding);
     RUN_TEST(test_wasm_host_function_registration);
+    RUN_TEST(test_wasm_float_and_bulk_memory);
+    RUN_TEST(test_wasm_fixed_point_float_ops);
+    RUN_TEST(test_wasm_fixture_arithmetic);
+    RUN_TEST(test_wasm_fixture_memory);
+    RUN_TEST(test_wasm_fixture_functions);
+    RUN_TEST(test_wasm_fixture_structs);
+    RUN_TEST(test_wasm_fixture_control_flow);
+    RUN_TEST(test_wasm_fixture_conversions);
+    RUN_TEST(test_wasm_fixture_recursion);
+    RUN_TEST(test_wasm_fixture_embedded);
+    RUN_TEST(test_wasm_fixture_host_api);
+    RUN_TEST(test_wasm_fixture_traps);
+    RUN_TEST(test_wasm_fixture_yield_resume);
 }
+/* touch test_wasm.c */

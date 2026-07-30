@@ -8,6 +8,12 @@
  * designed for embedded microcontrollers. Supports static linear memory arrays,
  * zero-copy parsing from flash, host function registration, and instruction-sliced
  * cooperative execution with protothread (`syn_pt`) integration.
+ *
+ * Recommended C-to-WASM compilation command for user applications:
+ *   clang --target=wasm32-unknown-unknown -O2 -nostdlib \
+ *     -mbulk-memory -msign-ext -mmultivalue -mnontrapping-fptoint \
+ *     -Wl,--no-entry -Wl,--export-all -Wl,--allow-undefined \
+ *     -Wl,-z,stack-size=1024 app.c -o app.wasm
  */
 
 #ifndef SYN_WASM_H
@@ -31,11 +37,11 @@ extern "C" {
 #endif
 
 #ifndef SYN_WASM_MAX_LOCALS
-#define SYN_WASM_MAX_LOCALS 32
+#define SYN_WASM_MAX_LOCALS 256
 #endif
 
 #ifndef SYN_WASM_MAX_CALL_DEPTH
-#define SYN_WASM_MAX_CALL_DEPTH 8
+#define SYN_WASM_MAX_CALL_DEPTH 32
 #endif
 
 #ifndef SYN_WASM_MAX_FUNCTIONS
@@ -82,7 +88,7 @@ typedef struct SYN_WASM_Context_s SYN_WASM_Context;
  * @param argc Number of arguments.
  * @return 32-bit return value (pushed onto Wasm stack).
  */
-typedef uint32_t (*SYN_WASM_HostFunc)(SYN_WASM_Context *ctx, const uint32_t *args, uint8_t argc);
+typedef uint64_t (*SYN_WASM_HostFunc)(SYN_WASM_Context *ctx, const uint64_t *args, uint8_t argc);
 
 /* ── Module Metadata (Zero-Heap Flash References) ────────────────────────── */
 
@@ -90,6 +96,8 @@ typedef struct {
     uint32_t type_idx;
     uint32_t code_offset;
     uint32_t code_size;
+    uint8_t param_count;
+    uint8_t result_count;
 } SYN_WASM_FuncDef;
 
 typedef struct {
@@ -106,6 +114,9 @@ typedef struct {
         uint16_t func_idx;
     } exports[SYN_WASM_MAX_FUNCTIONS];
     uint16_t export_count;
+
+    uint16_t table_elements[64];
+    uint16_t table_element_count;
 
     uint32_t start_func_idx;
     bool has_start_func;
@@ -133,9 +144,9 @@ struct SYN_WASM_Context_s {
 
     uint32_t pc;
     uint32_t sp;
-    uint32_t stack[SYN_WASM_MAX_STACK];
+    uint64_t stack[SYN_WASM_MAX_STACK];
 
-    uint32_t locals[SYN_WASM_MAX_LOCALS];
+    uint64_t locals[SYN_WASM_MAX_LOCALS];
     uint16_t local_count;
 
     SYN_WASM_CallFrame call_stack[SYN_WASM_MAX_CALL_DEPTH];
@@ -144,7 +155,7 @@ struct SYN_WASM_Context_s {
     SYN_WASM_Label label_stack[SYN_WASM_MAX_LABELS];
     uint8_t label_depth;
 
-    uint32_t globals[SYN_WASM_MAX_GLOBALS];
+    uint64_t globals[SYN_WASM_MAX_GLOBALS];
     uint16_t global_count;
 
     uint8_t *linear_mem;
@@ -218,7 +229,7 @@ SYN_WASM_Status syn_wasm_step(SYN_WASM_Context *ctx, uint16_t max_instructions);
  * @param ctx Pointer to context.
  * @return 32-bit return value.
  */
-uint32_t syn_wasm_result(const SYN_WASM_Context *ctx);
+uint64_t syn_wasm_result(const SYN_WASM_Context *ctx);
 
 #ifdef __cplusplus
 }

@@ -9,6 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     clang-tools \
     clang-format \
     clang-tidy \
+    lld-19 \
+    xxd \
     libclang-rt-dev \
     make \
     cmake \

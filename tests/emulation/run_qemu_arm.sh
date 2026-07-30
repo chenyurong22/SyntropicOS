@@ -15,8 +15,11 @@ SRC_FILES=$(find src/syntropic -name "*.c" ! -path "*/port_stubs/*" ! -name "syn
 # Gather test files, excluding test_runner.c (passed explicitly)
 TEST_FILES=$(find tests/unit -name "test_*.c" ! -name "test_runner.c")
 
+# Build WASM header fixtures
+make -f tests/Makefile.unity wasm-fixtures BUILD_DIR=build
+
 arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -std=c99 -pedantic -Wall -Wextra \
-    -O2 -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections -Wl,--gc-sections -I. -Isrc -Itests/unit -Itests/unit/mocks \
+    -O2 -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections -Wl,--gc-sections -I. -Isrc -Itests/unit -Itests/unit/mocks -Ibuild \
     -DSYN_LOG_COLOR=0 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_AT_PARSER=1 \
     -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format -Wno-stringop-truncation -Wno-type-limits \
     -T "${QEMU_DIR}/qemu_arm.ld" \

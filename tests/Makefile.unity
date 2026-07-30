@@ -1,8 +1,9 @@
 # Unity test build
 # Usage: make -f tests/Makefile.unity [test|clean]
 
+BUILD_DIR ?= build
 CC      := gcc
-CFLAGS  := -std=c99 -fPIC -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests/unit -Itests/unit/mocks -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_MBUS=1 -DSYN_USE_DLT645=1 -DSYN_USE_AT_PARSER=1 -DSYN_USE_BACNET=1 -DSYN_USE_DEVICENET=1
+CFLAGS   = -std=c99 -fPIC -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests/unit -Itests/unit/mocks -I$(BUILD_DIR) -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_MBUS=1 -DSYN_USE_DLT645=1 -DSYN_USE_AT_PARSER=1 -DSYN_USE_BACNET=1 -DSYN_USE_DEVICENET=1
 
 
 # All SyntropicOS source files
@@ -167,6 +168,24 @@ OBJS     := $(patsubst %.c,$(BUILD_DIR)/%.o,$(ALL_SRCS))
 
 all: test
 
+WASM_CC     := clang
+WASM_CFLAGS := --target=wasm32-unknown-unknown -O2 -nostdlib \
+               -mbulk-memory -msign-ext -mmultivalue -mnontrapping-fptoint \
+               -Wl,--no-entry -Wl,--export-all -Wl,--allow-undefined -Wl,-z,stack-size=1024
+WASM_SRCS   := $(wildcard tests/wasm/*.c)
+WASM_HDRS   := $(patsubst tests/wasm/%.c,$(BUILD_DIR)/wasm/%.wasm.h,$(WASM_SRCS))
+
+$(BUILD_DIR)/wasm/%.wasm: tests/wasm/%.c
+	@mkdir -p $(BUILD_DIR)/wasm
+	$(WASM_CC) $(WASM_CFLAGS) $< -o $@
+
+$(BUILD_DIR)/wasm/%.wasm.h: $(BUILD_DIR)/wasm/%.wasm
+	(cd $(BUILD_DIR)/wasm && xxd -i $(notdir $<)) > $@
+
+wasm-fixtures: $(WASM_HDRS)
+
+$(OBJS): | wasm-fixtures
+
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -174,7 +193,7 @@ $(BUILD_DIR)/%.o: %.c
 $(BUILD_DIR)/test_unity: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $@ -lm $(LDFLAGS)
 
-test_unity: $(BUILD_DIR)/test_unity
+test_unity: wasm-fixtures $(BUILD_DIR)/test_unity
 
 test: test_unity
 	./$(BUILD_DIR)/test_unity

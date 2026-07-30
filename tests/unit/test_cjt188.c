@@ -177,11 +177,22 @@ void test_cjt188_edge_cases_and_nulls(void)
                                0x78, 0x01, 0x14, 0x1F, 0x90, 0x00, 0x16};
     TEST_ASSERT_FALSE(syn_cjt188_parse_frame(truncated_len, sizeof(truncated_len), &frame));
 
-    /* Decoder buffer overflow: feed 135 bytes while in_frame is true */
+    /* 1. Close valve encoding */
+    size_t len = syn_cjt188_encode_valve_ctrl(buf, sizeof(buf), SYN_CJT188_METER_COLD_WATER,
+                                              meter_id, vendor_id, false, 0x02);
+    TEST_ASSERT_EQUAL(21, len);
+    TEST_ASSERT_EQUAL_HEX8(SYN_CJT188_VALVE_CLOSE, buf[18]); /* 0x99 */
+
+    /* 2. Decoder init NULL guard */
+    syn_cjt188_decoder_init(NULL);
+
+    /* 3. Decoder with oversized expected_len > 128 */
     syn_cjt188_decoder_init(&decoder);
     decoder.in_frame = true;
-    decoder.index = SYN_CJT188_MAX_FRAME_SIZE;
-    TEST_ASSERT_FALSE(syn_cjt188_decoder_feed(&decoder, 0x55, &frame));
+    decoder.index = 10;
+    TEST_ASSERT_FALSE(
+        syn_cjt188_decoder_feed(&decoder, 240, &frame)); /* data_len = 240 -> expected_len > 128 */
+    TEST_ASSERT_FALSE(decoder.in_frame);
 }
 
 void run_cjt188_tests(void)

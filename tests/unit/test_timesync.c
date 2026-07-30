@@ -107,20 +107,20 @@ static void test_timesync_drift_ppm_measurement(void)
     syn_timesync_init(&tsync);
 
     /* PPS 1 at tick 0, UTC sec 100 */
-    SYN_HPTimestamp pps1;
-    pps1.msb_1 = 0;
-    pps1.lsb = 0;
-    pps1.msb_2 = 0;
+    SYN_HPTimestamp pps1 = {.msb_1 = 0, .lsb = 0, .msb_2 = 0};
     syn_timesync_bind_pps(&tsync, &pps1, 100);
 
-    /* PPS 2 at tick 16,000,160 (160 ticks fast over 16M nominal = +10 PPM) */
-    SYN_HPTimestamp pps2;
-    pps2.msb_1 = 0;
-    pps2.lsb = 16000160;
-    pps2.msb_2 = 0;
+    /* PPS 2 at tick 16,000,160 (+10 PPM instantaneous). First update sets 10 PPM directly. */
+    SYN_HPTimestamp pps2 = {.msb_1 = 0, .lsb = 16000160, .msb_2 = 0};
     syn_timesync_bind_pps(&tsync, &pps2, 101);
-
     TEST_ASSERT_EQUAL_INT32(10, tsync.drift_ppm);
+
+    /* PPS 3 at tick 32,000,640 (+30 PPM instantaneous).
+     * EMA formula: (10 * 7 + 30) / 8 = 100 / 8 = 12 PPM.
+     */
+    SYN_HPTimestamp pps3 = {.msb_1 = 0, .lsb = 32000640, .msb_2 = 0};
+    syn_timesync_bind_pps(&tsync, &pps3, 102);
+    TEST_ASSERT_EQUAL_INT32(12, tsync.drift_ppm);
 }
 
 static void test_timesync_holdover_uncertainty_growth(void)

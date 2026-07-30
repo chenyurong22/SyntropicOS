@@ -56,6 +56,13 @@
 #define SYN_TIMESYNC_HAS_RTC 0 /**< RTC driver presence flag (0) */
 #endif
 
+#if !defined(SYN_USE_FILTER) || SYN_USE_FILTER
+#include "../dsp/syn_filter.h"
+#define SYN_TIMESYNC_HAS_FILTER 1 /**< DSP Filter module presence flag (1) */
+#else
+#define SYN_TIMESYNC_HAS_FILTER 0 /**< DSP Filter module presence flag (0) */
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -102,6 +109,10 @@ typedef struct {
     uint64_t prev_pps_ticks; /**< Ticks at previous PPS for PPM calculation */
     int32_t drift_ppm;       /**< Measured crystal drift in Parts-Per-Million */
     uint32_t pps_count;      /**< Total valid PPS updates received         */
+
+#if SYN_TIMESYNC_HAS_FILTER
+    SYN_FilterEMA drift_filter; /**< DSP EMA filter from syn_filter module */
+#endif
 
     /* Tuning / Config */
     uint32_t base_jitter_ns; /**< Base reference jitter (default: 50 ns)  */

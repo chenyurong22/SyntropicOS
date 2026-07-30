@@ -238,6 +238,15 @@ static void test_dlt645_additional_error_cases(void)
     huge_datalen[221] = 0x16;
     TEST_ASSERT_EQUAL_INT(SYN_ERROR,
                           syn_dlt645_parse(huge_datalen, 222, SYN_DLT645_VER_2007, &frame));
+
+    /* 7. Decoder reset on overflow with non-SOF start byte */
+    SYN_DLT645_Decoder dec_overflow;
+    syn_dlt645_decoder_init(&dec_overflow, SYN_DLT645_VER_2007, NULL, NULL);
+    syn_dlt645_decoder_feed(&dec_overflow, 0x68);
+    for (int i = 0; i < 130; i++) {
+        syn_dlt645_decoder_feed(&dec_overflow, 0x11);
+    }
+    TEST_ASSERT_EQUAL_INT(0, dec_overflow.rx_len);
 }
 
 void run_dlt645_tests(void)

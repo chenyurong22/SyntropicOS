@@ -12,7 +12,7 @@ All testing targets are fully containerized using **Podman** / **Docker**, provi
 | `make san` | `make container-san` | Executes unit tests with AddressSanitizer (ASan) & UBSan |
 | `make qemu` | `make container-qemu` | Bare-metal QEMU Cortex-M4 startup & RAM verification |
 | `make fuzz` | `make container-fuzz` | Runs LLVM `libFuzzer` protocol targets (COBS, Modbus, MQTT, HTTP, IR) |
-| `make cov` | `make container-cov` | Generates LCOV HTML code coverage reports (`coverage_html/index.html`) |
+| `make cov` | `make container-cov` | Generates LCOV line and branch code coverage summaries (`build/cov/coverage_src.info`) |
 | `make static` | `make container-static` | Performs Cppcheck and Clang `scan-build` static analysis |
 | `make dox` | `make container-dox` | Builds Doxygen API documentation and verifies zero warnings |
 | `make integration` | `make container-integration` | Executes E2E tests against genuine 3rd-party container daemons |
@@ -76,7 +76,7 @@ make san
 ```
 
 ### 2. Code & Branch Coverage
-Generates detailed line and branch coverage summaries using `gcovr` and `lcov`. View the output report at `coverage_html/index.html`:
+Generates detailed line and branch coverage summaries using `lcov` (`build/cov/coverage_src.info`):
 
 ```bash
 make cov

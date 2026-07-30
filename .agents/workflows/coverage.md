@@ -10,8 +10,8 @@ Measure line/branch code coverage, verify API documentation completeness, and en
 Execute the containerized LCOV coverage build:
 - **Containerized Coverage Report**: `make container-cov`
 
-## Step 1: Inspect HTML Report Artifacts
-Review `coverage_html/index.html` to identify untested functions, unreached branches, or edge cases.
+## Step 1: Inspect Coverage Summary & Uncovered Branches
+Review the terminal coverage summary and `build/cov/coverage_src.info` output to identify untested functions, unreached branches, or edge cases.
 
 ## Step 2: Doxygen API Documentation Coverage
 Verify API documentation completeness and check for missing symbol docs:

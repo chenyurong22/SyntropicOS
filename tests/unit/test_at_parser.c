@@ -234,6 +234,21 @@ static void test_at_parser_uncovered_edge_cases(void)
     TEST_ASSERT_FALSE(syn_at_parser_get_param_int("", 0, &val));
 }
 
+static void test_at_parser_additional_branch_coverage(void)
+{
+    /* 1. Unquoted string parameter extraction */
+    char str_buf[32];
+    TEST_ASSERT_TRUE(syn_at_parser_get_param_str("+CMGR: READ, 100", 0, str_buf, sizeof(str_buf)));
+    TEST_ASSERT_EQUAL_STRING("READ", str_buf);
+
+    /* 2. Multiple parameter index seeking without colon */
+    TEST_ASSERT_TRUE(syn_at_parser_get_param_str("VER1, VER2, VER3", 2, str_buf, sizeof(str_buf)));
+    TEST_ASSERT_EQUAL_STRING("VER3", str_buf);
+
+    /* 3. Parameter index out of bounds */
+    TEST_ASSERT_FALSE(syn_at_parser_get_param_str("VAL1, VAL2", 5, str_buf, sizeof(str_buf)));
+}
+
 void run_at_parser_tests(void)
 {
     RUN_TEST(test_at_parser_init);
@@ -246,4 +261,5 @@ void run_at_parser_tests(void)
     RUN_TEST(test_at_parser_param_str);
     RUN_TEST(test_at_parser_overflow);
     RUN_TEST(test_at_parser_uncovered_edge_cases);
+    RUN_TEST(test_at_parser_additional_branch_coverage);
 }

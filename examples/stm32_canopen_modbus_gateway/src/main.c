@@ -120,13 +120,17 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     }
 }
 
-void gateway_app_process(uint32_t now_ms)
+void gateway_app_process(uint32_t delta_ms)
 {
+    /* Step CANopen timers */
+    syn_canopen_update(&canopen_node, delta_ms);
+
+    /* Drain pending transmit frames */
     uint8_t tx_buf[8];
     uint32_t tx_cob_id = 0;
     uint8_t tx_len = 0;
 
-    if (syn_canopen_process_tx(&canopen_node, now_ms, &tx_cob_id, tx_buf, &tx_len)) {
+    while (syn_canopen_get_tx(&canopen_node, &tx_cob_id, tx_buf, &tx_len)) {
         send_hal_can_std(tx_cob_id, tx_buf, tx_len);
     }
 

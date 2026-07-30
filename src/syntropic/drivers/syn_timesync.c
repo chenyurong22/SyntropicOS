@@ -28,11 +28,6 @@ void syn_timesync_init(SYN_TimeSync *tsync)
     tsync->base_jitter_ns = SYN_TIMESYNC_DEFAULT_JITTER_NS;
     tsync->max_holdover_s = SYN_TIMESYNC_DEFAULT_HOLDOVER_S;
 
-#if SYN_TIMESYNC_HAS_FILTER
-    /* Initialize EMA filter: alpha = 32 (~0.125 / 8-sample smoothing) */
-    syn_filter_ema_init(&tsync->drift_filter, 32);
-#endif
-
 #if SYN_TIMESYNC_HAS_RTC
     /* If hardware RTC is configured and valid, mark RTC as available */
     SYN_RTC_DateTime dt;
@@ -66,15 +61,12 @@ SYN_Status syn_timesync_bind_pps(SYN_TimeSync *tsync, const SYN_HPTimestamp *pps
         /* Convert tick difference to Parts-Per-Million */
         int32_t new_ppm = (int32_t)((diff_ticks * 1000000LL) / (int64_t)nominal_freq);
 
-#if SYN_TIMESYNC_HAS_FILTER
-        tsync->drift_ppm = syn_filter_ema_update(&tsync->drift_filter, (int16_t)new_ppm);
-#else
-        if (tsync->pps_count == 1) {
+        if (tsync->pps_count == 1 || tsync->drift_ppm == 0) {
             tsync->drift_ppm = new_ppm;
         } else {
+            /* 8-sample Exponential Moving Average (EMA) to smooth out PPS jitter */
             tsync->drift_ppm = (int32_t)(((int64_t)tsync->drift_ppm * 7 + new_ppm) / 8);
         }
-#endif
     }
 
     /* Update anchors */

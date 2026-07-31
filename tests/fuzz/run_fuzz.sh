@@ -44,4 +44,15 @@ clang -std=c99 -I"${ROOT_DIR}" -I"${ROOT_DIR}/src" -I"${ROOT_DIR}/tests/unit/moc
 ./fuzzer_coap -max_total_time=10 || true
 rm -f fuzzer_coap
 
+echo "=== Compiling & Fuzzing USB Device Stack (10s smoke test) ==="
+clang -std=c99 -I"${ROOT_DIR}" -I"${ROOT_DIR}/src" -I"${ROOT_DIR}/tests/unit/mocks" -DSYN_USE_MULTICORE=1 -fsanitize=fuzzer,address,undefined \
+    "${ROOT_DIR}/src/syntropic/drivers/syn_usb.c" \
+    "${ROOT_DIR}/src/syntropic/drivers/syn_usb_cdc.c" \
+    "${ROOT_DIR}/src/syntropic/drivers/syn_usb_hid.c" \
+    "${ROOT_DIR}/tests/unit/mocks/mock_port.c" \
+    "${ROOT_DIR}/tests/fuzz/fuzz_usb.c" \
+    -o fuzzer_usb
+./fuzzer_usb -max_total_time=10 || true
+rm -f fuzzer_usb
+
 echo "=== Protocol Fuzzing Smoke Tests Complete ==="

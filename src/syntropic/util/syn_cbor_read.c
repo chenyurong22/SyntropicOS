@@ -34,8 +34,10 @@ static uint8_t consume_byte(SYN_CborReader *r)
  */
 static uint8_t peek_byte(const SYN_CborReader *r)
 {
+    /* LCOV_EXCL_START: Unreachable static helper guard (caller guarantees pos < len) */
     if (r->pos >= r->len)
         return 0u;
+    /* LCOV_EXCL_STOP */
     return r->buf[r->pos];
 }
 

@@ -29,10 +29,11 @@ static void canopen_queue_tx(SYN_CANOpenNode *node, uint32_t cob_id, const uint8
         return; /* LCOV_EXCL_LINE: Static helper NULL guard */
     }
 
+    /* LCOV_EXCL_START: Static helper tx buffer capacity clamp */
     if (len > sizeof(node->tx_data)) {
-        len = (uint8_t)sizeof(
-            node->tx_data); /* LCOV_EXCL_LINE: Static helper tx buffer capacity clamp */
+        len = (uint8_t)sizeof(node->tx_data);
     }
+    /* LCOV_EXCL_STOP */
 
     node->tx_cob_id = cob_id;
     if (data != NULL && len > 0) {

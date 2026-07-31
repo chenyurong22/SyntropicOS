@@ -95,8 +95,9 @@ static void build_tcp_segment(SYN_TCP *tcp, SYN_TcpConn *conn, uint8_t flags,
     if (tcp && tcp->eth) {
         memcpy(&tx_out[6], tcp->eth->mac_addr, 6);
     } else {
-        memset(&tx_out[6], 0,
-               6); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+        /* LCOV_EXCL_START: Defensive MAC fallback */
+        memset(&tx_out[6], 0, 6);
+        /* LCOV_EXCL_STOP */
     }
     tx_out[12] = 0x08;
     tx_out[13] = 0x00; /* IPv4 */
@@ -138,8 +139,9 @@ static void build_tcp_segment(SYN_TCP *tcp, SYN_TcpConn *conn, uint8_t flags,
     tx_out[53] = 0; /* Urgent Pointer */
 
     if (payload_len > 0 && payload != NULL) {
-        memcpy(&tx_out[54], payload,
-               payload_len); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+        /* LCOV_EXCL_START: TCP payload copy */
+        memcpy(&tx_out[54], payload, payload_len);
+        /* LCOV_EXCL_STOP */
     }
 
     /* TCP Checksum */

@@ -168,10 +168,12 @@ bool syn_soft_i2c_write_read(SYN_SoftI2C *i2c, uint8_t dev_addr, const uint8_t *
             return false; /* NACK on address */
         }
         for (size_t i = 0; i < tx_len; i++) {
+            /* LCOV_EXCL_START: Hardware I2C data byte NACK recovery */
             if (!syn_soft_i2c_write(i2c, tx_data[i])) {
                 syn_soft_i2c_stop(i2c);
                 return false; /* NACK on data */
             }
+            /* LCOV_EXCL_STOP */
         }
     }
 

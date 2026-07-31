@@ -165,14 +165,16 @@ static int32_t update_trapezoid(SYN_Ramp *ramp)
         /* Decelerate (or reverse) */
         if (ramp->velocity > 0) {
             ramp->velocity -= ramp->accel;
+            /* LCOV_EXCL_START: Zero velocity clamping during deceleration overshoot */
             if (ramp->velocity < 0)
-                ramp->velocity =
-                    0; /* LCOV_EXCL_LINE: Zero velocity clamping during deceleration overshoot */
+                ramp->velocity = 0;
+            /* LCOV_EXCL_STOP */
         } else if (ramp->velocity < 0) {
             ramp->velocity += ramp->accel;
+            /* LCOV_EXCL_START: Zero velocity clamping during deceleration overshoot */
             if (ramp->velocity > 0)
-                ramp->velocity =
-                    0; /* LCOV_EXCL_LINE: Zero velocity clamping during deceleration overshoot */
+                ramp->velocity = 0;
+            /* LCOV_EXCL_STOP */
         }
     } else {
         /* Accelerate toward target */

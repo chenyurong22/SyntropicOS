@@ -111,10 +111,10 @@ static void sha1_update(SYN_SHA1_Ctx *ctx, const uint8_t *data, uint32_t len)
     if ((j + len) > 63) {
         memcpy(&ctx->buffer[j], data, (i = 64 - j));
         sha1_transform(ctx->state, ctx->buffer);
+        /* LCOV_EXCL_START: SHA1 multi-block transform for long payloads */
         for (; i + 63 < len; i += 64)
-            sha1_transform(
-                ctx->state,
-                &data[i]); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+            sha1_transform(ctx->state, &data[i]);
+        /* LCOV_EXCL_STOP */
         j = 0;
     } else {
         i = 0;

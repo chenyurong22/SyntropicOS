@@ -1858,8 +1858,14 @@ static void test_imgui_extra_coverage(void)
     syn_imgui_init(&ctx);
 
     /* 1. focused_id > last_max_id cap (line 81) */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    syn_imgui_button(&ctx, "B1", 0, 0, 10, 10);
+    syn_imgui_button(&ctx, "B2", 0, 0, 10, 10);
+    syn_imgui_end(&ctx); /* last_max_id = 2 */
+
     ctx.focused_id = 100;
-    ctx.next_id = 2;
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    syn_imgui_button(&ctx, "B1", 0, 0, 10, 10); /* next_id = 1 */
     syn_imgui_end(&ctx);
     TEST_ASSERT_EQUAL(1, ctx.focused_id);
 
@@ -1879,17 +1885,18 @@ static void test_imgui_extra_coverage(void)
 
     /* 3. Dropdown encoder positive wrap (line 448) */
     const char *opts[] = {"A", "B", "C"};
-    int32_t selected = 0;
+    int32_t selected = 2;
     syn_imgui_begin(&ctx, &canvas, true, false, 0, false, 0, 0); /* select to open */
     syn_imgui_combo(&ctx, "DD", opts, 3, &selected, 0, 0, 80, 20);
     syn_imgui_end(&ctx);
-    syn_imgui_begin(&ctx, &canvas, false, false, 10, false, 0, 0); /* enc_delta = +10 */
+    syn_imgui_begin(&ctx, &canvas, false, false, 5, false, 0, 0); /* enc_delta = +5 */
     syn_imgui_combo(&ctx, "DD", opts, 3, &selected, 0, 0, 80, 20);
     syn_imgui_end(&ctx);
 
-    /* 4. Plot lines null/zero data (line 538) */
+    /* 4. Plot line max_val == min_val (line 542) */
+    int32_t pdata[] = {50, 50};
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
-    syn_imgui_graph(&ctx, "P", NULL, 0, 0, 100, 10, 10, 50, 30);
+    syn_imgui_graph(&ctx, "PL", pdata, 2, 50, 50, 10, 10, 80, 40);
     syn_imgui_end(&ctx);
 
     /* 5. Spinner touch hit (line 959) & negative wrap (line 972) */
@@ -1907,73 +1914,70 @@ static void test_imgui_extra_coverage(void)
     TEST_ASSERT_EQUAL_INT16(0, scroll_pos);
 
     /* 7. Tabs encoder positive/negative wrap & select exit (lines 1325, 1327, 1335) */
-    int32_t tab_active = 0;
+    int32_t tab_active = 1;
     const char *tabs[] = {"T1", "T2"};
-    syn_imgui_begin(&ctx, &canvas, true, false, 0, false, 0, 0);
+    syn_imgui_begin(&ctx, &canvas, true, false, 0, false, 0, 0); /* select to enter edit */
     syn_imgui_tabs(&ctx, tabs, 2, &tab_active, 0, 0, 100);
     syn_imgui_end(&ctx);
-    syn_imgui_begin(&ctx, &canvas, false, false, 5, false, 0, 0); /* positive wrap */
-    syn_imgui_tabs(&ctx, tabs, 2, &tab_active, 0, 0, 100);
-    syn_imgui_end(&ctx);
-    syn_imgui_begin(&ctx, &canvas, false, false, -5, false, 0, 0); /* negative wrap */
-    syn_imgui_tabs(&ctx, tabs, 2, &tab_active, 0, 0, 100);
-    syn_imgui_end(&ctx);
-    syn_imgui_begin(&ctx, &canvas, true, false, 0, false, 0, 0); /* select exit */
+    syn_imgui_begin(&ctx, &canvas, false, false, 5, false, 0, 0); /* positive wrap (line 1325) */
     syn_imgui_tabs(&ctx, tabs, 2, &tab_active, 0, 0, 100);
     syn_imgui_end(&ctx);
 
-    /* 8. Plot histogram bar_w < 1 (line 1435) & bar_h < 1 (line 1447) */
+    tab_active = 0;
+    syn_imgui_begin(&ctx, &canvas, true, false, 0, false, 0, 0); /* select to enter edit */
+    syn_imgui_tabs(&ctx, tabs, 2, &tab_active, 0, 0, 100);
+    syn_imgui_end(&ctx);
+    syn_imgui_begin(&ctx, &canvas, false, false, -5, false, 0, 0); /* negative wrap (line 1327) */
+    syn_imgui_tabs(&ctx, tabs, 2, &tab_active, 0, 0, 100);
+    syn_imgui_end(&ctx);
+
+    syn_imgui_begin(&ctx, &canvas, true, false, 0, false, 0, 0); /* select exit (line 1335) */
+    syn_imgui_tabs(&ctx, tabs, 2, &tab_active, 0, 0, 100);
+    syn_imgui_end(&ctx);
+
+    /* 8. Plot histogram bar_w < 1 & bar_h < 1 */
     int32_t hist_data[20] = {1, 2, 3};
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
     syn_imgui_bar_chart(&ctx, "H", hist_data, 20, 0, 100, 10, 10, 5, 20);
     syn_imgui_end(&ctx);
 
-    /* 9. Icon button touch hit (lines 1477, 1478) */
+    /* 9. Icon button touch hit */
     static const uint8_t dummy_icon[8] = {0xFF};
     syn_imgui_begin(&ctx, &canvas, false, false, 0, true, 15, 15);
     syn_imgui_icon_button(&ctx, dummy_icon, 8, 8, 10, 10, 20, 20);
     syn_imgui_end(&ctx);
 
-    /* 10. Progress bar indeterminate small inner_w (line 1676) & val < min (line 1693) */
+    /* 10. Progress bar val < min (line 1693) */
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
-    syn_imgui_progress_bar_ex(&ctx, -1, 0, 100, "PR", 0, 0, 5, 20);
-    syn_imgui_progress_bar_ex(&ctx, -5, 0, 100, "PR", 0, 0, 50, 20);
+    syn_imgui_progress_bar_ex(&ctx, -10, 0, 100, "PR", 0, 0, 50, 20);
     syn_imgui_end(&ctx);
 
-    /* 11. Selectable touch hit (line 1755) & normal text (line 1779) */
+    /* 11. Selectable unfocused text (line 1778) */
     bool sel = false;
-    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, 15, 15);
-    syn_imgui_selectable(&ctx, "SEL", &sel, 10, 10, 50, 20);
-    syn_imgui_end(&ctx);
     ctx.focused_id = 999;
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
     syn_imgui_selectable(&ctx, "SEL2", &sel, 10, 10, 50, 20);
     syn_imgui_end(&ctx);
 
-    /* 12. Collapsing header touch hit (line 1814) */
+    /* 12. Collapsing header touch hit */
     bool exp = false;
     syn_imgui_begin(&ctx, &canvas, false, false, 0, true, 15, 15);
     syn_imgui_collapsing_header(&ctx, "HDR", &exp, 10, 10, 50, 20);
     syn_imgui_end(&ctx);
 
-    /* 13. Text wrapped w <= 0 (line 1871) */
+    /* 13. Text wrapped w <= 0 */
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
     syn_imgui_text_wrapped(&ctx, "Hello World", 0, 0, 0);
     syn_imgui_end(&ctx);
 
-    /* 14. Text marquee speed=0, pause<4, offset<0, offset>=total, Phase 3 (lines 2027, 2051, 2059,
-     * 2061, 2073, 2098) */
-    int16_t mq_off = -5;
+    /* 14. Text marquee Phase 3 (line 2072), clip reset (line 2091), wrap (line 2097) */
+    int16_t mq_off = 200; /* offset >= total_cycle (line 2097) */
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
-    syn_imgui_text_marquee(&ctx, "A Very Long Text That Exceeds The Width", &mq_off, 0, 0, 20, 0);
-    syn_imgui_end(&ctx);
-
-    mq_off = 999;
-    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    canvas.clip_w = 0; /* clip_w == 0 triggers syn_canvas_reset_clip (line 2091) */
     syn_imgui_text_marquee(&ctx, "A Very Long Text That Exceeds The Width", &mq_off, 0, 0, 20, 10);
     syn_imgui_end(&ctx);
 
-    mq_off = 35; /* Phase 3 paused at end */
+    mq_off = 100; /* Phase 3 (line 2072) */
     syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
     syn_imgui_text_marquee(&ctx, "A Very Long Text That Exceeds The Width", &mq_off, 0, 0, 20, 1);
     syn_imgui_end(&ctx);

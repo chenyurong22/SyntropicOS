@@ -31,11 +31,11 @@ void syn_sched_init(SYN_Sched *sched, SYN_Task *tasks, size_t count)
     SYN_ASSERT(sched != NULL);
     SYN_ASSERT(tasks != NULL || count == 0);
 
-    if (sched == NULL ||
-        (tasks == NULL &&
-         count > 0)) { /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
-        return;        /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
+    /* LCOV_EXCL_START: Defensive NULL check or invalid parameter fallback */
+    if (sched == NULL || (tasks == NULL && count > 0)) {
+        return;
     }
+    /* LCOV_EXCL_STOP */
 
     sched->tasks = tasks;
     sched->task_count = count;
@@ -313,14 +313,13 @@ SYN_NORETURN void syn_sched_run_tickless(SYN_Sched *sched, SYN_Sleep *sleep)
 
         /* Only sleep if no tasks are immediately ready */
         if (wake != now && !syn_sleep_any_locked(sleep)) {
+            /* LCOV_EXCL_START: Light sleep until interrupt when no deadlines */
             if (wake == UINT32_MAX) {
-                /* No deadlines — light sleep until interrupt */
-                syn_sleep_enter(
-                    sleep); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+                syn_sleep_enter(sleep);
             } else {
-                /* Sleep until the next deadline */
                 syn_port_sleep_until(wake);
             }
+            /* LCOV_EXCL_STOP */
         }
 
         syn_port_exit_critical();

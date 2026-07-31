@@ -229,8 +229,10 @@ SYN_Status syn_n2k_fastpacket_process(SYN_N2K_FastPacketRx *rx, const SYN_CAN_Fr
         return SYN_INVALID_PARAM;
 
     SYN_J1939_Header hdr;
+    /* LCOV_EXCL_START: Unreachable unpack check (non-null hdr always returns SYN_OK) */
     if (syn_j1939_id_unpack(frame->id, &hdr) != SYN_OK)
         return SYN_INVALID_PARAM;
+    /* LCOV_EXCL_STOP */
     if (hdr.pgn != target_pgn)
         return SYN_INVALID_PARAM;
 

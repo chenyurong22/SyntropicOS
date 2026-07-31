@@ -40,7 +40,7 @@ static void test_charlcd_gpio_mode(void)
     SYN_Status st = syn_charlcd_init_gpio(&lcd, 0, 1, 2, 3, 4, 5, 20, 4);
     TEST_ASSERT_EQUAL(SYN_OK, st);
 
-    syn_charlcd_set_cursor(&lcd, 5, 25);
+    syn_charlcd_set_cursor(&lcd, 99, 99);
     syn_charlcd_print(&lcd, "GPIO Mode");
     syn_charlcd_clear(&lcd);
 }

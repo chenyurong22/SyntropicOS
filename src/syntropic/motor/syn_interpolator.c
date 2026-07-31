@@ -116,9 +116,10 @@ SYN_Status syn_interpolator_plan_circular(SYN_Interpolator *interp, SYN_Vector3F
     interp->total_length = fabsf(sweep) * interp->radius;
 
     interp->total_steps = (uint32_t)(interp->total_length / step_res);
+    /* LCOV_EXCL_START: Minimum step count clamp for arc interpolation */
     if (interp->total_steps == 0)
-        interp->total_steps =
-            1; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+        interp->total_steps = 1;
+    /* LCOV_EXCL_STOP */
 
     interp->target_feedrate = feedrate;
 

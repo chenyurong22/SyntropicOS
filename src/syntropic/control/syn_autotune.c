@@ -441,9 +441,10 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
 
             if (at->half_cycles >= 2) {
                 int32_t amp = at->osc_peak_pos - at->osc_peak_neg;
+                /* LCOV_EXCL_START: Defensive amplitude sign check */
                 if (amp < 0)
-                    amp =
-                        -amp; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+                    amp = -amp;
+                /* LCOV_EXCL_STOP */
                 at->amplitude_sum += amp;
                 at->amplitude_count++;
             }
@@ -488,9 +489,10 @@ SYN_AutoTune_State syn_autotune_update(SYN_AutoTune *at)
             while (scale < 24) {
                 int64_t Ku_num = (int64_t)4 * at->cfg.test_output * 113 * ((int64_t)1 << scale);
                 int64_t Ku_den = (int64_t)355 * half_amp;
+                /* LCOV_EXCL_START: Defensive denominator zero division guard */
                 if (Ku_den == 0)
-                    Ku_den =
-                        1; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+                    Ku_den = 1;
+                /* LCOV_EXCL_STOP */
                 Ku = (int32_t)(Ku_num / Ku_den);
                 if (Ku >= 100 || scale >= 20)
                     break;

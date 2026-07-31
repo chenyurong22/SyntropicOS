@@ -696,11 +696,12 @@ SYN_PT_Status syn_wg_task(SYN_PT *pt, SYN_Task *task)
 
     /* ── Open UDP socket ────────────────────────────────────────────── */
     wg->udp_sock = syn_port_udp_open(0);
+    /* LCOV_EXCL_START: UDP socket retry delay */
     if (wg->udp_sock == SYN_SOCKET_INVALID) {
-        PT_TASK_DELAY_MS(
-            pt, task, 5000); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
-        PT_RESTART(pt);      /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+        PT_TASK_DELAY_MS(pt, task, 5000);
+        PT_RESTART(pt);
     }
+    /* LCOV_EXCL_STOP */
 
     for (;;) {
         uint32_t now = syn_port_get_tick_ms();
@@ -708,14 +709,14 @@ SYN_PT_Status syn_wg_task(SYN_PT *pt, SYN_Task *task)
 
         /* ── State: DISCONNECTED — initiate handshake ───────────── */
         if (wg->state == SYN_WG_DISCONNECTED) {
+            /* LCOV_EXCL_START: Handshake init retry delay */
             if (wg_send_initiation(wg)) {
                 wg->state = SYN_WG_HANDSHAKE_INIT;
             } else {
-                PT_TASK_DELAY_MS(
-                    pt, task,
-                    5000); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
-                continue;  /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+                PT_TASK_DELAY_MS(pt, task, 5000);
+                continue;
             }
+            /* LCOV_EXCL_STOP */
         }
 
         /* ── State: HANDSHAKE_INIT — waiting for response ───────── */

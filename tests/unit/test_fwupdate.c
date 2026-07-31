@@ -137,6 +137,30 @@ void test_fwupdate_basic(void)
     TEST_ASSERT_EQUAL_HEX32(expected_crc, hdr.image_crc);
 }
 
+void test_fwupdate_multi_sector(void)
+{
+    mock_port_reset();
+
+    static uint8_t page_buf[256];
+    SYN_FwUpdate upd;
+
+    static uint8_t fw_large[1500];
+    memset(fw_large, 0x55, sizeof(fw_large));
+    uint32_t expected_crc = syn_crc32(fw_large, sizeof(fw_large));
+
+    SYN_Status st = syn_fwupdate_begin(&upd, SLOT_A_ADDR, 2048, page_buf, sizeof(page_buf));
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+
+    /* Write 1500 bytes in 256 byte chunks */
+    for (size_t i = 0; i < sizeof(fw_large); i += 256) {
+        size_t len = (sizeof(fw_large) - i > 256) ? 256 : (sizeof(fw_large) - i);
+        TEST_ASSERT_EQUAL(SYN_OK, syn_fwupdate_write(&upd, fw_large + i, len));
+    }
+
+    st = syn_fwupdate_finish(&upd, expected_crc, NULL, 0x00020000);
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+}
+
 void test_fwupdate_crc_mismatch(void)
 {
     mock_port_reset();
@@ -529,6 +553,7 @@ void run_fwupdate_tests(void)
 
     /* Streaming updater */
     RUN_TEST(test_fwupdate_basic);
+    RUN_TEST(test_fwupdate_multi_sector);
     RUN_TEST(test_fwupdate_crc_mismatch);
     RUN_TEST(test_fwupdate_abort);
 

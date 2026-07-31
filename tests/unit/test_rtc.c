@@ -183,6 +183,14 @@ static void test_rtc_schedule_alarm(void)
     TEST_ASSERT_EQUAL_UINT8(0u, alarm_dt.second);
 }
 
+static void test_rtc_schedule_alarm_fail(void)
+{
+    mock_rtc_init_ok = false;
+    SYN_RTC_DateTime alarm_dt;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_rtc_schedule_alarm_seconds(60, &alarm_dt));
+    mock_rtc_init_ok = true;
+}
+
 void run_rtc_tests(void)
 {
     RUN_TEST(test_rtc_init_ok);
@@ -200,4 +208,5 @@ void run_rtc_tests(void)
     RUN_TEST(test_rtc_drift_ppm);
     RUN_TEST(test_rtc_from_epoch_zero);
     RUN_TEST(test_rtc_schedule_alarm);
+    RUN_TEST(test_rtc_schedule_alarm_fail);
 }

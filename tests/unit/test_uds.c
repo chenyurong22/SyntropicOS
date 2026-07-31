@@ -2346,6 +2346,11 @@ static void test_uds_response_too_long_sweep(void)
 
     /* Register DTC handler NULL check */
     TEST_ASSERT_FALSE(syn_uds_register_dtc_handler(NULL, NULL, NULL));
+
+    /* SID 0x27 subfunction not supported (line 482) */
+    uint8_t req_27_unsupp[2] = {0x27, 0xFF};
+    syn_uds_process_request(&server, req_27_unsupp, 2, resp, sizeof(resp), &resp_len);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
 }
 
 void run_uds_tests(void)

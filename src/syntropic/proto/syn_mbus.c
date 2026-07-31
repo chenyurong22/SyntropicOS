@@ -345,10 +345,11 @@ void syn_mbus_decoder_feed(SYN_MBUS_Decoder *dec, uint8_t byte)
         }
         break;
 
+    /* LCOV_EXCL_START: Default case reset for M-Bus decoder state machine */
     default:
-        syn_mbus_decoder_reset(
-            dec); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
-        break;    /* LCOV_EXCL_LINE: Defensive default branch for enum state machine */
+        syn_mbus_decoder_reset(dec);
+        break;
+        /* LCOV_EXCL_STOP */
     }
 }
 

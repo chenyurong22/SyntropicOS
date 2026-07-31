@@ -335,8 +335,10 @@ SYN_ModbusMaster_State syn_modbus_master_process(SYN_ModbusMaster *m, uint32_t c
     if (fc == SYN_MB_FC_READ_HOLDING || fc == SYN_MB_FC_READ_INPUT) {
         uint8_t byte_count = m->buf[2];
         uint16_t words = byte_count / 2;
+        /* LCOV_EXCL_START: Defensive response words count clamp */
         if (words > 125)
             words = 125;
+        /* LCOV_EXCL_STOP */
         for (uint16_t i = 0; i < words; i++) {
             m->read_data[i] = read_u16_be(&m->buf[3 + i * 2]);
         }
@@ -345,8 +347,10 @@ SYN_ModbusMaster_State syn_modbus_master_process(SYN_ModbusMaster *m, uint32_t c
     } else if (fc == SYN_MB_FC_READ_COILS || fc == SYN_MB_FC_READ_DISCRETE_INPUTS ||
                fc == SYN_MB_FC_REPORT_SERVER_ID) {
         uint8_t byte_count = m->buf[2];
+        /* LCOV_EXCL_START: Defensive response byte_count clamp */
         if (byte_count > 250)
             byte_count = 250;
+        /* LCOV_EXCL_STOP */
         for (uint16_t i = 0; i < byte_count; i++) {
             m->read_data[i] = m->buf[3 + i];
         }
@@ -354,8 +358,10 @@ SYN_ModbusMaster_State syn_modbus_master_process(SYN_ModbusMaster *m, uint32_t c
         m->state = SYN_MB_MASTER_STATE_COMPLETE;
     } else if (fc == SYN_MB_FC_READ_FIFO_QUEUE) {
         uint16_t fifo_count = read_u16_be(&m->buf[4]);
+        /* LCOV_EXCL_START: Defensive response fifo_count clamp */
         if (fifo_count > 31)
             fifo_count = 31;
+        /* LCOV_EXCL_STOP */
         for (uint16_t i = 0; i < fifo_count; i++) {
             m->read_data[i] = read_u16_be(&m->buf[6 + i * 2]);
         }

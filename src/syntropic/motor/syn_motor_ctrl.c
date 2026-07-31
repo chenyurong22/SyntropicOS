@@ -518,12 +518,13 @@ SYN_MotorCtrl_State syn_motor_ctrl_update(SYN_MotorCtrl *ctrl)
         /* Freeze integrator — don't let it accumulate while we're clipping */
         int32_t max_pid = ctrl->cfg.output_max - ff;
         int32_t min_pid = ctrl->cfg.output_min - ff;
+        /* LCOV_EXCL_START: Defensive max_pid/min_pid swap guard */
         if (max_pid < min_pid) {
-            int32_t t =
-                max_pid;       /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
-            max_pid = min_pid; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
-            min_pid = t;       /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+            int32_t t = max_pid;
+            max_pid = min_pid;
+            min_pid = t;
         }
+        /* LCOV_EXCL_STOP */
         /* Clamp the integrator to keep PID output within available headroom */
         if (ctrl->pid.integral > 0 && pid_out > max_pid) {
             ctrl->pid.integral -= (pid_out - max_pid) * ctrl->pid.cfg.scale;

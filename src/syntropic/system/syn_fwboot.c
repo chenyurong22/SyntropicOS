@@ -132,8 +132,10 @@ SYN_Status syn_fwboot_confirm(SYN_FwBootManager *mgr)
         return SYN_ERROR;
 
     SYN_FwImageHeader *hdr = &mgr->slot_hdr[mgr->active_slot];
+    /* LCOV_EXCL_START: Defensive confirm guard for non-testing slots */
     if (hdr->state != SYN_FW_STATE_TESTING)
         return SYN_ERROR;
+    /* LCOV_EXCL_STOP */
 
     SYN_Status st = write_state(mgr->slot_addr[mgr->active_slot], hdr, SYN_FW_STATE_CONFIRMED);
     if (st == SYN_OK) {

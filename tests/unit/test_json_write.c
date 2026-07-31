@@ -264,10 +264,11 @@ static void test_json_null_writer_and_comma_checks(void)
 
 static void test_json_write_jw_puts_overflow_branch(void)
 {
-    char buf[12];
+    char buf[10];
     SYN_JsonWriter w;
     syn_json_init(&w, buf, sizeof(buf));
-    syn_json_key_str(&w, "key", "very long string value exceeding buffer");
+    syn_json_obj_open(&w);
+    syn_json_key_str(&w, "k", "abcdefghijk");
     TEST_ASSERT_TRUE(w.overflow);
 }
 

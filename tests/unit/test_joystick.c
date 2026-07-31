@@ -64,12 +64,19 @@ static void test_joystick_operations(void)
 
     syn_joystick_feed_adc(&j2, 100, 100, false);
 
-    /* Extreme inputs triggering percentage clamping (> 100 or < -100) */
+    /* Extreme inputs triggering percentage clamping (> 100) */
     SYN_Joystick j3;
-    syn_joystick_init(&j3, 1000, 1000, 2000, 0);
-    syn_joystick_feed_adc(&j3, 4000, 0, false);
+    syn_joystick_init(&j3, 1000, 1000, 1500, 0);
+    syn_joystick_feed_adc(&j3, 3000, 0, false); /* x_pct > 100, y_pct = -100 */
     TEST_ASSERT_EQUAL_INT16(100, syn_joystick_get_x_pct(&j3));
     TEST_ASSERT_EQUAL_INT16(-100, syn_joystick_get_y_pct(&j3));
+
+    /* Test range_x <= 0 branch (line 52) */
+    SYN_Joystick j4;
+    syn_joystick_init(&j4, 0, 0, 1000, 0);
+    j4.center_x = 0;
+    syn_joystick_feed_adc(&j4, 0, 0, false);
+    TEST_ASSERT_EQUAL_INT16(0, syn_joystick_get_x_pct(&j4));
 
     /* Intermediate region fallback: 0 < |x| <= 30 and 0 < |y| <= 30 */
     syn_joystick_feed_adc(&joy, 2200, 2200, false);

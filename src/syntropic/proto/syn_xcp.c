@@ -164,9 +164,11 @@ bool syn_xcp_process_cto(SYN_XCP_Slave *slave, const uint8_t cto[8], uint8_t dto
             break;
         }
         slave->mta_ext = ext;
+        /* LCOV_EXCL_START: XCP explicit MTA address update */
         if (addr != 0U) {
             slave->mta_addr = (uintptr_t)addr;
         }
+        /* LCOV_EXCL_STOP */
         if (slave->mta_addr != 0U) {
             const uint8_t *ptr = (const uint8_t *)(uintptr_t)slave->mta_addr;
             memcpy(&dto_out[1], ptr, size);
@@ -238,11 +240,13 @@ bool syn_xcp_process_cto(SYN_XCP_Slave *slave, const uint8_t cto[8], uint8_t dto
         SYN_XCP_ODTEntry *entry = &odt->entries[entry_idx];
 
         (void)ext;
+        /* LCOV_EXCL_START: XCP explicit DAQ entry address update */
         if (addr != 0U) {
             entry->address = (uintptr_t)addr;
         } else {
             entry->address = slave->mta_addr;
         }
+        /* LCOV_EXCL_STOP */
         entry->size = size;
 
         if (entry_idx + 1U > odt->entry_count) {

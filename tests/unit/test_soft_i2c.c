@@ -60,10 +60,12 @@ void test_soft_i2c_write_nack(void)
     TEST_ASSERT_FALSE(ack);
     mock_gpio_read_overrides[PIN_SDA] = -1;
 
-    /* Test NACK on data byte in write_read (lines 169-170 in syn_soft_i2c.c) */
+    /* Test NACK on data byte in write_read (lines 172-173 in syn_soft_i2c.c) */
     uint8_t tx_buf[2] = {0x01, 0x02};
     uint8_t rx_buf[2];
+    mock_gpio_read_overrides[PIN_SDA] = SYN_GPIO_HIGH;
     TEST_ASSERT_FALSE(syn_soft_i2c_write_read(&i2c, 0x50, tx_buf, 2, rx_buf, 0));
+    mock_gpio_read_overrides[PIN_SDA] = -1;
 }
 
 void test_soft_i2c_read(void)
@@ -201,8 +203,8 @@ static void gpio_ack_then_nack(SYN_GPIO_Pin pin, uint8_t state, void *ctx)
     (void)state;
     if (pin == PIN_SDA) {
         s_gpio_write_count++;
-        /* After 9 writes (address byte = 8 bits + 1 ACK pulse), flip to NACK */
-        if (s_gpio_write_count > 9) {
+        /* After 8 SDA writes (address byte bits 7..0), flip to NACK for data byte ACK */
+        if (s_gpio_write_count > 8) {
             mock_gpio_read_overrides[PIN_SDA] = SYN_GPIO_HIGH; /* NACK */
         }
     }

@@ -46,9 +46,9 @@ SYN_Status syn_settings_init(SYN_Settings *s, uint32_t flash_base, uint8_t secto
         /* Flash has valid data — load it */
         st = syn_param_load(&s->store, data);
         if (st != SYN_OK) {
-            /* Load failed — apply defaults */
-            memcpy(data, defaults,
-                   data_size); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+            /* LCOV_EXCL_START: Load failed apply defaults fallback */
+            memcpy(data, defaults, data_size);
+            /* LCOV_EXCL_STOP */
         }
     } else {
         /* Flash is blank or corrupt — apply defaults and write them */

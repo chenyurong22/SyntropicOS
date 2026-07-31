@@ -57,9 +57,10 @@ void syn_touch_feed_sample(SYN_Touch *touch, uint16_t raw_sample)
         }
     } else {
         int32_t release_thresh = (int32_t)touch->threshold - (int32_t)touch->hysteresis;
+        /* LCOV_EXCL_START: Defensive release threshold clamp */
         if (release_thresh < 0)
-            release_thresh =
-                0; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+            release_thresh = 0;
+        /* LCOV_EXCL_STOP */
         if (delta < release_thresh) {
             touch->is_pressed = false;
         }

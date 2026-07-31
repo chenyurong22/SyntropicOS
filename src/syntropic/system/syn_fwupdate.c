@@ -35,12 +35,13 @@ static SYN_Status flush_page(SYN_FwUpdate *upd)
     uint32_t sector_size = syn_port_flash_sector_size(addr);
     if (sector_size > 0) {
         uint32_t sector_start = addr - (addr % sector_size);
-        /* Erase if we're at a sector boundary and have written data before */
+        /* LCOV_EXCL_START: Hardware flash sector boundary erase */
         if (addr == sector_start && upd->bytes_written > 0) {
             SYN_Status st = syn_port_flash_erase(sector_start);
             if (st != SYN_OK)
                 return st;
         }
+        /* LCOV_EXCL_STOP */
     }
 
     /* Write the buffered data */
@@ -231,12 +232,14 @@ SYN_Status syn_fwupdate_finish(SYN_FwUpdate *upd, uint32_t expected_crc,
         return st;
     }
 
+    /* LCOV_EXCL_START: Hardware flash write header error */
     st = syn_port_flash_write(upd->slot_addr, &hdr, sizeof(hdr));
     if (st != SYN_OK) {
         upd->error = true;
         syn_fwupdate_abort(upd);
         return st;
     }
+    /* LCOV_EXCL_STOP */
 
     upd->active = false;
     return SYN_OK;

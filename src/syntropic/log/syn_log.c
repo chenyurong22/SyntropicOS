@@ -171,8 +171,10 @@ void syn_log_va(SYN_LogLevel level, const char *tag, const char *fmt, va_list ar
 #endif
 
     /* Null-terminate */
+    /* LCOV_EXCL_START: Defensive log buffer truncation guard */
     if (pos >= (int)sizeof(buf))
         pos = (int)sizeof(buf) - 1;
+    /* LCOV_EXCL_STOP */
     buf[pos] = '\0';
 
     emit_log(buf, (size_t)pos);

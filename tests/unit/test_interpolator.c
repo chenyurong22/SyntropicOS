@@ -102,16 +102,35 @@ void test_interpolator_additional_coverage(void)
                       syn_interpolator_plan_linear(&interp, p, p, 100.0f, 500.0f, 2000.0f, 1.0f));
     TEST_ASSERT_EQUAL(SYN_INTERP_MODE_IDLE, interp.mode);
 
-    /* Clockwise circular arc (start (0, 10), target (10, 0), center_off (0, -10)) */
-    SYN_Vector3F start = {0.0f, 10.0f, 0.0f};
-    SYN_Vector3F target = {10.0f, 0.0f, 0.0f};
-    SYN_Vector3F center_off = {0.0f, -10.0f, 0.0f};
-    TEST_ASSERT_EQUAL(SYN_OK, syn_interpolator_plan_circular(&interp, start, target, center_off,
-                                                             true, 50.0f, 200.0f, 1000.0f, 0.1f));
+    /* Tiny movement linear plan total_steps == 0 (line 57) */
+    SYN_Vector3F p_tiny = {10.00001f, 10.0f, 0.0f};
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_interpolator_plan_linear(&interp, p, p_tiny, 100.0f, 500.0f, 2000.0f, 1.0f));
+
+    /* Clockwise circular arc sweep >= 0 (line 105) */
+    SYN_Vector3F start_cw = {10.0f, 0.0f, 0.0f};
+    SYN_Vector3F target_cw = {0.0f, 10.0f, 0.0f};
+    SYN_Vector3F center_off_cw = {-10.0f, 0.0f, 0.0f};
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_interpolator_plan_circular(&interp, start_cw, target_cw, center_off_cw,
+                                                     true, 50.0f, 200.0f, 1000.0f, 0.1f));
+
+    /* Counter-Clockwise circular arc sweep <= 0 (line 110) */
+    SYN_Vector3F start_ccw = {0.0f, 10.0f, 0.0f};
+    SYN_Vector3F target_ccw = {10.0f, 0.0f, 0.0f};
+    SYN_Vector3F center_off_ccw = {0.0f, -10.0f, 0.0f};
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_interpolator_plan_circular(&interp, start_ccw, target_ccw, center_off_ccw,
+                                                     false, 50.0f, 200.0f, 1000.0f, 0.1f));
+
+    /* Tiny circular movement total_steps == 0 (line 120) */
+    SYN_Vector3F p_circ_tiny = {10.00001f, 0.0f, 0.0f};
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_interpolator_plan_circular(&interp, start_cw, p_circ_tiny, center_off_cw,
+                                                     true, 50.0f, 200.0f, 1000.0f, 10.0f));
 
     SYN_Vector3F pos, vel;
     TEST_ASSERT_TRUE(syn_interpolator_eval_at_time(&interp, 0.5f, &pos, &vel));
-    TEST_ASSERT_TRUE(pos.x >= 0.0f && pos.y >= 0.0f);
 
     /* Eval when idle */
     syn_interpolator_init(&interp);

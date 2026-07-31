@@ -36,6 +36,7 @@ void test_j1939_id_pack_unpack_pdu1_pdu2(void)
 
     /* Unpack invalid params */
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_j1939_id_unpack(can_id_pdu2, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_j1939_node_init(NULL, 0, NULL));
 }
 
 void test_j1939_name_encode_decode_roundtrip(void)

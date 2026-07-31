@@ -18,15 +18,17 @@
 extern "C" {
 #endif
 
-/* Maximum configuration parameters */
+/** @brief Maximum number of DAQ lists per CCP node */
 #ifndef SYN_CCP_MAX_DAQ_LISTS
 #define SYN_CCP_MAX_DAQ_LISTS 4U
 #endif
 
+/** @brief Maximum ODTs per DAQ list */
 #ifndef SYN_CCP_MAX_ODT_PER_DAQ
 #define SYN_CCP_MAX_ODT_PER_DAQ 8U
 #endif
 
+/** @brief Maximum entries per ODT */
 #ifndef SYN_CCP_MAX_ENTRIES_PER_ODT
 #define SYN_CCP_MAX_ENTRIES_PER_ODT 7U
 #endif

@@ -106,6 +106,9 @@ typedef void (*SYN_LogOutputFn)(const char *str, size_t len);
  * Use syn_log_init() macro which supports both:
  * - syn_log_init(min_level)
  * - syn_log_init(output_fn, min_level)
+ *
+ * @param output_fn Custom output function pointer (or NULL for default port output).
+ * @param min_level Minimum log level threshold for log emission.
  */
 void syn_log_init_backend(SYN_LogOutputFn output_fn, SYN_LogLevel min_level);
 

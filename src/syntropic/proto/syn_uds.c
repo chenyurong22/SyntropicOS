@@ -346,19 +346,30 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
                                           resp_len);
         }
-        uint8_t sub = req[1];
-        if (sub == 0x01U) { /* Request Seed */
+        uint8_t sub = req[1] & 0x7FU;
+        if (sub == 0x00U || sub == 0x7FU) {
+            return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
+                                          resp_len);
+        }
+        if ((sub & 1U) != 0U) { /* Odd subfunction = Request Seed (0x01, 0x03, 0x05...) */
             if (server->security_delay_timer_ms > 0U) {
                 return make_negative_response(sid, SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED,
                                               resp_buf, resp_len);
             }
-            server->security_state = SYN_UDS_SECURITY_SEED_SENT;
             resp_buf[0] = sid + 0x40U;
             resp_buf[1] = sub;
-            syn_poke_u32(server->current_seed, resp_buf, 2);
+            /* ISO 14229-1 §9.4: If already unlocked, return seed = 0x00000000 */
+            uint32_t seed_to_send = (server->security_state == SYN_UDS_SECURITY_UNLOCKED)
+                                        ? 0x00000000U
+                                        : server->current_seed;
+            if (server->security_state != SYN_UDS_SECURITY_UNLOCKED) {
+                server->security_state = SYN_UDS_SECURITY_SEED_SENT;
+            }
+            syn_poke_u32(seed_to_send, resp_buf, 2);
             *resp_len = 6U;
             success = true;
-        } else if (sub == 0x02U) { /* Send Key */
+        } else if ((sub & 1U) == 0U &&
+                   sub != 0x00U) { /* Even subfunction = Send Key (0x02, 0x04...) */
             if (req_len < 6U) {
                 return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
                                               resp_len);
@@ -713,6 +724,8 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             bool clear_dtc = false;
 
             if (is_all || (dtc == group_of_dtc)) {
+                clear_dtc = true;
+            } else if (is_emissions && (dtc <= 0x0FFFFFU)) {
                 clear_dtc = true;
             } else if (is_powertrain && (dtc <= 0x3FFFFFU)) {
                 clear_dtc = true;

@@ -213,28 +213,35 @@ static void test_uds_security_access(void)
     /* Tick 10s to expire lockout timer */
     syn_uds_tick(&g_uds, 10000);
 
-    /* Seed request succeeds after lockout expiration (error count decremented to 2) */
+    /* Request Seed and unlock with correct key */
+    req[1] = 0x01;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
 
-    /* Invalid key during this post-lockout attempt -> Error count returns to 3, re-triggering 10s
-     * lockout & NRC 0x36 */
+    uint32_t correct_key = g_uds.current_seed ^ 0xA5A5A5A5U;
     req[1] = 0x02;
-    req[2] = 0x00;
-    req[3] = 0x00;
-    req[4] = 0x00;
-    req[5] = 0x00;
+    syn_poke_u32(correct_key, req, 2);
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_EXCEEDED_NUMBER_OF_ATTEMPTS, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
 
-    /* Request Seed during re-triggered 10s lockout fails with NRC 0x37 */
+    /* ISO 14229-1 §9.4: When already unlocked, Request Seed returns seed = 0x00000000 */
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL_HEX32(0x00000000U, syn_peek_u32(resp, 2));
+
+    /* Re-initialize server and set delay timer to test NRC 0x37 */
+    syn_uds_init(&g_uds);
+    g_uds.security_delay_timer_ms = 10000;
+
+    /* Request Seed during active 10s lockout fails with NRC 0x37 */
     req[1] = 0x01;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED, resp[2]);
 
-    /* Expire 10s lockout again */
+    /* Expire 10s lockout timer */
     syn_uds_tick(&g_uds, 10000);
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
@@ -1754,12 +1761,13 @@ static void test_uds_clear_dtc_group_filtering(void)
     SYN_UDS_Server server;
     TEST_ASSERT_TRUE(syn_uds_init(&server));
 
-    /* Register DTCs across Powertrain (P), Chassis (C), Body (B), Network (U) */
-    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x010000, 0x09, 0x01)); /* Powertrain */
+    /* Register DTCs across Emissions (E), Powertrain (P), Chassis (C), Body (B), Network (U) */
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x000100, 0x09, 0x01)); /* Emissions */
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x150000, 0x09, 0x01)); /* Powertrain */
     TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x450000, 0x09, 0x01)); /* Chassis */
     TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x850000, 0x09, 0x01)); /* Body */
     TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0xC50000, 0x09, 0x01)); /* Network */
-    TEST_ASSERT_EQUAL_UINT8(4, server.dtc_count);
+    TEST_ASSERT_EQUAL_UINT8(5, server.dtc_count);
 
     uint8_t req[16] = {0};
     uint8_t resp[64] = {0};
@@ -1780,7 +1788,15 @@ static void test_uds_clear_dtc_group_filtering(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
 
-    /* 3. Clear Powertrain group (0x100000 / 0x010000) */
+    /* 3. Clear Emissions group (0x000000) */
+    req[1] = 0x00;
+    req[2] = 0x00;
+    req[3] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x54, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(4, server.dtc_count);
+
+    /* 4. Clear Powertrain group (0x100000) */
     req[1] = 0x10;
     req[2] = 0x00;
     req[3] = 0x00;

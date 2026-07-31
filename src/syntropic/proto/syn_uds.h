@@ -342,6 +342,9 @@ typedef struct {
     SYN_UDS_Session session;                      /**< Current diagnostic session state */
     SYN_UDS_SecurityState security_state;         /**< Security access unlock state */
     uint32_t current_seed;                        /**< Active security seed value */
+    bool use_aes128_security;                     /**< True if AES-128 security mode is active */
+    uint8_t aes_security_key[16];                 /**< AES-128 security secret key (16 bytes) */
+    uint8_t current_seed_bytes[16];               /**< Active AES-128 security seed (16 bytes) */
     uint32_t s3_timer_ms;                         /**< S3 session timer in ms */
     uint8_t security_error_count;                 /**< Failed security unlock attempts counter */
     uint32_t security_delay_timer_ms;             /**< Security delay penalty timer in ms */
@@ -383,6 +386,32 @@ typedef struct {
     uint8_t expected_block_seq;                   /**< Expected block sequence counter */
     uint8_t reset_type_requested;                 /**< Pending ECU reset type requested */
 } SYN_UDS_Server;
+
+/**
+ * @brief Enable AES-128 algorithm for UDS SecurityAccess (0x27) seed/key unlock.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param key 16-byte AES-128 secret key.
+ * @return true on success, false if server or key is NULL.
+ */
+bool syn_uds_enable_aes128_security(SYN_UDS_Server *server, const uint8_t key[16]);
+
+/**
+ * @brief Disable AES-128 security mode and revert to standard XOR security key calculation.
+ *
+ * @param server Pointer to UDS server instance.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_disable_aes128_security(SYN_UDS_Server *server);
+
+/**
+ * @brief Set custom 16-byte seed for AES-128 SecurityAccess.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param seed 16-byte seed buffer.
+ * @return true on success, false if server or seed is NULL.
+ */
+bool syn_uds_set_security_seed_bytes(SYN_UDS_Server *server, const uint8_t seed[16]);
 
 /**
  * @brief Initialize UDS Server context.

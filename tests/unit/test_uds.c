@@ -4,6 +4,7 @@
  */
 
 #include "syntropic/proto/syn_uds.h"
+#include "syntropic/util/syn_aes128.h"
 #include "syntropic/util/syn_pack.h"
 #include "unity/unity.h"
 
@@ -279,6 +280,121 @@ static void test_uds_security_access(void)
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
+}
+
+static void test_uds_security_access_aes128(void)
+{
+    syn_uds_init(&g_uds);
+    uint8_t req[64] = {0};
+    uint8_t resp[64] = {0};
+    uint16_t resp_len = 0;
+
+    /* Test null parameter guards */
+    TEST_ASSERT_FALSE(syn_uds_enable_aes128_security(NULL, NULL));
+    TEST_ASSERT_FALSE(syn_uds_enable_aes128_security(&g_uds, NULL));
+    TEST_ASSERT_FALSE(syn_uds_enable_aes128_security(NULL, (const uint8_t *)"1234567890123456"));
+    TEST_ASSERT_FALSE(syn_uds_disable_aes128_security(NULL));
+    TEST_ASSERT_FALSE(syn_uds_set_security_seed_bytes(NULL, NULL));
+    TEST_ASSERT_FALSE(syn_uds_set_security_seed_bytes(&g_uds, NULL));
+
+    /* Enable AES-128 security mode with secret key */
+    const uint8_t aes_key[16] = {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+                                 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c};
+    const uint8_t seed_16[16] = {0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96,
+                                 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a};
+    TEST_ASSERT_TRUE(syn_uds_enable_aes128_security(&g_uds, aes_key));
+    TEST_ASSERT_TRUE(syn_uds_set_security_seed_bytes(&g_uds, seed_16));
+
+    /* Expire power-on delay timer */
+    syn_uds_tick(&g_uds, 10000);
+
+    /* Request Seed (0x27 0x01) -> Returns 18 bytes (header + sub + 16-byte seed) */
+    req[0] = SYN_UDS_SID_SECURITY_ACCESS;
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(18, resp_len);
+    TEST_ASSERT_EQUAL_MEMORY(seed_16, &resp[2], 16);
+    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_SEED_SENT, g_uds.security_state);
+
+    /* Send Key with short payload (< 18 bytes) -> NRC 0x13 */
+    req[1] = 0x02;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 10, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* Send Key (Invalid AES Key #1) -> NRC 0x35 */
+    req[1] = 0x02;
+    memset(&req[2], 0xAA, 16);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 18, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INVALID_KEY, resp[2]);
+    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_LOCKED, g_uds.security_state);
+
+    /* Request Seed #2 + Invalid Key #2 */
+    req[1] = 0x01;
+    syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len);
+    req[1] = 0x02;
+    syn_uds_process_request(&g_uds, req, 18, resp, sizeof(resp), &resp_len);
+
+    /* Request Seed #3 + Invalid Key #3 -> Exceeds max attempts (3) returning NRC 0x36 */
+    req[1] = 0x01;
+    syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len);
+    req[1] = 0x02;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 18, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_EXCEEDED_NUMBER_OF_ATTEMPTS, resp[2]);
+
+    /* Request Seed during active 10s lockout -> NRC 0x37 */
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED, resp[2]);
+
+    /* Expire 10s lockout */
+    syn_uds_tick(&g_uds, 10000);
+
+    /* Request Seed and compute valid AES-128 key */
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+
+    SYN_AES128_Context aes_ctx;
+    syn_aes128_init(&aes_ctx, aes_key);
+    uint8_t valid_key[16];
+    syn_aes128_encrypt_block(&aes_ctx, seed_16, valid_key);
+
+    req[1] = 0x02;
+    memcpy(&req[2], valid_key, 16);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 18, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, resp[1]);
+    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
+    TEST_ASSERT_EQUAL_UINT8(0, g_uds.security_error_count);
+
+    /* Request Seed when already unlocked -> returns 16 zero bytes */
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    uint8_t zero_16[16] = {0};
+    TEST_ASSERT_EQUAL_MEMORY(zero_16, &resp[2], 16);
+
+    /* Send Key when seed not sent in AES128 mode -> NRC 0x22 (Conditions Not Correct) */
+    g_uds.security_state = SYN_UDS_SECURITY_LOCKED;
+    req[1] = 0x02;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 18, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    /* Invalid subfunction in AES128 mode -> NRC 0x12 */
+    req[1] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 18, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
+
+    /* Disable AES-128 security mode -> Revert to XOR mode */
+    TEST_ASSERT_TRUE(syn_uds_disable_aes128_security(&g_uds));
 }
 
 static void test_uds_did_read_write(void)
@@ -2168,6 +2284,7 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_init_and_sessions);
     RUN_TEST(test_uds_s3_timer_tick);
     RUN_TEST(test_uds_security_access);
+    RUN_TEST(test_uds_security_access_aes128);
     RUN_TEST(test_uds_communication_control);
     RUN_TEST(test_uds_access_timing_parameter);
     RUN_TEST(test_uds_secured_data_transmission);

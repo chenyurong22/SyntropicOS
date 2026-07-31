@@ -753,6 +753,10 @@ int main(void)
     RUN_TEST(test_igmp_group_overflow_and_leaving_unjoined);
     RUN_TEST(test_igmp_non_igmp_packets);
 
+    extern void run_hkdf_tests(void);
+    extern void run_asn1_x509_tests(void);
+    extern void run_tls_tests(void);
+
     run_tcp_tests();
     run_udp_tests();
     run_net_transport_udp_tests();
@@ -761,6 +765,9 @@ int main(void)
     run_lut_tests();
     run_uds_tests();
     run_uds_util_tests();
+    run_hkdf_tests();
+    run_asn1_x509_tests();
+    run_tls_tests();
 
     return UNITY_END();
 }

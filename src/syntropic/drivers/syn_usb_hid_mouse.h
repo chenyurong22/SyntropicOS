@@ -18,8 +18,11 @@ extern "C" {
 #include <stdint.h>
 
 /** USB HID Mouse Button Bitmasks */
+/** @brief Left mouse button bitmask. */
 #define SYN_USB_HID_MOUSE_BTN_LEFT (1U << 0)
+/** @brief Right mouse button bitmask. */
 #define SYN_USB_HID_MOUSE_BTN_RIGHT (1U << 1)
+/** @brief Middle mouse button bitmask. */
 #define SYN_USB_HID_MOUSE_BTN_MIDDLE (1U << 2)
 
 /** Standard 4-byte USB HID Boot Mouse IN Report structure */

@@ -6,7 +6,7 @@
  * SAE J2012 DTC strings (e.g., "P010500", "B111717", "U013100") and 24-bit
  * UDS wire integers (e.g., 0x010500, 0x911717, 0xC13100).
  *
- * @ingroup syn_proto
+ * @ingroup syn_protocols
  */
 
 #ifndef SYN_UDS_UTIL_H

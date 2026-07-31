@@ -46,7 +46,7 @@ Quick-jump to specific feature guides and API references:
 - **[Building Automation (`syn_bacnet` / `syn_dali`)](modules/communication.md)**: BACnet MS/TP (ISO 16484-5) & DALI Lighting (IEC 62386) protocol engines.
 - **[M-Bus Metering (`syn_mbus`)](modules/communication.md#2-m-bus-protocol)**: EN 13757 European utility meter bus decoder.
 - **[Automotive ISO-TP & J1939](modules/communication.md)**: CAN bus multi-frame transport and heavy vehicle PGN/SPN decoder.
-- **[USB 2.0 Device Core (`syn_usb` / `syn_usb_cdc` / `syn_usb_hid`)](modules/drivers.md#9-usb-20-device-core--class-drivers-driversusb_h-usb_cdch-usb_hidh)**: Zero-heap USB 2.0 device core, CDC ACM, HID class drivers, and protothread integration.
+- **[USB 2.0 Device & Host Core (`syn_usb` / `syn_usb_host` / `syn_usb_cdc` / `syn_usb_hid`)](modules/drivers.md#9-usb-20-device-core--class-drivers-driversusb_h-usb_cdch-usb_hidh)**: Zero-heap USB 2.0 device & host core engines, CDC ACM, HID class drivers, and protothread coroutines.
 
 
 

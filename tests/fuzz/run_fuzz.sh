@@ -49,6 +49,9 @@ clang -std=c99 -I"${ROOT_DIR}" -I"${ROOT_DIR}/src" -I"${ROOT_DIR}/tests/unit/moc
     "${ROOT_DIR}/src/syntropic/drivers/syn_usb.c" \
     "${ROOT_DIR}/src/syntropic/drivers/syn_usb_cdc.c" \
     "${ROOT_DIR}/src/syntropic/drivers/syn_usb_hid.c" \
+    "${ROOT_DIR}/src/syntropic/drivers/syn_usb_host.c" \
+    "${ROOT_DIR}/src/syntropic/drivers/syn_usb_host_cdc.c" \
+    "${ROOT_DIR}/src/syntropic/drivers/syn_transport_usb_host_cdc.c" \
     "${ROOT_DIR}/tests/unit/mocks/mock_port.c" \
     "${ROOT_DIR}/tests/fuzz/fuzz_usb.c" \
     -o fuzzer_usb

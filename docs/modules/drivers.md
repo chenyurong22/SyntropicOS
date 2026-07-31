@@ -215,5 +215,31 @@ void usb_setup(void) {
 }
 ```
 
+---
+
+## 10. USB 2.0 Host Core & Host CDC Class Driver (`drivers/syn_usb_host.h`, `syn_usb_host_cdc.h`)
+
+Provides a zero-heap USB 2.0 Host core engine with tick-driven enumeration state machine (attach detection, bus reset, descriptor reads, `SET_ADDRESS`, `SET_CONFIGURATION`), interface probing against registered host class drivers, and non-blocking protothread coroutines.
+
+```c
+#include <syntropic/drivers/syn_usb_host.h>
+#include <syntropic/drivers/syn_usb_host_cdc.h>
+
+static SYN_USB_Host    host;
+static SYN_USB_HostCDC host_cdc;
+
+void host_setup(void) {
+    syn_usb_host_init(&host);
+    syn_usb_host_cdc_init(&host_cdc);
+    syn_usb_host_cdc_register(&host, &host_cdc);
+}
+
+void host_task(void) {
+    /* Called each scheduler tick */
+    syn_usb_host_process(&host);
+}
+```
+
+
 
 

@@ -6,6 +6,8 @@
 #include "syntropic/drivers/syn_usb.h"
 #include "syntropic/drivers/syn_usb_cdc.h"
 #include "syntropic/drivers/syn_usb_hid.h"
+#include "syntropic/drivers/syn_usb_host.h"
+#include "syntropic/drivers/syn_usb_host_cdc.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -74,6 +76,23 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         /* Fuzz HID report send & read */
         syn_usb_hid_send_report(&hid, payload, payload_len);
         syn_usb_hid_read_report(&hid, read_out, sizeof(read_out), &out_len);
+    }
+
+    /* Fuzz USB Host enumeration descriptor parsing */
+    SYN_USB_Host host;
+    SYN_USB_HostCDC hcdc;
+    if (syn_usb_host_init(&host) == SYN_OK && syn_usb_host_cdc_init(&hcdc) == SYN_OK) {
+        syn_usb_host_cdc_register(&host, &hcdc);
+
+        if (size <= sizeof(host.enum_buf)) {
+            memcpy(host.enum_buf, data, size);
+            host.enum_buf_len = (uint16_t)size;
+            host.state = SYN_USB_HOST_STATE_ENUMERATING;
+            host.enum_step = SYN_USB_HOST_ENUM_CLASS_PROBE;
+
+            /* Drive class probing with fuzzed descriptor bytes */
+            syn_usb_host_process(&host);
+        }
     }
 
     return 0;

@@ -1297,3 +1297,98 @@ SYN_WEAK SYN_Status syn_port_usb_ep_stall(uint8_t ep_addr)
     (void)ep_addr;
     return SYN_OK;
 }
+
+/* ── USB Host HAL Mock Implementation ────────────────────────────────────── */
+
+bool mock_usb_host_attached = false;
+bool mock_usb_host_vbus_enabled = false;
+uint8_t mock_usb_host_xfer_buf[256];
+uint16_t mock_usb_host_xfer_len = 0;
+bool mock_usb_host_xfer_complete = true;
+SYN_Status mock_usb_host_xfer_status = SYN_OK;
+
+void mock_usb_host_reset(void)
+{
+    mock_usb_host_attached = false;
+    mock_usb_host_vbus_enabled = false;
+    memset(mock_usb_host_xfer_buf, 0, sizeof(mock_usb_host_xfer_buf));
+    mock_usb_host_xfer_len = 0;
+    mock_usb_host_xfer_complete = true;
+    mock_usb_host_xfer_status = SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_host_init(void)
+{
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_host_vbus(bool enable)
+{
+    mock_usb_host_vbus_enabled = enable;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_host_bus_reset(void)
+{
+    return SYN_OK;
+}
+
+SYN_WEAK bool syn_port_usb_host_device_attached(void)
+{
+    return mock_usb_host_attached;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_host_pipe_open(uint8_t pipe, uint8_t dev_addr, uint8_t ep_addr,
+                                                uint8_t ep_type, uint16_t max_pkt)
+{
+    (void)pipe;
+    (void)dev_addr;
+    (void)ep_addr;
+    (void)ep_type;
+    (void)max_pkt;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_host_pipe_close(uint8_t pipe)
+{
+    (void)pipe;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_host_submit_setup(uint8_t pipe, const SYN_USB_SetupPacket *pkt)
+{
+    (void)pipe;
+    (void)pkt;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_host_submit_data(uint8_t pipe, uint8_t *buf, uint16_t len,
+                                                  bool is_in)
+{
+    (void)pipe;
+    if (is_in && buf && mock_usb_host_xfer_len > 0U) {
+        uint16_t copy_len = (len < mock_usb_host_xfer_len) ? len : mock_usb_host_xfer_len;
+        memcpy(buf, mock_usb_host_xfer_buf, copy_len);
+    } else if (!is_in && buf && len > 0U) {
+        uint16_t copy_len =
+            (len < sizeof(mock_usb_host_xfer_buf)) ? len : (uint16_t)sizeof(mock_usb_host_xfer_buf);
+        memcpy(mock_usb_host_xfer_buf, buf, copy_len);
+        mock_usb_host_xfer_len = copy_len;
+    }
+    return SYN_OK;
+}
+
+SYN_WEAK bool syn_port_usb_host_xfer_done(uint8_t pipe)
+{
+    (void)pipe;
+    return mock_usb_host_xfer_complete;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_host_xfer_result(uint8_t pipe, uint16_t *actual_len)
+{
+    (void)pipe;
+    if (actual_len) {
+        *actual_len = mock_usb_host_xfer_len;
+    }
+    return mock_usb_host_xfer_status;
+}

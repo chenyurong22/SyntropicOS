@@ -141,6 +141,9 @@ SYN_SRCS := \
 	src/syntropic/drivers/syn_usb.c \
 	src/syntropic/drivers/syn_usb_hid.c \
 	src/syntropic/drivers/syn_transport_usb_cdc.c \
+	src/syntropic/drivers/syn_usb_host.c \
+	src/syntropic/drivers/syn_usb_host_cdc.c \
+	src/syntropic/drivers/syn_transport_usb_host_cdc.c \
 	src/syntropic/net/syn_eth.c \
 	src/syntropic/net/syn_dhcp.c \
 	src/syntropic/net/syn_icmp.c \

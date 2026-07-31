@@ -292,6 +292,20 @@ void mock_udp_set_response(const void *data, size_t len, const SYN_SockAddr *fro
 /** Add a packet to the mock RX queue for the next recvfrom() call. */
 void mock_udp_inject_packet(const void *data, size_t len, const SYN_SockAddr *from);
 
+/* ── USB Host mock ───────────────────────────────────────────────────────── */
+
+#include "port/syn_port_usb_host.h"
+
+extern bool mock_usb_host_attached;
+extern bool mock_usb_host_vbus_enabled;
+extern uint8_t mock_usb_host_xfer_buf[256];
+extern uint16_t mock_usb_host_xfer_len;
+extern bool mock_usb_host_xfer_complete;
+extern SYN_Status mock_usb_host_xfer_status;
+
+/* Reset USB Host mock state */
+void mock_usb_host_reset(void);
+
 /* ── Reset ────────────────────────────────────────────────────────────────── */
 
 /** Reset all mock state to defaults. Call from setUp(). */

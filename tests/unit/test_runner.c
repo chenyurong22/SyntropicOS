@@ -686,6 +686,10 @@ int main(void)
     RUN_TEST(test_usb_hid_report_send_and_read);
     RUN_TEST(test_usb_hid_class_requests);
     RUN_TEST(test_usb_hid_null_checks);
+
+    extern void run_usb_host_tests(void);
+    run_usb_host_tests();
+
     RUN_TEST(test_eth_generate_mac);
     RUN_TEST(test_eth_init);
     RUN_TEST(test_eth_arp_cache);

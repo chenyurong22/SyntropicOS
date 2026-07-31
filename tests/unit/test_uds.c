@@ -72,6 +72,13 @@ static void test_uds_init_and_sessions(void)
     TEST_ASSERT_EQUAL_HEX8(0x50, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SESSION_PROGRAMMING, resp[1]);
     TEST_ASSERT_EQUAL(SYN_UDS_SESSION_PROGRAMMING, g_uds.session);
+
+    /* Safety System Session (0x04) */
+    req[1] = SYN_UDS_SESSION_SAFETY_SYSTEM;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x50, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SESSION_SAFETY_SYSTEM, resp[1]);
+    TEST_ASSERT_EQUAL(SYN_UDS_SESSION_SAFETY_SYSTEM, g_uds.session);
 }
 
 static void test_uds_s3_timer_tick(void)

@@ -273,7 +273,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         }
         uint8_t sub = req[1] & 0x7FU;
         if ((sub != SYN_UDS_SESSION_DEFAULT) && (sub != SYN_UDS_SESSION_PROGRAMMING) &&
-            (sub != SYN_UDS_SESSION_EXTENDED)) {
+            (sub != SYN_UDS_SESSION_EXTENDED) && (sub != SYN_UDS_SESSION_SAFETY_SYSTEM)) {
             return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
                                           resp_len);
         }

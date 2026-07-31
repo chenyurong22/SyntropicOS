@@ -160,9 +160,10 @@ typedef enum {
 
 /** @brief UDS Diagnostic Session Types (ISO 14229-1) */
 typedef enum {
-    SYN_UDS_SESSION_DEFAULT = 0x01U,     /**< Default session (0x01) */
-    SYN_UDS_SESSION_PROGRAMMING = 0x02U, /**< Programming session (0x02) */
-    SYN_UDS_SESSION_EXTENDED = 0x03U     /**< Extended diagnostic session (0x03) */
+    SYN_UDS_SESSION_DEFAULT = 0x01U,      /**< Default session (0x01) */
+    SYN_UDS_SESSION_PROGRAMMING = 0x02U,  /**< Programming session (0x02) */
+    SYN_UDS_SESSION_EXTENDED = 0x03U,     /**< Extended diagnostic session (0x03) */
+    SYN_UDS_SESSION_SAFETY_SYSTEM = 0x04U /**< Safety system diagnostic session (0x04) */
 } SYN_UDS_Session;
 
 /** @brief UDS Security Access Unlock States */

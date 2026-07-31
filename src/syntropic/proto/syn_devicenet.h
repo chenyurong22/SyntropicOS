@@ -19,65 +19,68 @@
 extern "C" {
 #endif
 
-#define SYN_DEVICENET_MAX_MAC_ID 63U
-#define SYN_DEVICENET_MAX_PAYLOAD 8U
-#define SYN_DEVICENET_DUP_MAC_TIMEOUT_MS 1000U
+/** @name DeviceNet Configuration Constants */
+/**@{*/
+#define SYN_DEVICENET_MAX_MAC_ID 63U           /**< Maximum valid MAC ID */
+#define SYN_DEVICENET_MAX_PAYLOAD 8U           /**< Maximum CAN frame payload size */
+#define SYN_DEVICENET_DUP_MAC_TIMEOUT_MS 1000U /**< Duplicate MAC check timeout */
+/**@}*/
 
-/* DeviceNet Baud Rates */
+/** @brief DeviceNet Baud Rates */
 typedef enum {
-    SYN_DEVICENET_BAUD_125K = 0U,
-    SYN_DEVICENET_BAUD_250K = 1U,
-    SYN_DEVICENET_BAUD_500K = 2U
+    SYN_DEVICENET_BAUD_125K = 0U, /**< 125 kbps */
+    SYN_DEVICENET_BAUD_250K = 1U, /**< 250 kbps */
+    SYN_DEVICENET_BAUD_500K = 2U  /**< 500 kbps */
 } SYN_DeviceNet_Baud;
 
-/* DeviceNet Node States */
+/** @brief DeviceNet Node States */
 typedef enum {
-    SYN_DEVICENET_STATE_OFFLINE = 0U,
-    SYN_DEVICENET_STATE_DUP_MAC_CHECK = 1U,
-    SYN_DEVICENET_STATE_ONLINE = 2U,
-    SYN_DEVICENET_STATE_BUS_OFF = 3U
+    SYN_DEVICENET_STATE_OFFLINE = 0U,       /**< Node offline */
+    SYN_DEVICENET_STATE_DUP_MAC_CHECK = 1U, /**< Checking for duplicate MAC ID */
+    SYN_DEVICENET_STATE_ONLINE = 2U,        /**< Node online */
+    SYN_DEVICENET_STATE_BUS_OFF = 3U        /**< Node in bus-off error state */
 } SYN_DeviceNet_State;
 
 /** @brief CIP Identity Object (Class 0x01) Attributes */
 typedef struct {
-    uint16_t vendor_id;
-    uint16_t device_type;
-    uint16_t product_code;
-    uint8_t rev_major;
-    uint8_t rev_minor;
-    uint16_t status;
-    uint32_t serial_number;
-    char product_name[32];
-    bool quick_connect_enabled;
+    uint16_t vendor_id;         /**< Vendor ID code */
+    uint16_t device_type;       /**< Device type profile */
+    uint16_t product_code;      /**< Product code */
+    uint8_t rev_major;          /**< Major revision number */
+    uint8_t rev_minor;          /**< Minor revision number */
+    uint16_t status;            /**< Device status word */
+    uint32_t serial_number;     /**< 32-bit device serial number */
+    char product_name[32];      /**< ASCII product name string */
+    bool quick_connect_enabled; /**< QuickConnect feature enabled flag */
 } SYN_CIP_Identity;
 
 /** @brief CIP DeviceNet Object (Class 0x03) Attributes */
 typedef struct {
-    uint8_t mac_id;
-    SYN_DeviceNet_Baud baud_rate;
-    uint8_t bus_off_action;
-    uint8_t allocation_choice;
-    uint8_t master_mac_id;
+    uint8_t mac_id;               /**< Node MAC ID address */
+    SYN_DeviceNet_Baud baud_rate; /**< Configured CAN baud rate */
+    uint8_t bus_off_action;       /**< Bus-off reset action */
+    uint8_t allocation_choice;    /**< Allocation choice byte */
+    uint8_t master_mac_id;        /**< Master node MAC ID */
 } SYN_CIP_DeviceNet;
 
 /** @brief CIP Assembly Object (Class 0x04) Context */
 typedef struct {
-    uint8_t *input_buf;
-    uint8_t input_len;
-    uint8_t *output_buf;
-    uint8_t output_len;
+    uint8_t *input_buf;  /**< Target input assembly data buffer */
+    uint8_t input_len;   /**< Input assembly buffer length */
+    uint8_t *output_buf; /**< Target output assembly data buffer */
+    uint8_t output_len;  /**< Output assembly buffer length */
 } SYN_CIP_Assembly;
 
 /** @brief DeviceNet Node Context Structure */
 typedef struct {
-    SYN_DeviceNet_State state;
-    SYN_CIP_Identity identity;
-    SYN_CIP_DeviceNet devicenet_obj;
-    SYN_CIP_Assembly assembly;
-    uint32_t dup_mac_timer_ms;
-    bool dup_mac_failed;
-    bool explicit_connected;
-    bool polled_connected;
+    SYN_DeviceNet_State state;       /**< Current node state */
+    SYN_CIP_Identity identity;       /**< CIP Identity object attributes */
+    SYN_CIP_DeviceNet devicenet_obj; /**< CIP DeviceNet object attributes */
+    SYN_CIP_Assembly assembly;       /**< CIP Assembly object context */
+    uint32_t dup_mac_timer_ms;       /**< Duplicate MAC check timer in ms */
+    bool dup_mac_failed;             /**< Duplicate MAC check failure flag */
+    bool explicit_connected;         /**< Explicit connection active flag */
+    bool polled_connected;           /**< Polled I/O connection active flag */
 } SYN_DeviceNet_Node;
 
 /**

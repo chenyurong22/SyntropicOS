@@ -112,9 +112,11 @@ typedef void (*SYN_LogOutputFn)(const char *str, size_t len);
  */
 void syn_log_init_backend(SYN_LogOutputFn output_fn, SYN_LogLevel min_level);
 
+/** @cond INTERNAL */
 #define _SYN_LOG_INIT_1(level) syn_log_init_backend(NULL, (level))
 #define _SYN_LOG_INIT_2(fn, level) syn_log_init_backend((fn), (level))
 #define _SYN_LOG_INIT_GET_MACRO(_1, _2, NAME, ...) NAME
+/** @endcond */
 
 /**
  * @brief Initialize the logging system.

@@ -24,6 +24,8 @@
 #endif
 #include <string.h>
 
+/** @cond INTERNAL */
+
 /* ── State ──────────────────────────────────────────────────────────────── */
 
 static SYN_LogLevel s_level = SYN_LOG_DEBUG; /**< Current minimum log level.  */
@@ -38,6 +40,8 @@ static void emit_log(const char *str, size_t len)
         syn_port_serial_write((const uint8_t *)str, len);
     }
 }
+
+/** @endcond */
 
 /* ── Level labels ─────────────────────────────────────────────────────────────── */
 

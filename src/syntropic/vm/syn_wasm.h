@@ -30,52 +30,54 @@
 extern "C" {
 #endif
 
-/* ── Configuration Defaults ──────────────────────────────────────────────── */
-
+/** @name WebAssembly VM Execution Limit Constants */
+/**@{*/
 #ifndef SYN_WASM_MAX_STACK
-#define SYN_WASM_MAX_STACK 64
+#define SYN_WASM_MAX_STACK 64 /**< Maximum operand stack depth */
 #endif
 
 #ifndef SYN_WASM_MAX_LOCALS
-#define SYN_WASM_MAX_LOCALS 256
+#define SYN_WASM_MAX_LOCALS 256 /**< Maximum local variable count per frame */
 #endif
 
 #ifndef SYN_WASM_MAX_CALL_DEPTH
-#define SYN_WASM_MAX_CALL_DEPTH 32
+#define SYN_WASM_MAX_CALL_DEPTH 32 /**< Maximum call frame stack depth */
 #endif
 
 #ifndef SYN_WASM_MAX_FUNCTIONS
-#define SYN_WASM_MAX_FUNCTIONS 32
+#define SYN_WASM_MAX_FUNCTIONS 32 /**< Maximum internal function defs */
 #endif
 
 #ifndef SYN_WASM_MAX_HOST_FUNCS
-#define SYN_WASM_MAX_HOST_FUNCS 16
+#define SYN_WASM_MAX_HOST_FUNCS 16 /**< Maximum registered host functions */
 #endif
 
 #ifndef SYN_WASM_MAX_GLOBALS
-#define SYN_WASM_MAX_GLOBALS 16
+#define SYN_WASM_MAX_GLOBALS 16 /**< Maximum global variables */
 #endif
 
 #ifndef SYN_WASM_MAX_LABELS
-#define SYN_WASM_MAX_LABELS 16
+#define SYN_WASM_MAX_LABELS 16 /**< Maximum block/loop control labels */
 #endif
+/**@}*/
 
 /* ── Status Codes & Traps ───────────────────────────────────────────────── */
 
+/** @brief WebAssembly VM execution status codes and traps */
 typedef enum {
-    SYN_WASM_OK = 0,
-    SYN_WASM_YIELDED,
-    SYN_WASM_HALTED,
-    SYN_WASM_TRAP_STACK_OVERFLOW,
-    SYN_WASM_TRAP_STACK_UNDERFLOW,
-    SYN_WASM_TRAP_OUT_OF_BOUNDS,
-    SYN_WASM_TRAP_BAD_OPCODE,
-    SYN_WASM_TRAP_DIV_ZERO,
-    SYN_WASM_TRAP_UNREACHABLE,
-    SYN_WASM_TRAP_CALL_STACK_OVERFLOW,
-    SYN_WASM_TRAP_TYPE_MISMATCH,
-    SYN_WASM_TRAP_INVALID_MODULE,
-    SYN_WASM_TRAP_UNREGISTERED_HOST
+    SYN_WASM_OK = 0,                   /**< Execution completed normally */
+    SYN_WASM_YIELDED,                  /**< Execution yielded after instruction quota */
+    SYN_WASM_HALTED,                   /**< VM halted */
+    SYN_WASM_TRAP_STACK_OVERFLOW,      /**< Operand stack overflow trap */
+    SYN_WASM_TRAP_STACK_UNDERFLOW,     /**< Operand stack underflow trap */
+    SYN_WASM_TRAP_OUT_OF_BOUNDS,       /**< Memory access out of bounds trap */
+    SYN_WASM_TRAP_BAD_OPCODE,          /**< Invalid or unsupported opcode trap */
+    SYN_WASM_TRAP_DIV_ZERO,            /**< Division by zero trap */
+    SYN_WASM_TRAP_UNREACHABLE,         /**< Unreachable instruction trap */
+    SYN_WASM_TRAP_CALL_STACK_OVERFLOW, /**< Call stack overflow trap */
+    SYN_WASM_TRAP_TYPE_MISMATCH,       /**< Type mismatch trap */
+    SYN_WASM_TRAP_INVALID_MODULE,      /**< Invalid Wasm module header/binary */
+    SYN_WASM_TRAP_UNREGISTERED_HOST    /**< Unregistered host function trap */
 } SYN_WASM_Status;
 
 /* Forward declarations */
@@ -143,32 +145,32 @@ typedef struct {
 
 /** @brief WebAssembly virtual machine execution context */
 struct SYN_WASM_Context_s {
-    const SYN_WASM_Module *module;
+    const SYN_WASM_Module *module; /**< Pointer to target Wasm module */
 
-    uint32_t pc;
-    uint32_t sp;
-    uint64_t stack[SYN_WASM_MAX_STACK];
+    uint32_t pc;                        /**< Program counter opcode offset */
+    uint32_t sp;                        /**< Operand stack pointer */
+    uint64_t stack[SYN_WASM_MAX_STACK]; /**< Operand stack array */
 
-    uint64_t locals[SYN_WASM_MAX_LOCALS];
-    uint16_t local_count;
+    uint64_t locals[SYN_WASM_MAX_LOCALS]; /**< Local variables array */
+    uint16_t local_count;                 /**< Active local variable count */
 
-    SYN_WASM_CallFrame call_stack[SYN_WASM_MAX_CALL_DEPTH];
-    uint8_t call_depth;
+    SYN_WASM_CallFrame call_stack[SYN_WASM_MAX_CALL_DEPTH]; /**< Call frame stack array */
+    uint8_t call_depth;                                     /**< Active call depth */
 
-    SYN_WASM_Label label_stack[SYN_WASM_MAX_LABELS];
-    uint8_t label_depth;
+    SYN_WASM_Label label_stack[SYN_WASM_MAX_LABELS]; /**< Control block label stack array */
+    uint8_t label_depth;                             /**< Active label depth */
 
-    uint64_t globals[SYN_WASM_MAX_GLOBALS];
-    uint16_t global_count;
+    uint64_t globals[SYN_WASM_MAX_GLOBALS]; /**< Global variables array */
+    uint16_t global_count;                  /**< Global variable count */
 
-    uint8_t *linear_mem;
-    uint32_t linear_mem_size;
+    uint8_t *linear_mem;      /**< Pointer to linear RAM memory buffer */
+    uint32_t linear_mem_size; /**< Size of linear RAM memory buffer in bytes */
 
-    SYN_WASM_HostFunc host_funcs[SYN_WASM_MAX_HOST_FUNCS];
-    uint16_t host_func_count;
+    SYN_WASM_HostFunc host_funcs[SYN_WASM_MAX_HOST_FUNCS]; /**< Host function table */
+    uint16_t host_func_count;                              /**< Registered host function count */
 
-    void *user_ctx;
-    SYN_WASM_Status status;
+    void *user_ctx;         /**< Custom user context pointer */
+    SYN_WASM_Status status; /**< VM status and trap code */
 };
 
 /* ── Public API ─────────────────────────────────────────────────────────── */

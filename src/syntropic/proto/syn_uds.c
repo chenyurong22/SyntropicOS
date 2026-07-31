@@ -208,6 +208,7 @@ bool syn_uds_register_dtc_handler(SYN_UDS_Server *server, SYN_UDS_DTCHandler han
     return true;
 }
 
+/** @cond INTERNAL */
 static bool make_negative_response(uint8_t sid, uint8_t nrc, uint8_t *resp_buf, uint16_t *resp_len)
 {
     resp_buf[0] = SYN_UDS_RESPONSE_NEGATIVE;
@@ -216,6 +217,7 @@ static bool make_negative_response(uint8_t sid, uint8_t nrc, uint8_t *resp_buf, 
     *resp_len = 3U;
     return true;
 }
+/** @endcond */
 
 bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_t req_len,
                              uint8_t *resp_buf, uint16_t max_resp_len, uint16_t *resp_len)

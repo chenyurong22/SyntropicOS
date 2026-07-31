@@ -35,50 +35,50 @@ extern "C" {
 
 /** @name CCP Command Codes (CRO) */
 /**@{*/
-#define SYN_CCP_CMD_CONNECT 0x01U
-#define SYN_CCP_CMD_EXCHANGE_ID 0x02U
-#define SYN_CCP_CMD_DNLOAD 0x03U
-#define SYN_CCP_CMD_UPLOAD 0x04U
-#define SYN_CCP_CMD_START_STOP_ALL 0x06U
-#define SYN_CCP_CMD_SET_MTA 0x08U
-#define SYN_CCP_CMD_GET_ACTIVE_CAL_PAGE 0x09U
-#define SYN_CCP_CMD_SHORT_UP 0x0FU
-#define SYN_CCP_CMD_BUILD_PKT 0x10U
-#define SYN_CCP_CMD_START_STOP 0x11U
-#define SYN_CCP_CMD_GET_SEED 0x12U
-#define SYN_CCP_CMD_UNLOCK 0x13U
-#define SYN_CCP_CMD_SET_CAL_PAGE 0x14U
-#define SYN_CCP_CMD_SET_DAQ_SIZE 0x15U
-#define SYN_CCP_CMD_DISCONNECT 0x17U
-#define SYN_CCP_CMD_CLEAR_MEMORY 0x18U
-#define SYN_CCP_CMD_GET_DAQ_SIZE 0x1AU
-#define SYN_CCP_CMD_GET_CCP_VERSION 0x1BU
-#define SYN_CCP_CMD_PROGRAM 0x22U
-#define SYN_CCP_CMD_DNLOAD_6 0x23U
+#define SYN_CCP_CMD_CONNECT 0x01U             /**< Establish connection */
+#define SYN_CCP_CMD_EXCHANGE_ID 0x02U         /**< Exchange station ID */
+#define SYN_CCP_CMD_DNLOAD 0x03U              /**< Download data block */
+#define SYN_CCP_CMD_UPLOAD 0x04U              /**< Upload data block */
+#define SYN_CCP_CMD_START_STOP_ALL 0x06U      /**< Start/stop all DAQ lists */
+#define SYN_CCP_CMD_SET_MTA 0x08U             /**< Set memory transfer address */
+#define SYN_CCP_CMD_GET_ACTIVE_CAL_PAGE 0x09U /**< Get active calibration page */
+#define SYN_CCP_CMD_SHORT_UP 0x0FU            /**< Short upload */
+#define SYN_CCP_CMD_BUILD_PKT 0x10U           /**< Build DAQ packet */
+#define SYN_CCP_CMD_START_STOP 0x11U          /**< Start/stop single DAQ list */
+#define SYN_CCP_CMD_GET_SEED 0x12U            /**< Get seed for security unlock */
+#define SYN_CCP_CMD_UNLOCK 0x13U              /**< Send key to unlock resource */
+#define SYN_CCP_CMD_SET_CAL_PAGE 0x14U        /**< Set calibration page */
+#define SYN_CCP_CMD_SET_DAQ_SIZE 0x15U        /**< Set DAQ list size */
+#define SYN_CCP_CMD_DISCONNECT 0x17U          /**< Disconnect station */
+#define SYN_CCP_CMD_CLEAR_MEMORY 0x18U        /**< Clear flash/RAM memory */
+#define SYN_CCP_CMD_GET_DAQ_SIZE 0x1AU        /**< Get DAQ list size */
+#define SYN_CCP_CMD_GET_CCP_VERSION 0x1BU     /**< Get CCP protocol version */
+#define SYN_CCP_CMD_PROGRAM 0x22U             /**< Program flash memory */
+#define SYN_CCP_CMD_DNLOAD_6 0x23U            /**< Fast 6-byte download */
 /**@}*/
 
 /** @name CCP Response Packet Identifiers (DTO) */
 /**@{*/
-#define SYN_CCP_PID_CRM 0xFFU
-#define SYN_CCP_PID_EVENT 0xFEU
+#define SYN_CCP_PID_CRM 0xFFU   /**< Command response message */
+#define SYN_CCP_PID_EVENT 0xFEU /**< Event packet */
 /**@}*/
 
 /** @name CCP Error Return Codes */
 /**@{*/
-#define SYN_CCP_ERR_SUCCESS 0x00U
-#define SYN_CCP_ERR_CMD_UNKNOWN 0x01U
-#define SYN_CCP_ERR_CMD_SYNTAX 0x02U
-#define SYN_CCP_ERR_PARAM_OUT_OF_RANGE 0x10U
-#define SYN_CCP_ERR_ACCESS_DENIED 0x11U
-#define SYN_CCP_ERR_NOT_CONNECTED 0x12U
-#define SYN_CCP_ERR_RESOURCE_LOCKED 0x18U
+#define SYN_CCP_ERR_SUCCESS 0x00U            /**< Action succeeded */
+#define SYN_CCP_ERR_CMD_UNKNOWN 0x01U        /**< Command unknown */
+#define SYN_CCP_ERR_CMD_SYNTAX 0x02U         /**< Command syntax error */
+#define SYN_CCP_ERR_PARAM_OUT_OF_RANGE 0x10U /**< Parameter out of range */
+#define SYN_CCP_ERR_ACCESS_DENIED 0x11U      /**< Access denied */
+#define SYN_CCP_ERR_NOT_CONNECTED 0x12U      /**< Station not connected */
+#define SYN_CCP_ERR_RESOURCE_LOCKED 0x18U    /**< Resource locked */
 /**@}*/
 
 /** @name CCP Protection Resource Masks */
 /**@{*/
-#define SYN_CCP_RESOURCE_CAL 0x01U
-#define SYN_CCP_RESOURCE_DAQ 0x02U
-#define SYN_CCP_RESOURCE_PGM 0x40U
+#define SYN_CCP_RESOURCE_CAL 0x01U /**< Calibration resource mask */
+#define SYN_CCP_RESOURCE_DAQ 0x02U /**< Data acquisition resource mask */
+#define SYN_CCP_RESOURCE_PGM 0x40U /**< Flash programming resource mask */
 /**@}*/
 
 /**
@@ -93,39 +93,39 @@ typedef struct {
  * @brief ODT (Object Descriptor Table) structure.
  */
 typedef struct {
-    SYN_CCP_ODTEntry entries[SYN_CCP_MAX_ENTRIES_PER_ODT];
-    uint8_t entry_count;
+    SYN_CCP_ODTEntry entries[SYN_CCP_MAX_ENTRIES_PER_ODT]; /**< ODT entry array */
+    uint8_t entry_count;                                   /**< Active entry count */
 } SYN_CCP_ODT;
 
 /**
  * @brief DAQ List structure.
  */
 typedef struct {
-    SYN_CCP_ODT odts[SYN_CCP_MAX_ODT_PER_DAQ];
-    uint8_t odt_count;
-    uint8_t current_odt_idx;
-    uint8_t current_entry_idx;
-    bool running;
-    uint8_t event_channel;
-    uint16_t prescaler;
-    uint16_t cycle_counter;
+    SYN_CCP_ODT odts[SYN_CCP_MAX_ODT_PER_DAQ]; /**< Array of ODT blocks */
+    uint8_t odt_count;                         /**< Configured ODT count */
+    uint8_t current_odt_idx;                   /**< Current ODT index */
+    uint8_t current_entry_idx;                 /**< Current entry index */
+    bool running;                              /**< DAQ list running state */
+    uint8_t event_channel;                     /**< Event channel assignment */
+    uint16_t prescaler;                        /**< Transmission prescaler */
+    uint16_t cycle_counter;                    /**< Cycle counter */
 } SYN_CCP_DAQList;
 
 /**
  * @brief CCP Slave Instance Handle.
  */
 typedef struct {
-    uint16_t station_addr;
-    bool connected;
-    uint8_t unlocked_resources;
-    uintptr_t mta0_addr;
-    uint8_t mta0_ext;
-    uintptr_t mta1_addr;
-    uint8_t mta1_ext;
-    uint8_t active_cal_page;
-    SYN_CCP_DAQList daq_lists[SYN_CCP_MAX_DAQ_LISTS];
-    uint8_t selected_daq;
-    uint8_t selected_odt;
+    uint16_t station_addr;                            /**< CCP station address */
+    bool connected;                                   /**< Session connection state */
+    uint8_t unlocked_resources;                       /**< Bitmask of unlocked resources */
+    uintptr_t mta0_addr;                              /**< MTA0 target address */
+    uint8_t mta0_ext;                                 /**< MTA0 extension address */
+    uintptr_t mta1_addr;                              /**< MTA1 target address */
+    uint8_t mta1_ext;                                 /**< MTA1 extension address */
+    uint8_t active_cal_page;                          /**< Currently active calibration page */
+    SYN_CCP_DAQList daq_lists[SYN_CCP_MAX_DAQ_LISTS]; /**< Configured DAQ lists */
+    uint8_t selected_daq;                             /**< Currently selected DAQ list index */
+    uint8_t selected_odt;                             /**< Currently selected ODT index */
 } SYN_CCP_Slave;
 
 /**

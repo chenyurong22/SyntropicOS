@@ -9,6 +9,8 @@
 
 #include <string.h>
 
+/** @cond INTERNAL */
+
 /* Group 2 CAN Message ID offsets */
 #define GROUP2_EXPLICIT_RESP_MSG_ID 3U
 #define GROUP2_EXPLICIT_REQ_MSG_ID 4U
@@ -28,6 +30,8 @@ static uint32_t make_group4_can_id(uint8_t mac_id, uint8_t msg_id)
 {
     return (uint32_t)0x7C0U | ((uint32_t)(mac_id & 0x3FU) << 3) | (uint32_t)(msg_id & 0x07U);
 }
+
+/** @endcond */
 
 bool syn_devicenet_init(SYN_DeviceNet_Node *node, uint8_t mac_id, SYN_DeviceNet_Baud baud)
 {
@@ -111,6 +115,15 @@ void syn_devicenet_poll(SYN_DeviceNet_Node *node, uint32_t dt_ms)
     }
 }
 
+/**
+ * @brief Process an explicit DeviceNet message payload.
+ * @param node Target DeviceNet node instance.
+ * @param data Received message payload buffer.
+ * @param len Byte length of received payload.
+ * @param tx_data Response message payload output buffer.
+ * @param tx_len Pointer to output byte length variable.
+ * @return true if response frame was constructed, false on error.
+ */
 static bool handle_explicit_message(SYN_DeviceNet_Node *node, const uint8_t *data, uint8_t len,
                                     uint8_t *tx_data, uint8_t *tx_len)
 {

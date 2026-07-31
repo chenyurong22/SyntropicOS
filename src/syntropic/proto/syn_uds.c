@@ -702,7 +702,8 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         bool is_chassis =
             (group_of_dtc == SYN_UDS_DTC_GROUP_CHASSIS) || (group_of_dtc == 0x020000U);
         bool is_body = (group_of_dtc == SYN_UDS_DTC_GROUP_BODY) || (group_of_dtc == 0x030000U);
-        bool is_network = (group_of_dtc == SYN_UDS_DTC_GROUP_NETWORK);
+        bool is_network =
+            (group_of_dtc == SYN_UDS_DTC_GROUP_NETWORK) || (group_of_dtc == 0x040000U);
 
         bool matches_exact_dtc = false;
         for (uint8_t i = 0U; i < server->dtc_count; i++) {

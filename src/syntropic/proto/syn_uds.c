@@ -281,6 +281,8 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         server->session = (SYN_UDS_Session)sub;
         if (server->session == SYN_UDS_SESSION_DEFAULT) {
             server->security_state = SYN_UDS_SECURITY_LOCKED;
+            server->comm_control_state = SYN_UDS_COMM_ENABLE_RX_AND_TX;
+            server->transfer_state = SYN_UDS_TRANSFER_IDLE;
             server->s3_timer_ms = 0U;
         } else {
             server->s3_timer_ms = SYN_UDS_S3_TIMEOUT_MS;

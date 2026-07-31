@@ -346,6 +346,22 @@ static void test_uds_ecu_reset_routine_tester_present(void)
     syn_uds_clear_pending_reset(&g_uds);
     TEST_ASSERT_EQUAL_HEX8(0x00, syn_uds_get_pending_reset(&g_uds));
 
+    /* ECUReset 0x04 enableRapidPowerShutDown */
+    req[1] = 0x04;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x51, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x04, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x04, syn_uds_get_pending_reset(&g_uds));
+    syn_uds_clear_pending_reset(&g_uds);
+
+    /* ECUReset 0x05 disableRapidPowerShutDown */
+    req[1] = 0x05;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x51, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x05, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x05, syn_uds_get_pending_reset(&g_uds));
+    syn_uds_clear_pending_reset(&g_uds);
+
     /* RoutineControl short req */
     req[0] = SYN_UDS_SID_ROUTINE_CONTROL;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));

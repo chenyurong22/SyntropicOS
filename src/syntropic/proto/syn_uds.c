@@ -283,7 +283,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                           resp_len);
         }
         uint8_t sub = req[1] & 0x7FU;
-        if ((sub != 0x01U) && (sub != 0x02U) && (sub != 0x03U)) {
+        if ((sub < SYN_UDS_RESET_HARD) || (sub > SYN_UDS_RESET_DISABLE_RAPID_POWER_SHUTDOWN)) {
             return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
                                           resp_len);
         }

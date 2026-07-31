@@ -115,6 +115,15 @@ void stm32_uds_isotp_example_init(void)
     syn_uds_register_did(&g_uds, 0x0100U, g_battery_volts, sizeof(g_battery_volts),
                          true); /* Batt Volts (RW) */
 
+    /* Register Generic DTCs for 0x14 (ClearDTC) & 0x19 (ReadDTCInformation) */
+    syn_uds_register_dtc(&g_uds, 0x911717U, 0x09U, 0x00U); /* B111717: Battery voltage too high */
+    syn_uds_register_dtc(&g_uds, 0x911716U, 0x09U, 0x00U); /* B111716: Battery voltage too low */
+    syn_uds_register_dtc(&g_uds, 0xC13100U, 0x09U, 0x00U); /* U013100: Lost comm with EPS */
+    syn_uds_register_dtc(&g_uds, 0xC10100U, 0x09U, 0x00U); /* U010100: Lost comm with TCU */
+    syn_uds_register_dtc(&g_uds, 0xC12100U, 0x09U, 0x00U); /* U012100: Lost comm with ABS/ESP */
+    syn_uds_register_dtc(&g_uds, 0xC12600U, 0x09U, 0x00U); /* U012600: Lost comm with SAS */
+    syn_uds_register_dtc(&g_uds, 0xC12300U, 0x09U, 0x00U); /* U012300: Lost comm with YRS */
+
     /* Initialize ISO-TP Link */
     syn_isotp_init(&g_isotp, STM32_UDS_RX_CAN_ID, STM32_UDS_TX_CAN_ID, g_rx_buf, sizeof(g_rx_buf),
                    g_tx_buf, sizeof(g_tx_buf));

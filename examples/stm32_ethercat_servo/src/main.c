@@ -20,7 +20,6 @@ extern ETH_HandleTypeDef heth;
 /* Static EtherCAT Node & CANopen Object Dictionary Bindings */
 static SYN_EcatNode ecat_node;
 static SYN_CANOpenNode canopen_od;
-static SYN_CANOpenDictEntry od_entries[16];
 
 /* CiA 402 Servo Drive Object Dictionary Variables */
 static uint16_t control_word = 0;   /* Index 0x6040 Controlword */
@@ -29,28 +28,21 @@ static int32_t  target_position = 0; /* Index 0x607A Target Position */
 static int32_t  actual_position = 0; /* Index 0x6064 Position Actual Value */
 static int16_t  actual_torque   = 0; /* Index 0x6077 Torque Actual Value */
 
+static const SYN_CANOpenODEntry od_entries[] = {
+    {0x6040, 0x00, SYN_CANOPEN_TYPE_U16, SYN_CANOPEN_ACCESS_RW, &control_word, sizeof(control_word)},
+    {0x6041, 0x00, SYN_CANOPEN_TYPE_U16, SYN_CANOPEN_ACCESS_RO, &status_word, sizeof(status_word)},
+    {0x607A, 0x00, SYN_CANOPEN_TYPE_I32, SYN_CANOPEN_ACCESS_RW, &target_position, sizeof(target_position)},
+    {0x6064, 0x00, SYN_CANOPEN_TYPE_I32, SYN_CANOPEN_ACCESS_RO, &actual_position, sizeof(actual_position)},
+    {0x6077, 0x00, SYN_CANOPEN_TYPE_I16, SYN_CANOPEN_ACCESS_RO, &actual_torque, sizeof(actual_torque)},
+};
+
 /**
  * @brief Initialize Object Dictionary entries for CiA 402 Drive Profile CoE.
  */
 static void init_drive_object_dictionary(void)
 {
-    syn_canopen_init(&canopen_od, 0x01, od_entries, sizeof(od_entries) / sizeof(od_entries[0]));
-
-    /* Add CiA 402 Controlword (0x6040:00) */
-    syn_canopen_add_entry(&canopen_od, 0x6040, 0x00, SYN_CANOPEN_TYPE_UINT16,
-                         SYN_CANOPEN_ATTR_RW, &control_word);
-
-    /* Add CiA 402 Statusword (0x6041:00) */
-    syn_canopen_add_entry(&canopen_od, 0x6041, 0x00, SYN_CANOPEN_TYPE_UINT16,
-                         SYN_CANOPEN_ATTR_RO, &status_word);
-
-    /* Add Target Position (0x607A:00) */
-    syn_canopen_add_entry(&canopen_od, 0x607A, 0x00, SYN_CANOPEN_TYPE_INT32,
-                         SYN_CANOPEN_ATTR_RW, &target_position);
-
-    /* Add Actual Position (0x6064:00) */
-    syn_canopen_add_entry(&canopen_od, 0x6064, 0x00, SYN_CANOPEN_TYPE_INT32,
-                         SYN_CANOPEN_ATTR_RO, &actual_position);
+    SYN_CANOpenNodeConfig cfg = { .node_id = 0x01, .heartbeat_ms = 1000 };
+    syn_canopen_init(&canopen_od, &cfg, od_entries, sizeof(od_entries) / sizeof(od_entries[0]));
 }
 
 /**
@@ -127,6 +119,7 @@ static bool send_ethercat_raw_frame(const uint8_t *frame, size_t len)
         eth_frame[14 + i] = frame[i];
     }
 
+    (void)eth_frame;
     return HAL_ETH_TransmitFrame(&heth, 14 + len) == HAL_OK;
 }
 

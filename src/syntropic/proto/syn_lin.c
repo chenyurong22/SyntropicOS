@@ -6,7 +6,7 @@
 
 #include "syn_lin.h"
 
-#if defined(SYN_USE_LIN) && SYN_USE_LIN
+#if !defined(SYN_USE_LIN) || SYN_USE_LIN
 
 /* ── PID Parity Calculation ──────────────────────────────────────────────── */
 

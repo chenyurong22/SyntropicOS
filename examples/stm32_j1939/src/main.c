@@ -69,7 +69,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             const uint8_t *rx_payload;
             size_t rx_len;
 
-            SYN_Status status = syn_j1939_process_rx(&j1939_node, &frame, &rx_pgn, &rx_payload, &rx_len);
+            SYN_Status status = syn_j1939_process_frame(&j1939_node, &frame, &rx_pgn, &rx_payload, &rx_len);
             if (status == SYN_OK) {
                 /* Complete J1939 message received (single frame or reassembled BAM/RTS-CTS payload) */
                 if (rx_pgn == SYN_J1939_PGN_REQUEST && rx_len >= 3) {

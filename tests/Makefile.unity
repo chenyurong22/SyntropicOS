@@ -141,6 +141,8 @@ SYN_SRCS := \
 	src/syntropic/drivers/syn_usb_cdc.c \
 	src/syntropic/drivers/syn_usb.c \
 	src/syntropic/drivers/syn_usb_hid.c \
+	src/syntropic/drivers/syn_usb_hid_keyboard.c \
+	src/syntropic/drivers/syn_usb_hid_mouse.c \
 	src/syntropic/drivers/syn_transport_usb_cdc.c \
 	src/syntropic/drivers/syn_usb_host.c \
 	src/syntropic/drivers/syn_usb_host_cdc.c \

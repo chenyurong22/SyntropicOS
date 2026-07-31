@@ -56,6 +56,8 @@ static uint16_t g_target_coolant_temp = 85U;
 void ccp_app_init(void)
 {
     syn_ccp_init(&g_ccp_slave, CCP_STATION_ADDR);
+    (void)g_target_engine_rpm;
+    (void)g_target_coolant_temp;
 }
 
 void ccp_app_loop(uint32_t dt_ms)
@@ -76,6 +78,7 @@ void ccp_app_loop(uint32_t dt_ms)
 
         uint32_t tx_mailbox = 0;
         /* Transmission queue call (HAL_CAN_AddTxMessage) */
+        (void)tx_hdr;
         (void)tx_mailbox;
     }
 }
@@ -85,8 +88,9 @@ void ccp_app_loop(uint32_t dt_ms)
  */
 void HAL_CAN_RxFifo0MsgPendingCallback_CCP(CAN_HandleTypeDef *hcan)
 {
-    CAN_RxHeaderTypeDef rx_hdr;
-    uint8_t rx_data[8];
+    (void)hcan;
+    CAN_RxHeaderTypeDef rx_hdr = {0};
+    uint8_t rx_data[8] = {0};
 
     /* Simulating HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_hdr, rx_data) */
     if (rx_hdr.StdId == CCP_CRO_CAN_ID) {
@@ -99,7 +103,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback_CCP(CAN_HandleTypeDef *hcan)
             tx_hdr.DLC = 8U;
 
             uint32_t tx_mailbox = 0;
-            /* Send DTO response back to CCP Master */
+            /* Transmit DTO response */
+            (void)tx_hdr;
             (void)tx_mailbox;
         }
     }

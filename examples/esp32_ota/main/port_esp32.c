@@ -16,6 +16,7 @@
 #include "driver/gpio.h"
 #include "esp_timer.h"
 #include "esp_flash.h"
+#include "esp_system.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -28,11 +29,14 @@
 
 /* ── Assert ─────────────────────────────────────────────────────────────── */
 
+#include <stdlib.h>
 #include "syntropic/util/syn_assert.h"
 #include "esp_log.h"
 
 SYN_NORETURN void syn_assert_failed(const char *file, int line)
 {
+    (void)file;
+    (void)line;
     ESP_LOGE("SYN_ASSERT", "Assertion failed at %s:%d", file, line);
     abort();
 }

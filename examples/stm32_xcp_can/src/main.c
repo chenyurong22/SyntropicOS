@@ -68,6 +68,7 @@ void xcp_app_loop(uint32_t dt_ms)
 
         uint32_t tx_mailbox = 0;
         /* Transmission queue call (HAL_CAN_AddTxMessage) */
+        (void)tx_hdr;
         (void)tx_mailbox;
     }
 }
@@ -77,8 +78,9 @@ void xcp_app_loop(uint32_t dt_ms)
  */
 void HAL_CAN_RxFifo0MsgPendingCallback_XCP(CAN_HandleTypeDef *hcan)
 {
-    CAN_RxHeaderTypeDef rx_hdr;
-    uint8_t rx_data[8];
+    (void)hcan;
+    CAN_RxHeaderTypeDef rx_hdr = {0};
+    uint8_t rx_data[8] = {0};
 
     if (rx_hdr.StdId == XCP_CTO_CAN_ID) {
         uint8_t dto_resp[8];
@@ -91,6 +93,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback_XCP(CAN_HandleTypeDef *hcan)
 
             uint32_t tx_mailbox = 0;
             /* Transmit DTO response */
+            (void)tx_hdr;
             (void)tx_mailbox;
         }
     }

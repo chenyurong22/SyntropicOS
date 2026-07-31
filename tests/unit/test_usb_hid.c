@@ -102,6 +102,49 @@ void test_usb_hid_class_requests(void)
     TEST_ASSERT_EQUAL_MEMORY(SAMPLE_REPORT_DESC, resp, rlen);
 }
 
+#include "syntropic/drivers/syn_usb_hid_keyboard.h"
+#include "syntropic/drivers/syn_usb_hid_mouse.h"
+
+void test_usb_hid_keyboard_helpers(void)
+{
+    SYN_USB_HID hid;
+    syn_usb_hid_init(&hid);
+
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_usb_hid_keyboard_press(&hid, SYN_USB_HID_MOD_LSHIFT, SYN_USB_HID_KEY_A));
+    TEST_ASSERT_EQUAL_UINT16(8, hid.tx_len);
+    TEST_ASSERT_EQUAL_UINT8(SYN_USB_HID_MOD_LSHIFT, hid.tx_buf[0]);
+    TEST_ASSERT_EQUAL_UINT8(0x00, hid.tx_buf[1]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_USB_HID_KEY_A, hid.tx_buf[2]);
+
+    hid.tx_len = 0; /* Clear TX buffer */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_hid_keyboard_release(&hid));
+    TEST_ASSERT_EQUAL_UINT16(8, hid.tx_len);
+    TEST_ASSERT_EQUAL_UINT8(0x00, hid.tx_buf[0]);
+    TEST_ASSERT_EQUAL_UINT8(0x00, hid.tx_buf[2]);
+
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_usb_hid_keyboard_send(NULL, 0, NULL));
+}
+
+void test_usb_hid_mouse_helpers(void)
+{
+    SYN_USB_HID hid;
+    syn_usb_hid_init(&hid);
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_hid_mouse_move(&hid, 10, -5));
+    TEST_ASSERT_EQUAL_UINT16(4, hid.tx_len);
+    TEST_ASSERT_EQUAL_UINT8(0, hid.tx_buf[0]);
+    TEST_ASSERT_EQUAL_INT8(10, (int8_t)hid.tx_buf[1]);
+    TEST_ASSERT_EQUAL_INT8(-5, (int8_t)hid.tx_buf[2]);
+
+    hid.tx_len = 0; /* Clear TX buffer */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_hid_mouse_click(&hid, SYN_USB_HID_MOUSE_BTN_LEFT));
+    TEST_ASSERT_EQUAL_UINT16(4, hid.tx_len);
+    TEST_ASSERT_EQUAL_UINT8(SYN_USB_HID_MOUSE_BTN_LEFT, hid.tx_buf[0]);
+
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_usb_hid_mouse_send(NULL, 0, 0, 0, 0));
+}
+
 void test_usb_hid_null_checks(void)
 {
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_usb_hid_init(NULL));

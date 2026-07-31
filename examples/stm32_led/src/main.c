@@ -54,7 +54,7 @@ void led_app_task_10ms(void)
         syn_led_toggle(&heartbeat_led);
 
         HAL_GPIO_WritePin(LED_HEARTBEAT_PORT, LED_HEARTBEAT_PIN,
-                          heartbeat_led.is_on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+                          syn_led_is_on(&heartbeat_led) ? GPIO_PIN_SET : GPIO_PIN_RESET);
     }
 
     /* 2. Error Diagnostic LED: 3 rapid flashes (100ms ON / 100ms OFF) every 2000ms */
@@ -69,6 +69,6 @@ void led_app_task_10ms(void)
         }
 
         HAL_GPIO_WritePin(LED_ERROR_PORT, LED_ERROR_PIN,
-                          error_led.is_on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+                          syn_led_is_on(&error_led) ? GPIO_PIN_SET : GPIO_PIN_RESET);
     }
 }

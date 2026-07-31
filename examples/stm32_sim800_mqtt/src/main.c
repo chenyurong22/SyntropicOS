@@ -6,8 +6,10 @@
  * a GPRS IP context on SIM800 and run SyntropicOS's native syn_mqtt client engine.
  */
 
-#include "syntropic/syntropic.h"
+#include "syntropic/log/syn_log.h"
 #include "syntropic/net/syn_mqtt.h"
+#include "syntropic/sched/syn_sched.h"
+#include "syntropic/syntropic.h"
 #include "stm32f4xx_hal.h" /* Or stm32f1xx_hal.h / stm32g4xx_hal.h */
 
 #include <stdio.h>
@@ -59,6 +61,8 @@ void sim800_uart_rx_isr(uint8_t byte)
 
 static SYN_PT_Status sim800_modem_task(SYN_PT *pt, SYN_Task *task)
 {
+    (void)task;
+    (void)g_sim800_sock;
     static SYN_Timeout timer;
     static SYN_AtRespType resp;
 
@@ -67,7 +71,7 @@ static SYN_PT_Status sim800_modem_task(SYN_PT *pt, SYN_Task *task)
     /* 1. Send initial AT command */
     g_modem_state = MODEM_STATE_CHECK_AT;
     HAL_UART_Transmit(&huart2, (const uint8_t *)"AT\r\n", 4, 100);
-    syn_timeout_set(&timer, 2000);
+    syn_timeout_start(&timer, 2000);
 
     PT_WAIT_UNTIL(pt, (resp = syn_at_parser_feed_stream(&at_parser, &modem_rx_stream)) ==
                           SYN_AT_RESP_OK ||
@@ -81,7 +85,7 @@ static SYN_PT_Status sim800_modem_task(SYN_PT *pt, SYN_Task *task)
     /* 2. Verify SIM card insertion (AT+CPIN?) */
     g_modem_state = MODEM_STATE_CHECK_SIM;
     HAL_UART_Transmit(&huart2, (const uint8_t *)"AT+CPIN?\r\n", 10, 100);
-    syn_timeout_set(&timer, 3000);
+    syn_timeout_start(&timer, 3000);
 
     PT_WAIT_UNTIL(pt, (resp = syn_at_parser_feed_stream(&at_parser, &modem_rx_stream)) ==
                           SYN_AT_RESP_LINE ||
@@ -90,7 +94,7 @@ static SYN_PT_Status sim800_modem_task(SYN_PT *pt, SYN_Task *task)
     /* 3. Attach GPRS service (AT+CGATT=1) */
     g_modem_state = MODEM_STATE_ATTACH_GPRS;
     HAL_UART_Transmit(&huart2, (const uint8_t *)"AT+CGATT=1\r\n", 12, 100);
-    syn_timeout_set(&timer, 5000);
+    syn_timeout_start(&timer, 5000);
 
     PT_WAIT_UNTIL(pt, (resp = syn_at_parser_feed_stream(&at_parser, &modem_rx_stream)) ==
                           SYN_AT_RESP_OK ||
@@ -99,7 +103,7 @@ static SYN_PT_Status sim800_modem_task(SYN_PT *pt, SYN_Task *task)
     /* 4. Configure APN (AT+CSTT="CMNET") */
     g_modem_state = MODEM_STATE_SET_APN;
     HAL_UART_Transmit(&huart2, (const uint8_t *)"AT+CSTT=\"CMNET\"\r\n", 17, 100);
-    syn_timeout_set(&timer, 3000);
+    syn_timeout_start(&timer, 3000);
 
     PT_WAIT_UNTIL(pt, (resp = syn_at_parser_feed_stream(&at_parser, &modem_rx_stream)) ==
                           SYN_AT_RESP_OK ||
@@ -108,7 +112,7 @@ static SYN_PT_Status sim800_modem_task(SYN_PT *pt, SYN_Task *task)
     /* 5. Bring up wireless connection (AT+CIICR) */
     g_modem_state = MODEM_STATE_BRINGUP_WIRELESS;
     HAL_UART_Transmit(&huart2, (const uint8_t *)"AT+CIICR\r\n", 10, 100);
-    syn_timeout_set(&timer, 10000);
+    syn_timeout_start(&timer, 10000);
 
     PT_WAIT_UNTIL(pt, (resp = syn_at_parser_feed_stream(&at_parser, &modem_rx_stream)) ==
                           SYN_AT_RESP_OK ||
@@ -116,7 +120,7 @@ static SYN_PT_Status sim800_modem_task(SYN_PT *pt, SYN_Task *task)
 
     /* 6. Network connected! Set modem state to ready */
     g_modem_state = MODEM_STATE_READY;
-    SYN_LOG_INFO("SIM800 GPRS Wireless Connection Established");
+    SYN_LOG_I("SIM800", "SIM800 GPRS Wireless Connection Established");
 
     PT_END(pt);
 }
@@ -126,7 +130,7 @@ static SYN_PT_Status sim800_modem_task(SYN_PT *pt, SYN_Task *task)
 static void on_mqtt_message(const char *topic, const uint8_t *payload, size_t len, void *ctx)
 {
     (void)ctx;
-    SYN_LOG_INFO("MQTT Rx [%s]: %.*s", topic, (int)len, (const char *)payload);
+    SYN_LOG_I("SIM800", "MQTT Rx [%s]: %.*s", topic, (int)len, (const char *)payload);
 }
 
 /* ── Application Main ───────────────────────────────────────────────────── */
@@ -157,6 +161,6 @@ int main(void)
 
     /* Run Cooperative Scheduler Loop */
     for (;;) {
-        syn_sched_step(&sched);
+        syn_sched_run(&sched);
     }
 }

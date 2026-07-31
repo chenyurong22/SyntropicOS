@@ -9,6 +9,7 @@
  * and LIN transceiver Enable/Sleep GPIO control.
  */
 
+#include "syntropic/proto/syn_lin.h"
 #include "syntropic/syntropic.h"
 #include "stm32f4xx_hal.h" /* Replace with target header (stm32f1xx_hal.h / stm32g4xx_hal.h) */
 
@@ -32,7 +33,7 @@ static const SYN_LIN_ScheduleSlot master_schedule[] = {
         .checksum_mode = SYN_LIN_CHECKSUM_ENHANCED,
         .dir = SYN_LIN_SLOT_PUBLISH,
         .data = {0x01, 0x80, 0x00, 0xFF},
-        .slot_delay_ms = 20, /* 20ms slot window */
+        .delay_ms = 20, /* 20ms slot window */
     },
     {
         .id = LIN_ID_STATUS_SLAVE1,
@@ -40,7 +41,7 @@ static const SYN_LIN_ScheduleSlot master_schedule[] = {
         .checksum_mode = SYN_LIN_CHECKSUM_ENHANCED,
         .dir = SYN_LIN_SLOT_SUBSCRIBE,
         .data = {0},
-        .slot_delay_ms = 20,
+        .delay_ms = 20,
     },
     {
         .id = LIN_ID_AMBIENT_TEMP,
@@ -48,7 +49,7 @@ static const SYN_LIN_ScheduleSlot master_schedule[] = {
         .checksum_mode = SYN_LIN_CHECKSUM_CLASSIC,
         .dir = SYN_LIN_SLOT_SUBSCRIBE,
         .data = {0},
-        .slot_delay_ms = 30,
+        .delay_ms = 30,
     },
 };
 

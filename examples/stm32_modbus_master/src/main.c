@@ -60,7 +60,7 @@ int main(void)
         if (state == SYN_MB_MASTER_STATE_COMPLETE)
         {
             /* Transaction succeeded */
-            if (mb_master.func_code == SYN_MODBUS_FC_READ_HOLDING)
+            if (mb_master.func_code == SYN_MB_FC_READ_HOLDING)
             {
                 /* Read completed: values stored in mb_master.read_data */
                 // mb_master.read_data[0..count-1] contain register values

@@ -44,7 +44,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static const char *TAG = "syntropic";
+static const char *TAG SYN_UNUSED = "syntropic";
 
 /* ── Scheduler & Task pool ───────────────────────────────────────────────── */
 enum {
@@ -105,6 +105,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t base,
         esp_wifi_connect();
     } else if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
+        (void)event;
         ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
         wifi_connected = true;
         xEventGroupSetBits(s_wifi_events, WIFI_CONNECTED_BIT);
@@ -315,7 +316,7 @@ static int cmd_version(int argc, char *argv[])
     (void)argc; (void)argv;
     const SYN_Version *v = syn_version();
     printf("%s v%u.%u.%u (%s %s)\r\n",
-           v->app_name, v->major, v->minor, v->patch,
+           v->app_name, v->year, v->month, v->release,
            v->date, v->time);
     return 0;
 }
@@ -674,9 +675,9 @@ static void handle_api_version(const SYN_HttpdRequest *req,
     syn_json_init(&w, json_buf, sizeof(json_buf));
     syn_json_obj_open(&w);
     syn_json_key_str(&w, "app", v->app_name);
-    syn_json_key_uint(&w, "major", v->major);
-    syn_json_key_uint(&w, "minor", v->minor);
-    syn_json_key_uint(&w, "patch", v->patch);
+    syn_json_key_uint(&w, "major", v->year);
+    syn_json_key_uint(&w, "minor", v->month);
+    syn_json_key_uint(&w, "patch", v->release);
     syn_json_key_str(&w, "date", v->date);
     syn_json_key_str(&w, "time", v->time);
     syn_json_obj_close(&w);
@@ -1044,7 +1045,7 @@ void app_main(void)
     printf("====================================\r\n");
     printf("  SyntropicOS ESP32 OTA Example\r\n");
     printf("  v%d.%d.%d\r\n",
-           SYN_VERSION_MAJOR, SYN_VERSION_MINOR, SYN_VERSION_PATCH);
+           SYN_VERSION_YEAR, SYN_VERSION_MONTH, SYN_VERSION_RELEASE);
     printf("====================================\r\n");
     printf("\r\n");
 

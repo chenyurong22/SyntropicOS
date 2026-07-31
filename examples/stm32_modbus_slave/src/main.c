@@ -64,6 +64,21 @@ static void stm32_set_pwm_duty(uint16_t duty_0_to_1000)
     (void)duty_0_to_1000;
 }
 
+/* Suppress unused warnings when compiling standalone main.c without main_bare / main_sched */
+static void silence_unused_warnings(void)
+{
+    (void)s_holding_regs;
+    (void)s_input_regs;
+    (void)s_coils;
+    (void)s_discrete_inputs;
+    (void)&s_modbus_slave;
+    (void)s_modbus_rx_buf;
+    (void)stm32_read_adc_temperature;
+    (void)stm32_read_adc_bus_voltage;
+    (void)stm32_set_relay_state;
+    (void)stm32_set_pwm_duty;
+}
+
 /* ── Main Entry Point (Bare-Metal HAL Loop) ─────────────────────────────── */
 
 extern int main_bare(void);
@@ -71,6 +86,7 @@ extern int main_sched(void);
 
 int main(void)
 {
+    silence_unused_warnings();
 #if defined(USE_BARE_LOOP)
     return main_bare();
 #else

@@ -12,11 +12,11 @@
 
 #include "syntropic/control/syn_pid.h"
 #include "syntropic/port/syn_port_system.h"
-#include "syntropic/pt/syn_pt.h"
 #include "syntropic/sched/syn_sched.h"
 
 static SYN_PID s_pid;
-static q16_t   s_current_temp = Q16_FROM_INT(20);
+static int32_t s_setpoint_temp = 50;
+static int32_t s_current_temp  = 20;
 
 #define TASK_PID_CONTROL 0
 #define TASK_TELEMETRY   1
@@ -37,8 +37,8 @@ static SYN_PT_Status task_pid_control_func(SYN_PT *pt, SYN_Task *task)
         uint32_t dt_ms  = (last_ms == 0) ? 10 : (now_ms - last_ms);
         last_ms         = now_ms;
 
-        q16_t output = syn_pid_update(&s_pid, s_current_temp, dt_ms);
-        s_current_temp += (output >> 10);
+        int32_t output = syn_pid_update(&s_pid, s_setpoint_temp, s_current_temp, dt_ms);
+        s_current_temp += (output >> 4);
 
         PT_TASK_DELAY_MS(pt, task, 10);
     }
@@ -52,7 +52,8 @@ static SYN_PT_Status task_telemetry_func(SYN_PT *pt, SYN_Task *task)
     PT_BEGIN(pt);
 
     while (1) {
-        /* Telemetry logging output */
+        printf("Temp: %ld C, Setpoint: %ld C, Output: %ld%%\n",
+               (long)s_current_temp, (long)s_setpoint_temp, (long)s_pid.output);
         PT_TASK_DELAY_MS(pt, task, 1000);
     }
 
@@ -61,15 +62,8 @@ static SYN_PT_Status task_telemetry_func(SYN_PT *pt, SYN_Task *task)
 
 int main_sched(void)
 {
-    SYN_PID_Config cfg = {
-        .kp = Q16_FROM_FLOAT(2.0f),
-        .ki = Q16_FROM_FLOAT(0.5f),
-        .kd = Q16_FROM_FLOAT(0.1f),
-        .out_min = 0,
-        .out_max = Q16_FROM_INT(100)
-    };
+    SYN_PID_Config cfg = SYN_PID_GAINS(2.0f, 0.5f, 0.1f, 256, 0, 100);
     syn_pid_init(&s_pid, &cfg);
-    syn_pid_set_setpoint(&s_pid, Q16_FROM_INT(50));
 
     syn_task_create(&s_tasks[TASK_PID_CONTROL], "PidControl", task_pid_control_func, 1, NULL);
     syn_task_create(&s_tasks[TASK_TELEMETRY],   "Telemetry",  task_telemetry_func,   2, NULL);

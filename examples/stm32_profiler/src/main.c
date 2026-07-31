@@ -120,8 +120,18 @@ static SYN_PT_Status task_monitor_func(SYN_PT *pt, SYN_Task *task)
 extern int main_bare(void);
 extern int main_sched(void);
 
+static void silence_unused_warnings(void)
+{
+    (void)s_tasks;
+    (void)s_profile_entries;
+    (void)task_sensor_func;
+    (void)task_control_func;
+    (void)task_monitor_func;
+}
+
 int main(void)
 {
+    silence_unused_warnings();
 #if defined(USE_BARE_LOOP)
     return main_bare();
 #else

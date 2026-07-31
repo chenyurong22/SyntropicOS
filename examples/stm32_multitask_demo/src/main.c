@@ -166,11 +166,14 @@ static SYN_PT_Status task_usart_func(SYN_PT *pt)
 {
     PT_BEGIN(pt);
 
-    syn_cli_init(&cli_ctx, cli_commands, sizeof(cli_commands) / sizeof(cli_commands[0]));
+    syn_cli_init(&cli_ctx, cli_commands, sizeof(cli_commands) / sizeof(cli_commands[0]), "> ");
 
     while (1) {
         /* Process UART input buffer characters */
-        syn_cli_process(&cli_ctx);
+        uint8_t c;
+        if (syn_port_serial_read(&c, 1) == 1) {
+            syn_cli_process_char(&cli_ctx, (char)c);
+        }
 
         /* Yield to allow other protothreads to execute */
         PT_YIELD(pt);
@@ -230,23 +233,16 @@ static SYN_PT_Status task_led_func(SYN_PT *pt)
     while (1) {
         uint32_t interval_ms = 1000U; /* Default IDLE blink (1Hz) */
 
-        switch (g_resources.current_mode) {
-            case SYSTEM_MODE_IDLE:
-                interval_ms = 1000U; /* Slow blink */
-                break;
-
-            case SYSTEM_MODE_ACTIVE:
-                interval_ms = 250U;  /* Fast blink */
-                break;
-
-            case SYSTEM_MODE_ALERT:
-                interval_ms = 100U;  /* Rapid flash */
-                break;
-
-            case SYSTEM_MODE_CONFIG:
-                HAL_GPIO_WritePin(LED_GPIO_PORT, LED_GPIO_PIN, GPIO_PIN_SET); /* Solid ON */
-                PT_YIELD(pt);
-                continue;
+        if (g_resources.current_mode == SYSTEM_MODE_ACTIVE) {
+            interval_ms = 250U;  /* Fast blink */
+        } else if (g_resources.current_mode == SYSTEM_MODE_ALERT) {
+            interval_ms = 100U;  /* Rapid flash */
+        } else if (g_resources.current_mode == SYSTEM_MODE_CONFIG) {
+            HAL_GPIO_WritePin(LED_GPIO_PORT, LED_GPIO_PIN, GPIO_PIN_SET); /* Solid ON */
+            PT_YIELD(pt);
+            continue;
+        } else {
+            interval_ms = 1000U; /* Slow blink */
         }
 
         if ((syn_port_get_tick_ms() - last_toggle_tick) >= interval_ms) {

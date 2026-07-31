@@ -47,10 +47,10 @@ void encoder_button_app_init(void)
 
     /* Set 4 quadrature transitions per physical detent click */
     syn_encoder_set_steps_per_detent(&encoder, 4);
-    syn_encoder_set_position(&encoder, ui_state.setpoint_value);
+    encoder.position = ui_state.setpoint_value;
 
-    /* Initialize Push-Button on SW (PA2), Active Low (Pull-Up) */
-    syn_button_init(&button, (SYN_GPIO_Pin)ENC_PIN_SW, SYN_BUTTON_ACTIVE_LOW);
+    /* Initialize Push-Button on SW (PA2), Active Low (Pull-Up), 50ms debounce */
+    syn_button_init(&button, (SYN_GPIO_Pin)ENC_PIN_SW, SYN_BUTTON_ACTIVE_LOW, 50);
 }
 
 /**
@@ -58,14 +58,9 @@ void encoder_button_app_init(void)
  */
 static void poll_hardware_inputs(void)
 {
-    /* Read Phase A, Phase B, and Switch SW logic levels */
-    GPIO_PinState pin_a_state  = HAL_GPIO_ReadPin(ENC_PORT_A, ENC_PIN_A);
-    GPIO_PinState pin_b_state  = HAL_GPIO_ReadPin(ENC_PORT_B, ENC_PIN_B);
-    GPIO_PinState pin_sw_state = HAL_GPIO_ReadPin(ENC_PORT_SW, ENC_PIN_SW);
-
-    /* Feed pin states to SyntropicOS Quadrature Encoder & Button State Machines */
-    syn_encoder_feed_pins(&encoder, pin_a_state == GPIO_PIN_SET, pin_b_state == GPIO_PIN_SET);
-    syn_button_feed_state(&button, pin_sw_state == GPIO_PIN_SET, syn_port_get_tick_ms());
+    /* Step Encoder & Button State Machines */
+    syn_encoder_update(&encoder);
+    syn_button_update(&button);
 }
 
 /**
@@ -76,10 +71,6 @@ static void poll_hardware_inputs(void)
 void encoder_button_sample_task_1ms(void)
 {
     poll_hardware_inputs();
-
-    /* Step Encoder & Button State Machines */
-    syn_encoder_update(&encoder);
-    syn_button_update(&button, syn_port_get_tick_ms());
 }
 
 /**
@@ -100,23 +91,24 @@ void encoder_button_ui_task(void)
                 ui_state.setpoint_value = 100;
             }
 
-            syn_encoder_set_position(&encoder, ui_state.setpoint_value);
+            encoder.position = ui_state.setpoint_value;
         }
     }
 
     /* 2. Process Push-Button Click Gestures */
-    if (syn_button_was_clicked(&button)) {
+    uint8_t evts = syn_button_poll_events(&button);
+    if (evts & SYN_BUTTON_EVT_SINGLE_CLICK) {
         /* Single click -> Toggle between Parameter Selection & Editing mode */
         ui_state.menu_mode ^= 1;
     }
 
-    if (syn_button_was_double_clicked(&button)) {
+    if (evts & SYN_BUTTON_EVT_DOUBLE_CLICK) {
         /* Double click -> Reset setpoint value to default 50 */
         ui_state.setpoint_value = 50;
-        syn_encoder_set_position(&encoder, 50);
+        encoder.position = 50;
     }
 
-    if (syn_button_was_long_pressed(&button)) {
+    if (evts & SYN_BUTTON_EVT_LONG_PRESS) {
         /* Long press -> Toggle system power state ON / OFF */
         ui_state.system_on = !ui_state.system_on;
     }

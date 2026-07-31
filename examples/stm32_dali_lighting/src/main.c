@@ -14,6 +14,7 @@
  *   - UART Console:   USART2 (PA2/PA3 @ 115200 8N1)
  */
 
+#include <stdio.h>
 #include "stm32f4xx_hal.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/proto/syn_dali.h"

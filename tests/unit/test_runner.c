@@ -680,11 +680,15 @@ int main(void)
     extern void test_usb_hid_init_and_register(void);
     extern void test_usb_hid_report_send_and_read(void);
     extern void test_usb_hid_class_requests(void);
+    extern void test_usb_hid_keyboard_helpers(void);
+    extern void test_usb_hid_mouse_helpers(void);
     extern void test_usb_hid_null_checks(void);
 
     RUN_TEST(test_usb_hid_init_and_register);
     RUN_TEST(test_usb_hid_report_send_and_read);
     RUN_TEST(test_usb_hid_class_requests);
+    RUN_TEST(test_usb_hid_keyboard_helpers);
+    RUN_TEST(test_usb_hid_mouse_helpers);
     RUN_TEST(test_usb_hid_null_checks);
 
     extern void run_usb_host_tests(void);

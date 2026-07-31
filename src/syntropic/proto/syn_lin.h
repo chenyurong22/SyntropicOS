@@ -13,7 +13,7 @@
 
 #include "../common/syn_defs.h"
 
-#if defined(SYN_USE_LIN) && SYN_USE_LIN
+#if !defined(SYN_USE_LIN) || SYN_USE_LIN
 
 #ifdef __cplusplus
 extern "C" {

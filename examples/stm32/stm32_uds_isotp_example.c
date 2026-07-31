@@ -34,7 +34,7 @@ static SYN_Task g_uds_task;
 static SYN_Sched g_sched;
 
 /* Shared DID Memory Buffers */
-static uint8_t g_vin_did[17] = "SYN1234567890ABCD";
+static uint8_t g_vin_did[18] = "SYN1234567890ABCD";
 static uint8_t g_battery_volts[2] = {0x00, 0x78}; /* 12.0 Volts */
 
 /* Simulated CAN hardware receive hook */

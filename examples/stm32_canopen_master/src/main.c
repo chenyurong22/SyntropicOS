@@ -7,6 +7,7 @@
  * with STM32 HAL CAN drivers (`HAL_CAN_...`).
  */
 
+#include "syntropic/proto/syn_canopen_mgr.h"
 #include "syntropic/syntropic.h"
 #include "stm32f4xx_hal.h" /* Replace with target MCU header (stm32f1xx_hal.h / stm32g4xx_hal.h) */
 
@@ -50,7 +51,7 @@ void canopen_master_app_init(void)
 
     /* Send NMT Start Node command (0x01) to put slave into Operational state */
     SYN_CAN_Frame nmt_frame;
-    syn_canopen_mgr_build_nmt(&nmt_frame, TARGET_SLAVE_NODE_ID, SYN_CANOPEN_NMT_CMD_START_NODE);
+    syn_canopen_mgr_build_nmt(&nmt_frame, TARGET_SLAVE_NODE_ID, SYN_CANOPEN_NMT_CMD_START);
     send_hal_can_frame(&nmt_frame);
 }
 

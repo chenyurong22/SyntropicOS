@@ -15,3 +15,6 @@ Fast, fail-fast static verification and core test execution. Always execute the 
 
 ## Step 2: Bare-Metal ARM Emulation
 - **QEMU Bare-Metal ARM Cortex-M4**: `make container-qemu`
+
+## Step 3: Examples Cross-Compilation Check
+- **Examples Cross-Compilation**: `make container-examples`

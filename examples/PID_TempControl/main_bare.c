@@ -17,20 +17,14 @@ static SYN_PID s_pid;
 
 int main_bare(void)
 {
-    /* Initialize integer PID controller (Kp=2.0, Ki=0.5, Kd=0.1 in Q16) */
-    SYN_PID_Config cfg = {
-        .kp = Q16_FROM_FLOAT(2.0f),
-        .ki = Q16_FROM_FLOAT(0.5f),
-        .kd = Q16_FROM_FLOAT(0.1f),
-        .out_min = 0,
-        .out_max = Q16_FROM_INT(100) /* 0 to 100% PWM */
-    };
+    /* Initialize integer PID controller (Kp=2.0, Ki=0.5, Kd=0.1) */
+    SYN_PID_Config cfg = SYN_PID_GAINS(2.0f, 0.5f, 0.1f, 256, 0, 100);
     syn_pid_init(&s_pid, &cfg);
-    syn_pid_set_setpoint(&s_pid, Q16_FROM_INT(50)); /* Target 50 °C */
 
     uint32_t last_pid_ms  = syn_port_get_tick_ms();
     uint32_t last_tele_ms = syn_port_get_tick_ms();
-    q16_t    current_temp = Q16_FROM_INT(20);
+    int32_t setpoint_temp = 50;
+    int32_t current_temp  = 20;
 
     while (1) {
         uint32_t now_ms = syn_port_get_tick_ms();
@@ -40,15 +34,16 @@ int main_bare(void)
             uint32_t dt_ms = now_ms - last_pid_ms;
             last_pid_ms    = now_ms;
 
-            q16_t output = syn_pid_update(&s_pid, current_temp, dt_ms);
+            int32_t output = syn_pid_update(&s_pid, setpoint_temp, current_temp, dt_ms);
             /* Simulate plant response: temperature rises proportionally to PWM output */
-            current_temp += (output >> 10);
+            current_temp += (output >> 4);
         }
 
         /* Low-Priority Telemetry Logging (1000ms / 1 Hz) */
         if (now_ms - last_tele_ms >= 1000) {
             last_tele_ms = now_ms;
-            /* Print current process value and setpoint */
+            printf("Temp: %ld C, Setpoint: %ld C, Output: %ld%%\n",
+                   (long)current_temp, (long)setpoint_temp, (long)s_pid.output);
         }
     }
 

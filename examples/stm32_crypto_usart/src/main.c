@@ -13,6 +13,7 @@
  *   - Pins:  PA2 (TX), PA3 (RX)
  */
 
+#include <stdio.h>
 #include "stm32f4xx_hal.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/util/syn_ringbuf.h"

@@ -12,6 +12,7 @@
  *   - UART:  USART2 (PA2=TX, PA3=RX, PA1=RS485 DE) @ 38400 8N1
  */
 
+#include <stdio.h>
 #include "stm32f4xx_hal.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/proto/syn_bacnet.h"
@@ -33,6 +34,8 @@ static void set_rs485_de(bool tx_enable);
 
 int main(void)
 {
+    (void)rx_raw_buf;
+    (void)rx_raw_len;
     HAL_Init();
     SystemClock_Config();
     MX_GPIO_Init();

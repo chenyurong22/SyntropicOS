@@ -63,7 +63,6 @@ static void process_serial_command(const char *cmd)
             dt.hour   = (uint8_t)hh;
             dt.minute = (uint8_t)mm;
             dt.second = (uint8_t)ss;
-            dt.subsecond = 0;
 
             if (syn_rtc_is_valid(&dt)) {
                 rtc_app.current_epoch_sec = syn_rtc_to_epoch(&dt);

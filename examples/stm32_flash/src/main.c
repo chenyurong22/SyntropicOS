@@ -148,8 +148,13 @@ static bool stm32_flash_write_word(uint32_t address, uint32_t data)
 
 /* ── SyntropicOS Hardware Flash Port Implementation ──────────────────────── */
 
+#include <stdio.h>
+#include "syntropic/syntropic.h"
+#include "syntropic/port/syn_port_flash.h"
+
 SYN_Status syn_port_flash_erase(uint32_t addr)
 {
+    (void)addr;
     /* Calculate sector from address (simplified example for Sector 5) */
     uint8_t sector = 5;
     return stm32_flash_erase_sector(sector) ? SYN_OK : SYN_ERROR;
@@ -190,8 +195,6 @@ uint32_t syn_port_flash_sector_size(uint32_t addr)
 
 int main(void)
 {
-    syn_init();
-
     printf("=== SyntropicOS Bare-Metal STM32 Flash Register Example ===\n");
 
     /* 1. Register-Level Sector Erase */
@@ -204,7 +207,7 @@ int main(void)
 
     /* 2. Register-Level Word Programming */
     uint32_t magic_word = 0x594E5452; /* 'SNTR' in ASCII */
-    printf("Programming 0x%08X to Flash 0x%08X...\n", magic_word, TEST_FLASH_ADDR);
+    printf("Programming 0x%08lX to Flash 0x%08lX...\n", (unsigned long)magic_word, (unsigned long)TEST_FLASH_ADDR);
     if (!stm32_flash_write_word(TEST_FLASH_ADDR, magic_word)) {
         printf("Flash Word Programming FAILED!\n");
         return -1;
@@ -212,7 +215,7 @@ int main(void)
 
     /* 3. Readback Verification */
     uint32_t readback = *(volatile uint32_t *)TEST_FLASH_ADDR;
-    printf("Flash Readback: 0x%08X (%s)\n", readback,
+    printf("Flash Readback: 0x%08lX (%s)\n", (unsigned long)readback,
            (readback == magic_word) ? "VERIFIED PASS" : "FAIL");
 
     /* 4. SyntropicOS Flash Port Layer Verification */

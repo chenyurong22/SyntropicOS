@@ -76,7 +76,7 @@ void buzzer_app_task_10ms(void)
         syn_buzzer_step(&buzzer, dt);
 
         /* Update physical GPIO / PWM hardware output */
-        update_hardware_buzzer_tone(&buzzer, buzzer.active, buzzer.current_freq);
+        update_hardware_buzzer_tone(&buzzer, syn_buzzer_is_playing(&buzzer), 1000);
     }
 
     /* 2. Audio Sequence Demo State Machine (triggers a new chime every 4 seconds) */

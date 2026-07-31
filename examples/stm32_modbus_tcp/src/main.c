@@ -225,5 +225,6 @@ void modbus_tcp_client_task_1000ms(void)
  */
 void app_init(void)
 {
+    (void)server_input_regs;
     modbus_tcp_server_init();
 }

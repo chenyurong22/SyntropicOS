@@ -181,3 +181,10 @@ container-flawfinder: container-build
 container-integration: container-build
 	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers integration
 
+examples:
+	@bash $(ROOT_DIR)/tools/examples/run_examples_check.sh
+
+container-examples: container-build
+	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers examples
+
+

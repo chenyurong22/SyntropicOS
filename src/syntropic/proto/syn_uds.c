@@ -313,10 +313,8 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
 
         resp_buf[0] = sid + 0x40U;
         resp_buf[1] = sub;
-        resp_buf[2] = 0x00U; /* P2 Server max high byte */
-        resp_buf[3] = 0x32U; /* P2 Server max low byte (50ms) */
-        resp_buf[4] = 0x01U; /* P2* Server max high byte */
-        resp_buf[5] = 0xF4U; /* P2* Server max low byte (5000ms) */
+        syn_poke_u16(server->active_p2_max_ms, resp_buf, 2);
+        syn_poke_u16(server->active_p2_star_max_10ms, resp_buf, 4);
         *resp_len = 6U;
         success = true;
         break;
@@ -513,7 +511,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
                                           resp_len);
         }
-        uint8_t sub = req[1];
+        uint8_t sub = req[1] & 0x7FU;
         uint16_t routine_id = syn_peek_u16(req, 2);
 
         resp_buf[0] = sid + 0x40U;
@@ -697,13 +695,10 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
 
         bool is_all = (group_of_dtc == SYN_UDS_DTC_GROUP_ALL);
         bool is_emissions = (group_of_dtc == SYN_UDS_DTC_GROUP_EMISSIONS);
-        bool is_powertrain =
-            (group_of_dtc == SYN_UDS_DTC_GROUP_POWERTRAIN) || (group_of_dtc == 0x010000U);
-        bool is_chassis =
-            (group_of_dtc == SYN_UDS_DTC_GROUP_CHASSIS) || (group_of_dtc == 0x020000U);
-        bool is_body = (group_of_dtc == SYN_UDS_DTC_GROUP_BODY) || (group_of_dtc == 0x030000U);
-        bool is_network =
-            (group_of_dtc == SYN_UDS_DTC_GROUP_NETWORK) || (group_of_dtc == 0x040000U);
+        bool is_powertrain = (group_of_dtc == SYN_UDS_DTC_GROUP_POWERTRAIN);
+        bool is_chassis = (group_of_dtc == SYN_UDS_DTC_GROUP_CHASSIS);
+        bool is_body = (group_of_dtc == SYN_UDS_DTC_GROUP_BODY);
+        bool is_network = (group_of_dtc == SYN_UDS_DTC_GROUP_NETWORK);
 
         bool matches_exact_dtc = false;
         for (uint8_t i = 0U; i < server->dtc_count; i++) {
@@ -728,7 +723,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                 clear_dtc = true;
             } else if (is_emissions && (dtc <= 0x0FFFFFU)) {
                 clear_dtc = true;
-            } else if (is_powertrain && (dtc <= 0x3FFFFFU)) {
+            } else if (is_powertrain && (dtc >= 0x100000U && dtc <= 0x3FFFFFU)) {
                 clear_dtc = true;
             } else if (is_chassis && (dtc >= 0x400000U && dtc <= 0x7FFFFFU)) {
                 clear_dtc = true;
@@ -938,10 +933,9 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         }
 
         case SYN_UDS_DTC_REPORT_FAULT_DETECTION_COUNTER: {
-            uint16_t pos = 3U;
+            uint16_t pos = 2U;
             resp_buf[0] = sid + 0x40U;
             resp_buf[1] = sub;
-            resp_buf[2] = SYN_UDS_DTC_STATUS_AVAILABILITY_MASK;
             for (uint8_t i = 0U; i < server->dtc_count; i++) {
                 if (pos + 4U > max_resp_len) {
                     return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,

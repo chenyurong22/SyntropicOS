@@ -1400,7 +1400,7 @@ static void test_uds_nrc_coverage_sweep(void)
     syn_poke_u16(0x0201, req, 2);
     TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SID_ROUTINE_CONTROL + 0x40, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(0x99, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x19, resp[1]); /* 0x99 & 0x7F = 0x19 */
 
     req[0] = SYN_UDS_SID_LINK_CONTROL;
     req[1] = 0x99;

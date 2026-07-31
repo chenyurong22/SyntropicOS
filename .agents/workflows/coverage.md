@@ -16,6 +16,7 @@ Review the terminal coverage summary and `build/cov/coverage_src.info` output to
 ## Step 2: Doxygen API Documentation Coverage
 Verify API documentation completeness and check for missing symbol docs:
 - **Doxygen Coverage Check**: `make container-dox`
+- **Mandatory Reporting**: ALWAYS report the exact Doxygen warning count (e.g. `Documentation Warning Count: X`) and list any sample undocumented functions/structs in the workflow summary output. Never obscure or omit Doxygen warning metrics.
 
 ## Step 3: Module & Feature Documentation Audit
 Audit markdown documentation (`docs/`, `docs/modules/`, `README.md`, `mkdocs.yml`) for feature coverage:

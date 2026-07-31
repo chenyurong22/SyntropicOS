@@ -301,6 +301,11 @@ typedef bool (*SYN_UDS_DTCHandler)(uint8_t subfunction, const uint8_t *in_data, 
                                    uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len,
                                    void *ctx);
 
+/**
+ * @brief ECUReset (0x11) deferred post-TX reset callback function signature.
+ */
+typedef void (*SYN_UDS_ResetHandler)(uint8_t reset_type, void *ctx);
+
 /** @name UDS Security & S3 Session Timeout Parameters */
 /**@{*/
 #ifndef SYN_UDS_S3_TIMEOUT_MS
@@ -313,6 +318,10 @@ typedef bool (*SYN_UDS_DTCHandler)(uint8_t subfunction, const uint8_t *in_data, 
 
 #ifndef SYN_UDS_SECURITY_DELAY_MS
 #define SYN_UDS_SECURITY_DELAY_MS 10000U /**< Security delay penalty in ms */
+#endif
+
+#ifndef SYN_UDS_DEFAULT_RESET_TX_WAIT_MS
+#define SYN_UDS_DEFAULT_RESET_TX_WAIT_MS 50U /**< Default post-TX ECU reset wait time in ms */
 #endif
 /**@}*/
 
@@ -343,9 +352,13 @@ typedef struct {
     SYN_UDS_AuthHandler auth_cb;                  /**< Authentication (0x29) callback. */
     void *auth_ctx;                               /**< Context pointer for auth callback. */
     SYN_UDS_FileTransferHandler file_transfer_cb; /**< File transfer (0x38) callback. */
-    void *file_transfer_ctx;   /**< Context pointer for file transfer callback. */
-    SYN_UDS_DTCHandler dtc_cb; /**< ReadDTCInformation (0x19) callback. */
-    void *dtc_ctx;             /**< Context pointer for DTC callback. */
+    void *file_transfer_ctx;        /**< Context pointer for file transfer callback. */
+    SYN_UDS_DTCHandler dtc_cb;      /**< ReadDTCInformation (0x19) callback. */
+    void *dtc_ctx;                  /**< Context pointer for DTC callback. */
+    SYN_UDS_ResetHandler reset_cb;  /**< ECUReset (0x11) deferred callback. */
+    void *reset_ctx;                /**< Context pointer for reset callback. */
+    uint16_t reset_tx_wait_ms;      /**< Post-TX ECU reset delay window in ms. */
+    uint32_t reset_wait_elapsed_ms; /**< Internal reset delay accumulator in ms. */
     SYN_UDS_DIDEntry did_table[SYN_UDS_MAX_DIDS]; /**< Registered DID entries array */
     uint8_t did_count;                            /**< Registered DID count */
     SYN_UDS_DTCEntry dtc_table[SYN_UDS_MAX_DTCS]; /**< Registered DTC entries array */
@@ -374,6 +387,23 @@ bool syn_uds_init(SYN_UDS_Server *server);
  * @param dt_ms Milliseconds elapsed since last tick.
  */
 void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms);
+
+/**
+ * @brief Register deferred post-TX ECU reset handler callback.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param cb Callback function to execute after post-TX reset delay.
+ * @param ctx Context pointer passed to callback function.
+ */
+void syn_uds_set_reset_handler(SYN_UDS_Server *server, SYN_UDS_ResetHandler cb, void *ctx);
+
+/**
+ * @brief Set post-TX ECU reset delay window duration in milliseconds.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param wait_ms Delay duration in ms before executing reset callback.
+ */
+void syn_uds_set_reset_wait_ms(SYN_UDS_Server *server, uint16_t wait_ms);
 
 /**
  * @brief Get pending ECU reset sub-function requested by 0x11 service.

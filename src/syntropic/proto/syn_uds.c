@@ -45,6 +45,10 @@ bool syn_uds_init(SYN_UDS_Server *server)
     server->transfer_bytes_processed = 0U;
     server->expected_block_seq = 1U;
     server->reset_type_requested = 0U;
+    server->reset_cb = NULL;
+    server->reset_ctx = NULL;
+    server->reset_tx_wait_ms = SYN_UDS_DEFAULT_RESET_TX_WAIT_MS;
+    server->reset_wait_elapsed_ms = 0U;
 
     return true;
 }
@@ -82,6 +86,36 @@ void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms)
     } else {
         server->s3_timer_ms = 0U;
     }
+
+    /* 3. Deferred ECU reset countdown */
+    if (server->reset_type_requested > 0U) {
+        server->reset_wait_elapsed_ms += dt_ms;
+        if (server->reset_wait_elapsed_ms >= (uint32_t)server->reset_tx_wait_ms) {
+            uint8_t reset_type = server->reset_type_requested;
+            server->reset_type_requested = 0U;
+            server->reset_wait_elapsed_ms = 0U;
+            if (server->reset_cb != NULL) {
+                server->reset_cb(reset_type, server->reset_ctx);
+            }
+        }
+    } else {
+        server->reset_wait_elapsed_ms = 0U;
+    }
+}
+
+void syn_uds_set_reset_handler(SYN_UDS_Server *server, SYN_UDS_ResetHandler cb, void *ctx)
+{
+    if (server != NULL) {
+        server->reset_cb = cb;
+        server->reset_ctx = ctx;
+    }
+}
+
+void syn_uds_set_reset_wait_ms(SYN_UDS_Server *server, uint16_t wait_ms)
+{
+    if (server != NULL) {
+        server->reset_tx_wait_ms = wait_ms;
+    }
 }
 
 uint8_t syn_uds_get_pending_reset(const SYN_UDS_Server *server)
@@ -96,6 +130,7 @@ void syn_uds_clear_pending_reset(SYN_UDS_Server *server)
 {
     if (server != NULL) {
         server->reset_type_requested = 0U;
+        server->reset_wait_elapsed_ms = 0U;
     }
 }
 
@@ -277,6 +312,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                           resp_len);
         }
         server->reset_type_requested = sub;
+        server->reset_wait_elapsed_ms = 0U;
         resp_buf[0] = sid + 0x40U;
         resp_buf[1] = sub;
         *resp_len = 2U;

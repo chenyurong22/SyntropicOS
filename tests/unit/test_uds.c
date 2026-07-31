@@ -2025,6 +2025,50 @@ static void test_uds_remaining_edge_branches(void)
     syn_uds_process_request(&server, xfer_req, 7, resp, sizeof(resp), &resp_len);
 }
 
+static uint8_t g_test_reset_cb_type = 0;
+static void *g_test_reset_cb_ctx = NULL;
+
+static void test_reset_callback_func(uint8_t reset_type, void *ctx)
+{
+    g_test_reset_cb_type = reset_type;
+    g_test_reset_cb_ctx = ctx;
+}
+
+static void test_uds_deferred_reset_callback(void)
+{
+    syn_uds_init(&g_uds);
+    g_test_reset_cb_type = 0;
+    g_test_reset_cb_ctx = NULL;
+
+    /* Register reset handler and set custom wait timer (30ms) */
+    syn_uds_set_reset_handler(&g_uds, test_reset_callback_func, (void *)0x1234);
+    syn_uds_set_reset_wait_ms(&g_uds, 30);
+
+    /* Send ECUReset request (hardReset = 0x01) */
+    uint8_t req[2] = {SYN_UDS_SID_ECU_RESET, 0x01};
+    uint8_t resp[16] = {0};
+    uint16_t resp_len = 0;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x51, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, syn_uds_get_pending_reset(&g_uds));
+    TEST_ASSERT_EQUAL_HEX8(0, g_test_reset_cb_type);
+
+    /* Advance by 20ms -> Callback not yet fired */
+    syn_uds_tick(&g_uds, 20);
+    TEST_ASSERT_EQUAL_HEX8(0x01, syn_uds_get_pending_reset(&g_uds));
+    TEST_ASSERT_EQUAL_HEX8(0, g_test_reset_cb_type);
+
+    /* Advance by another 10ms -> Total 30ms, callback fires, pending reset cleared */
+    syn_uds_tick(&g_uds, 10);
+    TEST_ASSERT_EQUAL_HEX8(0, syn_uds_get_pending_reset(&g_uds));
+    TEST_ASSERT_EQUAL_HEX8(0x01, g_test_reset_cb_type);
+    TEST_ASSERT_EQUAL_PTR((void *)0x1234, g_test_reset_cb_ctx);
+
+    /* Test null server handling in setter functions */
+    syn_uds_set_reset_handler(NULL, NULL, NULL);
+    syn_uds_set_reset_wait_ms(NULL, 100);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -2050,4 +2094,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_dtc_iso14229_bit_operations);
     RUN_TEST(test_uds_remaining_uncovered_paths);
     RUN_TEST(test_uds_remaining_edge_branches);
+    RUN_TEST(test_uds_deferred_reset_callback);
 }

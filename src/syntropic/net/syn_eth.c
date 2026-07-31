@@ -18,7 +18,7 @@
  * @brief Weak hook to obtain UDP transport instance.
  * @return Pointer to global SYN_UDP instance, or NULL if unavailable.
  */
-/* LCOV_EXCL_START */
+/* LCOV_EXCL_START: Defensive bounds check / hardware port fallback */
 SYN_WEAK SYN_UDP *syn_transport_udp_get_instance(void)
 {
     return NULL;

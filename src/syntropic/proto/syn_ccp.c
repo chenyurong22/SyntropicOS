@@ -321,12 +321,12 @@ bool syn_ccp_service_daq(SYN_CCP_Slave *slave, uint8_t event_channel, uint8_t dt
 
         uint8_t current_odt = daq->current_odt_idx;
         if (current_odt >= daq->odt_count) {
-            daq->current_odt_idx = 0; /* LCOV_EXCL_LINE */
-            current_odt = 0;          /* LCOV_EXCL_LINE */
+            daq->current_odt_idx = 0;
+            current_odt = 0;
         }
 
         if (daq->odt_count == 0) {
-            continue; /* LCOV_EXCL_LINE */
+            continue;
         }
 
         SYN_CCP_ODT *odt = &daq->odts[current_odt];

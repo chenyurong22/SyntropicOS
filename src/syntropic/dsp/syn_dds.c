@@ -115,7 +115,7 @@ q16_t syn_dds_step(SYN_DDS *dds)
         break;
     }
     default:
-        break; /* LCOV_EXCL_LINE */
+        break; /* LCOV_EXCL_LINE: Defensive default branch for enum state machine */
     }
 
     dds->phase += dds->phase_step;

@@ -498,6 +498,20 @@ static void test_ccp_null_checks_and_bounds(void)
     g_ccp_slave.connected = false;
     uint8_t daq_dto[8], l_idx, o_idx;
     TEST_ASSERT_FALSE(syn_ccp_service_daq(&g_ccp_slave, 0x01, daq_dto, &l_idx, &o_idx));
+
+    /* DAQ service with current_odt_idx >= odt_count (line 324) and odt_count == 0 (line 329) */
+    g_ccp_slave.connected = true;
+    g_ccp_slave.daq_lists[0].running = true;
+    g_ccp_slave.daq_lists[0].event_channel = 0x02;
+    g_ccp_slave.daq_lists[0].prescaler = 1;
+    g_ccp_slave.daq_lists[0].cycle_counter = 0;
+    g_ccp_slave.daq_lists[0].odt_count = 0; /* zero ODT count -> line 329 */
+    TEST_ASSERT_FALSE(syn_ccp_service_daq(&g_ccp_slave, 0x02, daq_dto, &l_idx, &o_idx));
+
+    g_ccp_slave.daq_lists[0].odt_count = 1;
+    g_ccp_slave.daq_lists[0].current_odt_idx =
+        5; /* invalid current_odt_idx >= odt_count -> lines 324-325 */
+    TEST_ASSERT_TRUE(syn_ccp_service_daq(&g_ccp_slave, 0x02, daq_dto, &l_idx, &o_idx));
 }
 
 void run_ccp_tests(void)

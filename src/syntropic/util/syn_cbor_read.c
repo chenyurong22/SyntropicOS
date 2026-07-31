@@ -35,7 +35,7 @@ static uint8_t consume_byte(SYN_CborReader *r)
 static uint8_t peek_byte(const SYN_CborReader *r)
 {
     if (r->pos >= r->len)
-        return 0u; /* LCOV_EXCL_LINE */
+        return 0u;
     return r->buf[r->pos];
 }
 

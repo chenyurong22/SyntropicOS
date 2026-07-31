@@ -313,6 +313,55 @@ static void test_xcp_bounds_and_null_checks(void)
 
     /* service_daq when list not running */
     TEST_ASSERT_FALSE(syn_xcp_service_daq(&g_xcp_slave, 1, dto, &l, &o));
+
+    /* 1. SHORT_UPLOAD with non-zero mta_addr (line 168) */
+    static const uint8_t test_var_static[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+    syn_xcp_set_mta(&g_xcp_slave, 1, (uintptr_t)test_var_static);
+    cto[0] = SYN_XCP_CMD_SHORT_UPLOAD;
+    cto[1] = 2; /* size = 2 */
+    cto[2] = 0;
+    cto[3] = 0x01; /* ext */
+    cto[4] = 0;
+    cto[5] = 0;
+    cto[6] = 0;
+    cto[7] = 0;
+    TEST_ASSERT_TRUE(syn_xcp_process_cto(&g_xcp_slave, cto, dto));
+    TEST_ASSERT_EQUAL_HEX8(0xAA, dto[1]);
+    TEST_ASSERT_EQUAL_HEX8(0xBB, dto[2]);
+
+    /* 2. SET_DAQ_LIST_MODE with prescaler = 0 (line 271) */
+    cto[0] = SYN_XCP_CMD_SET_DAQ_LIST_MODE;
+    cto[1] = 0x01; /* mode */
+    cto[2] = 0x00; /* list_idx = 0 */
+    cto[3] = 0x00;
+    cto[4] = 0x01; /* event_channel = 1 */
+    cto[5] = 0x00; /* prescaler = 0 -> line 271 sets prescaler = 1 */
+    cto[6] = 0x00;
+    TEST_ASSERT_TRUE(syn_xcp_process_cto(&g_xcp_slave, cto, dto));
+    TEST_ASSERT_EQUAL(1, g_xcp_slave.daq_lists[0].prescaler);
+
+    /* 3. WRITE_DAQ with addr = 0 using mta_addr (line 242) */
+    g_xcp_slave.current_daq_ptr_idx = 0;
+    cto[0] = SYN_XCP_CMD_WRITE_DAQ;
+    cto[1] = 0x00; /* bit_offset */
+    cto[2] = 0x02; /* size = 2 */
+    cto[3] = 0x01; /* ext */
+    cto[4] = 0;
+    cto[5] = 0;
+    cto[6] = 0;
+    cto[7] = 0;
+    TEST_ASSERT_TRUE(syn_xcp_process_cto(&g_xcp_slave, cto, dto));
+
+    /* 4. syn_xcp_service_daq with *odt_idx >= list->odt_count (line 335) */
+    g_xcp_slave.daq_lists[0].running = true;
+    g_xcp_slave.daq_lists[0].event_channel = 1;
+    g_xcp_slave.daq_lists[0].odt_count = 1;
+    l = 0;
+    o = 5; /* invalid o >= list->odt_count -> line 335 sets o = 0 */
+    TEST_ASSERT_TRUE(syn_xcp_service_daq(&g_xcp_slave, 1, dto, &l, &o));
+
+    /* Reset global slave state */
+    syn_xcp_init(&g_xcp_slave, 0x1234U);
 }
 
 void run_xcp_tests(void)

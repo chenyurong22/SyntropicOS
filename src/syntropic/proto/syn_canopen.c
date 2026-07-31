@@ -26,11 +26,12 @@ static void canopen_queue_tx(SYN_CANOpenNode *node, uint32_t cob_id, const uint8
                              uint8_t len)
 {
     if (node == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Static helper NULL guard */
     }
 
     if (len > sizeof(node->tx_data)) {
-        len = (uint8_t)sizeof(node->tx_data); /* LCOV_EXCL_LINE */
+        len = (uint8_t)sizeof(
+            node->tx_data); /* LCOV_EXCL_LINE: Static helper tx buffer capacity clamp */
     }
 
     node->tx_cob_id = cob_id;
@@ -123,7 +124,7 @@ SYN_Status syn_canopen_od_read(SYN_CANOpenNode *node, uint16_t index, uint8_t su
         return SYN_ERROR;
     }
 
-    if (entry->access == SYN_CANOPEN_ACCESS_WO) {
+    if (entry->access == SYN_CANOPEN_ACCESS_WO || entry->data_ptr == NULL) {
         return SYN_ERROR;
     }
 
@@ -149,7 +150,7 @@ SYN_Status syn_canopen_od_write(SYN_CANOpenNode *node, uint16_t index, uint8_t s
         return SYN_ERROR;
     }
 
-    if (entry->access == SYN_CANOPEN_ACCESS_RO) {
+    if (entry->access == SYN_CANOPEN_ACCESS_RO || entry->data_ptr == NULL) {
         return SYN_ERROR;
     }
 
@@ -323,7 +324,7 @@ SYN_Status syn_canopen_process_rx(SYN_CANOpenNode *node, uint32_t cob_id, const 
                     canopen_queue_tx(node, 0x580U + node->node_id, resp, 8);
                 } else {
                     /* clang-format off */
-                    canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH); /* LCOV_EXCL_LINE */
+                    canopen_send_sdo_abort(node, index, subindex, SYN_CANOPEN_SDO_ABORT_TYPE_MISMATCH);
                     /* clang-format on */
                 }
             } else { /* Segmented upload initiate */
@@ -499,7 +500,7 @@ SYN_Status syn_canopen_tpdo_trigger(SYN_CANOpenNode *node, uint8_t pdo_num)
         return SYN_OK;
     }
 
-    return SYN_ERROR; /* LCOV_EXCL_LINE */
+    return SYN_ERROR;
 }
 
 #endif /* SYN_USE_CANOPEN */

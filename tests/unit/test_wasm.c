@@ -352,6 +352,41 @@ static void test_wasm_fixture_yield_resume(void)
     TEST_ASSERT_EQUAL_UINT32(0, syn_wasm_result(&g_wasm_ctx));
 }
 
+static void test_wasm_extended_traps_and_nulls(void)
+{
+    SYN_WASM_Module mod;
+    SYN_WASM_Context ctx;
+    uint8_t mem[1024];
+
+    /* Null & boundary API calls */
+    TEST_ASSERT_FALSE(syn_wasm_module_load(NULL, g_wasm_add_binary, sizeof(g_wasm_add_binary)));
+    TEST_ASSERT_FALSE(syn_wasm_module_load(&mod, NULL, sizeof(g_wasm_add_binary)));
+    TEST_ASSERT_FALSE(syn_wasm_module_load(&mod, g_wasm_add_binary, 0));
+    TEST_ASSERT_FALSE(syn_wasm_init(NULL, &g_wasm_mod, mem, sizeof(mem)));
+    TEST_ASSERT_FALSE(syn_wasm_init(&ctx, NULL, mem, sizeof(mem)));
+    TEST_ASSERT_TRUE(syn_wasm_init(&ctx, &g_wasm_mod, NULL, 0));
+    TEST_ASSERT_FALSE(syn_wasm_register_host(NULL, 0, mock_host_log));
+    TEST_ASSERT_FALSE(syn_wasm_register_host(&ctx, 999, mock_host_log));
+    TEST_ASSERT_EQUAL(-1, syn_wasm_find_export(NULL, "add"));
+    TEST_ASSERT_EQUAL(-1, syn_wasm_find_export(&g_wasm_mod, NULL));
+    TEST_ASSERT_EQUAL(-1, syn_wasm_find_export(&g_wasm_mod, "non_existent"));
+    TEST_ASSERT_FALSE(syn_wasm_call(NULL, 0));
+    TEST_ASSERT_FALSE(syn_wasm_call(&ctx, 9999));
+    TEST_ASSERT_EQUAL(SYN_WASM_TRAP_INVALID_MODULE, syn_wasm_step(NULL, 10));
+    TEST_ASSERT_EQUAL_UINT64(0, syn_wasm_result(NULL));
+
+    /* Invalid Magic Header check */
+    uint8_t bad_magic[8] = {0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00};
+    TEST_ASSERT_FALSE(syn_wasm_module_load(&mod, bad_magic, sizeof(bad_magic)));
+
+    /* Load valid minimal module and test step traps */
+    SYN_WASM_Module test_mod;
+    TEST_ASSERT_TRUE(syn_wasm_module_load(&test_mod, g_wasm_add_binary, sizeof(g_wasm_add_binary)));
+    TEST_ASSERT_TRUE(syn_wasm_init(&ctx, &test_mod, mem, sizeof(mem)));
+    TEST_ASSERT_TRUE(syn_wasm_call(&ctx, 0));
+    syn_wasm_step(&ctx, 10);
+}
+
 void run_wasm_tests(void)
 {
     RUN_TEST(test_wasm_load_null_and_invalid);
@@ -372,5 +407,6 @@ void run_wasm_tests(void)
     RUN_TEST(test_wasm_fixture_host_api);
     RUN_TEST(test_wasm_fixture_traps);
     RUN_TEST(test_wasm_fixture_yield_resume);
+    RUN_TEST(test_wasm_extended_traps_and_nulls);
 }
 /* touch test_wasm.c */

@@ -146,6 +146,18 @@ static void test_isotp_canfd_multi_frame(void)
         uint8_t out[16];
         TEST_ASSERT_EQUAL(3, syn_isotp_receive(&node_b, out, sizeof(out)));
         TEST_ASSERT_EQUAL_MEMORY(payload, out, 3);
+
+        /* CAN FD 8-bit single frame test (data[0] = 0x00, data[1] = len) */
+        SYN_CAN_Frame fd_frame = {0};
+        fd_frame.id = 0x7E0;
+        fd_frame.dlc = 8;
+        fd_frame.data[0] = 0x00;
+        fd_frame.data[1] = 0x03;
+        fd_frame.data[2] = 0x02;
+        fd_frame.data[3] = 0x10;
+        fd_frame.data[4] = 0x01;
+        syn_isotp_process_rx_frame(&node_b, &fd_frame);
+        TEST_ASSERT_EQUAL(3, syn_isotp_receive(&node_b, out, sizeof(out)));
     }
 
     static void test_isotp_multi_frame_flow(void)
@@ -468,6 +480,8 @@ static void test_isotp_canfd_multi_frame(void)
 
     static void test_isotp_is_tx_idle_helper(void)
     {
+        TEST_ASSERT_TRUE(syn_isotp_is_tx_idle(NULL));
+
         SYN_ISOTP_Link link;
         syn_isotp_init(&link, 0x700, 0x708, rx_buf_a, sizeof(rx_buf_a), tx_buf_a, sizeof(tx_buf_a));
         TEST_ASSERT_TRUE(syn_isotp_is_tx_idle(&link));
@@ -475,6 +489,26 @@ static void test_isotp_canfd_multi_frame(void)
         uint8_t payload[32] = {0};
         syn_isotp_send(&link, payload, sizeof(payload));
         TEST_ASSERT_FALSE(syn_isotp_is_tx_idle(&link));
+    }
+
+    static void test_isotp_extra_coverage(void)
+    {
+        SYN_ISOTP_Link link;
+        syn_isotp_init(&link, 0x700, 0x708, rx_buf_a, sizeof(rx_buf_a), tx_buf_a, sizeof(tx_buf_a));
+
+        /* 1. tx_st_timer_us > 0 in SYN_ISOTP_TX_SEND_CF (line 232) */
+        link.tx_state = SYN_ISOTP_TX_SEND_CF;
+        link.tx_st_timer_us = 5000;
+        SYN_CAN_Frame frame;
+        TEST_ASSERT_FALSE(syn_isotp_get_tx_frame(&link, &frame));
+
+        /* 2. Reserved STmin value (e.g. 0x80) (line 53) */
+        link.tx_st_timer_us = 0;
+        link.tx_st_min = 0x80;
+        link.tx_len = 10;
+        link.tx_offset = 2;
+        TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&link, &frame));
+        TEST_ASSERT_EQUAL_UINT32(0, link.tx_st_timer_us);
     }
 
     void run_isotp_tests(void)
@@ -491,6 +525,7 @@ static void test_isotp_canfd_multi_frame(void)
         RUN_TEST(test_isotp_tx_send_cf_zero_remaining_idle);
         RUN_TEST(test_isotp_32bit_extended_first_frame_parsing);
         RUN_TEST(test_isotp_is_tx_idle_helper);
+        RUN_TEST(test_isotp_extra_coverage);
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
         RUN_TEST(test_isotp_canfd_single_frame);
         RUN_TEST(test_isotp_canfd_multi_frame);

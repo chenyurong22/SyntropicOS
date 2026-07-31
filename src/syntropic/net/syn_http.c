@@ -132,11 +132,11 @@ static bool send_request(SYN_Socket sock, const char *method, const char *host, 
         if (!sock_write_str(sock, headers[i].value))
             return false;
         if (!sock_write_str(sock, "\r\n"))
-            return false; /* LCOV_EXCL_LINE */
+            return false; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     if (!sock_write_str(sock, "\r\n"))
-        return false; /* LCOV_EXCL_LINE */
+        return false; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     return true;
 }
 

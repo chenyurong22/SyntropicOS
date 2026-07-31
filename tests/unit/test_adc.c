@@ -26,6 +26,13 @@ static void test_adc(void)
     mock_adc_value = 2048;
     syn_adc_init(&adc, &cfg);
 
+    /* Zero config oversample and cal_scale fallback tests */
+    SYN_ADC_Config zero_cfg = {.channel = 0, .oversample = 0, .cal_scale = 0};
+    SYN_ADC zero_adc;
+    syn_adc_init(&zero_adc, &zero_cfg);
+    TEST_ASSERT_EQUAL(1, zero_adc.cfg.oversample);
+    TEST_ASSERT_EQUAL(1, zero_adc.cfg.cal_scale);
+
     int32_t val = syn_adc_read(&adc);
     TEST_ASSERT_EQUAL_INT(2048, val);
     TEST_ASSERT_EQUAL_INT(2048, syn_adc_raw(&adc));

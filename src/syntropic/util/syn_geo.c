@@ -98,7 +98,7 @@ SYN_Status syn_geo_ecef_to_enu(double x, double y, double z, double ref_lat_deg,
     SYN_Status st =
         syn_geo_wgs84_to_ecef(ref_lat_deg, ref_lon_deg, ref_alt_m, &ref_x, &ref_y, &ref_z);
     if (st != SYN_OK)
-        return st; /* LCOV_EXCL_LINE */
+        return st; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
 
     double dx = x - ref_x;
     double dy = y - ref_y;
@@ -132,7 +132,7 @@ SYN_Status syn_geo_wgs84_to_enu(double lat_deg, double lon_deg, double alt_m, do
     double x, y, z;
     SYN_Status st = syn_geo_wgs84_to_ecef(lat_deg, lon_deg, alt_m, &x, &y, &z);
     if (st != SYN_OK)
-        return st; /* LCOV_EXCL_LINE */
+        return st; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
 
     return syn_geo_ecef_to_enu(x, y, z, ref_lat_deg, ref_lon_deg, ref_alt_m, out_enu);
 }

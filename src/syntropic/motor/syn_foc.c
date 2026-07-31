@@ -133,7 +133,7 @@ void syn_foc_svpwm(const SYN_FOC_AB *ab, q16_t v_bus, q16_t *duty_a, q16_t *duty
     SYN_ASSERT(ab != NULL && duty_a != NULL && duty_b != NULL && duty_c != NULL);
     SYN_ASSERT(v_bus > 0);
     if (v_bus <= 0)
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
 
     SYN_FOC_ABC v_ref;
     syn_foc_inv_clarke(ab, &v_ref);

@@ -25,7 +25,8 @@
 static void led_set_output(SYN_LED *led, bool on)
 {
     if (led == NULL)
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Unreachable static helper guard; led is verified non-NULL by
+                   caller */
     led->lit = on;
     SYN_GPIO_State level;
     if (led->polarity == (uint8_t)SYN_LED_ACTIVE_LOW) {

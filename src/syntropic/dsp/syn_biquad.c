@@ -32,7 +32,7 @@ void syn_filter_biquad_reset(SYN_FilterBiquad *f)
 {
     SYN_ASSERT(f != NULL);
     if (f == NULL)
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     f->x1 = 0;
     f->x2 = 0;
     f->y1 = 0;

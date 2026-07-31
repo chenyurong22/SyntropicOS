@@ -90,7 +90,8 @@ bool syn_coredump_read(SYN_CoreDump *out)
 {
     SYN_ASSERT(out != NULL);
     if (out == NULL) {
-        return false; /* LCOV_EXCL_LINE */
+        return false; /* LCOV_EXCL_LINE: Defensive NULL guard after SYN_ASSERT macro in release mode
+                       */
     }
 
     SYN_CoreDump dump;

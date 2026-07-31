@@ -118,7 +118,7 @@ SYN_Status syn_ecat_parse_frame(SYN_EcatNode *node, const uint8_t *frame, size_t
         return SYN_ERROR;
 
     uint16_t dg_len = ecat_hdr & 0x07FF;
-    if (len < (size_t)(2 + dg_len))
+    if (dg_len < 12 || len < (size_t)(2 + dg_len))
         return SYN_ERROR;
 
     /* Extract Datagram WKC from the end of the first datagram */

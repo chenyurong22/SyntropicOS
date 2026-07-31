@@ -21,7 +21,7 @@ void syn_workqueue_init(SYN_WorkQueue *wq, SYN_WorkItem *buf, size_t capacity)
     SYN_ASSERT(capacity > 1);
 
     if (wq == NULL || buf == NULL || capacity <= 1) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     syn_spsc_queue_init(&wq->queue, buf, sizeof(SYN_WorkItem), capacity);

@@ -93,7 +93,8 @@ SYN_Status syn_aes128_init(SYN_AES128_Context *ctx, const uint8_t key[SYN_AES128
     SYN_ASSERT(key != NULL);
 
     if (ctx == NULL || key == NULL) {
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in
+                                     release mode */
     }
 
     memcpy(ctx->round_keys, key, 16);
@@ -142,7 +143,7 @@ void syn_aes128_encrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16
     SYN_ASSERT(out != NULL);
 
     if (ctx == NULL || in == NULL || out == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
     }
 
     uint8_t state[4][4];
@@ -211,7 +212,7 @@ void syn_aes128_decrypt_block(const SYN_AES128_Context *ctx, const uint8_t in[16
     SYN_ASSERT(out != NULL);
 
     if (ctx == NULL || in == NULL || out == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
     }
 
     uint8_t state[4][4];
@@ -284,7 +285,8 @@ SYN_Status syn_aes128_cbc_encrypt(const SYN_AES128_Context *ctx, const uint8_t i
     SYN_ASSERT(out_len != NULL);
 
     if (ctx == NULL || iv == NULL || (in == NULL && in_len > 0) || out == NULL || out_len == NULL) {
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in
+                                     release mode */
     }
 
     size_t pad_len = 16 - (in_len % 16);

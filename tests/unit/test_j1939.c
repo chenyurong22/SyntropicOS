@@ -293,6 +293,10 @@ static void test_j1939_edge_coverage(void)
     size_t len = syn_j1939_encode_dm1(buf, sizeof(buf), dtcs, 3, 0);
     TEST_ASSERT_EQUAL(6, len);
 
+    /* DM1 zero DTC count with small buffer (buf_size = 5) -> returns 2 (line 210) */
+    uint8_t buf5[5];
+    TEST_ASSERT_EQUAL(2, syn_j1939_encode_dm1(buf5, 5, NULL, 0, 0));
+
     /* 2. Active DTC log overflow (max logged DTCs = 16) */
     SYN_J1939_DTCLog log;
     syn_j1939_dtc_log_init(&log);
@@ -305,6 +309,9 @@ static void test_j1939_edge_coverage(void)
     /* 3. Shift elements when clearing active DTC */
     TEST_ASSERT_EQUAL(SYN_OK, syn_j1939_dtc_clear_active(&log, 1000, 1));
     TEST_ASSERT_EQUAL(SYN_J1939_MAX_LOGGED_DTCS - 1, log.active_count);
+
+    /* Clear non-existent DTC -> returns SYN_ERROR (line 369) */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_j1939_dtc_clear_active(&log, 99999, 1));
 }
 
 void run_j1939_tests(void)

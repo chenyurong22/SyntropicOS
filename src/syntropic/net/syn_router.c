@@ -127,7 +127,7 @@ static bool queue_pending(SYN_Router *r, uint8_t dst, uint8_t type, uint8_t seq,
                           const uint8_t *data, uint8_t len)
 {
     if (r->pending == NULL)
-        return false; /* LCOV_EXCL_LINE */
+        return false; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
 
     for (uint8_t i = 0; i < r->pending_cap; i++) {
         SYN_PendingAck *p = &r->pending[i];

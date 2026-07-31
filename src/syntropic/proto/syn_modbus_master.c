@@ -248,7 +248,7 @@ SYN_Status syn_modbus_master_read_fifo_queue(SYN_ModbusMaster *m, uint8_t slave_
 SYN_Status syn_modbus_master_report_server_id(SYN_ModbusMaster *m, uint8_t slave_addr)
 {
     if (m == NULL || slave_addr == 0)
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM;
 
     if (m->state == SYN_MB_MASTER_STATE_WAITING_RESPONSE)
         return SYN_BUSY;
@@ -336,7 +336,7 @@ SYN_ModbusMaster_State syn_modbus_master_process(SYN_ModbusMaster *m, uint32_t c
         uint8_t byte_count = m->buf[2];
         uint16_t words = byte_count / 2;
         if (words > 125)
-            words = 125; /* LCOV_EXCL_LINE */
+            words = 125;
         for (uint16_t i = 0; i < words; i++) {
             m->read_data[i] = read_u16_be(&m->buf[3 + i * 2]);
         }
@@ -346,7 +346,7 @@ SYN_ModbusMaster_State syn_modbus_master_process(SYN_ModbusMaster *m, uint32_t c
                fc == SYN_MB_FC_REPORT_SERVER_ID) {
         uint8_t byte_count = m->buf[2];
         if (byte_count > 250)
-            byte_count = 250; /* LCOV_EXCL_LINE */
+            byte_count = 250;
         for (uint16_t i = 0; i < byte_count; i++) {
             m->read_data[i] = m->buf[3 + i];
         }
@@ -355,7 +355,7 @@ SYN_ModbusMaster_State syn_modbus_master_process(SYN_ModbusMaster *m, uint32_t c
     } else if (fc == SYN_MB_FC_READ_FIFO_QUEUE) {
         uint16_t fifo_count = read_u16_be(&m->buf[4]);
         if (fifo_count > 31)
-            fifo_count = 31; /* LCOV_EXCL_LINE */
+            fifo_count = 31;
         for (uint16_t i = 0; i < fifo_count; i++) {
             m->read_data[i] = read_u16_be(&m->buf[6 + i * 2]);
         }
@@ -401,7 +401,7 @@ SYN_Status syn_modbus_master_queue_step(SYN_ModbusMaster *m, SYN_ModbusMasterQue
                                         uint32_t now_ms)
 {
     if (m == NULL || q == NULL) {
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM;
     }
 
     SYN_ModbusMaster_State state = syn_modbus_master_process(m, now_ms);
@@ -429,7 +429,7 @@ SYN_Status syn_modbus_master_queue_step(SYN_ModbusMaster *m, SYN_ModbusMasterQue
                                                         qry->count);
             break;
         default:
-            break; /* LCOV_EXCL_LINE */
+            break;
         }
 
         if (st == SYN_OK) {
@@ -453,8 +453,7 @@ SYN_Status syn_modbus_master_queue_step(SYN_ModbusMaster *m, SYN_ModbusMasterQue
             m->state = SYN_MB_MASTER_STATE_IDLE; /* Retry query */
         } else {
             if (qry->callback != NULL) {
-                qry->callback(qry->slave_addr, qry->func_code, NULL, 0, SYN_ERROR,
-                              qry->user_ctx); /* LCOV_EXCL_LINE */
+                qry->callback(qry->slave_addr, qry->func_code, NULL, 0, SYN_ERROR, qry->user_ctx);
             }
             q->head = (uint8_t)((q->head + 1U) % SYN_MODBUS_QUEUE_SIZE);
             q->count--;

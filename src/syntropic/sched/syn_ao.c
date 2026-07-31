@@ -43,7 +43,7 @@ static SYN_PT_Status syn_ao_pt_run(SYN_PT *pt, SYN_Task *task)
         }
     }
 
-    PT_END(pt); /* LCOV_EXCL_LINE */
+    PT_END(pt); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
 }
 
 void syn_ao_init(SYN_ActiveObject *ao, const char *name, const SYN_FSM_Transition *transitions,

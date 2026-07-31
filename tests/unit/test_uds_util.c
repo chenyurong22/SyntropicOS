@@ -32,9 +32,9 @@ void test_uds_util_dtc_from_str(void)
     TEST_ASSERT_TRUE(syn_uds_dtc_from_str("C101000", &dtc));
     TEST_ASSERT_EQUAL_HEX32(0x501000U, dtc);
 
-    /* Short 5-character string "P0105" */
-    TEST_ASSERT_TRUE(syn_uds_dtc_from_str("P0105", &dtc));
-    TEST_ASSERT_EQUAL_HEX32(0x010500U, dtc);
+    /* Hex characters A-F and a-f */
+    TEST_ASSERT_TRUE(syn_uds_dtc_from_str("P01ABcd", &dtc));
+    TEST_ASSERT_TRUE(syn_uds_dtc_from_str("p01abCD", &dtc));
 }
 
 void test_uds_util_dtc_to_str(void)

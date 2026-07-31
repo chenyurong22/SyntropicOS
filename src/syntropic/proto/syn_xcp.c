@@ -165,7 +165,7 @@ bool syn_xcp_process_cto(SYN_XCP_Slave *slave, const uint8_t cto[8], uint8_t dto
         }
         slave->mta_ext = ext;
         if (addr != 0U) {
-            slave->mta_addr = (uintptr_t)addr; /* LCOV_EXCL_LINE */
+            slave->mta_addr = (uintptr_t)addr;
         }
         if (slave->mta_addr != 0U) {
             const uint8_t *ptr = (const uint8_t *)(uintptr_t)slave->mta_addr;
@@ -239,7 +239,7 @@ bool syn_xcp_process_cto(SYN_XCP_Slave *slave, const uint8_t cto[8], uint8_t dto
 
         (void)ext;
         if (addr != 0U) {
-            entry->address = (uintptr_t)addr; /* LCOV_EXCL_LINE */
+            entry->address = (uintptr_t)addr;
         } else {
             entry->address = slave->mta_addr;
         }
@@ -268,7 +268,7 @@ bool syn_xcp_process_cto(SYN_XCP_Slave *slave, const uint8_t cto[8], uint8_t dto
         list->event_channel = cto[4];
         list->prescaler = syn_peek_u16_le(cto, 5);
         if (list->prescaler == 0U) {
-            list->prescaler = 1U; /* LCOV_EXCL_LINE */
+            list->prescaler = 1U;
         }
         break;
     }
@@ -332,7 +332,7 @@ bool syn_xcp_service_daq(SYN_XCP_Slave *slave, uint8_t event_channel, uint8_t dt
 
         uint8_t o = *odt_idx;
         if (o >= list->odt_count) {
-            o = 0U; /* LCOV_EXCL_LINE */
+            o = 0U;
         }
 
         SYN_XCP_ODT *odt = &list->odts[o];

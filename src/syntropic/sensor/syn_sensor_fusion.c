@@ -14,7 +14,7 @@ void syn_sensor_fusion_init(SYN_SensorFusion *f, q16_t Kp, q16_t Ki, q16_t dt)
 {
     SYN_ASSERT(f != NULL);
     if (f == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     memset(f, 0, sizeof(*f));
@@ -32,7 +32,7 @@ void syn_sensor_fusion_reset(SYN_SensorFusion *f)
 {
     SYN_ASSERT(f != NULL);
     if (f == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     f->q.w = Q16_ONE;

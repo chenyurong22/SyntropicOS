@@ -78,7 +78,7 @@ void syn_imgui_end(SYN_IMGUI_Context *ctx)
 
     /* Safely cap focus if the number of widgets decreased */
     if (ctx->focused_id > ctx->last_max_id) {
-        ctx->focused_id = (ctx->last_max_id > 0) ? 1 : 0; /* LCOV_EXCL_LINE */
+        ctx->focused_id = (ctx->last_max_id > 0) ? 1 : 0;
     }
 }
 
@@ -273,9 +273,9 @@ bool syn_imgui_slider(SYN_IMGUI_Context *ctx, const char *label, int32_t *value,
             int16_t relative_x = ctx->touch_x - bar_x;
             int32_t new_val = min + (relative_x * (max - min)) / bar_w;
             if (new_val < min)
-                new_val = min; /* LCOV_EXCL_LINE */
+                new_val = min; /* LCOV_EXCL_LINE: defensive lower bound clamp after range check */
             if (new_val > max)
-                new_val = max; /* LCOV_EXCL_LINE */
+                new_val = max; /* LCOV_EXCL_LINE: defensive upper bound clamp after range check */
             if (new_val != *value) {
                 *value = new_val;
                 changed = true;
@@ -445,7 +445,7 @@ bool syn_imgui_combo(SYN_IMGUI_Context *ctx, const char *label, const char **opt
             while (idx < 0)
                 idx += (int32_t)count;
             while (idx >= (int32_t)count)
-                idx -= (int32_t)count; /* LCOV_EXCL_LINE */
+                idx -= (int32_t)count;
             if (idx != *selected) {
                 *selected = idx;
                 changed = true;
@@ -535,7 +535,7 @@ void syn_imgui_graph(SYN_IMGUI_Context *ctx, const char *title, const int32_t *d
                  (int16_t)(plot_y + plot_h / 2), fg);
 
     if (data == NULL || count == 0)
-        return; /* LCOV_EXCL_LINE */
+        return;
 
     int32_t range = max_val - min_val;
     if (range <= 0)
@@ -807,7 +807,7 @@ void syn_imgui_layout_end(SYN_IMGUI_Context *ctx)
 {
     SYN_ASSERT(ctx != NULL);
     if (ctx == NULL)
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: release-mode defensive NULL check after SYN_ASSERT */
     ctx->layout.in_layout = false;
 }
 
@@ -956,7 +956,7 @@ bool syn_imgui_spinner(SYN_IMGUI_Context *ctx, const char *label, int32_t *value
 
     if (ctx->disabled_depth == 0) {
         if (is_hit_test(ctx, x, y, w, h)) {
-            ctx->focused_id = ctx->next_id; /* LCOV_EXCL_LINE */
+            ctx->focused_id = ctx->next_id;
         }
     }
 
@@ -969,7 +969,7 @@ bool syn_imgui_spinner(SYN_IMGUI_Context *ctx, const char *label, int32_t *value
         if (new_val > max)
             new_val = min; /* wrap */
         if (new_val < min)
-            new_val = max; /* LCOV_EXCL_LINE */
+            new_val = max;
         if (new_val != *value) {
             *value = new_val;
             changed = true;
@@ -1083,7 +1083,7 @@ void syn_imgui_scroll_end(SYN_IMGUI_Context *ctx)
 
     /* Clamp scroll */
     if (*sp < 0)
-        *sp = 0; /* LCOV_EXCL_LINE */
+        *sp = 0;
     if (*sp > max_scroll)
         *sp = max_scroll;
 
@@ -1322,9 +1322,9 @@ bool syn_imgui_tabs(SYN_IMGUI_Context *ctx, const char **labels, size_t count, i
         if (ctx->enc_delta != 0) {
             int32_t new_val = *active + ctx->enc_delta;
             if (new_val >= (int32_t)count)
-                new_val = 0; /* LCOV_EXCL_LINE */
+                new_val = 0;
             if (new_val < 0)
-                new_val = (int32_t)count - 1; /* LCOV_EXCL_LINE */
+                new_val = (int32_t)count - 1;
             if (new_val != *active) {
                 *active = new_val;
                 changed = true;
@@ -1332,7 +1332,7 @@ bool syn_imgui_tabs(SYN_IMGUI_Context *ctx, const char **labels, size_t count, i
         }
         /* Select exits edit mode */
         if (ctx->btn_select) {
-            ctx->active_id = 0; /* LCOV_EXCL_LINE */
+            ctx->active_id = 0;
         }
     } else if (ctx->disabled_depth == 0 && is_focused && ctx->btn_select) {
         /* Enter edit mode */
@@ -1432,7 +1432,7 @@ void syn_imgui_bar_chart(SYN_IMGUI_Context *ctx, const char *title, const int32_
 
     int16_t bar_w = (int16_t)(plot_w / (int16_t)count);
     if (bar_w < 1)
-        bar_w = 1; /* LCOV_EXCL_LINE */
+        bar_w = 1;
     int16_t gap = (bar_w > 2) ? 1 : 0;
 
     for (size_t i = 0; i < count; i++) {
@@ -1444,7 +1444,7 @@ void syn_imgui_bar_chart(SYN_IMGUI_Context *ctx, const char *title, const int32_
 
         int16_t bar_h = (int16_t)((int32_t)(val - min_val) * plot_h / range);
         if (bar_h < 1 && val > min_val)
-            bar_h = 1; /* LCOV_EXCL_LINE */
+            bar_h = 1;
 
         int16_t bx = (int16_t)(plot_x + (int16_t)i * bar_w + gap);
         int16_t by = (int16_t)(plot_y + plot_h - bar_h);
@@ -1474,8 +1474,8 @@ bool syn_imgui_icon_button(SYN_IMGUI_Context *ctx, const uint8_t *icon, int16_t 
     if (ctx->disabled_depth == 0) {
         bool touch_hit = is_hit_test(ctx, x, y, w, h);
         if (touch_hit) {
-            ctx->focused_id = ctx->next_id; /* LCOV_EXCL_LINE */
-            clicked = true;                 /* LCOV_EXCL_LINE */
+            ctx->focused_id = ctx->next_id;
+            clicked = true;
         }
         if (ctx->focused_id == ctx->next_id && ctx->btn_select) {
             clicked = true;
@@ -1673,7 +1673,7 @@ void syn_imgui_progress_bar_ex(SYN_IMGUI_Context *ctx, int32_t value, int32_t mi
             int32_t phase = (value < 0 ? -value : value) % (inner_w * 2);
             int16_t bar_w = (int16_t)(inner_w / 5);
             if (bar_w < 2)
-                bar_w = 2; /* LCOV_EXCL_LINE */
+                bar_w = 2;
             int16_t bar_x;
             if (phase < inner_w) {
                 bar_x = (int16_t)(x + 2 + phase);
@@ -1690,7 +1690,7 @@ void syn_imgui_progress_bar_ex(SYN_IMGUI_Context *ctx, int32_t value, int32_t mi
             /* Normal fill */
             int32_t val = value;
             if (val < min)
-                val = min; /* LCOV_EXCL_LINE */
+                val = min;
             if (val > max)
                 val = max;
             int32_t range = max - min;
@@ -1752,7 +1752,7 @@ bool syn_imgui_selectable(SYN_IMGUI_Context *ctx, const char *label, bool *selec
     if (ctx->disabled_depth == 0) {
         touch_clicked = is_hit_test(ctx, x, y, w, h);
         if (touch_clicked) {
-            ctx->focused_id = ctx->next_id; /* LCOV_EXCL_LINE */
+            ctx->focused_id = ctx->next_id;
         }
     }
 
@@ -1775,9 +1775,8 @@ bool syn_imgui_selectable(SYN_IMGUI_Context *ctx, const char *label, bool *selec
         syn_gfx_text(ctx->gfx, (int16_t)(x + ctx->style.padding), (int16_t)(y + (h - fh) / 2),
                      label, fg);
     } else {
-        /* clang-format off */
-        syn_gfx_text(ctx->gfx, (int16_t)(x + ctx->style.padding), (int16_t)(y + (h - fh) / 2), label, fg); /* LCOV_EXCL_LINE */
-        /* clang-format on */
+        syn_gfx_text(ctx->gfx, (int16_t)(x + ctx->style.padding), (int16_t)(y + (h - fh) / 2),
+                     label, fg);
     }
 
     return clicked;
@@ -1811,7 +1810,7 @@ bool syn_imgui_collapsing_header(SYN_IMGUI_Context *ctx, const char *label, bool
     if (ctx->disabled_depth == 0) {
         touch_clicked = is_hit_test(ctx, x, y, w, h);
         if (touch_clicked) {
-            ctx->focused_id = ctx->next_id; /* LCOV_EXCL_LINE */
+            ctx->focused_id = ctx->next_id;
         }
     }
 
@@ -1868,7 +1867,7 @@ void syn_imgui_text_wrapped(SYN_IMGUI_Context *ctx, const char *text, int16_t x,
     int16_t cy = y;
 
     if (fw == 0 || w <= 0)
-        return; /* LCOV_EXCL_LINE */
+        return;
 
     const char *p = text;
     while (*p) {
@@ -2024,7 +2023,7 @@ void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text, int16_t *o
     int16_t text_w = (int16_t)syn_gfx_text_width(ctx->gfx, text);
 
     if (speed <= 0)
-        speed = 1; /* LCOV_EXCL_LINE */
+        speed = 1;
 
     /* Resolve geometry from layout cursor before any drawing */
     uint8_t fh_mq = syn_gfx_text_height(ctx->gfx);
@@ -2048,7 +2047,7 @@ void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text, int16_t *o
     /* Pause duration at each end (in calls).  ~30 calls at speed=1 */
     int16_t pause = (int16_t)(30 / speed);
     if (pause < 4)
-        pause = 4; /* LCOV_EXCL_LINE */
+        pause = 4;
 
     /* Total cycle: pause + scroll_right + pause + scroll_left */
     int16_t total_cycle = (int16_t)(pause + overflow + pause + overflow);
@@ -2056,9 +2055,9 @@ void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text, int16_t *o
     /* Normalize offset into cycle */
     int16_t pos = *offset;
     if (pos < 0)
-        pos = 0; /* LCOV_EXCL_LINE */
+        pos = 0;
     if (pos >= total_cycle)
-        pos = 0; /* LCOV_EXCL_LINE */
+        pos = 0;
 
     /* Determine text_x shift */
     int16_t shift;
@@ -2070,7 +2069,7 @@ void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text, int16_t *o
         shift = (int16_t)(pos - pause);
     } else if (pos < pause + overflow + pause) {
         /* Phase 3: paused at end */
-        shift = overflow; /* LCOV_EXCL_LINE */
+        shift = overflow;
     } else {
         /* Phase 4: scrolling right (back) */
         shift = (int16_t)(overflow - (pos - pause - overflow - pause));
@@ -2089,13 +2088,13 @@ void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text, int16_t *o
     if (old_cw > 0 && old_ch > 0) {
         syn_canvas_set_clip(c, old_cx, old_cy, old_cw, old_ch);
     } else {
-        syn_canvas_reset_clip(c); /* LCOV_EXCL_LINE */
+        syn_canvas_reset_clip(c);
     }
 
     /* Advance offset */
     *offset = (int16_t)(pos + speed);
     if (*offset >= total_cycle)
-        *offset = 0; /* LCOV_EXCL_LINE */
+        *offset = 0;
 }
 
 #endif /* SYN_USE_IMGUI */

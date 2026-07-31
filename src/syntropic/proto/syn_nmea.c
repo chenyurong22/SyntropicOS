@@ -28,7 +28,8 @@
 static bool get_field(const char *sentence, uint8_t index, char *dest, size_t max_len)
 {
     if (sentence == NULL || dest == NULL || max_len == 0)
-        return false; /* LCOV_EXCL_LINE */
+        return false; /* LCOV_EXCL_LINE: Unreachable guard; callers pass non-NULL valid stack
+                         buffers */
     dest[0] = '\0';
 
     const char *p = sentence;
@@ -41,7 +42,7 @@ static bool get_field(const char *sentence, uint8_t index, char *dest, size_t ma
             current_field++;
             p++;
             if (current_field > index)
-                break; /* LCOV_EXCL_LINE */
+                break; /* LCOV_EXCL_LINE: Early termination guard when field index is exceeded */
             continue;
         }
 
@@ -57,7 +58,8 @@ static bool get_field(const char *sentence, uint8_t index, char *dest, size_t ma
         p++;
     }
 
-    return false; /* LCOV_EXCL_LINE */
+    return false; /* LCOV_EXCL_LINE: Fallback return when requested field index exceeds total
+                     sentence comma count */
 }
 
 /**
@@ -111,9 +113,9 @@ bool syn_nmea_parser_feed(SYN_NMEA_Parser *parser, char byte, char *out_sentence
                 return true;
             }
         }
-        parser->in_sentence = false; /* LCOV_EXCL_LINE */
-        parser->pos = 0;             /* LCOV_EXCL_LINE */
-        return false;                /* LCOV_EXCL_LINE */
+        parser->in_sentence = false;
+        parser->pos = 0;
+        return false;
     }
 
     if (parser->pos < SYN_NMEA_MAX_SENTENCE_LEN) {
@@ -164,7 +166,8 @@ SYN_NMEA_SentenceType syn_nmea_get_type(const char *sentence)
 
     char talker[10];
     if (!get_field(sentence, 0, talker, sizeof(talker)))
-        return SYN_NMEA_SENTENCE_UNKNOWN; /* LCOV_EXCL_LINE */
+        return SYN_NMEA_SENTENCE_UNKNOWN; /* LCOV_EXCL_LINE: Unreachable guard; sentence was
+                                             validated non-empty above */
 
     size_t len = strlen(talker);
     if (len < 3)
@@ -182,7 +185,7 @@ SYN_NMEA_SentenceType syn_nmea_get_type(const char *sentence)
     if (strcmp(type_str, "ZDA") == 0)
         return SYN_NMEA_SENTENCE_ZDA;
 
-    return SYN_NMEA_SENTENCE_UNKNOWN; /* LCOV_EXCL_LINE */
+    return SYN_NMEA_SENTENCE_UNKNOWN;
 }
 
 double syn_nmea_parse_coord(const char *nmea_coord, char dir)
@@ -218,7 +221,7 @@ static void parse_time(const char *field, uint8_t *h, uint8_t *m, uint8_t *s, ui
     *ms = 0;
     if (field == NULL || field[0] == '\0' || field[1] == '\0' || field[2] == '\0' ||
         field[3] == '\0' || field[4] == '\0' || field[5] == '\0') {
-        return; /* LCOV_EXCL_LINE */
+        return;
     }
 
     char tmp[3] = {0};

@@ -15,7 +15,8 @@ SYN_Status syn_biometric_init(SYN_Biometric *bio, SYN_GPIO_Pin scl, SYN_GPIO_Pin
 {
     SYN_ASSERT(bio != NULL);
     if (bio == NULL) {
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in
+                                     release mode */
     }
 
     memset(bio, 0, sizeof(*bio));

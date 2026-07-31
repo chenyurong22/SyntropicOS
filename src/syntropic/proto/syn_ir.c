@@ -192,7 +192,8 @@ static const SYN_IR_ProtoDesc proto_table[SYN_IR_PROTO_COUNT] = {
 static bool timing_match(uint16_t actual, uint16_t expected, uint16_t tolerance)
 {
     if (expected == 0)
-        return false; /* LCOV_EXCL_LINE */
+        return false; /* LCOV_EXCL_LINE: Unreachable guard; callers pass non-zero timing thresholds
+                         from proto_table */
     uint16_t diff = (actual > expected) ? (actual - expected) : (expected - actual);
     return (diff <= tolerance);
 }
@@ -242,7 +243,8 @@ static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
 {
     SYN_IR_Protocol proto = decoder->active_proto;
     if (proto >= SYN_IR_PROTO_COUNT) {
-        return false; /* LCOV_EXCL_LINE */
+        return false; /* LCOV_EXCL_LINE: Unreachable guard; decoder->active_proto is validated
+                         against proto_table during state transitions */
     }
     const SYN_IR_ProtoDesc *desc = &proto_table[proto];
 
@@ -298,7 +300,8 @@ static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
             frame_out->address =
                 (uint32_t)((bits >> 7) & 0x1FU) | (((uint32_t)((bits >> 12) & 0xFFU)) << 5);
         } else {
-            return false; /* LCOV_EXCL_LINE */
+            return false; /* LCOV_EXCL_LINE: Unreachable guard; Sony bit_idx is constrained to 12,
+                             15, or 20 by decoder trigger conditions */
         }
         break;
     }
@@ -359,8 +362,9 @@ static bool unpack_frame(const SYN_IR_Decoder *decoder, SYN_IR_Frame *frame_out)
         break;
     }
 
-    default:          /* LCOV_EXCL_LINE */
-        return false; /* LCOV_EXCL_LINE */
+    default: /* LCOV_EXCL_LINE: Unreachable default switch case in SYN_IR_Protocol enum switch */
+        return false; /* LCOV_EXCL_LINE: Unreachable default switch case in SYN_IR_Protocol enum
+                         switch */
     }
 
     return true;
@@ -402,7 +406,8 @@ bool syn_ir_decode_pulse(SYN_IR_Decoder *decoder, uint16_t duration_us, bool is_
                             reset_decoder_state(decoder);
                             return true;
                         }
-                        /* LCOV_EXCL_START */
+                        /* LCOV_EXCL_START: Unreachable fallback when unpack_frame fails after exact
+                         * bit_idx match */
                         reset_decoder_state(decoder);
                         return false;
                         /* LCOV_EXCL_STOP */
@@ -684,8 +689,9 @@ SYN_Status syn_ir_encode_frame(const SYN_IR_Frame *frame, SYN_IR_Pulse *pulse_bu
         raw_bits = ((frame->address & 0x1FU) << 10) | ((frame->command & 0xFFU) << 2);
         break;
 
-    default:                      /* LCOV_EXCL_LINE */
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+    default: /* LCOV_EXCL_LINE: Unreachable default switch case in SYN_IR_Protocol enum switch */
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE: Unreachable default switch case in
+                                     SYN_IR_Protocol enum switch */
     }
 
     /* Encode Data Bits */

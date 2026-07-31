@@ -165,4 +165,47 @@ void test_usb_null_checks(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_usb_set_raw_config_desc(NULL, NULL, 0));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_usb_process_setup(NULL, NULL, NULL, NULL));
     TEST_ASSERT_FALSE(syn_usb_is_configured(NULL));
+
+    SYN_USB_Device dev;
+    syn_usb_init(&dev, TEST_DEVICE_DESC);
+    SYN_USB_ClassDriver dummy_cls = {0};
+    dev.class_count = SYN_USB_MAX_CLASSES;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_usb_register_class(&dev, &dummy_cls, NULL, 0));
+
+    dev.class_count = 0;
+    dev.config_buf_used = SYN_USB_MAX_CONFIG_DESC;
+    uint8_t dummy_iface[5] = {0};
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_usb_register_class(&dev, &dummy_cls, dummy_iface, 5));
+
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_usb_set_string_desc(&dev, 99, dummy_iface));
+
+    /* SET_ADDRESS 0 -> DEFAULT state */
+    SYN_USB_SetupPacket pkt = {
+        .bmRequestType = 0, .bRequest = SYN_USB_REQ_SET_ADDRESS, .wValue = 0};
+    uint8_t resp[16];
+    uint16_t rlen = 0;
+    syn_usb_process_setup(&dev, &pkt, resp, &rlen);
+    TEST_ASSERT_EQUAL_INT(SYN_USB_STATE_DEFAULT, dev.state);
+
+    /* SET_CONFIGURATION 0 -> ADDRESS state */
+    pkt.bRequest = SYN_USB_REQ_SET_CONFIGURATION;
+    pkt.wValue = 0;
+    syn_usb_process_setup(&dev, &pkt, resp, &rlen);
+    TEST_ASSERT_EQUAL_INT(SYN_USB_STATE_ADDRESS, dev.state);
+
+    /* String desc request wLength truncation & invalid index */
+    uint8_t sdesc[4] = {4, 3, 'A', 0};
+    syn_usb_set_string_desc(&dev, 0, sdesc);
+    pkt.bRequest = SYN_USB_REQ_GET_DESCRIPTOR;
+    pkt.wValue = (SYN_USB_DESC_TYPE_STRING << 8) | 0;
+    pkt.wLength = 2;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_process_setup(&dev, &pkt, resp, &rlen));
+    TEST_ASSERT_EQUAL_UINT16(2, rlen);
+
+    pkt.wValue = (SYN_USB_DESC_TYPE_STRING << 8) | 10;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_usb_process_setup(&dev, &pkt, resp, &rlen));
+
+    /* Unknown bRequest */
+    pkt.bRequest = 0xFF;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_process_setup(&dev, &pkt, resp, &rlen));
 }

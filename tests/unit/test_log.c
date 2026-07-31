@@ -61,6 +61,13 @@ static void test_logging_basic(void)
     mock_serial_tx_buf[0] = '\0';
     syn_log(SYN_LOG_INFO, "test", "no crash");
     TEST_ASSERT_TRUE(1);
+
+    /* Test long log truncation (line 175 in syn_log.c) */
+    char long_msg[300];
+    memset(long_msg, 'A', sizeof(long_msg) - 1);
+    long_msg[sizeof(long_msg) - 1] = '\0';
+    syn_log(SYN_LOG_INFO, "LONG", "%s", long_msg);
+    TEST_ASSERT_TRUE(log_capture_pos > 0);
 }
 
 static void test_log_hexdump(void)
@@ -156,7 +163,7 @@ static void test_log_null_tag(void)
     TEST_ASSERT_TRUE(log_capture_pos > 0);
 
     /* Test oversized msg truncation */
-    char huge_msg[300];
+    char huge_msg[600];
     memset(huge_msg, 'M', sizeof(huge_msg) - 1);
     huge_msg[sizeof(huge_msg) - 1] = '\0';
     log_capture_pos = 0;

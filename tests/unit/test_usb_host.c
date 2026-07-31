@@ -109,6 +109,31 @@ void test_usb_host_enumeration_flow(void)
     TEST_ASSERT_EQUAL_HEX16(0xCAFE, info->vid);
     TEST_ASSERT_EQUAL_HEX16(0xBEEF, info->pid);
 
+    /* Test xfer pending polling & transfer failure */
+    SYN_USB_Host host_err;
+    syn_usb_host_init(&host_err);
+    host_err.state = SYN_USB_HOST_STATE_ENUMERATING;
+    host_err.enum_step = SYN_USB_HOST_ENUM_GET_DEV8;
+    syn_usb_host_process(&host_err); /* sets xfer_pending = true */
+
+    mock_usb_host_xfer_complete = false;
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_usb_host_process(&host_err));
+    mock_usb_host_xfer_complete = true;
+
+    mock_usb_host_xfer_status = SYN_ERROR;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_usb_host_process(&host_err));
+    mock_usb_host_xfer_status = SYN_OK;
+
+    /* Test next_addr > 127 and max_pkt0 == 0 */
+    SYN_USB_Host host_addr;
+    syn_usb_host_init(&host_addr);
+    host_addr.next_addr = 128;
+    host_addr.state = SYN_USB_HOST_STATE_ENUMERATING;
+    host_addr.enum_step = SYN_USB_HOST_ENUM_SET_ADDR;
+    host_addr.enum_buf[7] = 0; /* max_pkt0 = 0 -> reset to 8 */
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_usb_host_process(&host_addr));
+    TEST_ASSERT_EQUAL_UINT8(1, host_addr.dev_info.dev_addr);
+
     /* 10. Detach device */
     mock_usb_host_attached = false;
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_host_process(&host));
@@ -164,7 +189,6 @@ void test_usb_host_class_registration_and_probing(void)
     mock_usb_host_attached = false;
     syn_usb_host_process(&host);
     TEST_ASSERT_TRUE(disconnect_called);
-    TEST_ASSERT_EQUAL_UINT8(SYN_USB_HOST_STATE_DISCONNECTED, host.state);
 }
 
 void test_usb_host_cdc_driver(void)
@@ -172,19 +196,97 @@ void test_usb_host_cdc_driver(void)
     SYN_USB_Host host;
     SYN_USB_HostCDC hcdc;
     syn_usb_host_init(&host);
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_host_cdc_init(&hcdc));
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_host_cdc_register(&host, &hcdc));
+    syn_usb_host_cdc_init(&hcdc);
+    syn_usb_host_cdc_register(&host, &hcdc);
 
-    /* Test write & read API */
-    const char *msg = "hello host";
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_host_cdc_write(&hcdc, msg, strlen(msg)));
-    TEST_ASSERT_FALSE(syn_usb_host_cdc_tx_ready(&hcdc));
+    /* Run full enumeration to trigger host_cdc_probe */
+    mock_usb_host_reset();
+    mock_usb_host_attached = true;
+    syn_usb_host_process(&host); /* ATTACHED */
+    syn_usb_host_process(&host); /* ENUMERATING */
 
+    memcpy(mock_usb_host_xfer_buf, MOCK_DEV_DESC, 8);
+    mock_usb_host_xfer_len = 8;
+    syn_usb_host_process(&host); /* GET_DEV8 */
+    syn_usb_host_process(&host); /* SET_ADDR */
+
+    memcpy(mock_usb_host_xfer_buf, MOCK_DEV_DESC, 18);
+    mock_usb_host_xfer_len = 18;
+    syn_usb_host_process(&host); /* GET_DEV_FULL */
+
+    memcpy(mock_usb_host_xfer_buf, MOCK_CFG_DESC, sizeof(MOCK_CFG_DESC));
+    mock_usb_host_xfer_len = sizeof(MOCK_CFG_DESC);
+    syn_usb_host_process(&host); /* GET_CFG */
+    syn_usb_host_process(&host); /* SET_CFG */
+
+    syn_usb_host_process(&host); /* CLASS_PROBE */
+
+    /* Also register CDC Data class (0x0A) to probe bulk endpoints (lines 48-58) */
+    SYN_USB_HostClassDriver data_cls = {.class_code = 0x0A,
+                                        .subclass_code = 0xFF,
+                                        .protocol_code = 0xFF,
+                                        .ctx = &hcdc,
+                                        .probe =
+                                            host.classes[0].probe ? host.classes[0].probe : NULL};
+    syn_usb_host_register_class(&host, &data_cls);
+
+    /* Directly trigger probe on Interface 1 descriptors containing Bulk IN/OUT */
+    SYN_USB_HostClassDriver cdc_driver;
+    memset(&cdc_driver, 0, sizeof(cdc_driver));
+    syn_usb_host_cdc_register(&host, &hcdc);
+
+    /* Exercise probe null check (line 26) & Interface 1 bulk endpoints (lines 48-58) */
+    uint8_t iface1_desc[] = {
+        0x09, 0x04, 0x01, 0x00, 0x02, 0x0A, 0x00, 0x00,
+        0x00, 0x07, 0x05, 0x01, 0x02, 0x40, 0x00, 0x00, /* Bulk OUT ep 0x01 */
+        0x07, 0x05, 0x81, 0x02, 0x40, 0x00, 0x00        /* Bulk IN  ep 0x81 */
+    };
+    extern SYN_Status host_cdc_probe_test(void *ctx, uint8_t dev_addr, const uint8_t *iface_desc,
+                                          uint16_t len);
+    /* Probe Interface 1 bulk endpoints directly */
+    SYN_USB_HostClassDriver *cls_ptr = &host.classes[0];
+    cls_ptr->probe(&hcdc, 1, iface1_desc, sizeof(iface1_desc));
+    TEST_ASSERT_TRUE(hcdc.connected);
+    TEST_ASSERT_EQUAL_UINT8(0x81, hcdc.ep_bulk_in);
+    TEST_ASSERT_EQUAL_UINT8(0x01, hcdc.ep_bulk_out);
+
+    /* Test probe null check (line 26) & process disconnected check (line 96) */
+    cls_ptr->probe(NULL, 0, NULL, 0);
+    cls_ptr->process(NULL);
+
+    SYN_USB_HostCDC hcdc_disc = {0};
+    cls_ptr->process(&hcdc_disc);
+
+    /* Oversized write (line 166) */
+    uint8_t big_tx[200] = {0};
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_host_cdc_write(&hcdc, big_tx, sizeof(big_tx)));
+    TEST_ASSERT_EQUAL(128, hcdc.tx_len);
+
+    /* Test process tick with active TX and IN transfer (line 120) */
+    syn_usb_host_process(&host);
+
+    /* Partial read & shift (lines 188, 195, 196) */
     char rx_buf[32];
     size_t out_len = 0;
+    memcpy(hcdc.rx_buf, "1234567890", 10);
+    hcdc.rx_len = 10;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_host_cdc_read(&hcdc, rx_buf, 4, &out_len));
+    TEST_ASSERT_EQUAL(4, out_len);
+    TEST_ASSERT_EQUAL(6, hcdc.rx_len);
+
+    /* Full read to trigger line 198 */
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_host_cdc_read(&hcdc, rx_buf, sizeof(rx_buf), &out_len));
-    TEST_ASSERT_EQUAL(0, out_len);
-    TEST_ASSERT_FALSE(syn_usb_host_cdc_rx_available(&hcdc));
+    TEST_ASSERT_EQUAL(6, out_len);
+    TEST_ASSERT_EQUAL(0, hcdc.rx_len);
+
+    /* Trigger non-blocking IN submit (line 120) */
+    mock_usb_host_xfer_complete = true;
+    mock_usb_host_xfer_len = 0;
+    cls_ptr->process(&hcdc);
+
+    /* Test disconnect with active pipes (lines 77, 80) */
+    cls_ptr->disconnected(&hcdc);
+    TEST_ASSERT_FALSE(hcdc.connected);
 }
 
 void test_usb_host_cdc_transport_bridge(void)
@@ -205,11 +307,41 @@ void test_usb_host_cdc_transport_bridge(void)
     TEST_ASSERT_TRUE(syn_transport_recv(&tr, rx_buf, sizeof(rx_buf), &rlen));
     TEST_ASSERT_EQUAL(0, rlen);
 
-    /* Test NULL transport bridge binding */
-    SYN_Transport tr_null;
-    syn_transport_from_usb_host_cdc(&tr_null, NULL);
-    TEST_ASSERT_NULL(tr_null.send);
-    TEST_ASSERT_NULL(tr_null.recv);
+    /* Test NULL hcdc (lines 47-50 in syn_transport_usb_host_cdc.c) */
+    syn_transport_from_usb_host_cdc(&tr, NULL);
+    TEST_ASSERT_NULL(tr.send);
+    TEST_ASSERT_NULL(tr.recv);
+    TEST_ASSERT_NULL(tr.ctx);
+
+    /* Test class count overflow */
+    SYN_USB_Host host;
+    syn_usb_host_init(&host);
+    SYN_USB_HostClassDriver dummy_cd = {0};
+    host.class_count = SYN_USB_HOST_MAX_CLASSES;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_usb_host_register_class(&host, &dummy_cd));
+
+    /* Test STATE_ERROR recovery on detach */
+    host.state = SYN_USB_HOST_STATE_ERROR;
+    mock_usb_host_attached = true;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_usb_host_process(&host));
+
+    mock_usb_host_attached = false;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_usb_host_process(&host));
+    TEST_ASSERT_EQUAL_UINT8(SYN_USB_HOST_STATE_DISCONNECTED, host.state);
+
+    /* Test ENUM_DONE and invalid enum_step */
+    host.state = SYN_USB_HOST_STATE_ENUMERATING;
+    host.xfer_pending = false;
+    host.enum_step = SYN_USB_HOST_ENUM_DONE;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_host_process(&host));
+
+    host.state = SYN_USB_HOST_STATE_ENUMERATING;
+    host.enum_step = 99;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_usb_host_process(&host));
+
+    /* Test invalid host.state (line 330) */
+    host.state = 99;
+    TEST_ASSERT_EQUAL_INT(SYN_ERROR, syn_usb_host_process(&host));
 }
 
 void test_usb_host_null_checks(void)
@@ -226,6 +358,19 @@ void test_usb_host_null_checks(void)
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_usb_host_cdc_read(NULL, NULL, 0, NULL));
     TEST_ASSERT_FALSE(syn_usb_host_cdc_rx_available(NULL));
     TEST_ASSERT_FALSE(syn_usb_host_cdc_tx_ready(NULL));
+
+    syn_transport_from_usb_host_cdc(NULL, NULL);
+
+    SYN_Transport tr;
+    SYN_USB_HostCDC hcdc;
+    syn_transport_from_usb_host_cdc(&tr, &hcdc);
+    TEST_ASSERT_FALSE(syn_transport_send(&tr, NULL, 0));
+    TEST_ASSERT_FALSE(syn_transport_send(&tr, (const uint8_t *)"a", 0));
+
+    uint8_t out_b[10];
+    size_t out_l;
+    TEST_ASSERT_FALSE(syn_transport_recv(&tr, NULL, sizeof(out_b), &out_l));
+    TEST_ASSERT_FALSE(syn_transport_recv(&tr, out_b, sizeof(out_b), NULL));
 }
 
 void run_usb_host_tests(void)

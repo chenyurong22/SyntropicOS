@@ -282,7 +282,7 @@ bool syn_uds_register_dtc(SYN_UDS_Server *server, uint32_t dtc, uint8_t status, 
 bool syn_uds_register_dtc_handler(SYN_UDS_Server *server, SYN_UDS_DTCHandler handler, void *ctx)
 {
     if (server == NULL) {
-        return false; /* LCOV_EXCL_LINE */
+        return false;
     }
     server->dtc_cb = handler;
     server->dtc_ctx = ctx;
@@ -754,7 +754,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         } else {
             if (sec_in_len > (max_resp_len - 1U)) {
                 /* clang-format off */
-                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len); /* LCOV_EXCL_LINE */
+                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len);
                 /* clang-format on */
             }
             memcpy(&resp_buf[1], sec_in_data, sec_in_len);
@@ -833,7 +833,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
     case SYN_UDS_SID_READ_DTC_INFORMATION: {
         if (req_len < 2U) {
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                          resp_len); /* LCOV_EXCL_LINE */
+                                          resp_len);
         }
         uint8_t sub = req[1] & 0x7FU;
         switch (sub) {
@@ -842,7 +842,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         case SYN_UDS_DTC_REPORT_NUMBER_EMISSIONS_OBD_BY_STATUS_MASK: {
             if (req_len < 3U) {
                 return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                              resp_len); /* LCOV_EXCL_LINE */
+                                              resp_len);
             }
             if (max_resp_len < 6U) {
                 return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
@@ -870,7 +870,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         case SYN_UDS_DTC_REPORT_EMISSIONS_OBD_BY_STATUS_MASK: {
             if (req_len < 3U) {
                 return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                              resp_len); /* LCOV_EXCL_LINE */
+                                              resp_len);
             }
             uint8_t mask = req[2];
             uint16_t pos = 3U;
@@ -961,7 +961,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         case SYN_UDS_DTC_REPORT_NUMBER_BY_SEVERITY_MASK: {
             if (req_len < 4U) {
                 return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                              resp_len); /* LCOV_EXCL_LINE */
+                                              resp_len);
             }
             uint8_t sev_mask = req[2];
             uint8_t stat_mask = req[3];
@@ -985,7 +985,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         case SYN_UDS_DTC_REPORT_BY_SEVERITY_MASK: {
             if (req_len < 4U) {
                 return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                              resp_len); /* LCOV_EXCL_LINE */
+                                              resp_len);
             }
             uint8_t sev_mask = req[2];
             uint8_t stat_mask = req[3];
@@ -1056,7 +1056,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             } else {
                 if (max_resp_len < 6U) {
                     /* clang-format off */
-                    return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len); /* LCOV_EXCL_LINE */
+                    return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len);
                     /* clang-format on */
                 }
                 resp_buf[0] = sid + 0x40U;
@@ -1177,7 +1177,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         uint8_t sub = req[1] & 0x7FU;
         if (sub != 0x01U && sub != 0x02U) {
             return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
-                                          resp_len); /* LCOV_EXCL_LINE */
+                                          resp_len);
         }
         resp_buf[0] = sid + 0x40U;
         resp_buf[1] = sub;
@@ -1198,7 +1198,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         }
         if (max_resp_len < 4U) {
             /* clang-format off */
-            return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len); /* LCOV_EXCL_LINE */
+            return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len);
             /* clang-format on */
         }
         resp_buf[0] = sid + 0x40U;
@@ -1219,7 +1219,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
     case SYN_UDS_SID_REQUEST_UPLOAD: {
         if (req_len < 3U) {
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                          resp_len); /* LCOV_EXCL_LINE */
+                                          resp_len);
         }
         uint8_t alfid = req[2];
         uint8_t addr_len = alfid & 0x0FU;
@@ -1265,7 +1265,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
     case SYN_UDS_SID_TRANSFER_DATA: {
         if (req_len < 2U) {
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                          resp_len); /* LCOV_EXCL_LINE */
+                                          resp_len);
         }
         if (server->transfer_state == SYN_UDS_TRANSFER_IDLE) {
             return make_negative_response(sid, SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp_buf,
@@ -1292,7 +1292,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             if (server->transfer_size > 0U &&
                 (server->transfer_bytes_processed + payload_len > server->transfer_size)) {
                 return make_negative_response(sid, SYN_UDS_NRC_TRANSFER_DATA_SUSPENDED, resp_buf,
-                                              resp_len); /* LCOV_EXCL_LINE */
+                                              resp_len);
             }
             if (server->memory_cb != NULL) {
                 if (!server->memory_cb(true,
@@ -1318,7 +1318,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             }
             if ((uint32_t)2U + chunk_len > max_resp_len) {
                 /* clang-format off */
-                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len); /* LCOV_EXCL_LINE */
+                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len);
                 /* clang-format on */
             }
             if (server->memory_cb != NULL) {
@@ -1326,7 +1326,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                        server->transfer_address + server->transfer_bytes_processed,
                                        chunk_len, &resp_buf[2], server->memory_ctx)) {
                     return make_negative_response(sid, SYN_UDS_NRC_GENERAL_PROGRAMMING_FAILURE,
-                                                  resp_buf, resp_len); /* LCOV_EXCL_LINE */
+                                                  resp_buf, resp_len);
                 }
             }
             server->transfer_bytes_processed += chunk_len;
@@ -1354,7 +1354,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
     case SYN_UDS_SID_READ_MEMORY_BY_ADDRESS: {
         if (req_len < 3U) {
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                          resp_len); /* LCOV_EXCL_LINE */
+                                          resp_len);
         }
         if (server->security_state != SYN_UDS_SECURITY_UNLOCKED) {
             return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
@@ -1365,7 +1365,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         uint8_t size_len = (alfid >> 4U) & 0x0FU;
         if (req_len < (2U + addr_len + size_len)) {
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                          resp_len); /* LCOV_EXCL_LINE */
+                                          resp_len);
         }
         uint32_t address = 0U;
         for (uint8_t i = 0U; i < addr_len && i < 4U; i++) {
@@ -1399,8 +1399,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         }
         uint16_t target_did = syn_peek_u16(req, 1);
         if (max_resp_len < 4U) {
-            return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
-                                          resp_len); /* LCOV_EXCL_LINE */
+            return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len);
         }
         resp_buf[0] = sid + 0x40U;
         syn_poke_u16(target_did, resp_buf, 1);
@@ -1519,7 +1518,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
     case SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS: {
         if (req_len < 3U) {
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                          resp_len); /* LCOV_EXCL_LINE */
+                                          resp_len);
         }
         if (server->security_state != SYN_UDS_SECURITY_UNLOCKED) {
             return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
@@ -1530,7 +1529,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         uint8_t size_len = (alfid >> 4U) & 0x0FU;
         if (req_len < (2U + addr_len + size_len)) {
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
-                                          resp_len); /* LCOV_EXCL_LINE */
+                                          resp_len);
         }
         uint32_t address = 0U;
         for (uint8_t i = 0U; i < addr_len && i < 4U; i++) {
@@ -1543,7 +1542,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         uint16_t header_len = 2U + addr_len + size_len;
         if (req_len < header_len + size) {
             /* clang-format off */
-            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf, resp_len); /* LCOV_EXCL_LINE */
+            return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf, resp_len);
             /* clang-format on */
         }
         if (server->memory_cb != NULL) {

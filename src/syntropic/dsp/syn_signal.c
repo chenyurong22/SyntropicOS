@@ -147,9 +147,11 @@ int32_t syn_signal_variance_q16(const SYN_Signal *sig)
 
     /* Clamp to int32_t range */
     if (var_q16 > INT32_MAX)
-        return INT32_MAX; /* LCOV_EXCL_LINE */
+        return INT32_MAX; /* LCOV_EXCL_LINE: Q16 variance saturation guard for extreme signal values
+                           */
     if (var_q16 < INT32_MIN)
-        return INT32_MIN; /* LCOV_EXCL_LINE */
+        return INT32_MIN; /* LCOV_EXCL_LINE: Q16 variance saturation guard for extreme negative
+                             values */
 
     return (int32_t)var_q16;
 }
@@ -220,7 +222,7 @@ int32_t syn_signal_rms_q16(const SYN_Signal *sig)
 
     /* Clamp to int32_t range for q16_sqrt input */
     if (mean_sq_q16 > INT32_MAX)
-        mean_sq_q16 = INT32_MAX; /* LCOV_EXCL_LINE */
+        mean_sq_q16 = INT32_MAX; /* LCOV_EXCL_LINE: Q16 RMS mean-square saturation guard */
 
     return q16_sqrt((q16_t)mean_sq_q16);
 }
@@ -250,7 +252,7 @@ int32_t syn_signal_power_q16(const SYN_Signal *sig)
 
     int64_t mean_sq_q16 = (sum_sq << 16) / (int64_t)sig->count;
     if (mean_sq_q16 > INT32_MAX)
-        return INT32_MAX; /* LCOV_EXCL_LINE */
+        return INT32_MAX; /* LCOV_EXCL_LINE: Q16 power mean-square saturation guard */
 
     return (int32_t)mean_sq_q16;
 }
@@ -270,7 +272,7 @@ int32_t syn_signal_crest_factor_q16(SYN_Signal *sig)
     int64_t cf_q16 = (peak_q16 * 65536LL) / (int64_t)rms;
 
     if (cf_q16 > INT32_MAX)
-        return INT32_MAX; /* LCOV_EXCL_LINE */
+        return INT32_MAX; /* LCOV_EXCL_LINE: Q16 crest factor saturation guard */
 
     return (int32_t)cf_q16;
 }

@@ -96,7 +96,8 @@ void syn_scurve_set_target(SYN_SCurve *sc, int32_t target)
     // D_accel_decel = v_max * (2*Tj + Ta)
     uint32_t vmax_reached = (uint32_t)sc->j_max * Tj * Tj + (uint32_t)sc->a_max * Ta;
     if (vmax_reached == 0) {
-        vmax_reached = 1; /* LCOV_EXCL_LINE */
+        vmax_reached = 1; /* LCOV_EXCL_LINE: Zero velocity division-by-zero guard in S-curve
+                             parameter calculation */
     }
     uint32_t D_ad = vmax_reached * (2u * Tj + Ta);
 

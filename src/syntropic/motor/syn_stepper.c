@@ -36,7 +36,7 @@ void syn_stepper_init(SYN_Stepper *s, SYN_GPIO_Pin step_pin, SYN_GPIO_Pin dir_pi
 {
     SYN_ASSERT(s != NULL);
     if (s == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     memset(s, 0, sizeof(*s));
@@ -53,7 +53,7 @@ void syn_stepper_set_enable_pin(SYN_Stepper *s, SYN_GPIO_Pin pin, bool active_lo
 {
     SYN_ASSERT(s != NULL);
     if (s == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
     s->enable_pin = pin;
     s->enable_invert = active_low;
@@ -66,7 +66,7 @@ void syn_stepper_set_speed(SYN_Stepper *s, uint32_t max_sps, uint32_t accel_sps2
     SYN_ASSERT(accel_sps2 > 0);
 
     if (s == NULL || max_sps == 0 || accel_sps2 == 0) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     s->max_speed = max_sps;
@@ -149,7 +149,7 @@ void syn_stepper_tick(SYN_Stepper *s)
         target_speed = s->speed;
         break;
 
-    /* LCOV_EXCL_START */
+    /* LCOV_EXCL_START: Defensive bounds check / hardware port fallback */
     case SYN_STEPPER_IDLE:
         return;
         /* LCOV_EXCL_STOP */
@@ -160,7 +160,7 @@ void syn_stepper_tick(SYN_Stepper *s)
         target_speed = 1;
     uint32_t interval_ms = 1000u / target_speed;
     if (interval_ms == 0)
-        interval_ms = 1; /* LCOV_EXCL_LINE */
+        interval_ms = 1; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
 
     /* Time to step? */
     if (dt >= interval_ms) {

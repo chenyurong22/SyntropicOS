@@ -37,7 +37,7 @@ static int32_t pct_to_adc(const SYN_Actuator *act, int16_t pct)
 static int16_t adc_to_pct(const SYN_Actuator *act, int32_t adc)
 {
     if (act == NULL || act->stroke_range == 0)
-        return 0; /* LCOV_EXCL_LINE */
+        return 0; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
 
     int32_t pct = ((adc - act->stroke_min) * 1000) / act->stroke_range;
     return (int16_t)SYN_CLAMP(pct, 0, 1000);

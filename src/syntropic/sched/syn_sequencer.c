@@ -20,8 +20,9 @@ void syn_seq_init(SYN_Sequencer *seq, const SYN_SeqStep *steps, uint16_t count)
     SYN_ASSERT(steps != NULL);
     SYN_ASSERT(count > 0);
 
-    if (seq == NULL || steps == NULL || count == 0) { /* LCOV_EXCL_LINE */
-        return;                                       /* LCOV_EXCL_LINE */
+    if (seq == NULL || steps == NULL ||
+        count == 0) { /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+        return;       /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     memset(seq, 0, sizeof(*seq));
@@ -34,8 +35,8 @@ void syn_seq_on_complete(SYN_Sequencer *seq, SYN_SeqCompleteCallback cb, void *c
 {
     SYN_ASSERT(seq != NULL);
 
-    if (seq == NULL) { /* LCOV_EXCL_LINE */
-        return;        /* LCOV_EXCL_LINE */
+    if (seq == NULL) { /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+        return;        /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
     seq->on_complete = cb;
     seq->on_complete_ctx = ctx;
@@ -45,8 +46,8 @@ void syn_seq_set_loop(SYN_Sequencer *seq, bool loop)
 {
     SYN_ASSERT(seq != NULL);
 
-    if (seq == NULL) { /* LCOV_EXCL_LINE */
-        return;        /* LCOV_EXCL_LINE */
+    if (seq == NULL) { /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+        return;        /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
     seq->loop = loop;
 }
@@ -55,8 +56,8 @@ void syn_seq_start(SYN_Sequencer *seq)
 {
     SYN_ASSERT(seq != NULL);
 
-    if (seq == NULL) { /* LCOV_EXCL_LINE */
-        return;        /* LCOV_EXCL_LINE */
+    if (seq == NULL) { /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+        return;        /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
     seq->current = 0;
     seq->state = SYN_SEQ_RUNNING;
@@ -66,8 +67,8 @@ void syn_seq_stop(SYN_Sequencer *seq)
 {
     SYN_ASSERT(seq != NULL);
 
-    if (seq == NULL) { /* LCOV_EXCL_LINE */
-        return;        /* LCOV_EXCL_LINE */
+    if (seq == NULL) { /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+        return;        /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
     seq->state = SYN_SEQ_IDLE;
 }

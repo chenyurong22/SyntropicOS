@@ -59,7 +59,8 @@ static inline void write_u16(uint8_t *buf, uint16_t val)
 static bool check_crc(const uint8_t *buf, uint16_t len)
 {
     if (len < 2)
-        return false; /* LCOV_EXCL_LINE */
+        return false; /* LCOV_EXCL_LINE: Unreachable guard; caller verifies frame_len >= 4 before
+                         CRC verification */
     uint16_t received = syn_peek_u16_le(buf, len - 2);
     uint16_t computed = syn_crc16_modbus(buf, len - 2);
     return received == computed;
@@ -158,8 +159,8 @@ static void handle_read_regs(SYN_Modbus *mb, uint16_t frame_len, const uint16_t 
 static void handle_write_single(SYN_Modbus *mb, uint16_t frame_len)
 {
     if (frame_len < 8) {
-        send_exception(mb, SYN_MB_FC_WRITE_SINGLE, SYN_MB_EX_ILLEGAL_VALUE); /* LCOV_EXCL_LINE */
-        return;                                                              /* LCOV_EXCL_LINE */
+        send_exception(mb, SYN_MB_FC_WRITE_SINGLE, SYN_MB_EX_ILLEGAL_VALUE);
+        return;
     }
 
     uint16_t addr = read_u16(&mb->buf[2]);
@@ -322,7 +323,7 @@ static void handle_read_device_info(SYN_Modbus *mb)
     uint8_t start_obj = (read_code == 0x04) ? object_id : 0;
     uint8_t max_obj = (read_code == 0x01) ? 2 : 6;
     if (read_code == 0x04)
-        max_obj = object_id; /* LCOV_EXCL_LINE */
+        max_obj = object_id;
 
     for (uint8_t id = start_obj; id <= max_obj; id++) {
         const char *str = NULL;
@@ -364,10 +365,10 @@ static void handle_read_device_info(SYN_Modbus *mb)
 
         size_t slen = strlen(str);
         if (slen > 245)
-            slen = 245; /* LCOV_EXCL_LINE */
+            slen = 245;
 
         if ((uint32_t)pos + 2 + (uint32_t)slen > (uint32_t)mb->buf_size - 2)
-            break; /* LCOV_EXCL_LINE */
+            break;
 
         mb->buf[pos++] = id;
         mb->buf[pos++] = (uint8_t)slen;
@@ -825,7 +826,7 @@ bool syn_modbus_process(SYN_Modbus *mb)
     SYN_ASSERT(mb != NULL);
 
     if (mb->rx_len == 0) {
-        return false; /* LCOV_EXCL_LINE */
+        return false;
     }
 
     uint32_t now = syn_port_get_tick_ms();

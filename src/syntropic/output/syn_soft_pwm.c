@@ -20,8 +20,10 @@ void syn_soft_pwm_init(SYN_SoftPWM *pwm, SYN_GPIO_Pin pin, uint16_t resolution)
     SYN_ASSERT(pwm != NULL);
     SYN_ASSERT(resolution > 0);
 
-    if (pwm == NULL || resolution == 0) { /* LCOV_EXCL_LINE */
-        return;                           /* LCOV_EXCL_LINE */
+    if (pwm == NULL ||
+        resolution ==
+            0) { /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
+        return;  /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
     }
 
     memset(pwm, 0, sizeof(*pwm));
@@ -37,8 +39,9 @@ void syn_soft_pwm_init(SYN_SoftPWM *pwm, SYN_GPIO_Pin pin, uint16_t resolution)
 void syn_soft_pwm_set_duty(SYN_SoftPWM *pwm, uint16_t duty)
 {
     SYN_ASSERT(pwm != NULL);
-    if (pwm == NULL) { /* LCOV_EXCL_LINE */
-        return;        /* LCOV_EXCL_LINE */
+    if (pwm ==
+        NULL) { /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
     }
 
     if (duty > pwm->resolution) {
@@ -50,8 +53,9 @@ void syn_soft_pwm_set_duty(SYN_SoftPWM *pwm, uint16_t duty)
 void syn_soft_pwm_set_percent(SYN_SoftPWM *pwm, uint8_t percent)
 {
     SYN_ASSERT(pwm != NULL);
-    if (pwm == NULL) { /* LCOV_EXCL_LINE */
-        return;        /* LCOV_EXCL_LINE */
+    if (pwm ==
+        NULL) { /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
     }
 
     if (percent > 100)

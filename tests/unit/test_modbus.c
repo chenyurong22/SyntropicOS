@@ -18,6 +18,54 @@ static bool test_on_write(SYN_Modbus *mb, uint16_t addr, uint16_t count, void *c
     return on_write_allow && (addr != 5);
 }
 
+static void test_modbus_extra_coverage(void)
+{
+    static uint16_t holding[8] = {0};
+    static uint8_t mb_buf[256];
+    mock_port_reset();
+
+    static char long_str[300];
+    memset(long_str, 'A', 260);
+    long_str[260] = '\0';
+    SYN_Modbus_DeviceInfo dev_info = {.vendor_name = long_str};
+
+    SYN_Modbus mb;
+    SYN_Modbus_Config cfg = {
+        .slave_addr = 1,
+        .holding_regs = holding,
+        .holding_count = 8,
+        .device_info = &dev_info,
+    };
+    syn_modbus_init(&mb, &cfg, mb_buf, sizeof(mb_buf));
+
+    /* Short FC 0x06 write single frame (< 8 bytes) */
+    uint8_t req[8] = {1, 0x06, 0x00, 0x00, 0x00, 0x00};
+    uint16_t crc = syn_crc16_modbus(req, 4);
+    req[4] = (uint8_t)(crc & 0xFF);
+    req[5] = (uint8_t)(crc >> 8);
+    memcpy(mb.buf, req, 6);
+    mb.rx_len = 6;
+    syn_modbus_process(&mb);
+
+    /* MEI read code 0x04 & long string truncation & small buffer overflow */
+    uint8_t mei_req[8] = {1, 0x2B, 0x0E, 0x04, 0x00, 0x00, 0x00, 0x00};
+    crc = syn_crc16_modbus(mei_req, 5);
+    mei_req[5] = (uint8_t)(crc & 0xFF);
+    mei_req[6] = (uint8_t)(crc >> 8);
+    memcpy(mb.buf, mei_req, 7);
+    mb.rx_len = 7;
+    syn_modbus_process(&mb);
+
+    /* Small buffer overflow check */
+    static uint8_t small_buf[12];
+    SYN_Modbus small_mb;
+    syn_modbus_init(&small_mb, &cfg, small_buf, sizeof(small_buf));
+    TEST_ASSERT_FALSE(syn_modbus_process(&small_mb));
+    memcpy(small_mb.buf, mei_req, 7);
+    small_mb.rx_len = 7;
+    syn_modbus_process(&small_mb);
+}
+
 static void test_modbus_basic(void)
 {
     static uint16_t holding[8] = {100, 200, 300, 400, 500, 600, 700, 800};
@@ -2366,4 +2414,5 @@ void run_modbus_tests(void)
     RUN_TEST(test_modbus_short_frame_exceptions);
     RUN_TEST(test_modbus_write_multiple_short_frame_exception);
     RUN_TEST(test_modbus_fc17_on_write_rejection_and_broadcast_exception);
+    RUN_TEST(test_modbus_extra_coverage);
 }

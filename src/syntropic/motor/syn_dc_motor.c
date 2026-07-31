@@ -26,7 +26,7 @@
 static int32_t clamp_speed(const SYN_DCMotor *motor, int32_t speed)
 {
     if (motor == NULL)
-        return 0; /* LCOV_EXCL_LINE */
+        return 0; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     if (speed > motor->duty_max)
         return motor->duty_max;
     if (speed < -motor->duty_max)
@@ -41,7 +41,7 @@ static int32_t clamp_speed(const SYN_DCMotor *motor, int32_t speed)
 static void apply_speed(SYN_DCMotor *m)
 {
     if (m == NULL)
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     int32_t spd = m->speed;
 
     bool forward = (spd >= 0);

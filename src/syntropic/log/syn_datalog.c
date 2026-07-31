@@ -14,7 +14,7 @@ void syn_datalog_init(SYN_DataLog *log, uint8_t *buf, size_t size)
     SYN_ASSERT(size > sizeof(SYN_DataLogHeader));
 
     if (log == NULL || buf == NULL || size <= sizeof(SYN_DataLogHeader)) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     syn_ringbuf_init(&log->rb, buf, size);
@@ -27,7 +27,7 @@ bool syn_datalog_write(SYN_DataLog *log, uint16_t id, const void *data, uint16_t
     SYN_ASSERT(data != NULL || len == 0);
 
     if (log == NULL || (data == NULL && len > 0)) {
-        return false; /* LCOV_EXCL_LINE */
+        return false; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     size_t required = sizeof(SYN_DataLogHeader) + len;
@@ -57,7 +57,7 @@ size_t syn_datalog_read(SYN_DataLog *log, uint16_t *out_id, void *out_data, size
     SYN_ASSERT(out_data != NULL);
 
     if (log == NULL || out_id == NULL || out_data == NULL) {
-        return 0; /* LCOV_EXCL_LINE */
+        return 0; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     if (syn_ringbuf_count(&log->rb) < sizeof(SYN_DataLogHeader)) {
@@ -72,7 +72,9 @@ size_t syn_datalog_read(SYN_DataLog *log, uint16_t *out_id, void *out_data, size
      */
     SYN_DataLogHeader header;
     if (syn_ringbuf_peek_n(&log->rb, (uint8_t *)&header, sizeof(header)) < sizeof(header)) {
-        return 0; /* should not happen if count check above passed */ /* LCOV_EXCL_LINE */
+        return 0; /* should not happen if count check above passed */ /* LCOV_EXCL_LINE: Defensive
+                                                                         NULL check or invalid
+                                                                         parameter fallback */
     }
 
     /* Verify that full frame (header + payload) is available in ringbuffer */

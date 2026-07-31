@@ -52,7 +52,7 @@ void syn_sntp_init(SYN_SNTP *sntp, const SYN_SockAddr *server, uint32_t sync_int
 static SYN_Status sntp_parse_packet(SYN_SNTP *sntp, const uint8_t *pkt, size_t len)
 {
     if (len < SYN_SNTP_PACKET_SIZE)
-        return SYN_BUSY; /* LCOV_EXCL_LINE */
+        return SYN_BUSY; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
 
     /* Validate mode (4=server, 5=broadcast) and stratum != 0 */
     uint8_t mode = pkt[0] & 0x07;
@@ -221,7 +221,7 @@ SYN_PT_Status syn_sntp_task(SYN_PT *pt, SYN_Task *task)
                 syn_port_sock_close(sntp->udp_sock);
                 sntp->udp_sock = SYN_SOCKET_INVALID;
                 PT_TASK_DELAY_MS(pt, task, syn_backoff_next_ms(&sntp->backoff));
-                continue; /* LCOV_EXCL_LINE */
+                continue; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
             }
 
             /* Phase 3: Non-blocking poll with deadline */
@@ -244,7 +244,7 @@ SYN_PT_Status syn_sntp_task(SYN_PT *pt, SYN_Task *task)
         PT_TASK_DELAY_MS(pt, task, sntp->sync_interval_s * 1000);
     }
 
-    PT_END(pt); /* LCOV_EXCL_LINE */
+    PT_END(pt); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
 }
 
 #endif /* SYN_USE_SNTP */

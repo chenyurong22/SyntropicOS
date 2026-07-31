@@ -26,7 +26,7 @@ SYN_UDP *syn_transport_udp_get_instance(void)
     return g_native_udp;
 }
 
-/* LCOV_EXCL_START */
+/* LCOV_EXCL_START: Defensive bounds check / hardware port fallback */
 SYN_WEAK SYN_Socket syn_port_udp_open(uint16_t port)
 {
     if (!g_native_udp) {

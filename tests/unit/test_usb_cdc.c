@@ -32,6 +32,22 @@ void test_usb_cdc_registration(void)
 
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_cdc_register(&dev, &cdc));
     TEST_ASSERT_EQUAL_UINT8(1, dev.class_count);
+
+    /* Trigger class callbacks through device */
+    SYN_USB_SetupPacket setup = {.bmRequestType = 0x00,
+                                 .bRequest = SYN_USB_REQ_SET_CONFIGURATION,
+                                 .wValue = 1,
+                                 .wIndex = 0,
+                                 .wLength = 0};
+    uint8_t resp[16];
+    uint16_t rlen = 0;
+    syn_usb_process_setup(&dev, &setup, resp, &rlen);
+    TEST_ASSERT_TRUE(cdc.configured);
+
+    setup.bmRequestType = 0x21;
+    setup.bRequest = SYN_USB_CDC_SET_CONTROL_LINE_STATE;
+    setup.wValue = 0x03;
+    syn_usb_process_setup(&dev, &setup, resp, &rlen);
 }
 
 void test_usb_cdc_setup_requests(void)
@@ -55,6 +71,30 @@ void test_usb_cdc_setup_requests(void)
     setup.wValue = 1;
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_cdc_handle_setup(&cdc, &setup, resp, &rlen));
     TEST_ASSERT_TRUE(cdc.configured);
+
+    setup.bRequest = SYN_USB_CDC_SET_LINE_CODING;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_cdc_handle_setup(&cdc, &setup, resp, &rlen));
+
+    setup.bRequest = 0xFF;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_cdc_handle_setup(&cdc, &setup, resp, &rlen));
+
+    /* Partial read & zero rx_len read */
+    uint8_t dummy_rx[16] = "1234567890";
+    memcpy(cdc.rx_buf, dummy_rx, 10);
+    cdc.rx_len = 10;
+
+    uint8_t out_buf[16] = {0};
+    size_t read_len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_cdc_read(&cdc, out_buf, 4, &read_len));
+    TEST_ASSERT_EQUAL(4, read_len);
+    TEST_ASSERT_EQUAL(6, cdc.rx_len);
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_cdc_read(&cdc, out_buf, sizeof(out_buf), &read_len));
+    TEST_ASSERT_EQUAL(6, read_len);
+    TEST_ASSERT_EQUAL(0, cdc.rx_len);
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_cdc_read(&cdc, out_buf, sizeof(out_buf), &read_len));
+    TEST_ASSERT_EQUAL(0, read_len);
 
     setup.bRequest = SYN_USB_CDC_GET_LINE_CODING;
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_cdc_handle_setup(&cdc, &setup, resp, &rlen));
@@ -122,6 +162,16 @@ void test_usb_cdc_null_checks(void)
     TEST_ASSERT_FALSE(syn_usb_cdc_tx_ready(NULL));
 
     SYN_Transport tr;
+    syn_transport_from_usb_cdc(NULL, NULL);
     syn_transport_from_usb_cdc(&tr, NULL);
     TEST_ASSERT_FALSE(syn_transport_send(&tr, (const uint8_t *)"a", 1));
+
+    SYN_USB_CDC cdc_inst;
+    syn_transport_from_usb_cdc(&tr, &cdc_inst);
+    TEST_ASSERT_FALSE(syn_transport_send(&tr, NULL, 0));
+    TEST_ASSERT_FALSE(syn_transport_send(&tr, (const uint8_t *)"a", 0));
+    uint8_t out_b[10];
+    size_t out_l;
+    TEST_ASSERT_FALSE(syn_transport_recv(&tr, NULL, sizeof(out_b), &out_l));
+    TEST_ASSERT_FALSE(syn_transport_recv(&tr, out_b, sizeof(out_b), NULL));
 }

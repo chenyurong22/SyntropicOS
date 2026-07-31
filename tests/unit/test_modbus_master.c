@@ -553,6 +553,55 @@ static void test_modbus_master_busy_state_checks(void)
     TEST_ASSERT_EQUAL(SYN_BUSY, syn_modbus_master_report_server_id(&m, 1));
 }
 
+static void dummy_cb(uint8_t slave_addr, uint8_t fc, const uint16_t *data, uint16_t count,
+                     SYN_Status status, void *user_ctx)
+{
+    (void)slave_addr;
+    (void)fc;
+    (void)data;
+    (void)count;
+    (void)status;
+    if (user_ctx != NULL) {
+        *(bool *)user_ctx = true;
+    }
+}
+
+static void test_modbus_master_extra_coverage(void)
+{
+    SYN_ModbusMaster m;
+    syn_modbus_master_init(&m, 10);
+
+    /* 1. report_server_id slave_addr == 0 (line 251) */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_report_server_id(&m, 0));
+
+    /* 2. queue_step NULL params (line 404) */
+    SYN_ModbusMasterQueue q;
+    syn_modbus_master_queue_init(&q, 0);
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_modbus_master_queue_step(NULL, &q, 0));
+
+    /* 3. queue_step unsupported func_code (line 432) */
+    SYN_ModbusMasterQuery unsupp_query = {
+        .slave_addr = 1, .func_code = 0x99, .start_addr = 0, .count = 1};
+    syn_modbus_master_queue_push(&q, &unsupp_query);
+    TEST_ASSERT_EQUAL(SYN_OK, syn_modbus_master_queue_step(&m, &q, 0));
+
+    /* 4. max retries timeout callback invocation (line 457) */
+    SYN_ModbusMasterQueue q_cb;
+    syn_modbus_master_queue_init(&q_cb, 0); /* 0 retries */
+    bool cb_called = false;
+    SYN_ModbusMasterQuery cb_query = {.slave_addr = 1,
+                                      .func_code = SYN_MB_FC_READ_HOLDING,
+                                      .start_addr = 0,
+                                      .count = 1,
+                                      .callback = dummy_cb,
+                                      .user_ctx = &cb_called};
+    syn_modbus_master_queue_push(&q_cb, &cb_query);
+    syn_modbus_master_queue_step(&m, &q_cb, 100);
+    /* Advance time to trigger timeout */
+    syn_modbus_master_queue_step(&m, &q_cb, 600);
+    TEST_ASSERT_TRUE(cb_called);
+}
+
 void run_modbus_master_tests(void)
 {
     RUN_TEST(test_modbus_master_read_holding);
@@ -567,4 +616,5 @@ void run_modbus_master_tests(void)
     RUN_TEST(test_modbus_master_parameter_bounds);
     RUN_TEST(test_modbus_master_queue_null_and_full_checks);
     RUN_TEST(test_modbus_master_busy_state_checks);
+    RUN_TEST(test_modbus_master_extra_coverage);
 }

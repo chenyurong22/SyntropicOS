@@ -395,6 +395,12 @@ static void test_uds_security_access_aes128(void)
 
     /* Disable AES-128 security mode -> Revert to XOR mode */
     TEST_ASSERT_TRUE(syn_uds_disable_aes128_security(&g_uds));
+
+    /* Invalid subfunction in standard XOR mode -> NRC 0x12 */
+    req[1] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
 }
 
 static void test_uds_did_read_write(void)
@@ -2278,6 +2284,69 @@ static void test_uds_deferred_reset_callback(void)
     syn_uds_set_reset_handler(NULL, NULL, NULL);
     syn_uds_set_reset_wait_ms(NULL, 100);
 }
+static void test_uds_response_too_long_sweep(void)
+{
+    SYN_UDS_Server server;
+    syn_uds_init(&server);
+    uint8_t resp[16];
+    uint16_t resp_len = 0;
+
+    /* SIDs with short buffer (resp_max_len = 2) */
+    uint8_t sids[] = {0x10, 0x11, 0x22, 0x27, 0x28, 0x2E, 0x31,
+                      0x34, 0x35, 0x36, 0x37, 0x3E, 0x85, 0x87};
+    for (size_t i = 0; i < sizeof(sids); i++) {
+        uint8_t req[8] = {sids[i], 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        syn_uds_process_request(&server, req, sizeof(req), resp, 2, &resp_len);
+    }
+
+    /* SID 0x19 short requests */
+    uint8_t req_19_1[1] = {0x19};
+    syn_uds_process_request(&server, req_19_1, 1, resp, sizeof(resp), &resp_len);
+    uint8_t req_19_2[2] = {0x19, 0x01};
+    syn_uds_process_request(&server, req_19_2, 2, resp, sizeof(resp), &resp_len);
+    uint8_t req_19_3[2] = {0x19, 0x02};
+    syn_uds_process_request(&server, req_19_3, 2, resp, sizeof(resp), &resp_len);
+    uint8_t req_19_4[3] = {0x19, 0x07, 0x00};
+    syn_uds_process_request(&server, req_19_4, 3, resp, sizeof(resp), &resp_len);
+    uint8_t req_19_5[3] = {0x19, 0x08, 0x00};
+    syn_uds_process_request(&server, req_19_5, 3, resp, sizeof(resp), &resp_len);
+    uint8_t req_19_6[5] = {0x19, 0x04, 0x01, 0x02, 0x03};
+    syn_uds_process_request(&server, req_19_6, 5, resp, 5, &resp_len);
+
+    /* SID 0x3D truncated data test */
+    uint8_t req_3d[6] = {0x3D, 0x11, 0x10,
+                         0x10, 0x00, 0x00}; /* addr_len=1, size_len=1, size=16, req_len=6 < 4+16 */
+    syn_uds_process_request(&server, req_3d, sizeof(req_3d), resp, sizeof(resp), &resp_len);
+
+    /* SID 0x85 invalid subfunction */
+    uint8_t req_85[2] = {0x85, 0x99};
+    syn_uds_process_request(&server, req_85, 2, resp, sizeof(resp), &resp_len);
+
+    /* SID 0x34 short request */
+    uint8_t req_34[2] = {0x34, 0x00};
+    syn_uds_process_request(&server, req_34, 2, resp, sizeof(resp), &resp_len);
+
+    /* SID 0x23, 0x24, 0x3D short requests */
+    server.security_state = SYN_UDS_SECURITY_UNLOCKED;
+    uint8_t req_23_short[2] = {0x23, 0x11};
+    syn_uds_process_request(&server, req_23_short, 2, resp, sizeof(resp), &resp_len);
+    uint8_t req_23_short2[3] = {0x23, 0x22, 0x00}; /* addr_len=2, size_len=2 -> req_len=3 < 2+4 */
+    syn_uds_process_request(&server, req_23_short2, 3, resp, sizeof(resp), &resp_len);
+
+    uint8_t req_24_short[2] = {0x24, 0x00};
+    syn_uds_process_request(&server, req_24_short, 2, resp, sizeof(resp), &resp_len);
+    uint8_t req_24_ok[3] = {0x24, 0x12, 0x34};
+    syn_uds_process_request(&server, req_24_ok, 3, resp, 2, &resp_len); /* resp_max_len = 2 < 4 */
+
+    uint8_t req_3d_short[2] = {0x3D, 0x11};
+    syn_uds_process_request(&server, req_3d_short, 2, resp, sizeof(resp), &resp_len);
+    uint8_t req_3d_short2[3] = {0x3D, 0x22, 0x00}; /* addr_len=2, size_len=2 -> req_len=3 < 2+4 */
+    syn_uds_process_request(&server, req_3d_short2, 3, resp, sizeof(resp), &resp_len);
+    ;
+
+    /* Register DTC handler NULL check */
+    TEST_ASSERT_FALSE(syn_uds_register_dtc_handler(NULL, NULL, NULL));
+}
 
 void run_uds_tests(void)
 {
@@ -2307,4 +2376,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_remaining_edge_branches);
     RUN_TEST(test_uds_deferred_reset_callback);
     RUN_TEST(test_uds_session_transition_policy);
+    RUN_TEST(test_uds_response_too_long_sweep);
 }

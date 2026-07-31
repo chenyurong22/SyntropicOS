@@ -59,7 +59,8 @@ static void test_aes128_cbc_capacity_and_padding_errors(void)
 {
     const uint8_t key[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     const uint8_t iv[16] = {0};
-    const uint8_t msg[16] = "TestMessage12345";
+    const uint8_t msg[16] = {'T', 'e', 's', 't', 'M', 'e', 's', 's',
+                             'a', 'g', 'e', '1', '2', '3', '4', '5'};
     SYN_AES128_Context ctx;
     syn_aes128_init(&ctx, key);
 
@@ -79,7 +80,8 @@ static void test_aes128_cbc_capacity_and_padding_errors(void)
                       syn_aes128_cbc_decrypt(&ctx, iv, cipher, 16, plain, 5, &plain_len));
 
     /* Valid encrypt with 14-byte message (pad_len = 2) */
-    const uint8_t msg14[14] = "TestMessage123";
+    const uint8_t msg14[14] = {'T', 'e', 's', 't', 'M', 'e', 's',
+                               's', 'a', 'g', 'e', '1', '2', '3'};
     syn_aes128_cbc_encrypt(&ctx, iv, msg14, 14, cipher, sizeof(cipher), &cipher_len);
 
     /* Corrupt last byte to trigger pad_val error (line 360) */

@@ -101,7 +101,7 @@ SYN_Status syn_n2k_encode_heading(uint8_t sa, const SYN_N2K_VesselHeading *headi
 SYN_Status syn_n2k_decode_heading(const SYN_CAN_Frame *frame, SYN_N2K_VesselHeading *heading)
 {
     if (!frame || !heading || frame->dlc < 8)
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM;
 
     size_t pos_idx = 0;
     heading->sid = syn_unpack_u8(frame->data, &pos_idx);
@@ -136,7 +136,7 @@ SYN_Status syn_n2k_encode_battery(uint8_t sa, const SYN_N2K_BatteryStatus *batte
 SYN_Status syn_n2k_decode_battery(const SYN_CAN_Frame *frame, SYN_N2K_BatteryStatus *battery)
 {
     if (!frame || !battery || frame->dlc < 8)
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM;
 
     size_t pos_idx = 0;
     battery->instance = syn_unpack_u8(frame->data, &pos_idx);
@@ -173,7 +173,7 @@ SYN_Status syn_n2k_encode_dc_detailed(uint8_t sa, const SYN_N2K_DcDetailedStatus
 SYN_Status syn_n2k_decode_dc_detailed(const SYN_CAN_Frame *frame, SYN_N2K_DcDetailedStatus *dc)
 {
     if (!frame || !dc || frame->dlc < 8)
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM;
 
     size_t pos_idx = 0;
     dc->sid = syn_unpack_u8(frame->data, &pos_idx);
@@ -210,7 +210,7 @@ SYN_Status syn_n2k_encode_environment(uint8_t sa, const SYN_N2K_EnvParams *env,
 SYN_Status syn_n2k_decode_environment(const SYN_CAN_Frame *frame, SYN_N2K_EnvParams *env)
 {
     if (!frame || !env || frame->dlc < 7)
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM;
 
     size_t pos_idx = 0;
     env->sid = syn_unpack_u8(frame->data, &pos_idx);
@@ -230,7 +230,7 @@ SYN_Status syn_n2k_fastpacket_process(SYN_N2K_FastPacketRx *rx, const SYN_CAN_Fr
 
     SYN_J1939_Header hdr;
     if (syn_j1939_id_unpack(frame->id, &hdr) != SYN_OK)
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM;
     if (hdr.pgn != target_pgn)
         return SYN_INVALID_PARAM;
 

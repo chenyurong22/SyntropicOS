@@ -47,7 +47,8 @@ SYN_Status syn_settings_init(SYN_Settings *s, uint32_t flash_base, uint8_t secto
         st = syn_param_load(&s->store, data);
         if (st != SYN_OK) {
             /* Load failed — apply defaults */
-            memcpy(data, defaults, data_size); /* LCOV_EXCL_LINE */
+            memcpy(data, defaults,
+                   data_size); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
         }
     } else {
         /* Flash is blank or corrupt — apply defaults and write them */
@@ -158,7 +159,7 @@ SYN_Status syn_settings_export_vfs(const SYN_Settings *s, const char *filepath)
     syn_vfs_close(fd);
 
     if (written < 0 || (size_t)written != s->data_size)
-        return SYN_ERROR; /* LCOV_EXCL_LINE */
+        return SYN_ERROR; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
 
     return SYN_OK;
 }
@@ -176,7 +177,7 @@ SYN_Status syn_settings_import_vfs(SYN_Settings *s, const char *filepath, bool s
     syn_vfs_close(fd);
 
     if (read_bytes < 0 || (size_t)read_bytes != s->data_size)
-        return SYN_ERROR; /* LCOV_EXCL_LINE */
+        return SYN_ERROR; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
 
     if (save) {
         return syn_settings_save(s);

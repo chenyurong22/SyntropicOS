@@ -28,6 +28,8 @@ static void test_resolve_no_overflow(void)
     ts.lsb = 1000;
     ts.msb_2 = 5;
 
+    TEST_ASSERT_EQUAL_UINT64(0, syn_hpclock_resolve(NULL));
+
     uint64_t ticks = syn_hpclock_resolve(&ts);
     uint64_t expected = ((uint64_t)5 << 32) | 1000ULL;
     TEST_ASSERT_EQUAL_UINT64(expected, ticks);

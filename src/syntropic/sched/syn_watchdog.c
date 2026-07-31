@@ -51,7 +51,7 @@ int8_t syn_watchdog_register(SYN_Watchdog *wdt, const char *name, uint32_t timeo
             return (int8_t)i;
         }
     }
-    return -1; /* LCOV_EXCL_LINE */
+    return -1; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
 }
 
 void syn_watchdog_checkin(SYN_Watchdog *wdt, int8_t id)

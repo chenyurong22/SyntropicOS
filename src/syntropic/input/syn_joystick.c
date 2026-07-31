@@ -49,7 +49,8 @@ void syn_joystick_feed_adc(SYN_Joystick *joy, uint16_t raw_x, uint16_t raw_y, bo
     if (range_x > 0) {
         joy->current_x_pct = (int16_t)((dx * 100) / range_x);
     } else {
-        joy->current_x_pct = 0; /* LCOV_EXCL_LINE */
+        joy->current_x_pct =
+            0; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
     }
 
     if (range_y > 0) {
@@ -62,11 +63,14 @@ void syn_joystick_feed_adc(SYN_Joystick *joy, uint16_t raw_x, uint16_t raw_y, bo
     if (joy->current_x_pct > 100)
         joy->current_x_pct = 100;
     if (joy->current_x_pct < -100)
-        joy->current_x_pct = -100; /* LCOV_EXCL_LINE */
+        joy->current_x_pct =
+            -100; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
     if (joy->current_y_pct > 100)
-        joy->current_y_pct = 100; /* LCOV_EXCL_LINE */
+        joy->current_y_pct =
+            100; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
     if (joy->current_y_pct < -100)
-        joy->current_y_pct = -100; /* LCOV_EXCL_LINE */
+        joy->current_y_pct =
+            -100; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
 
     /* Decode 8-way directional state */
     int16_t x = joy->current_x_pct;

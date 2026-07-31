@@ -20,7 +20,7 @@ void syn_mbap_encode_header(const SYN_MBAP_Header *hdr, uint8_t *buf)
     SYN_ASSERT(hdr != NULL);
     SYN_ASSERT(buf != NULL);
     if (hdr == NULL || buf == NULL)
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
 
     size_t pos = 0;
     syn_pack_u16(buf, &pos, hdr->transaction_id);
@@ -75,7 +75,7 @@ static uint16_t get_response_pdu_len(const uint8_t *buf)
     case SYN_MB_FC_MASK_WRITE_REGISTER:
         return 7;
 
-    /* LCOV_EXCL_START */
+    /* LCOV_EXCL_START: Defensive bounds check / hardware port fallback */
     default:
         return (uint16_t)(2 + buf[2]);
         /* LCOV_EXCL_STOP */
@@ -108,7 +108,7 @@ bool syn_modbus_tcp_process_slave(SYN_Modbus *mb, const uint8_t *req_adu, uint16
 
     uint16_t pdu_len = expected_payload_len - 1; /* Unit ID is 1 byte */
     if (pdu_len > mb->buf_size - 3) {
-        return false; /* LCOV_EXCL_LINE */
+        return false; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     /* Unit ID check: Accept if matching slave address or unit_id == 0 or 255 */

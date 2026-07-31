@@ -574,7 +574,8 @@ static void cli_builtin_errors(const SYN_CLI *cli)
     SYN_ErrEntry e;
     for (size_t i = 0; i < avail; i++) {
         if (!syn_errlog_read(s_cli_errlog, i, &e))
-            continue; /* LCOV_EXCL_LINE */
+            continue; /* LCOV_EXCL_LINE: Unreachable guard; loop bound avail is returned by
+                         syn_errlog_count */
 
         cli_puts(cli, "  [");
         syn_fmt_uint(num, sizeof(num), e.timestamp);

@@ -110,7 +110,7 @@ void syn_j1939_name_decode(const uint8_t buf[8], SYN_J1939_Name *name)
 SYN_Status syn_j1939_node_init(SYN_J1939_Node *node, uint8_t sa, const SYN_J1939_Name *name)
 {
     if (!node)
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM;
 
     memset(node, 0, sizeof(*node));
     node->sa = sa;
@@ -207,13 +207,13 @@ size_t syn_j1939_encode_dm1(uint8_t *buf, size_t buf_size, const SYN_J1939_DTC *
             memset(&buf[2], 0, 4);
             return 6;
         }
-        return 2; /* LCOV_EXCL_LINE */
+        return 2;
     }
 
     size_t offset = 2;
     for (size_t i = 0; i < dtc_count; i++) {
         if (offset + 4 > buf_size)
-            break; /* LCOV_EXCL_LINE */
+            break;
 
         uint32_t spn = dtc_list[i].spn & 0x7FFFFU;
         uint8_t fmi = dtc_list[i].fmi & 0x1FU;
@@ -239,7 +239,8 @@ SYN_Status syn_j1939_process_frame(SYN_J1939_Node *node, const SYN_CAN_Frame *fr
 
     SYN_J1939_Header hdr;
     if (syn_j1939_id_unpack(frame->id, &hdr) != SYN_OK) {
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE: Unreachable guard; syn_j1939_id_unpack always
+                                     returns SYN_OK for non-NULL header */
     }
 
     /* Handle Multi-Packet Transport Protocol Connection Management (TP.CM) */
@@ -332,7 +333,7 @@ SYN_Status syn_j1939_dtc_add_active(SYN_J1939_DTCLog *log, uint32_t spn, uint8_t
     }
 
     if (log->active_count >= SYN_J1939_MAX_LOGGED_DTCS) {
-        return SYN_ERROR; /* LCOV_EXCL_LINE */
+        return SYN_ERROR;
     }
 
     log->active_dtcs[log->active_count].spn = spn;
@@ -359,14 +360,14 @@ SYN_Status syn_j1939_dtc_clear_active(SYN_J1939_DTCLog *log, uint32_t spn, uint8
             }
             /* Remove from active_dtcs */
             for (size_t j = i; j + 1 < log->active_count; j++) {
-                log->active_dtcs[j] = log->active_dtcs[j + 1]; /* LCOV_EXCL_LINE */
+                log->active_dtcs[j] = log->active_dtcs[j + 1];
             }
             log->active_count--;
             return SYN_OK;
         }
     }
 
-    return SYN_ERROR; /* LCOV_EXCL_LINE */
+    return SYN_ERROR;
 }
 
 void syn_j1939_dtc_clear_dm3(SYN_J1939_DTCLog *log)

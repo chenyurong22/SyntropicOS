@@ -34,7 +34,8 @@ SYN_Status syn_vfs_mount(const char *prefix, const SYN_VfsOps *ops, void *fs_dat
     SYN_ASSERT(ops != NULL);
 
     if (prefix == NULL || ops == NULL) {
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter
+                                     fallback */
     }
 
     if (g_mount_count >= SYN_VFS_MAX_MOUNTS) {
@@ -61,7 +62,8 @@ SYN_Status syn_vfs_unmount(const char *prefix)
 {
     SYN_ASSERT(prefix != NULL);
     if (prefix == NULL) {
-        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE */
+        return SYN_INVALID_PARAM; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter
+                                     fallback */
     }
 
     for (size_t i = 0; i < g_mount_count; i++) {

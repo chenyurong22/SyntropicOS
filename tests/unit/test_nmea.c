@@ -13,6 +13,28 @@ void test_nmea_checksum_and_validate(void)
     /* Tampered string */
     const char *bad = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*48";
     TEST_ASSERT_FALSE(syn_nmea_validate(bad));
+
+    /* Test parser feed validation failure (lines 114-116 in syn_nmea.c) */
+    SYN_NMEA_Parser parser;
+    syn_nmea_parser_init(&parser);
+    const char *invalid_feed = "$BAD*00\n";
+    for (size_t i = 0; i < strlen(invalid_feed); i++) {
+        TEST_ASSERT_FALSE(syn_nmea_parser_feed(&parser, invalid_feed[i], NULL));
+    }
+
+    /* Test unknown sentence type (line 185 in syn_nmea.c) */
+    const char *gsv = "GPGSV,1,1,00";
+    char gsv_str[64];
+    snprintf(gsv_str, sizeof(gsv_str), "$%s*%02X", gsv, syn_nmea_checksum(gsv));
+    TEST_ASSERT_EQUAL(SYN_NMEA_SENTENCE_UNKNOWN, syn_nmea_get_type(gsv_str));
+
+    /* Test short time string in parse_gga (line 221 in syn_nmea.c) */
+    SYN_NMEA_GGA gga_short;
+    const char *short_time = "GPGGA,12,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,";
+    char short_time_str[128];
+    snprintf(short_time_str, sizeof(short_time_str), "$%s*%02X", short_time,
+             syn_nmea_checksum(short_time));
+    TEST_ASSERT_TRUE(syn_nmea_parse_gga(short_time_str, &gga_short));
 }
 
 void test_nmea_coord_parsing(void)

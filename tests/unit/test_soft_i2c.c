@@ -59,6 +59,11 @@ void test_soft_i2c_write_nack(void)
 
     TEST_ASSERT_FALSE(ack);
     mock_gpio_read_overrides[PIN_SDA] = -1;
+
+    /* Test NACK on data byte in write_read (lines 169-170 in syn_soft_i2c.c) */
+    uint8_t tx_buf[2] = {0x01, 0x02};
+    uint8_t rx_buf[2];
+    TEST_ASSERT_FALSE(syn_soft_i2c_write_read(&i2c, 0x50, tx_buf, 2, rx_buf, 0));
 }
 
 void test_soft_i2c_read(void)

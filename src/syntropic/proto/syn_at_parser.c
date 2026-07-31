@@ -47,7 +47,8 @@ void syn_at_parser_reset(SYN_AtParser *parser)
 static bool starts_with(const char *str, const char *prefix)
 {
     if (str == NULL || prefix == NULL)
-        return false; /* LCOV_EXCL_LINE */
+        return false; /* LCOV_EXCL_LINE: Unreachable guard; callers pass non-NULL valid string
+                         references */
     return strncmp(str, prefix, strlen(prefix)) == 0;
 }
 
@@ -89,7 +90,8 @@ SYN_AtRespType syn_at_parser_feed_char(SYN_AtParser *parser, char c)
             if (p != NULL) {
                 parser->cme_error_code = atoi(p + 1);
             } else {
-                parser->cme_error_code = -1; /* LCOV_EXCL_LINE */
+                parser->cme_error_code = -1; /* LCOV_EXCL_LINE: Unreachable fallback; colon is
+                                                guaranteed by starts_with match */
             }
         } else if (starts_with(line, "+RECEIVE,") || starts_with(line, "+IPD,") ||
                    starts_with(line, "CLOSED") || starts_with(line, "SHUT OK") ||

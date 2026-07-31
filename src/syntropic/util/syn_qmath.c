@@ -275,7 +275,8 @@ q16_t q16_rsqrt(q16_t x)
         return 0;
     q16_t sqrt_x = q16_sqrt(x);
     if (sqrt_x == 0)
-        return INT32_MAX; /* LCOV_EXCL_LINE */
+        return INT32_MAX; /* LCOV_EXCL_LINE: Unreachable guard; q16_sqrt returns non-zero for
+                             positive x */
     return q16_inv(sqrt_x);
 }
 
@@ -339,7 +340,8 @@ q16_t q16_exp(q16_t x)
     if (x < 0) {
         q16_t pos = q16_exp(-x);
         if (pos == 0)
-            return INT32_MAX; /* -x overflowed */ /* LCOV_EXCL_LINE */
+            return INT32_MAX; /* LCOV_EXCL_LINE: Unreachable guard; q16_exp(-x) for -x > 0 returns
+                                 positive result */
         return q16_inv(pos);
     }
 
@@ -356,12 +358,12 @@ q16_t q16_exp(q16_t x)
 
     /* Clamp r to [0, ln2) — numerical safety */
     if (r < 0) {
-        r = 0; /* LCOV_EXCL_LINE */
-        k--;   /* LCOV_EXCL_LINE */
+        r = 0; /* LCOV_EXCL_LINE: Defensive bounds clamping during range reduction */
+        k--;   /* LCOV_EXCL_LINE: Defensive bounds clamping during range reduction */
     }
     if (r >= Q16_LN2) {
-        r -= Q16_LN2; /* LCOV_EXCL_LINE */
-        k++;          /* LCOV_EXCL_LINE */
+        r -= Q16_LN2; /* LCOV_EXCL_LINE: Defensive bounds clamping during range reduction */
+        k++;          /* LCOV_EXCL_LINE: Defensive bounds clamping during range reduction */
     }
 
     /*
@@ -377,12 +379,15 @@ q16_t q16_exp(q16_t x)
     /* Multiply by 2^k */
     if (k >= 0) {
         if (k >= 15)
-            return INT32_MAX; /* Would overflow Q16 integer range */ /* LCOV_EXCL_LINE */
+            return INT32_MAX; /* LCOV_EXCL_LINE: Exponent overflow guard for k >= 15 */
         return exp_r << k;
     } else {
-        if (k < -16)          /* LCOV_EXCL_LINE */
-            return 0;         /* LCOV_EXCL_LINE */
-        return exp_r >> (-k); /* LCOV_EXCL_LINE */
+        if (k < -16) /* LCOV_EXCL_LINE: Unreachable negative k branch; negative x is converted to -x
+                        > 0 above */
+            return 0; /* LCOV_EXCL_LINE: Unreachable negative k branch; negative x is converted to
+                         -x > 0 above */
+        return exp_r >> (-k); /* LCOV_EXCL_LINE: Unreachable negative k branch; negative x is
+                                 converted to -x > 0 above */
     }
 }
 
@@ -393,7 +398,8 @@ q16_t q16_exp_fast(q16_t x)
     if (x < 0) {
         q16_t pos = q16_exp_fast(-x);
         if (pos == 0)
-            return INT32_MAX; /* LCOV_EXCL_LINE */
+            return INT32_MAX; /* LCOV_EXCL_LINE: Unreachable guard; q16_exp_fast(-x) for -x > 0
+                                 returns positive result */
         return q16_inv(pos);
     }
     if (x > Q16_FROM_INT(10))
@@ -402,12 +408,12 @@ q16_t q16_exp_fast(q16_t x)
     int32_t k = (int32_t)(((int64_t)x << 16) / Q16_LN2) >> 16;
     q16_t r = x - q16_mul((q16_t)(k * Q16_ONE), Q16_LN2);
     if (r < 0) {
-        r = 0; /* LCOV_EXCL_LINE */
-        k--;   /* LCOV_EXCL_LINE */
+        r = 0; /* LCOV_EXCL_LINE: Defensive bounds clamping during range reduction */
+        k--;   /* LCOV_EXCL_LINE: Defensive bounds clamping during range reduction */
     }
     if (r >= Q16_LN2) {
-        r -= Q16_LN2; /* LCOV_EXCL_LINE */
-        k++;          /* LCOV_EXCL_LINE */
+        r -= Q16_LN2; /* LCOV_EXCL_LINE: Defensive bounds clamping during range reduction */
+        k++;          /* LCOV_EXCL_LINE: Defensive bounds clamping during range reduction */
     }
 
     q16_t r2 = q16_mul(r, r);
@@ -415,12 +421,15 @@ q16_t q16_exp_fast(q16_t x)
 
     if (k >= 0) {
         if (k >= 15)
-            return INT32_MAX; /* LCOV_EXCL_LINE */
+            return INT32_MAX; /* LCOV_EXCL_LINE: Exponent overflow guard for k >= 15 */
         return exp_r << k;
     } else {
-        if (k < -16)          /* LCOV_EXCL_LINE */
-            return 0;         /* LCOV_EXCL_LINE */
-        return exp_r >> (-k); /* LCOV_EXCL_LINE */
+        if (k < -16) /* LCOV_EXCL_LINE: Unreachable negative k branch; negative x is converted to -x
+                        > 0 above */
+            return 0; /* LCOV_EXCL_LINE: Unreachable negative k branch; negative x is converted to
+                         -x > 0 above */
+        return exp_r >> (-k); /* LCOV_EXCL_LINE: Unreachable negative k branch; negative x is
+                                 converted to -x > 0 above */
     }
 }
 

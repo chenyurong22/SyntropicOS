@@ -79,7 +79,7 @@ static inline int32_t syn_lut_forward(const SYN_LUT_Entry *table, size_t count, 
     int32_t dx = x1 - x0;
 
     if (dx == 0)
-        return y0; /* LCOV_EXCL_LINE */
+        return y0; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
 
     return y0 + ((y1 - y0) * (x - x0)) / dx;
 }

@@ -676,6 +676,38 @@ static void test_canopen_uncovered_edge_cases(void)
     TEST_ASSERT_EQUAL(8, tx_len);
 }
 
+static void test_canopen_extra_coverage(void)
+{
+    /* 1. TPDO transmit with unmapped/invalid OD entry -> returns SYN_ERROR (line 502) */
+    static const SYN_CANOpenODEntry od_invalid[] = {
+        {0x2001U, 0x01U, SYN_CANOPEN_TYPE_U8, SYN_CANOPEN_ACCESS_RO, NULL, 0}
+        /* NULL data pointer */
+    };
+    SYN_CANOpenNode node_tpdo_err;
+    SYN_CANOpenNodeConfig cfg_tpdo_err = {.node_id = 5, .tpdo = {{0x185U, 0x2001U, 0x01U, 1U}}};
+    syn_canopen_init(&node_tpdo_err, &cfg_tpdo_err, od_invalid, 1);
+    uint8_t nmt_start[2] = {0x01, 0x05};
+    syn_canopen_process_rx(&node_tpdo_err, 0x000U, nmt_start, 2);
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_canopen_tpdo_trigger(&node_tpdo_err, 1));
+
+    /* 2. SDO upload on entry with size <= 4 but NULL data pointer -> triggers abort line 326 */
+    static const SYN_CANOpenODEntry od_null_read[] = {
+        {0x2005U, 0x01U, SYN_CANOPEN_TYPE_U16, SYN_CANOPEN_ACCESS_RO, NULL, 2}};
+    SYN_CANOpenNode node_exp_err;
+    SYN_CANOpenNodeConfig cfg_exp_err = {.node_id = 5};
+    syn_canopen_init(&node_exp_err, &cfg_exp_err, od_null_read, 1);
+    uint32_t tx_id = 0;
+    uint8_t tx_buf[8] = {0};
+    uint8_t tx_len = 0;
+    (void)syn_canopen_get_tx(&node_exp_err, &tx_id, tx_buf, &tx_len); /* Drain bootup message */
+
+    /* Expedited upload request 0x40 on 0x2005 sub 1 */
+    uint8_t sdo_exp_req[8] = {0x40U, 0x05U, 0x20U, 0x01U, 0, 0, 0, 0};
+    syn_canopen_process_rx(&node_exp_err, 0x605U, sdo_exp_req, 8);
+    TEST_ASSERT_TRUE(syn_canopen_get_tx(&node_exp_err, &tx_id, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL(0x80U, tx_buf[0]); /* Abort response */
+}
+
 void run_canopen_tests(void)
 {
     RUN_TEST(test_canopen_init_and_bootup);
@@ -690,4 +722,5 @@ void run_canopen_tests(void)
     RUN_TEST(test_canopen_sdo_segmented_toggle_bit_mismatch);
     RUN_TEST(test_canopen_sdo_segmented_download_invalid_data);
     RUN_TEST(test_canopen_uncovered_edge_cases);
+    RUN_TEST(test_canopen_extra_coverage);
 }

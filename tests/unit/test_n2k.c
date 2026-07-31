@@ -228,12 +228,20 @@ static void test_n2k_fastpacket_invalid_id_pgn_and_overflow(void)
 
 static void test_n2k_encode_decode_null_checks(void)
 {
-    SYN_CAN_Frame f;
-    SYN_N2K_CogSogRapid cs;
+    SYN_CAN_Frame f_short = {.id = 0, .dlc = 5, .extended = true};
     SYN_N2K_VesselHeading h;
     SYN_N2K_BatteryStatus b;
     SYN_N2K_DcDetailedStatus dc;
     SYN_N2K_EnvParams env;
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_decode_heading(NULL, &h));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_decode_heading(&f_short, &h));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_decode_battery(&f_short, &b));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_decode_dc_detailed(&f_short, &dc));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_decode_environment(&f_short, &env));
+
+    SYN_CAN_Frame f;
+    SYN_N2K_CogSogRapid cs;
 
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_cog_sog_rapid(0x10, NULL, &f));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_n2k_encode_cog_sog_rapid(0x10, &cs, NULL));

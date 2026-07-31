@@ -31,8 +31,10 @@ void syn_sched_init(SYN_Sched *sched, SYN_Task *tasks, size_t count)
     SYN_ASSERT(sched != NULL);
     SYN_ASSERT(tasks != NULL || count == 0);
 
-    if (sched == NULL || (tasks == NULL && count > 0)) { /* LCOV_EXCL_LINE */
-        return;                                          /* LCOV_EXCL_LINE */
+    if (sched == NULL ||
+        (tasks == NULL &&
+         count > 0)) { /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
+        return;        /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     sched->tasks = tasks;
@@ -53,8 +55,10 @@ void syn_task_create(SYN_Task *task, const char *name, SYN_TaskFunc func, uint8_
     SYN_ASSERT(func != NULL);
     SYN_ASSERT(priority < SYN_SCHED_PRIO_LEVELS);
 
-    if (task == NULL || func == NULL || priority >= SYN_SCHED_PRIO_LEVELS) { /* LCOV_EXCL_LINE */
-        return;                                                              /* LCOV_EXCL_LINE */
+    if (task == NULL || func == NULL ||
+        priority >= SYN_SCHED_PRIO_LEVELS) { /* LCOV_EXCL_LINE: Defensive bounds check / hardware
+                                                port fallback */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     PT_INIT(&task->pt);
@@ -311,7 +315,8 @@ SYN_NORETURN void syn_sched_run_tickless(SYN_Sched *sched, SYN_Sleep *sleep)
         if (wake != now && !syn_sleep_any_locked(sleep)) {
             if (wake == UINT32_MAX) {
                 /* No deadlines — light sleep until interrupt */
-                syn_sleep_enter(sleep); /* LCOV_EXCL_LINE */
+                syn_sleep_enter(
+                    sleep); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
             } else {
                 /* Sleep until the next deadline */
                 syn_port_sleep_until(wake);
@@ -415,7 +420,7 @@ void syn_task_boost_priority(SYN_Task *task, uint8_t temp_prio)
 {
     SYN_ASSERT(task != NULL);
     if (task == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
     /* Priority 0 is highest priority level. Boost only accepts higher or equal priority. */
     if (temp_prio < SYN_SCHED_PRIO_LEVELS && temp_prio <= task->base_priority) {
@@ -427,7 +432,7 @@ void syn_task_restore_priority(SYN_Task *task)
 {
     SYN_ASSERT(task != NULL);
     if (task == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
     task->priority = task->base_priority;
 }
@@ -438,7 +443,7 @@ void syn_task_set_base_priority(SYN_Task *task, uint8_t new_prio)
     SYN_ASSERT(new_prio < SYN_SCHED_PRIO_LEVELS);
 
     if (task == NULL || new_prio >= SYN_SCHED_PRIO_LEVELS) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     task->base_priority = new_prio;

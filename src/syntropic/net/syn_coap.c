@@ -301,7 +301,8 @@ SYN_PT_Status syn_coap_request_task(SYN_PT *pt, SYN_Task *task)
     }
 
     if (r->status == SYN_BUSY)
-        r->status = SYN_TIMEOUT; /* LCOV_EXCL_LINE */
+        r->status =
+            SYN_TIMEOUT; /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
 
     syn_port_sock_close(r->sock);
     r->sock = SYN_SOCKET_INVALID;

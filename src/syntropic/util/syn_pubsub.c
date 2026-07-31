@@ -13,7 +13,7 @@ void syn_pubsub_init(SYN_PubSubBroker *broker, SYN_PubSubSub *sub_array, size_t 
     SYN_ASSERT(sub_array != NULL || capacity == 0);
 
     if (broker == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     }
 
     broker->subs = sub_array;

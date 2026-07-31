@@ -72,7 +72,7 @@ void syn_fsm_init(SYN_FSM *fsm, const SYN_FSM_Transition *transitions, SYN_FSM_S
     SYN_ASSERT(transitions != NULL);
 
     if (fsm == NULL || transitions == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
     }
 
     memset(fsm, 0, sizeof(*fsm));
@@ -86,7 +86,7 @@ void syn_fsm_set_state_descs(SYN_FSM *fsm, const SYN_FSM_StateDesc *descs)
     SYN_ASSERT(fsm != NULL);
 
     if (fsm == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
     }
     fsm->state_descs = descs;
 }
@@ -96,7 +96,7 @@ void syn_fsm_set_state_names(SYN_FSM *fsm, const char *const *names)
     SYN_ASSERT(fsm != NULL);
 
     if (fsm == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
     }
     fsm->state_names = names;
 }
@@ -106,7 +106,7 @@ void syn_fsm_set_context(SYN_FSM *fsm, void *ctx)
     SYN_ASSERT(fsm != NULL);
 
     if (fsm == NULL) {
-        return; /* LCOV_EXCL_LINE */
+        return; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
     }
     fsm->ctx = ctx;
 }

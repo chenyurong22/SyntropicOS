@@ -118,6 +118,11 @@ static bool tcp_recv(uint8_t *data, size_t max_len, size_t *out_len, void *ctx)
     }
 }
 
+/**
+ * @brief Check if TCP socket or internal buffer has pending readable data.
+ * @param ctx Pointer to SYN_TransportTcp instance.
+ * @return True if data is ready, false otherwise.
+ */
 static bool tcp_has_data(const void *ctx)
 {
     const SYN_TransportTcp *tcp = (const SYN_TransportTcp *)ctx;

@@ -335,7 +335,8 @@ static void test_dns_resolve_malformed_responses(void)
     while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
         syn_port_delay_ms(1);
     }
-    TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
+    /* Runt response (n < 12) is ignored and loop times out → SYN_TIMEOUT */
+    TEST_ASSERT_EQUAL(SYN_TIMEOUT, r.status);
 }
 
 static void test_dns_resolve_rcode_error_and_txid_mismatch(void)

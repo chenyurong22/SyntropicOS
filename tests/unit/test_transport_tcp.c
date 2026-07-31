@@ -197,6 +197,38 @@ static void test_transport_tcp_invalid_socket(void)
     TEST_ASSERT_FALSE(syn_transport_recv(&t, dummy, sizeof(dummy), &out_len));
 }
 
+static void test_transport_tcp_has_data(void)
+{
+    SYN_Transport t;
+    SYN_TransportTcp tcp;
+    syn_transport_tcp_init(&t, &tcp, 1);
+    mock_sock_connected = true;
+
+    /* Socket invalid -> false */
+    SYN_Transport t_inv;
+    SYN_TransportTcp tcp_inv;
+    syn_transport_tcp_init(&t_inv, &tcp_inv, SYN_SOCKET_INVALID);
+    TEST_ASSERT_FALSE(syn_transport_has_data(&t_inv));
+    TEST_ASSERT_FALSE(syn_transport_has_data(NULL));
+    TEST_ASSERT_FALSE(syn_transport_send(NULL, NULL, 0));
+
+    /* Socket connected, no data ready -> false */
+    TEST_ASSERT_FALSE(syn_transport_has_data(&t));
+
+    /* Socket connected with data -> true */
+    uint8_t rx[] = {0x00, 0x05};
+    mock_sock_set_response(rx, sizeof(rx));
+    TEST_ASSERT_TRUE(syn_transport_has_data(&t));
+
+    /* Partial packet in progress (tcp.state > 0) -> true */
+    uint8_t out[16];
+    size_t out_len;
+    syn_transport_recv(&t, out, sizeof(out), &out_len);
+    TEST_ASSERT_TRUE(tcp.state > 0);
+    mock_port_reset();
+    TEST_ASSERT_TRUE(syn_transport_has_data(&t));
+}
+
 void run_transport_tcp_tests(void)
 {
     RUN_TEST(test_transport_tcp_send);
@@ -208,4 +240,5 @@ void run_transport_tcp_tests(void)
     RUN_TEST(test_transport_tcp_recv_empty_packet);
     RUN_TEST(test_transport_tcp_recv_outbuf_too_small);
     RUN_TEST(test_transport_tcp_invalid_socket);
+    RUN_TEST(test_transport_tcp_has_data);
 }

@@ -199,10 +199,12 @@ SYN_PT_Status syn_dns_resolve_task(SYN_PT *pt, SYN_Task *task)
         SYN_SockAddr from;
         int n = syn_port_udp_recvfrom(r->sock, r->buf, sizeof(r->buf), &from, 0);
         if (n > 0) {
-            if (n < 12 || syn_peek_u16(r->buf, 0) == r->txid) {
-                r->status = parse_response(r->buf, (size_t)n, r->addr_out, r->txid);
-                break;
+            if (n < 12 || syn_peek_u16(r->buf, 0) != r->txid) {
+                /* Runt or TXID mismatch — ignore and keep waiting */
+                continue;
             }
+            r->status = parse_response(r->buf, (size_t)n, r->addr_out, r->txid);
+            break;
         }
 
         if ((syn_port_get_tick_ms() - r->start_ms) >= r->timeout_ms) {

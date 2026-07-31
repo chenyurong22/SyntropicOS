@@ -526,7 +526,6 @@ int syn_httpd_read_body(const SYN_HttpdRequest *req, const SYN_HttpdResponse *re
  * @return true if work pending, false otherwise.
  */
 static bool httpd_has_work(const SYN_Httpd *srv)
-
 {
     if (srv == NULL || !srv->running)
         return false;

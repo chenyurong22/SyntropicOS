@@ -686,7 +686,6 @@ void syn_wg_init(SYN_WG *wg, const SYN_WgConfig *config, SYN_SNTP *sntp, uint8_t
  * @return true if work pending, false otherwise.
  */
 static bool wg_has_work(const SYN_WG *wg)
-
 {
     if (wg == NULL)
         return false;

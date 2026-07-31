@@ -118,6 +118,16 @@ static bool tcp_recv(uint8_t *data, size_t max_len, size_t *out_len, void *ctx)
     }
 }
 
+static bool tcp_has_data(const void *ctx)
+{
+    const SYN_TransportTcp *tcp = (const SYN_TransportTcp *)ctx;
+    if (tcp == NULL || tcp->sock == SYN_SOCKET_INVALID)
+        return false;
+    if (tcp->state > 0)
+        return true; /* Partial header or payload buffer in progress */
+    return syn_port_sock_readable(tcp->sock);
+}
+
 void syn_transport_tcp_init(SYN_Transport *t, SYN_TransportTcp *tcp, SYN_Socket sock)
 {
     SYN_ASSERT(t != NULL);
@@ -129,6 +139,7 @@ void syn_transport_tcp_init(SYN_Transport *t, SYN_TransportTcp *tcp, SYN_Socket 
 
     t->send = tcp_send;
     t->recv = tcp_recv;
+    t->has_data = tcp_has_data;
     t->ctx = tcp;
 }
 

@@ -164,17 +164,9 @@ static void test_uds_security_access(void)
     uint8_t resp[16] = {0};
     uint16_t resp_len = 0;
 
-    /* Power-on delay active (10000ms): Request Seed fails with NRC 0x37 */
+    /* Immediate Request Seed on power-on succeeds (delay timer = 0 on boot) */
     req[0] = SYN_UDS_SID_SECURITY_ACCESS;
     req[1] = 0x01;
-    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED, resp[2]);
-
-    /* Tick 10s to expire power-on safety delay */
-    syn_uds_tick(&g_uds, 10000);
-
-    /* Request Seed now succeeds */
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
@@ -226,11 +218,18 @@ static void test_uds_security_access(void)
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
 
-    /* ISO 14229-1 §9.4: When already unlocked, Request Seed returns seed = 0x00000000 */
+    /* Repeat Request Seed + Send Key cycle when already unlocked */
     req[1] = 0x01;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
-    TEST_ASSERT_EQUAL_HEX32(0x00000000U, syn_peek_u32(resp, 2));
+    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_SEED_SENT, g_uds.security_state);
+
+    correct_key = g_uds.current_seed ^ 0xA5A5A5A5U;
+    req[1] = 0x02;
+    syn_poke_u32(correct_key, req, 2);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
 
     /* Re-initialize server and set delay timer to test NRC 0x37 */
     syn_uds_init(&g_uds);

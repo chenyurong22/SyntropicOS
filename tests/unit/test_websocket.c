@@ -435,6 +435,12 @@ static void test_websocket_uncovered_edge_cases(void)
     ws.state = SYN_WS_STATE_CLOSED;
     syn_websocket_task(&task_pt, &task_obj);
 
+    /* Test task waiting when not connected (returns PT_WAITING) */
+    SYN_PT task_pt2;
+    PT_INIT(&task_pt2);
+    ws.state = SYN_WS_STATE_CLOSED;
+    TEST_ASSERT_EQUAL(PT_WAITING, syn_websocket_task(&task_pt2, &task_obj));
+
     /* 3. send when not connected (line 275) */
     ws.state = SYN_WS_STATE_CLOSED;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_websocket_send(&ws, 0x01, "test", 4));

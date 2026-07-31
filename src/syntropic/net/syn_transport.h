@@ -56,6 +56,13 @@ typedef struct {
      */
     bool (*recv)(uint8_t *data, size_t max_len, size_t *out_len, void *ctx);
 
+    /**
+     * Check if unread data is ready (optional).
+     * @param ctx Transport context.
+     * @return true if data is available to receive.
+     */
+    bool (*has_data)(const void *ctx);
+
     void *ctx; /**< Transport-specific context */
 } SYN_Transport;
 
@@ -89,6 +96,20 @@ static inline bool syn_transport_recv(SYN_Transport *t, uint8_t *data, size_t ma
     if (t == NULL || t->recv == NULL)
         return false; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
     return t->recv(data, max_len, out_len, t->ctx);
+}
+
+/**
+ * @brief Check if transport has unread data available (non-blocking).
+ * @param t Transport instance.
+ * @return true if data is ready or readiness check is unhandled.
+ */
+static inline bool syn_transport_has_data(const SYN_Transport *t)
+{
+    if (t == NULL)
+        return false;
+    if (t->has_data != NULL)
+        return t->has_data(t->ctx);
+    return true; /* Default if no hook: assume data may be available */
 }
 
 #ifdef __cplusplus

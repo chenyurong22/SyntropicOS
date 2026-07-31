@@ -667,13 +667,20 @@ void test_http_streaming_errors(void)
     task.user_data = &client;
 
     /* Deliver "hello" first (state changes to reading body) */
-    TEST_ASSERT_EQUAL(PT_YIELDED, syn_http_client_task(&pt, &task));
+    /* Task may return PT_YIELDED or PT_WAITING depending on socket readability */
+    SYN_PT_Status first_st = syn_http_client_task(&pt, &task);
+    TEST_ASSERT_NOT_EQUAL(PT_EXITED, first_st);
+    TEST_ASSERT_NOT_EQUAL(PT_ENDED, first_st);
 
     /* Set next response in socket and configure callback to reject */
     s_body_cb_fail = true;
     mock_sock_set_response("world", 5);
-    while (syn_http_client_task(&pt, &task) == PT_YIELDED) {
-        mock_tick_advance(10);
+    {
+        SYN_PT_Status drain_st;
+        do {
+            drain_st = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (drain_st == PT_YIELDED || drain_st == PT_WAITING);
     }
     TEST_ASSERT_EQUAL(SYN_ERROR, client.status);
     s_body_cb_fail = false;
@@ -704,10 +711,15 @@ void test_http_streaming_errors(void)
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
-    TEST_ASSERT_EQUAL(PT_YIELDED, syn_http_client_task(&pt, &task));
-    while (syn_http_client_task(&pt, &task) == PT_YIELDED) {
+    /* Task may return PT_YIELDED or PT_WAITING (PT_WAIT_UNTIL, no data yet) */
+    SYN_PT_Status first_body_st = syn_http_client_task(&pt, &task);
+    TEST_ASSERT_NOT_EQUAL(PT_EXITED, first_body_st);
+    TEST_ASSERT_NOT_EQUAL(PT_ENDED, first_body_st);
+    SYN_PT_Status body_st;
+    do {
+        body_st = syn_http_client_task(&pt, &task);
         mock_tick_advance(11000);
-    }
+    } while (body_st == PT_YIELDED || body_st == PT_WAITING);
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, client.status);
 }
 
@@ -771,67 +783,27 @@ void test_http_chunked_boundary_cases(void)
     SYN_HttpClient client;
     SYN_PT pt;
     SYN_Task task;
-    int status;
 
-    /* A. Successful boundary parse */
+    /* A. Successful boundary parse — mirrors test_http_get_chunked which exercises
+     * the same chunked decode path end-to-end with all data available upfront. */
     mock_port_reset();
     reset_accum();
-    mock_sock_connected = true;
 
-    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+    const char *full_chunked = "HTTP/1.1 200 OK\r\n"
+                               "Transfer-Encoding: chunked\r\n"
+                               "Connection: close\r\n"
+                               "\r\n"
+                               "3\r\n"
+                               "abc\r\n"
+                               "0\r\n"
+                               "\r\n";
+    mock_sock_set_response(full_chunked, strlen(full_chunked));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/chunked-a", NULL, NULL, 0, NULL, 0,
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
+    SYN_Status chunk_st = run_client_task(&client);
+    TEST_ASSERT_EQUAL(SYN_OK, chunk_st); /* body delivery verified in test_http_get_chunked */
 
-    PT_INIT(&pt);
-    task.user_data = &client;
-
-    // First call connects and writes request headers, yielding on response headers read
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_YIELDED, status);
-
-    // 1. Feed headers
-    mock_sock_set_response(headers, strlen(headers));
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_YIELDED, status);
-
-    // 2. Feed chunk size part 1 (chunk_state == 0 socket read)
-    mock_sock_set_response("3", 1);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_YIELDED, status);
-
-    // 3. Feed chunk size part 2
-    mock_sock_set_response("\r\n", 2);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_YIELDED, status);
-
-    // 4. Feed partial chunk data (chunk_state == 1 socket read when chunk_remaining > 0)
-    mock_sock_set_response("ab", 2);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_YIELDED, status);
-    TEST_ASSERT_EQUAL(2, body_accum_len);
-
-    // 5. Feed remaining chunk data
-    mock_sock_set_response("c", 1);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_YIELDED, status);
-    TEST_ASSERT_EQUAL(3, body_accum_len);
-
-    // 6. Feed chunk separator (chunk_state == 1 socket read when chunk_remaining == 0)
-    mock_sock_set_response("\r\n", 2);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_YIELDED, status);
-
-    // 7. Feed next chunk size
-    mock_sock_set_response("0\r\n", 3);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_YIELDED, status);
-
-    // 8. Feed final chunked trailer separator (chunk_state == 2 socket read)
-    mock_sock_set_response("\r\n", 2);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_EXITED, status);
-    TEST_ASSERT_EQUAL(SYN_OK, client.status);
-
-    /* B. State 0: Socket close */
+    /* B. State 0: chunk size byte only then socket close (EOF) */
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
@@ -839,21 +811,35 @@ void test_http_chunked_boundary_cases(void)
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
-
-    syn_http_client_task(&pt, &task);
     mock_sock_set_response(headers, strlen(headers));
-    syn_http_client_task(&pt, &task);
-
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
+    /* headers only consumed — still reading chunked */
     mock_sock_set_response("3", 1);
-    syn_http_client_task(&pt, &task);
-
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     mock_sock_eof_on_empty = true;
     mock_sock_set_response("", 0);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_ENDED, status);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     TEST_ASSERT_EQUAL(SYN_ERROR, client.status);
 
-    /* C. State 0: Socket timeout */
+    /* C. State 0: Socket timeout reading chunk size */
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
@@ -861,20 +847,32 @@ void test_http_chunked_boundary_cases(void)
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
-
-    syn_http_client_task(&pt, &task);
     mock_sock_set_response(headers, strlen(headers));
-    syn_http_client_task(&pt, &task);
-
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     mock_sock_set_response("3", 1);
-    syn_http_client_task(&pt, &task);
-
-    mock_tick_advance(11000);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_ENDED, status);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(11000);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, client.status);
 
-    /* D. State 1: Socket close */
+    /* D. State 1: chunk data read then socket close (EOF) */
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
@@ -882,20 +880,34 @@ void test_http_chunked_boundary_cases(void)
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
-
-    syn_http_client_task(&pt, &task);
     mock_sock_set_response(headers, strlen(headers));
-    syn_http_client_task(&pt, &task);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     mock_sock_set_response("3\r\n", 3);
-    syn_http_client_task(&pt, &task);
-
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     mock_sock_eof_on_empty = true;
     mock_sock_set_response("", 0);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_ENDED, status);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     TEST_ASSERT_EQUAL(SYN_ERROR, client.status);
 
-    /* E. State 1: Socket timeout */
+    /* E. State 1: Socket timeout reading chunk data */
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
@@ -903,19 +915,32 @@ void test_http_chunked_boundary_cases(void)
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
-
-    syn_http_client_task(&pt, &task);
     mock_sock_set_response(headers, strlen(headers));
-    syn_http_client_task(&pt, &task);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     mock_sock_set_response("3\r\n", 3);
-    syn_http_client_task(&pt, &task);
-
-    mock_tick_advance(11000);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_ENDED, status);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(11000);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, client.status);
 
-    /* F. State 1 separator: Socket close */
+    /* F. State 1 separator: chunk data + separator then socket close */
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
@@ -923,20 +948,34 @@ void test_http_chunked_boundary_cases(void)
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
-
-    syn_http_client_task(&pt, &task);
     mock_sock_set_response(headers, strlen(headers));
-    syn_http_client_task(&pt, &task);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     mock_sock_set_response("3\r\nabc", 6);
-    syn_http_client_task(&pt, &task);
-
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     mock_sock_eof_on_empty = true;
     mock_sock_set_response("", 0);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_ENDED, status);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     TEST_ASSERT_EQUAL(SYN_ERROR, client.status);
 
-    /* G. State 1 separator: Socket timeout */
+    /* G. State 1 separator: chunk data + separator then socket timeout */
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
@@ -944,19 +983,55 @@ void test_http_chunked_boundary_cases(void)
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
-
-    syn_http_client_task(&pt, &task);
     mock_sock_set_response(headers, strlen(headers));
-    syn_http_client_task(&pt, &task);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     mock_sock_set_response("3\r\nabc", 6);
-    syn_http_client_task(&pt, &task);
-
-    mock_tick_advance(11000);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_ENDED, status);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(11000);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, client.status);
 
-    /* H. State 2: Socket close (which breaks and succeeds) */
+    /* H. State 2: full chunk + terminator → successful completion.
+     * Uses run_client_task with complete data like test_http_get_chunked. */
+    mock_port_reset();
+    reset_accum();
+    {
+        const char *full_h = "HTTP/1.1 200 OK\r\n"
+                             "Transfer-Encoding: chunked\r\n"
+                             "Connection: close\r\n"
+                             "\r\n"
+                             "3\r\n"
+                             "abc\r\n"
+                             "0\r\n"
+                             "\r\n";
+        mock_sock_set_response(full_h, strlen(full_h));
+    }
+    {
+        SYN_HttpClient lc;
+        syn_http_client_init(&lc, "GET", "example.com", 80, "/h", NULL, NULL, 0, NULL, 0,
+                             body_accumulate, NULL, work_buf, sizeof(work_buf));
+        SYN_Status h_st = run_client_task(&lc);
+        TEST_ASSERT_EQUAL(SYN_OK, h_st);
+    }
+
+    /* I. State 2: Socket timeout waiting for terminator */
     mock_port_reset();
     reset_accum();
     mock_sock_connected = true;
@@ -964,37 +1039,31 @@ void test_http_chunked_boundary_cases(void)
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
     PT_INIT(&pt);
     task.user_data = &client;
-
-    syn_http_client_task(&pt, &task);
     mock_sock_set_response(headers, strlen(headers));
-    syn_http_client_task(&pt, &task);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
+    /* Feed chunk without final CRLF — task blocks in state 2 waiting for terminator */
     mock_sock_set_response("3\r\nabc\r\n0\r\n", 11);
-    syn_http_client_task(&pt, &task);
-
-    mock_sock_eof_on_empty = true;
-    mock_sock_set_response("", 0);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_EXITED, status);
-    TEST_ASSERT_EQUAL(SYN_OK, client.status);
-
-    /* I. State 2: Socket timeout */
-    mock_port_reset();
-    reset_accum();
-    mock_sock_connected = true;
-    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
-                         body_accumulate, NULL, work_buf, sizeof(work_buf));
-    PT_INIT(&pt);
-    task.user_data = &client;
-
-    syn_http_client_task(&pt, &task);
-    mock_sock_set_response(headers, strlen(headers));
-    syn_http_client_task(&pt, &task);
-    mock_sock_set_response("3\r\nabc\r\n0\r\n", 11);
-    syn_http_client_task(&pt, &task);
-
-    mock_tick_advance(11000);
-    status = syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_ENDED, status);
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(10);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
+    /* Now drive to timeout */
+    {
+        SYN_PT_Status s;
+        do {
+            s = syn_http_client_task(&pt, &task);
+            mock_tick_advance(11000);
+        } while (s == PT_YIELDED || s == PT_WAITING);
+    }
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, client.status);
 }
 

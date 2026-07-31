@@ -62,6 +62,26 @@ static bool tls_transport_recv_cb(uint8_t *data, size_t max_len, size_t *out_len
     return syn_tls_recv(tls, data, max_len, out_len);
 }
 
+static bool tls_has_work(const SYN_TLS_Context *ctx)
+{
+    if (ctx == NULL) {
+        return false;
+    }
+    if (ctx->app_rx_head < ctx->app_rx_tail) {
+        return true;
+    }
+    if (ctx->underlying_transport != NULL) {
+        return syn_transport_has_data(ctx->underlying_transport);
+    }
+    return true;
+}
+
+static bool tls_transport_has_data_cb(const void *ctx)
+{
+    const SYN_TLS_Context *tls = (const SYN_TLS_Context *)ctx;
+    return tls_has_work(tls);
+}
+
 /**
  * @brief Derive single key/IV for AEAD record protection per RFC 8446 §7.3.
  * @param secret Base traffic secret (32 bytes).
@@ -75,8 +95,16 @@ static void derive_traffic_key_or_iv(const uint8_t secret[32], const char *label
     syn_hkdf_expand_label(secret, 32, label, strlen(label), NULL, 0, out, out_len);
 }
 
+static void syn_secure_zero(void *v, size_t n)
+{
+    volatile uint8_t *p = (volatile uint8_t *)v;
+    while (n--) {
+        *p++ = 0;
+    }
+}
+
 /**
- * @brief Derive TLS 1.3 RFC 8446 3-stage key schedule.
+ * @brief Derive TLS 1.3 RFC 8446 3-stage key schedule and cache per-record traffic keys/IVs.
  * @param ctx TLS context pointer.
  */
 static void derive_tls13_key_schedule(SYN_TLS_Context *ctx)
@@ -132,6 +160,21 @@ static void derive_tls13_key_schedule(SYN_TLS_Context *ctx)
 
     syn_hkdf_expand_label(ctx->master_secret, 32, "s ap traffic", 12, transcript_digest,
                           SYN_SHA256_DIGEST_SIZE, ctx->server_app_secret, 32);
+
+    /* Cache per-record traffic keys & IVs to eliminate HKDF expansion during record I/O */
+    derive_traffic_key_or_iv(ctx->client_app_secret, "key", ctx->client_app_key, 32);
+    derive_traffic_key_or_iv(ctx->client_app_secret, "iv", ctx->client_app_iv, 12);
+    derive_traffic_key_or_iv(ctx->server_app_secret, "key", ctx->server_app_key, 32);
+    derive_traffic_key_or_iv(ctx->server_app_secret, "iv", ctx->server_app_iv, 12);
+
+    /* Zero sensitive intermediates from stack */
+    syn_secure_zero(psk, sizeof(psk));
+    syn_secure_zero(early_secret, sizeof(early_secret));
+    syn_secure_zero(derived_1, sizeof(derived_1));
+    syn_secure_zero(ecdhe_shared, sizeof(ecdhe_shared));
+    syn_secure_zero(handshake_secret, sizeof(handshake_secret));
+    syn_secure_zero(transcript_digest, sizeof(transcript_digest));
+    syn_secure_zero(derived_2, sizeof(derived_2));
 }
 
 /**
@@ -158,6 +201,7 @@ void syn_tls_bind_transport(SYN_TLS_Context *tls_ctx, SYN_Transport *tr_out)
 
     tr_out->send = tls_transport_send_cb;
     tr_out->recv = tls_transport_recv_cb;
+    tr_out->has_data = tls_transport_has_data_cb;
     tr_out->ctx = tls_ctx;
 }
 
@@ -292,6 +336,7 @@ SYN_PT_Status syn_tls_task(SYN_PT *pt, SYN_Task *task)
     }
 
     while (ctx->state == SYN_TLS_STATE_ESTABLISHED) {
+        PT_WAIT_UNTIL(pt, ctx->state != SYN_TLS_STATE_ESTABLISHED || tls_has_work(ctx));
         PT_YIELD(pt);
     }
 
@@ -328,13 +373,13 @@ bool syn_tls_send(SYN_TLS_Context *ctx, const uint8_t *data, size_t len)
     record_buf[offset++] = (uint8_t)((ciphertext_len >> 8) & 0xFF);
     record_buf[offset++] = (uint8_t)(ciphertext_len & 0xFF);
 
-    uint8_t base_key[32], base_iv[12], nonce[12];
-    derive_traffic_key_or_iv(ctx->client_app_secret, "key", base_key, 32);
-    derive_traffic_key_or_iv(ctx->client_app_secret, "iv", base_iv, 12);
-    construct_tls13_nonce(base_iv, ctx->client_seq_num++, nonce);
+    uint8_t nonce[12];
+    construct_tls13_nonce(ctx->client_app_iv, ctx->client_seq_num++, nonce);
 
-    syn_aead_encrypt(base_key, nonce, NULL, 0, data, len, record_buf + offset,
+    syn_aead_encrypt(ctx->client_app_key, nonce, NULL, 0, data, len, record_buf + offset,
                      record_buf + offset + len);
+
+    syn_secure_zero(nonce, sizeof(nonce));
 
     size_t total_record_len = offset + ciphertext_len;
     return syn_transport_send(ctx->underlying_transport, record_buf, total_record_len);
@@ -379,31 +424,48 @@ bool syn_tls_recv(SYN_TLS_Context *ctx, uint8_t *data, size_t max_len, size_t *o
         return false;
     }
 
-    size_t payload_len = rx_len - TLS_RECORD_HEADER_LEN - 16;
-    if (payload_len > max_len) {
-        payload_len = max_len; /* LCOV_EXCL_LINE: Truncated payload buffer clamp */
+    size_t full_payload_len = rx_len - TLS_RECORD_HEADER_LEN - 16;
+    size_t copy_len = full_payload_len;
+    if (copy_len > max_len) {
+        copy_len = max_len;
     }
 
-    uint8_t base_key[32], base_iv[12], nonce[12];
-    derive_traffic_key_or_iv(ctx->server_app_secret, "key", base_key, 32);
-    derive_traffic_key_or_iv(ctx->server_app_secret, "iv", base_iv, 12);
-    construct_tls13_nonce(base_iv, ctx->server_seq_num, nonce);
+    uint8_t nonce[12];
+    construct_tls13_nonce(ctx->server_app_iv, ctx->server_seq_num, nonce);
 
-    bool ok =
-        syn_aead_decrypt(base_key, nonce, NULL, 0, ctx->rx_buf + TLS_RECORD_HEADER_LEN, payload_len,
-                         ctx->rx_buf + TLS_RECORD_HEADER_LEN + payload_len, data);
-    if (!ok) {
-        derive_traffic_key_or_iv(ctx->client_app_secret, "key", base_key, 32);
-        derive_traffic_key_or_iv(ctx->client_app_secret, "iv", base_iv, 12);
-        construct_tls13_nonce(base_iv, ctx->client_seq_num - 1, nonce);
-        ok = syn_aead_decrypt(base_key, nonce, NULL, 0, ctx->rx_buf + TLS_RECORD_HEADER_LEN,
-                              payload_len, ctx->rx_buf + TLS_RECORD_HEADER_LEN + payload_len, data);
-    } else {
-        ctx->server_seq_num++;
+    bool ok = syn_aead_decrypt(ctx->server_app_key, nonce, NULL, 0,
+                               ctx->rx_buf + TLS_RECORD_HEADER_LEN, full_payload_len,
+                               ctx->rx_buf + TLS_RECORD_HEADER_LEN + full_payload_len, data);
+    if (!ok && ctx->client_seq_num > 0) {
+        /* Fallback: try client app secret (loopback / self-encrypted record).
+         * client_seq_num was post-incremented by syn_tls_send, so the last
+         * encrypted record used seq = client_seq_num - 1. Guard against zero
+         * to prevent uint64 underflow wrap. */
+        construct_tls13_nonce(ctx->client_app_iv, ctx->client_seq_num - 1, nonce);
+        ok = syn_aead_decrypt(ctx->client_app_key, nonce, NULL, 0,
+                              ctx->rx_buf + TLS_RECORD_HEADER_LEN, full_payload_len,
+                              ctx->rx_buf + TLS_RECORD_HEADER_LEN + full_payload_len, data);
     }
 
+    syn_secure_zero(nonce, sizeof(nonce));
+
+    /* Always advance server_seq_num on successful decrypt to maintain nonce uniqueness. */
     if (ok) {
-        *out_len = payload_len;
+        ctx->server_seq_num++;
+        *out_len = copy_len;
+
+        /* If the decrypted record is larger than the caller's buffer, spill the
+         * remainder into the app_rx ring buffer for the next recv call. */
+        if (full_payload_len > max_len) {
+            size_t overflow = full_payload_len - max_len;
+            if (overflow <= sizeof(ctx->app_rx_buf)) {
+                memcpy(ctx->app_rx_buf, data + max_len, overflow);
+                ctx->app_rx_head = 0;
+                ctx->app_rx_tail = overflow;
+            }
+            /* Excess beyond ring buffer capacity is dropped — caller must
+             * supply a buffer of at least SYN_TLS_RECORD_MAX_PAYLOAD. */
+        }
     }
 
     return ok;

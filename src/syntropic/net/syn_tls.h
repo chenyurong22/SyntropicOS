@@ -103,6 +103,11 @@ typedef struct {
     uint8_t server_app_secret[SYN_TLS_SECRET_LEN];       /**< Server application traffic secret */
     uint8_t master_secret[SYN_TLS_SECRET_LEN];           /**< Master secret */
 
+    uint8_t client_app_key[SYN_TLS_SECRET_LEN]; /**< Cached client AEAD key */
+    uint8_t client_app_iv[12];                  /**< Cached client AEAD base IV */
+    uint8_t server_app_key[SYN_TLS_SECRET_LEN]; /**< Cached server AEAD key */
+    uint8_t server_app_iv[12];                  /**< Cached server AEAD base IV */
+
     uint64_t client_seq_num; /**< Encryption record sequence counter */
     uint64_t server_seq_num; /**< Decryption record sequence counter */
 

@@ -570,15 +570,17 @@ static void test_httpd_task_protothread(void)
     task.user_data = &srv;
 
     /* First call: step() accepts + recvs + dispatches (fall-through),
-     * then PT_YIELD returns PT_YIELDED */
+     * then PT_WAIT_UNTIL returns PT_WAITING (no new data) or PT_YIELDED */
     SYN_PT_Status st = syn_httpd_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_YIELDED, st);
+    TEST_ASSERT_NOT_EQUAL(PT_EXITED, st);
+    TEST_ASSERT_NOT_EQUAL(PT_ENDED, st);
     TEST_ASSERT_TRUE(handler_called);
 
-    /* Second call: no client → step returns SYN_TIMEOUT, task yields */
+    /* Second call: no client → step returns SYN_TIMEOUT, task blocks on has_work */
     mock_sock_accept_ok = false;
     st = syn_httpd_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_YIELDED, st);
+    TEST_ASSERT_NOT_EQUAL(PT_EXITED, st);
+    TEST_ASSERT_NOT_EQUAL(PT_ENDED, st);
 }
 
 void test_httpd_extra_coverage(void)

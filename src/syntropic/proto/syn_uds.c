@@ -27,7 +27,7 @@ bool syn_uds_init(SYN_UDS_Server *server)
     memcpy(server->current_seed_bytes, default_seed_16, 16);
     server->s3_timer_ms = 0U;
     server->security_error_count = 0U;
-    server->security_delay_timer_ms = SYN_UDS_SECURITY_DELAY_MS;
+    server->security_delay_timer_ms = 0U;
     server->comm_control_state = SYN_UDS_COMM_ENABLE_RX_AND_TX;
     server->p2_max_ms = 50U;
     server->p2_star_max_10ms = 500U;
@@ -391,21 +391,20 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             }
             resp_buf[0] = sid + 0x40U;
             resp_buf[1] = sub;
+            bool is_unlocked = (server->security_state == SYN_UDS_SECURITY_UNLOCKED);
+            server->security_state = SYN_UDS_SECURITY_SEED_SENT;
             if (server->use_aes128_security) {
-                if (server->security_state == SYN_UDS_SECURITY_UNLOCKED) {
+                if (is_unlocked) {
+                    memset(server->current_seed_bytes, 0, 16);
                     memset(&resp_buf[2], 0, 16);
                 } else {
-                    server->security_state = SYN_UDS_SECURITY_SEED_SENT;
                     memcpy(&resp_buf[2], server->current_seed_bytes, 16);
                 }
                 *resp_len = 18U;
             } else {
-                /* ISO 14229-1 §9.4: If already unlocked, return seed = 0x00000000 */
-                uint32_t seed_to_send = (server->security_state == SYN_UDS_SECURITY_UNLOCKED)
-                                            ? 0x00000000U
-                                            : server->current_seed;
-                if (server->security_state != SYN_UDS_SECURITY_UNLOCKED) {
-                    server->security_state = SYN_UDS_SECURITY_SEED_SENT;
+                uint32_t seed_to_send = is_unlocked ? 0x00000000U : server->current_seed;
+                if (is_unlocked) {
+                    server->current_seed = 0x00000000U;
                 }
                 syn_poke_u32(seed_to_send, resp_buf, 2);
                 *resp_len = 6U;
@@ -427,11 +426,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                 uint8_t expected_key[16];
                 syn_aes128_encrypt_block(&aes_ctx, server->current_seed_bytes, expected_key);
 
-                uint8_t decrypted_seed[16];
-                syn_aes128_decrypt_block(&aes_ctx, &req[2], decrypted_seed);
-
-                if (memcmp(&req[2], expected_key, 16) == 0 &&
-                    memcmp(decrypted_seed, server->current_seed_bytes, 16) == 0) {
+                if (memcmp(&req[2], expected_key, 16) == 0) {
                     server->security_state = SYN_UDS_SECURITY_UNLOCKED;
                     server->security_error_count = 0U;
                     resp_buf[0] = sid + 0x40U;

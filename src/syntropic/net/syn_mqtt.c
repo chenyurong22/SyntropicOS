@@ -515,6 +515,9 @@ void syn_mqtt_disconnect(SYN_MqttClient *client)
     }
     client->state = SYN_MQTT_DISCONNECTED;
     client->rx_phase = SYN_MQTT_RX_IDLE;
+    /* Clear QoS retransmit state — stale IDs must not bleed into next session. */
+    client->pending_puback_id = 0;
+    client->retransmit_len = 0;
 }
 
 /**
@@ -523,7 +526,6 @@ void syn_mqtt_disconnect(SYN_MqttClient *client)
  * @return true if work pending, false otherwise.
  */
 static bool mqtt_has_work(const SYN_MqttClient *c)
-
 {
     if (c == NULL)
         return false;
@@ -531,6 +533,9 @@ static bool mqtt_has_work(const SYN_MqttClient *c)
         return true;
 
     uint32_t now = syn_port_get_tick_ms();
+    if (c->state == SYN_MQTT_CONNECTING && (now - c->last_activity_ms) >= MQTT_ACK_TIMEOUT_MS) {
+        return true;
+    }
     if (c->pending_puback_id != 0 && (now - c->pending_puback_ms) >= MQTT_ACK_TIMEOUT_MS) {
         return true;
     }
@@ -568,6 +573,19 @@ SYN_PT_Status syn_mqtt_task(SYN_PT *pt, SYN_Task *task)
         }
 
         if (c->state == SYN_MQTT_CONNECTING || c->state == SYN_MQTT_CONNECTED) {
+            /* Check CONNECTING response (CONNACK) timeout */
+            if (c->state == SYN_MQTT_CONNECTING) {
+                uint32_t now = syn_port_get_tick_ms();
+                if ((now - c->last_activity_ms) >= MQTT_ACK_TIMEOUT_MS) {
+                    syn_port_sock_close(c->sock);
+                    c->sock = SYN_SOCKET_INVALID;
+                    c->state = SYN_MQTT_DISCONNECTED;
+                    c->rx_phase = SYN_MQTT_RX_IDLE;
+                    PT_TASK_DELAY_MS(pt, task, 5000);
+                    continue;
+                }
+            }
+
             /* Check QoS 1 Puback timeout */
             if (c->pending_puback_id != 0) {
                 uint32_t now = syn_port_get_tick_ms();

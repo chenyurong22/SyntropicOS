@@ -108,10 +108,17 @@ void test_tls_transport_binding_interface(void)
     TEST_ASSERT_EQUAL_MEMORY(payload, rx_buf, rx_len);
 }
 
+static bool loopback_has_data(const void *ctx)
+{
+    const LoopbackTransport *lb = (const LoopbackTransport *)ctx;
+    return (lb != NULL && lb->len > 0);
+}
+
 void test_tls_task_protothread(void)
 {
     LoopbackTransport wire = {0};
-    SYN_Transport tr = {.send = loopback_send, .recv = loopback_recv, .ctx = &wire};
+    SYN_Transport tr = {
+        .send = loopback_send, .recv = loopback_recv, .has_data = loopback_has_data, .ctx = &wire};
     SYN_TLS_Config config = {.mode = SYN_TLS_AUTH_MODE_PSK};
 
     uint8_t rx_record_buf[2560];
@@ -124,9 +131,15 @@ void test_tls_task_protothread(void)
     SYN_PT pt;
     PT_INIT(&pt);
 
-    SYN_PT_Status status = syn_tls_task(&pt, &task);
-    TEST_ASSERT_EQUAL(PT_YIELDED, status);
+    /* When no data on wire, task blocks and returns PT_WAITING */
+    SYN_PT_Status status_empty = syn_tls_task(&pt, &task);
+    TEST_ASSERT_EQUAL(PT_WAITING, status_empty);
     TEST_ASSERT_EQUAL(SYN_TLS_STATE_ESTABLISHED, tls.state);
+
+    /* When data arrives on wire, task wakes up and returns PT_YIELDED */
+    wire.len = 10;
+    SYN_PT_Status status_data = syn_tls_task(&pt, &task);
+    TEST_ASSERT_EQUAL(PT_YIELDED, status_data);
 }
 
 void test_tls_null_and_bounds_checks(void)
@@ -198,6 +211,18 @@ void test_tls_null_and_bounds_checks(void)
     memset(wire.buf, 0x17, 30);
     TEST_ASSERT_FALSE(syn_tls_recv(&psk_tls, rx_buf, sizeof(rx_buf), &rx_len));
 
+    /* Decrypt record spill into app_rx_buf test */
+    wire.len = 0;
+    TEST_ASSERT_TRUE(syn_tls_send(&psk_tls, (const uint8_t *)"SPILL_TEST_DATA", 15));
+    /* Provide max_len = 5 < 15 to spill 10 bytes into app_rx_buf */
+    TEST_ASSERT_TRUE(syn_tls_recv(&psk_tls, rx_buf, 5, &rx_len));
+    TEST_ASSERT_EQUAL(5, rx_len);
+    TEST_ASSERT_EQUAL_MEMORY("SPILL", rx_buf, 5);
+    /* Drain remaining 10 bytes from app_rx_buf */
+    TEST_ASSERT_TRUE(syn_tls_recv(&psk_tls, rx_buf, sizeof(rx_buf), &rx_len));
+    TEST_ASSERT_EQUAL(10, rx_len);
+    TEST_ASSERT_EQUAL_MEMORY("_TEST_DATA", rx_buf, 10);
+
     /* App data ring buffer drain test */
     SYN_TLS_Context ring_tls;
     memset(&ring_tls, 0, sizeof(ring_tls));
@@ -210,6 +235,19 @@ void test_tls_null_and_bounds_checks(void)
     TEST_ASSERT_EQUAL(1, ring_rx_len);
     TEST_ASSERT_EQUAL('X', rx_buf[0]);
 
+    /* Test tls_tr has_data hook and task execution when ring buffer holds data */
+    SYN_Transport bound_tr;
+    syn_tls_bind_transport(&psk_tls, &bound_tr);
+    psk_tls.app_rx_head = 0;
+    psk_tls.app_rx_tail = 5;
+    TEST_ASSERT_TRUE(syn_transport_has_data(&bound_tr));
+    SYN_Task task_ring = {.user_data = &psk_tls};
+    SYN_PT pt_ring;
+    PT_INIT(&pt_ring);
+    TEST_ASSERT_EQUAL(PT_YIELDED, syn_tls_task(&pt_ring, &task_ring));
+    psk_tls.app_rx_head = 0;
+    psk_tls.app_rx_tail = 0;
+
     /* Complete drain to trigger head/tail reset */
     TEST_ASSERT_TRUE(syn_tls_recv(&ring_tls, rx_buf, sizeof(rx_buf), &ring_rx_len));
     TEST_ASSERT_EQUAL(1, ring_rx_len);
@@ -221,6 +259,8 @@ void test_tls_null_and_bounds_checks(void)
         syn_tls_init(&srv_tls, &psk_cfg, &tr, rx_ok, sizeof(rx_ok), tx_ok, sizeof(tx_ok)));
     TEST_ASSERT_TRUE(syn_tls_handshake(&srv_tls));
     memcpy(srv_tls.client_app_secret, srv_tls.server_app_secret, 32);
+    memcpy(srv_tls.client_app_key, srv_tls.server_app_key, 32);
+    memcpy(srv_tls.client_app_iv, srv_tls.server_app_iv, 12);
     wire.len = 0;
     TEST_ASSERT_TRUE(syn_tls_send(&srv_tls, (const uint8_t *)"SERVER_TEST", 11));
     TEST_ASSERT_TRUE(syn_tls_recv(&srv_tls, rx_buf, sizeof(rx_buf), &rx_len));

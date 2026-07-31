@@ -312,7 +312,6 @@ SYN_Status syn_websocket_send(SYN_WebsocketSession *ws, uint8_t opcode, const vo
  * @return true if work pending, false otherwise.
  */
 static bool ws_has_work(const SYN_WebsocketSession *ws)
-
 {
     if (ws == NULL)
         return false;
@@ -324,7 +323,6 @@ static bool ws_has_work(const SYN_WebsocketSession *ws)
 }
 
 SYN_PT_Status syn_websocket_task(SYN_PT *pt, SYN_Task *task)
-
 {
     SYN_WebsocketSession *ws = (SYN_WebsocketSession *)task->user_data;
     SYN_ASSERT(ws != NULL);
@@ -332,7 +330,7 @@ SYN_PT_Status syn_websocket_task(SYN_PT *pt, SYN_Task *task)
     PT_BEGIN(pt);
 
     for (;;) {
-        PT_BLOCK_CONDITION(pt, task, ws->state == SYN_WS_STATE_CONNECTED);
+        PT_WAIT_UNTIL(pt, ws->state == SYN_WS_STATE_CONNECTED);
 
         /* Try to read multiple bytes (non-blocking) */
         uint8_t buf[64];

@@ -406,7 +406,23 @@ static void test_mqtt_state_machine_failures(void)
     mock_tick_advance(5000);
     syn_mqtt_task(&pt, &task);
 
-    /* 3. CONNACK Short Packet (rem_len < 2) */
+    /* 3. CONNECTING CONNACK Timeout */
+    mock_port_reset();
+    PT_INIT(&pt);
+    syn_mqtt_init(&c, "broker.hivemq.com", 1883, "myclient", NULL, NULL, 60, rx, sizeof(rx), tx,
+                  sizeof(tx));
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_MQTT_CONNECTING, c.state);
+    mock_tick_advance(5000);
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
+    TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, c.sock);
+
+    /* Resume task after CONNACK timeout delay to hit continue statement */
+    mock_tick_advance(5000);
+    syn_mqtt_task(&pt, &task);
+
+    /* 4. CONNACK Short Packet (rem_len < 2) */
     mock_port_reset();
     PT_INIT(&pt);
     syn_mqtt_init(&c, "broker.hivemq.com", 1883, "myclient", NULL, NULL, 60, rx, sizeof(rx), tx,
@@ -421,7 +437,7 @@ static void test_mqtt_state_machine_failures(void)
     TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
     TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, c.sock);
 
-    /* 4. CONNACK Non-Zero Code */
+    /* 5. CONNACK Non-Zero Code */
     mock_port_reset();
     PT_INIT(&pt);
     syn_mqtt_init(&c, "broker.hivemq.com", 1883, "myclient", NULL, NULL, 60, rx, sizeof(rx), tx,
@@ -435,7 +451,7 @@ static void test_mqtt_state_machine_failures(void)
     TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
     TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, c.sock);
 
-    /* 5. Socket EOF Closure (n == 0 during poll) */
+    /* 6. Socket EOF Closure (n == 0 during poll) */
     mock_port_reset();
     PT_INIT(&pt);
     syn_mqtt_init(&c, "broker.hivemq.com", 1883, "myclient", NULL, NULL, 60, rx, sizeof(rx), tx,
@@ -448,7 +464,7 @@ static void test_mqtt_state_machine_failures(void)
     TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
     TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, c.sock);
 
-    /* 6. Transmit Failures for Publish/Subscribe */
+    /* 7. Transmit Failures for Publish/Subscribe */
     mock_port_reset();
     syn_mqtt_init(&c, "broker.hivemq.com", 1883, "myclient", NULL, NULL, 60, rx, sizeof(rx), tx,
                   sizeof(tx));
@@ -865,19 +881,22 @@ void test_mqtt_disconnect(void)
     syn_mqtt_disconnect(&c);
     TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
 
-    /* Disconnect when connected */
+    /* Disconnect when connected with stale QoS state */
     c.state = SYN_MQTT_CONNECTED;
     c.sock = 10;
+    c.pending_puback_id = 42;
+    c.retransmit_len = 16;
     mock_sock_connected = true;
     syn_mqtt_disconnect(&c);
 
     TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
     TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, c.sock);
     TEST_ASSERT_EQUAL_UINT8(0xE0, mock_sock_tx_buf[0]); /* DISCONNECT packet */
+    TEST_ASSERT_EQUAL(0, c.pending_puback_id);          /* stale QoS cleared */
+    TEST_ASSERT_EQUAL(0, c.retransmit_len);             /* stale retransmit cleared */
 }
 
 void run_mqtt_tests(void)
-
 {
     RUN_TEST(test_mqtt_connect);
     RUN_TEST(test_mqtt_subscribe);

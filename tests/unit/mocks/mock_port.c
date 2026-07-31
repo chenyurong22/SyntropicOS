@@ -1234,3 +1234,66 @@ void syn_port_memory_barrier(void)
 {
     mock_barrier_count++;
 }
+
+/* ── USB HAL Stubs ─────────────────────────────────────────────────────── */
+
+SYN_WEAK SYN_Status syn_port_usb_init(void)
+{
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_connect(void)
+{
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_disconnect(void)
+{
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_set_address(uint8_t addr)
+{
+    (void)addr;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_ep_open(uint8_t ep_addr, uint8_t ep_type, uint16_t max_pkt)
+{
+    (void)ep_addr;
+    (void)ep_type;
+    (void)max_pkt;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_ep_close(uint8_t ep_addr)
+{
+    (void)ep_addr;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_ep_write(uint8_t ep_addr, const void *data, uint16_t len)
+{
+    (void)ep_addr;
+    (void)data;
+    (void)len;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_ep_read(uint8_t ep_addr, void *buf, uint16_t max_len,
+                                         uint16_t *out_len)
+{
+    (void)ep_addr;
+    (void)buf;
+    (void)max_len;
+    if (out_len) {
+        *out_len = 0;
+    }
+    return SYN_BUSY;
+}
+
+SYN_WEAK SYN_Status syn_port_usb_ep_stall(uint8_t ep_addr)
+{
+    (void)ep_addr;
+    return SYN_OK;
+}

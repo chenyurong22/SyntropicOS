@@ -50,7 +50,10 @@ SYN_SRC  = $(SYN_DIR)/util/syn_ringbuf.c \
             $(SYN_DIR)/util/syn_crc.c \
             $(SYN_DIR)/util/syn_fsm.c \
             $(SYN_DIR)/sched/syn_sched.c \
-            $(SYN_DIR)/sched/syn_timer.c
+            $(SYN_DIR)/sched/syn_timer.c \
+            $(SYN_DIR)/drivers/syn_usb.c \
+            $(SYN_DIR)/drivers/syn_usb_cdc.c \
+            $(SYN_DIR)/drivers/syn_usb_hid.c
 
 # All sources for single-node
 SRCS      = $(PORT_SRC) $(FW_SRC) $(UNITY_SRC) $(SYN_SRC)

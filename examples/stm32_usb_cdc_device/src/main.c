@@ -91,7 +91,7 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 /**
  * @brief Coroutine Task: Echo received bytes back over USB CDC Virtual COM port.
  */
-static PT_THREAD(usb_cdc_echo_task(SYN_PT *pt))
+static SYN_PT_Status usb_cdc_echo_task(SYN_PT *pt)
 {
     PT_BEGIN(pt);
 

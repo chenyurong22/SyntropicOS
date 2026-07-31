@@ -64,7 +64,7 @@ void HAL_HCD_Disconnect_Callback(HCD_HandleTypeDef *hhcd)
 /**
  * @brief Coroutine Task: Communicate with downstream USB serial device.
  */
-static PT_THREAD(usb_host_cdc_task(SYN_PT *pt))
+static SYN_PT_Status usb_host_cdc_task(SYN_PT *pt)
 {
     PT_BEGIN(pt);
 

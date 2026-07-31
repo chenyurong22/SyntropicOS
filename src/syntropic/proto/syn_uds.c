@@ -49,6 +49,8 @@ bool syn_uds_init(SYN_UDS_Server *server)
     server->reset_ctx = NULL;
     server->reset_tx_wait_ms = SYN_UDS_DEFAULT_RESET_TX_WAIT_MS;
     server->reset_wait_elapsed_ms = 0U;
+    server->session_transition_cb = NULL;
+    server->session_transition_ctx = NULL;
 
     return true;
 }
@@ -100,6 +102,15 @@ void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms)
         }
     } else {
         server->reset_wait_elapsed_ms = 0U;
+    }
+}
+
+void syn_uds_set_session_transition_handler(SYN_UDS_Server *server,
+                                            SYN_UDS_SessionTransitionHandler cb, void *ctx)
+{
+    if (server != NULL) {
+        server->session_transition_cb = cb;
+        server->session_transition_ctx = ctx;
     }
 }
 
@@ -276,6 +287,14 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             (sub != SYN_UDS_SESSION_EXTENDED) && (sub != SYN_UDS_SESSION_SAFETY_SYSTEM)) {
             return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
                                           resp_len);
+        }
+
+        if (server->session_transition_cb != NULL) {
+            if (!server->session_transition_cb(server->session, (SYN_UDS_Session)sub,
+                                               server->session_transition_ctx)) {
+                return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                              resp_len);
+            }
         }
 
         server->session = (SYN_UDS_Session)sub;
@@ -1139,6 +1158,10 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         server->transfer_size = size;
         server->transfer_bytes_processed = 0U;
         server->expected_block_seq = 1U;
+
+        if (max_resp_len < 4U) {
+            return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len);
+        }
 
         resp_buf[0] = sid + 0x40U;
         resp_buf[1] = 0x20U;

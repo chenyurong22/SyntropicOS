@@ -149,6 +149,8 @@ extern "C" {
 #define SYN_UDS_NRC_TRANSFER_DATA_SUSPENDED 0x71U     /**< Transfer data suspended (0x71) */
 #define SYN_UDS_NRC_GENERAL_PROGRAMMING_FAILURE 0x72U /**< General programming failure (0x72) */
 #define SYN_UDS_NRC_WRONG_BLOCK_SEQUENCE_COUNTER 0x73U /**< Wrong block sequence counter (0x73) */
+#define SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION \
+    0x7EU /**< Sub-function not supported in active session (0x7E) */
 /**@}*/
 
 /** @brief UDS Data Transfer States */
@@ -307,6 +309,12 @@ typedef bool (*SYN_UDS_DTCHandler)(uint8_t subfunction, const uint8_t *in_data, 
  */
 typedef void (*SYN_UDS_ResetHandler)(uint8_t reset_type, void *ctx);
 
+/**
+ * @brief DiagnosticSessionControl (0x10) session transition rule callback signature.
+ */
+typedef bool (*SYN_UDS_SessionTransitionHandler)(SYN_UDS_Session from_session,
+                                                 SYN_UDS_Session to_session, void *ctx);
+
 /** @name UDS Security & S3 Session Timeout Parameters */
 /**@{*/
 #ifndef SYN_UDS_S3_TIMEOUT_MS
@@ -360,6 +368,9 @@ typedef struct {
     void *reset_ctx;                /**< Context pointer for reset callback. */
     uint16_t reset_tx_wait_ms;      /**< Post-TX ECU reset delay window in ms. */
     uint32_t reset_wait_elapsed_ms; /**< Internal reset delay accumulator in ms. */
+    SYN_UDS_SessionTransitionHandler
+        session_transition_cb;                    /**< Session transition policy callback. */
+    void *session_transition_ctx;                 /**< Session transition context pointer. */
     SYN_UDS_DIDEntry did_table[SYN_UDS_MAX_DIDS]; /**< Registered DID entries array */
     uint8_t did_count;                            /**< Registered DID count */
     SYN_UDS_DTCEntry dtc_table[SYN_UDS_MAX_DTCS]; /**< Registered DTC entries array */
@@ -388,6 +399,16 @@ bool syn_uds_init(SYN_UDS_Server *server);
  * @param dt_ms Milliseconds elapsed since last tick.
  */
 void syn_uds_tick(SYN_UDS_Server *server, uint32_t dt_ms);
+
+/**
+ * @brief Register optional session transition policy callback.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param cb Callback function to validate session transition graph permissions.
+ * @param ctx Context pointer passed to callback function.
+ */
+void syn_uds_set_session_transition_handler(SYN_UDS_Server *server,
+                                            SYN_UDS_SessionTransitionHandler cb, void *ctx);
 
 /**
  * @brief Register deferred post-TX ECU reset handler callback.

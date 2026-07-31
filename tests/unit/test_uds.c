@@ -50,7 +50,7 @@ static void test_uds_init_and_sessions(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SESSION_PROGRAMMING, resp[1]);
     TEST_ASSERT_EQUAL(SYN_UDS_SESSION_PROGRAMMING, g_uds.session);
 
-    /* Extended Session (Allowed from PROGRAMMING) */
+    /* Extended Session (Allowed from PROGRAMMING per ISO 14229-1 default) */
     req[1] = SYN_UDS_SESSION_EXTENDED;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x50, resp[0]);
@@ -66,7 +66,7 @@ static void test_uds_init_and_sessions(void)
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_LOCKED, g_uds.security_state);
     TEST_ASSERT_EQUAL_UINT32(0, g_uds.s3_timer_ms);
 
-    /* Programming Session (Allowed directly from DEFAULT) */
+    /* Programming Session (Allowed directly from DEFAULT per ISO 14229-1 default) */
     req[1] = SYN_UDS_SESSION_PROGRAMMING;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x50, resp[0]);
@@ -79,6 +79,45 @@ static void test_uds_init_and_sessions(void)
     TEST_ASSERT_EQUAL_HEX8(0x50, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SESSION_SAFETY_SYSTEM, resp[1]);
     TEST_ASSERT_EQUAL(SYN_UDS_SESSION_SAFETY_SYSTEM, g_uds.session);
+}
+
+static bool test_session_transition_policy(SYN_UDS_Session from, SYN_UDS_Session to, void *ctx)
+{
+    (void)ctx;
+    /* Custom rule: Default -> Programming directly is disallowed */
+    if ((from == SYN_UDS_SESSION_DEFAULT) && (to == SYN_UDS_SESSION_PROGRAMMING)) {
+        return false;
+    }
+    return true;
+}
+
+static void test_uds_session_transition_policy(void)
+{
+    syn_uds_init(&g_uds);
+    uint8_t req[16] = {SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL, SYN_UDS_SESSION_DEFAULT};
+    uint8_t resp[16] = {0};
+    uint16_t resp_len = 0;
+
+    syn_uds_set_session_transition_handler(&g_uds, test_session_transition_policy, NULL);
+
+    /* DEFAULT -> PROGRAMMING should be rejected with NRC 0x22 */
+    req[1] = SYN_UDS_SESSION_PROGRAMMING;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    /* DEFAULT -> EXTENDED is allowed */
+    req[1] = SYN_UDS_SESSION_EXTENDED;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x50, resp[0]);
+
+    /* EXTENDED -> PROGRAMMING is allowed */
+    req[1] = SYN_UDS_SESSION_PROGRAMMING;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x50, resp[0]);
+
+    syn_uds_set_session_transition_handler(&g_uds, NULL, NULL);
+    syn_uds_set_session_transition_handler(NULL, NULL, NULL);
 }
 
 static void test_uds_s3_timer_tick(void)
@@ -437,6 +476,7 @@ static void test_uds_bounds_and_null_checks(void)
     TEST_ASSERT_FALSE(syn_uds_process_request(&g_uds, req, 2, NULL, sizeof(resp), &resp_len));
     TEST_ASSERT_FALSE(syn_uds_process_request(&g_uds, req, 2, resp, 2, &resp_len));
     TEST_ASSERT_FALSE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), NULL));
+    TEST_ASSERT_EQUAL_HEX8(0U, syn_uds_get_pending_reset(NULL));
 
     /* Register DID overflow */
     syn_uds_init(&g_uds);
@@ -1604,6 +1644,37 @@ static void test_uds_dtc_overflow_and_short_msg_nrcs(void)
     TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 5, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* 12. ReadDTCInformation small resp_buf_size < 6 (Line 666, Line 968) */
+    req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
+    req[1] = SYN_UDS_DTC_REPORT_NUMBER_BY_STATUS_MASK;
+    req[2] = 0xFF;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, 5, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    req[1] = SYN_UDS_DTC_REPORT_BY_STATUS_MASK;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, 5, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    /* 13. ResponseOnEvent small resp_buf_size < 4 (Line 1110) */
+    req[0] = SYN_UDS_SID_RESPONSE_ON_EVENT;
+    req[1] = 0x00; /* stopResponseOnEvent */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, 3, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    /* 14. RequestDownload small resp_buf_size < 4 (Line 1226) */
+    server.security_state = SYN_UDS_SECURITY_UNLOCKED;
+    req[0] = SYN_UDS_SID_REQUEST_DOWNLOAD;
+    req[1] = 0x00; /* dataFormatIdentifier */
+    req[2] = 0x11; /* addrLenFormat: 1 byte addr, 1 byte size */
+    req[3] = 0x10; /* address */
+    req[4] = 0x10; /* size */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 5, resp, 3, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
 }
 
 static void test_uds_read_dtc_additional_subfunctions(void)
@@ -2102,4 +2173,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_remaining_uncovered_paths);
     RUN_TEST(test_uds_remaining_edge_branches);
     RUN_TEST(test_uds_deferred_reset_callback);
+    RUN_TEST(test_uds_session_transition_policy);
 }

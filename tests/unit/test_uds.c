@@ -1780,8 +1780,8 @@ static void test_uds_clear_dtc_group_filtering(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
 
-    /* 3. Clear Powertrain group (0x000000) */
-    req[1] = 0x00;
+    /* 3. Clear Powertrain group (0x100000 / 0x010000) */
+    req[1] = 0x10;
     req[2] = 0x00;
     req[3] = 0x00;
     TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));

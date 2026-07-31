@@ -685,6 +685,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             ((uint32_t)req[1] << 16U) | ((uint32_t)req[2] << 8U) | (uint32_t)req[3];
 
         bool is_all = (group_of_dtc == SYN_UDS_DTC_GROUP_ALL);
+        bool is_emissions = (group_of_dtc == SYN_UDS_DTC_GROUP_EMISSIONS);
         bool is_powertrain =
             (group_of_dtc == SYN_UDS_DTC_GROUP_POWERTRAIN) || (group_of_dtc == 0x010000U);
         bool is_chassis =
@@ -700,7 +701,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             }
         }
 
-        if (!is_all && !is_powertrain && !is_chassis && !is_body && !is_network &&
+        if (!is_all && !is_emissions && !is_powertrain && !is_chassis && !is_body && !is_network &&
             !matches_exact_dtc) {
             return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf,
                                           resp_len);

@@ -118,7 +118,8 @@ extern "C" {
 
 /** @name UDS GroupOfDTC Definitions (ISO 14229-1 / SAE J2012) */
 /**@{*/
-#define SYN_UDS_DTC_GROUP_POWERTRAIN 0x000000U /**< Powertrain DTC group */
+#define SYN_UDS_DTC_GROUP_EMISSIONS 0x000000U  /**< Emissions-related systems DTC group */
+#define SYN_UDS_DTC_GROUP_POWERTRAIN 0x100000U /**< Powertrain DTC group */
 #define SYN_UDS_DTC_GROUP_CHASSIS 0x400000U    /**< Chassis DTC group */
 #define SYN_UDS_DTC_GROUP_BODY 0x800000U       /**< Body DTC group */
 #define SYN_UDS_DTC_GROUP_NETWORK 0xC00000U    /**< Network DTC group */

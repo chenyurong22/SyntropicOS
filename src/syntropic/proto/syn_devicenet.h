@@ -38,7 +38,7 @@ typedef enum {
     SYN_DEVICENET_STATE_BUS_OFF = 3U
 } SYN_DeviceNet_State;
 
-/* CIP Identity Object (Class 0x01) Attributes */
+/** @brief CIP Identity Object (Class 0x01) Attributes */
 typedef struct {
     uint16_t vendor_id;
     uint16_t device_type;
@@ -51,7 +51,7 @@ typedef struct {
     bool quick_connect_enabled;
 } SYN_CIP_Identity;
 
-/* CIP DeviceNet Object (Class 0x03) Attributes */
+/** @brief CIP DeviceNet Object (Class 0x03) Attributes */
 typedef struct {
     uint8_t mac_id;
     SYN_DeviceNet_Baud baud_rate;
@@ -60,7 +60,7 @@ typedef struct {
     uint8_t master_mac_id;
 } SYN_CIP_DeviceNet;
 
-/* CIP Assembly Object (Class 0x04) Context */
+/** @brief CIP Assembly Object (Class 0x04) Context */
 typedef struct {
     uint8_t *input_buf;
     uint8_t input_len;
@@ -68,7 +68,7 @@ typedef struct {
     uint8_t output_len;
 } SYN_CIP_Assembly;
 
-/* DeviceNet Node Context Structure */
+/** @brief DeviceNet Node Context Structure */
 typedef struct {
     SYN_DeviceNet_State state;
     SYN_CIP_Identity identity;

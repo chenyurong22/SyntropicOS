@@ -50,11 +50,12 @@ static void test_uds_init_and_sessions(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SESSION_PROGRAMMING, resp[1]);
     TEST_ASSERT_EQUAL(SYN_UDS_SESSION_PROGRAMMING, g_uds.session);
 
-    /* Extended Session (REJECTED from PROGRAMMING -> NRC 0x22) */
+    /* Extended Session (Allowed from PROGRAMMING) */
     req[1] = SYN_UDS_SESSION_EXTENDED;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x50, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SESSION_EXTENDED, resp[1]);
+    TEST_ASSERT_EQUAL(SYN_UDS_SESSION_EXTENDED, g_uds.session);
 
     /* Default Session resets security lock and S3 timer */
     g_uds.security_state = SYN_UDS_SECURITY_UNLOCKED;
@@ -65,11 +66,12 @@ static void test_uds_init_and_sessions(void)
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_LOCKED, g_uds.security_state);
     TEST_ASSERT_EQUAL_UINT32(0, g_uds.s3_timer_ms);
 
-    /* Programming Session (REJECTED directly from DEFAULT -> NRC 0x22) */
+    /* Programming Session (Allowed directly from DEFAULT) */
     req[1] = SYN_UDS_SESSION_PROGRAMMING;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x50, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SESSION_PROGRAMMING, resp[1]);
+    TEST_ASSERT_EQUAL(SYN_UDS_SESSION_PROGRAMMING, g_uds.session);
 }
 
 static void test_uds_s3_timer_tick(void)

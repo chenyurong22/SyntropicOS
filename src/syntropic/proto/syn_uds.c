@@ -241,19 +241,6 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                           resp_len);
         }
 
-        /* ISO 14229 Session transition rules:
-         * DEFAULT -> PROGRAMMING : Not allowed directly (must enter EXTENDED first).
-         * PROGRAMMING -> EXTENDED : Not allowed directly (must return to DEFAULT first).
-         */
-        if ((server->session == SYN_UDS_SESSION_DEFAULT) && (sub == SYN_UDS_SESSION_PROGRAMMING)) {
-            return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
-                                          resp_len);
-        }
-        if ((server->session == SYN_UDS_SESSION_PROGRAMMING) && (sub == SYN_UDS_SESSION_EXTENDED)) {
-            return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
-                                          resp_len);
-        }
-
         server->session = (SYN_UDS_Session)sub;
         if (server->session == SYN_UDS_SESSION_DEFAULT) {
             server->security_state = SYN_UDS_SECURITY_LOCKED;

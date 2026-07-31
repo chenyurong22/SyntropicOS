@@ -53,8 +53,16 @@ static void on_can_frame_received(uint32_t can_id, const uint8_t data[8], uint8_
 static void on_ecu_reset(uint8_t reset_type, void *ctx)
 {
     (void)ctx;
-    (void)reset_type;
-    /* Execute hardware system reset (e.g. NVIC_SystemReset() on ARM Cortex-M) */
+    switch (reset_type) {
+    case SYN_UDS_RESET_HARD:
+    case SYN_UDS_RESET_KEY_OFF_ON:
+    case SYN_UDS_RESET_SOFT:
+    case SYN_UDS_RESET_ENABLE_RAPID_POWER_SHUTDOWN:
+    case SYN_UDS_RESET_DISABLE_RAPID_POWER_SHUTDOWN:
+    default:
+        /* Execute hardware system reset (e.g. NVIC_SystemReset() on ARM Cortex-M) */
+        break;
+    }
 }
 
 /* Periodic 10ms task servicing ISO-TP transport & UDS request processing */

@@ -224,8 +224,14 @@ static SYN_UDS_Server g_uds;
 
 static void on_ecu_reset(uint8_t reset_type, void *ctx) {
     (void)ctx;
-    (void)reset_type;
-    syn_port_system_reset(); /* Trigger hardware system reset 50 ms after 0x51 response */
+    switch (reset_type) {
+    case SYN_UDS_RESET_HARD:
+    case SYN_UDS_RESET_KEY_OFF_ON:
+    case SYN_UDS_RESET_SOFT:
+    default:
+        syn_port_system_reset(); /* Trigger hardware system reset 50 ms after 0x51 response */
+        break;
+    }
 }
 
 void uds_init(void) {

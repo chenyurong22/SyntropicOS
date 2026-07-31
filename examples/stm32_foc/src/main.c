@@ -20,7 +20,7 @@
 static SYN_PID          s_id_pid;
 static SYN_PID          s_iq_pid;
 static SYN_PID          s_vel_pid;
-static SYN_FOC_Observer s_observer;
+static SYN_FOCObserver  s_observer;
 static volatile q16_t   s_target_iq = 0;
 
 static void stm32_sample_currents(SYN_FOC_ABC *currents)
@@ -50,7 +50,8 @@ void stm32_foc_current_loop_isr(void)
     syn_foc_clarke(&phase_currents, &i_ab);
 
     /* Step 3: Estimate rotor angle theta via Sliding Mode Observer */
-    q16_t theta = syn_foc_observer_update(&s_observer, &i_ab, &i_ab, 1);
+    syn_foc_observer_update(&s_observer, 0, 0, i_ab.alpha, i_ab.beta);
+    q16_t theta = syn_foc_observer_get_angle(&s_observer);
 
     /* Step 4: Forward Park Transform (Stationary AB -> Rotating DQ) */
     SYN_FOC_DQ i_dq;
@@ -88,11 +89,13 @@ int main(void)
     syn_pid_init(&s_vel_pid, &vel_cfg);
 
     /* Initialize Sliding Mode Observer */
-    SYN_FOC_ObserverConfig obs_cfg = {
-        .r                = Q16_FROM_FLOAT(0.5f),
-        .l                = Q16_FROM_FLOAT(0.002f),
-        .k_slide          = Q16_FROM_FLOAT(5.0f),
-        .filter_cutoff_hz = Q16_FROM_FLOAT(200.0f)
+    SYN_FOCObserverConfig obs_cfg = {
+        .R      = Q16_FROM_FLOAT(0.5f),
+        .L      = Q16_FROM_FLOAT(0.002f),
+        .G      = Q16_FROM_FLOAT(5.0f),
+        .dt     = Q16_FROM_FLOAT(0.0001f),
+        .Kp_pll = Q16_FROM_FLOAT(10.0f),
+        .Ki_pll = Q16_FROM_FLOAT(1.0f)
     };
     syn_foc_observer_init(&s_observer, &obs_cfg);
 

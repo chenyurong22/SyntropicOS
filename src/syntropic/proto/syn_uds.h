@@ -27,35 +27,37 @@ extern "C" {
 
 /** @name UDS Service Identifiers (ISO 14229-1 SID) */
 /**@{*/
-#define SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL 0x10U         /**< DiagnosticSessionControl */
-#define SYN_UDS_SID_ECU_RESET 0x11U                          /**< ECUReset */
-#define SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION 0x14U       /**< ClearDiagnosticInformation */
-#define SYN_UDS_SID_READ_DTC_INFORMATION 0x19U               /**< ReadDTCInformation */
-#define SYN_UDS_SID_READ_DATA_BY_IDENTIFIER 0x22U            /**< ReadDataByIdentifier */
-#define SYN_UDS_SID_READ_MEMORY_BY_ADDRESS 0x23U             /**< ReadMemoryByAddress */
-#define SYN_UDS_SID_READ_SCALING_DATA_BY_IDENTIFIER 0x24U    /**< ReadScalingDataByIdentifier */
-#define SYN_UDS_SID_SECURITY_ACCESS 0x27U                    /**< SecurityAccess */
-#define SYN_UDS_SID_COMMUNICATION_CONTROL 0x28U              /**< CommunicationControl */
-#define SYN_UDS_SID_AUTHENTICATION 0x29U                     /**< Authentication */
-#define SYN_UDS_SID_READ_DATA_BY_PERIODIC_IDENTIFIER 0x2AU   /**< ReadDataByPeriodicIdentifier */
-#define SYN_UDS_SID_DYNAMICALLY_DEFINE_DATA_IDENTIFIER 0x2CU /**< DynamicallyDefineDataIdentifier \
-                                                              */
-#define SYN_UDS_SID_WRITE_DATA_BY_IDENTIFIER 0x2EU           /**< WriteDataByIdentifier */
-#define SYN_UDS_SID_INPUT_OUTPUT_CONTROL_BY_IDENTIFIER 0x2FU /**< InputOutputControlByIdentifier \
-                                                              */
-#define SYN_UDS_SID_ROUTINE_CONTROL 0x31U                    /**< RoutineControl */
-#define SYN_UDS_SID_REQUEST_DOWNLOAD 0x34U                   /**< RequestDownload */
-#define SYN_UDS_SID_REQUEST_UPLOAD 0x35U                     /**< RequestUpload */
-#define SYN_UDS_SID_TRANSFER_DATA 0x36U                      /**< TransferData */
-#define SYN_UDS_SID_REQUEST_TRANSFER_EXIT 0x37U              /**< RequestTransferExit */
-#define SYN_UDS_SID_REQUEST_FILE_TRANSFER 0x38U              /**< RequestFileTransfer */
-#define SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS 0x3DU            /**< WriteMemoryByAddress */
-#define SYN_UDS_SID_TESTER_PRESENT 0x3EU                     /**< TesterPresent */
-#define SYN_UDS_SID_ACCESS_TIMING_PARAMETER 0x83U            /**< AccessTimingParameter */
-#define SYN_UDS_SID_SECURED_DATA_TRANSMISSION 0x84U          /**< SecuredDataTransmission */
-#define SYN_UDS_SID_CONTROL_DTC_SETTING 0x85U                /**< ControlDTCSetting */
-#define SYN_UDS_SID_RESPONSE_ON_EVENT 0x86U                  /**< ResponseOnEvent */
-#define SYN_UDS_SID_LINK_CONTROL 0x87U                       /**< LinkControl */
+#define SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL 0x10U       /**< DiagnosticSessionControl */
+#define SYN_UDS_SID_ECU_RESET 0x11U                        /**< ECUReset */
+#define SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION 0x14U     /**< ClearDiagnosticInformation */
+#define SYN_UDS_SID_READ_DTC_INFORMATION 0x19U             /**< ReadDTCInformation */
+#define SYN_UDS_SID_READ_DATA_BY_IDENTIFIER 0x22U          /**< ReadDataByIdentifier */
+#define SYN_UDS_SID_READ_MEMORY_BY_ADDRESS 0x23U           /**< ReadMemoryByAddress */
+#define SYN_UDS_SID_READ_SCALING_DATA_BY_IDENTIFIER 0x24U  /**< ReadScalingDataByIdentifier */
+#define SYN_UDS_SID_SECURITY_ACCESS 0x27U                  /**< SecurityAccess */
+#define SYN_UDS_SID_COMMUNICATION_CONTROL 0x28U            /**< CommunicationControl */
+#define SYN_UDS_SID_AUTHENTICATION 0x29U                   /**< Authentication */
+#define SYN_UDS_SID_READ_DATA_BY_PERIODIC_IDENTIFIER 0x2AU /**< ReadDataByPeriodicIdentifier */
+#define SYN_UDS_SID_DYNAMICALLY_DEFINE_DATA_IDENTIFIER                                  \
+    0x2CU                                          /**< DynamicallyDefineDataIdentifier \
+                                                    */
+#define SYN_UDS_SID_WRITE_DATA_BY_IDENTIFIER 0x2EU /**< WriteDataByIdentifier */
+#define SYN_UDS_SID_INPUT_OUTPUT_CONTROL_BY_IDENTIFIER                                  \
+    0x2FU                                           /**< InputOutputControlByIdentifier \
+                                                     */
+#define SYN_UDS_SID_ROUTINE_CONTROL 0x31U           /**< RoutineControl */
+#define SYN_UDS_SID_REQUEST_DOWNLOAD 0x34U          /**< RequestDownload */
+#define SYN_UDS_SID_REQUEST_UPLOAD 0x35U            /**< RequestUpload */
+#define SYN_UDS_SID_TRANSFER_DATA 0x36U             /**< TransferData */
+#define SYN_UDS_SID_REQUEST_TRANSFER_EXIT 0x37U     /**< RequestTransferExit */
+#define SYN_UDS_SID_REQUEST_FILE_TRANSFER 0x38U     /**< RequestFileTransfer */
+#define SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS 0x3DU   /**< WriteMemoryByAddress */
+#define SYN_UDS_SID_TESTER_PRESENT 0x3EU            /**< TesterPresent */
+#define SYN_UDS_SID_ACCESS_TIMING_PARAMETER 0x83U   /**< AccessTimingParameter */
+#define SYN_UDS_SID_SECURED_DATA_TRANSMISSION 0x84U /**< SecuredDataTransmission */
+#define SYN_UDS_SID_CONTROL_DTC_SETTING 0x85U       /**< ControlDTCSetting */
+#define SYN_UDS_SID_RESPONSE_ON_EVENT 0x86U         /**< ResponseOnEvent */
+#define SYN_UDS_SID_LINK_CONTROL 0x87U              /**< LinkControl */
 /**@}*/
 
 /** @name UDS Service 0x11 ECUReset Sub-functions (ISO 14229-1) */
@@ -69,12 +71,14 @@ extern "C" {
 
 /** @name UDS Service 0x19 ReadDTCInformation Sub-functions */
 /**@{*/
-#define SYN_UDS_DTC_REPORT_NUMBER_BY_STATUS_MASK 0x01U   /**< Report number of DTCs by status mask \
-                                                          */
-#define SYN_UDS_DTC_REPORT_BY_STATUS_MASK 0x02U          /**< Report DTCs by status mask */
-#define SYN_UDS_DTC_REPORT_SNAPSHOT_IDENTIFICATION 0x03U /**< Report DTC snapshot identification \
-                                                          */
-#define SYN_UDS_DTC_REPORT_SNAPSHOT_RECORD_BY_DTC 0x04U  /**< Report DTC snapshot record by DTC */
+#define SYN_UDS_DTC_REPORT_NUMBER_BY_STATUS_MASK                                          \
+    0x01U                                       /**< Report number of DTCs by status mask \
+                                                 */
+#define SYN_UDS_DTC_REPORT_BY_STATUS_MASK 0x02U /**< Report DTCs by status mask */
+#define SYN_UDS_DTC_REPORT_SNAPSHOT_IDENTIFICATION                                              \
+    0x03U                                               /**< Report DTC snapshot identification \
+                                                         */
+#define SYN_UDS_DTC_REPORT_SNAPSHOT_RECORD_BY_DTC 0x04U /**< Report DTC snapshot record by DTC */
 #define SYN_UDS_DTC_REPORT_STORED_DATA_BY_RECORD_NUM \
     0x05U                                               /**< Report stored data by record number */
 #define SYN_UDS_DTC_REPORT_EXT_DATA_RECORD_BY_DTC 0x06U /**< Report extended data record by DTC */
@@ -85,9 +89,10 @@ extern "C" {
 #define SYN_UDS_DTC_REPORT_SUPPORTED 0x0AU         /**< Report supported DTCs */
 #define SYN_UDS_DTC_REPORT_FIRST_TEST_FAILED 0x0BU /**< Report first test failed DTC */
 #define SYN_UDS_DTC_REPORT_FIRST_CONFIRMED 0x0CU   /**< Report first confirmed DTC */
-#define SYN_UDS_DTC_REPORT_MOST_RECENT_TEST_FAILED 0x0DU /**< Report most recent test failed DTC \
-                                                          */
-#define SYN_UDS_DTC_REPORT_MOST_RECENT_CONFIRMED 0x0EU   /**< Report most recent confirmed DTC */
+#define SYN_UDS_DTC_REPORT_MOST_RECENT_TEST_FAILED                                             \
+    0x0DU                                              /**< Report most recent test failed DTC \
+                                                        */
+#define SYN_UDS_DTC_REPORT_MOST_RECENT_CONFIRMED 0x0EU /**< Report most recent confirmed DTC */
 #define SYN_UDS_DTC_REPORT_MIRROR_MEMORY_BY_STATUS_MASK \
     0x0FU                                               /**< Report mirror memory by status mask */
 #define SYN_UDS_DTC_REPORT_MIRROR_MEMORY_EXT_DATA 0x10U /**< Report mirror memory extended data */
@@ -256,8 +261,9 @@ typedef struct {
 #define SYN_UDS_DTC_STATUS_TEST_FAILED_SINCE_LAST_CLEAR (1U << 5) /**< Test failed since clear */
 #define SYN_UDS_DTC_STATUS_TEST_NOT_COMPLETED_THIS_OP_CYCLE \
     (1U << 6) /**< Test not completed this op cycle */
-#define SYN_UDS_DTC_STATUS_WARNING_INDICATOR_REQUESTED (1U << 7) /**< Warning indicator requested \
-                                                                  */
+#define SYN_UDS_DTC_STATUS_WARNING_INDICATOR_REQUESTED \
+    (1U << 7) /**< Warning indicator requested         \
+               */
 /**@}*/
 
 /** @name ISO 14229-1 DTCSeverityByte Definitions (Bits 7..5) */

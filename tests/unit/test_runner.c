@@ -650,16 +650,42 @@ int main(void)
     RUN_TEST(test_blackbox_varint);
     RUN_TEST(test_blackbox_encode_intra_and_delta);
     RUN_TEST(test_blackbox_null_checks);
-    extern void test_usb_cdc_null_checks(void);
     extern void test_eth_generate_mac(void);
     extern void test_eth_init(void);
 
+    extern void test_usb_init_and_state(void);
+    extern void test_usb_set_address_and_config(void);
+    extern void test_usb_get_descriptors(void);
+    extern void test_usb_class_registration_and_routing(void);
+    extern void test_usb_raw_config_override(void);
+    extern void test_usb_null_checks(void);
+
+    RUN_TEST(test_usb_init_and_state);
+    RUN_TEST(test_usb_set_address_and_config);
+    RUN_TEST(test_usb_get_descriptors);
+    RUN_TEST(test_usb_class_registration_and_routing);
+    RUN_TEST(test_usb_raw_config_override);
+    RUN_TEST(test_usb_null_checks);
+
+    extern void test_usb_cdc_registration(void);
+    extern void test_usb_cdc_transport_bridge(void);
+
     RUN_TEST(test_usb_cdc_init);
+    RUN_TEST(test_usb_cdc_registration);
     RUN_TEST(test_usb_cdc_setup_requests);
     RUN_TEST(test_usb_cdc_read_write);
+    RUN_TEST(test_usb_cdc_transport_bridge);
     RUN_TEST(test_usb_cdc_null_checks);
-    extern void test_usb_cdc_extended_edge_cases(void);
-    RUN_TEST(test_usb_cdc_extended_edge_cases);
+
+    extern void test_usb_hid_init_and_register(void);
+    extern void test_usb_hid_report_send_and_read(void);
+    extern void test_usb_hid_class_requests(void);
+    extern void test_usb_hid_null_checks(void);
+
+    RUN_TEST(test_usb_hid_init_and_register);
+    RUN_TEST(test_usb_hid_report_send_and_read);
+    RUN_TEST(test_usb_hid_class_requests);
+    RUN_TEST(test_usb_hid_null_checks);
     RUN_TEST(test_eth_generate_mac);
     RUN_TEST(test_eth_init);
     RUN_TEST(test_eth_arp_cache);

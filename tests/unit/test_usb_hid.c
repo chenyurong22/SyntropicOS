@@ -1,0 +1,113 @@
+/**
+ * @file test_usb_hid.c
+ * @brief Unit tests for Zero-Heap USB 2.0 Human Interface Device (HID) Class Driver.
+ */
+
+#include "syntropic/drivers/syn_usb_hid.h"
+#include "unity/unity.h"
+
+#include <string.h>
+
+static const uint8_t SAMPLE_REPORT_DESC[24] = {
+    0x05, 0x01,       /* Usage Page (Generic Desktop) */
+    0x09, 0x00,       /* Usage (Undefined) */
+    0xA1, 0x01,       /* Collection (Application) */
+    0x09, 0x01,       /* Usage (Pointer) */
+    0x15, 0x00,       /* Logical Minimum (0) */
+    0x26, 0xFF, 0x00, /* Logical Maximum (255) */
+    0x75, 0x08,       /* Report Size (8 bits) */
+    0x95, 0x08,       /* Report Count (8 bytes) */
+    0x81, 0x02,       /* Input (Data, Variable, Absolute) */
+    0xC0              /* End Collection */
+};
+
+static const uint8_t TEST_DEVICE_DESC[18] = {0x12, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x40, 0xFE,
+                                             0xCA, 0xEF, 0xBE, 0x00, 0x01, 0x01, 0x02, 0x00, 0x01};
+
+void test_usb_hid_init_and_register(void)
+{
+    SYN_USB_Device dev;
+    SYN_USB_HID hid;
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_init(&dev, TEST_DEVICE_DESC));
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_hid_init(&hid));
+    TEST_ASSERT_EQUAL_UINT8(0x83, hid.ep_in);
+
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_usb_hid_register(&dev, &hid, SAMPLE_REPORT_DESC, sizeof(SAMPLE_REPORT_DESC)));
+    TEST_ASSERT_EQUAL_UINT8(0, hid.iface_num);
+}
+
+void test_usb_hid_report_send_and_read(void)
+{
+    SYN_USB_HID hid;
+    syn_usb_hid_init(&hid);
+
+    const uint8_t sample_data[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    TEST_ASSERT_FALSE(syn_usb_hid_report_available(&hid));
+    TEST_ASSERT_TRUE(syn_usb_hid_tx_ready(&hid));
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_hid_send_report(&hid, sample_data, sizeof(sample_data)));
+    TEST_ASSERT_FALSE(syn_usb_hid_tx_ready(&hid));
+    TEST_ASSERT_EQUAL_UINT16(8, hid.tx_len);
+
+    /* Simulate OUT report received */
+    memcpy(hid.rx_buf, sample_data, sizeof(sample_data));
+    hid.rx_len = sizeof(sample_data);
+
+    TEST_ASSERT_TRUE(syn_usb_hid_report_available(&hid));
+
+    uint8_t read_buf[16] = {0};
+    size_t out_len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_OK,
+                          syn_usb_hid_read_report(&hid, read_buf, sizeof(read_buf), &out_len));
+    TEST_ASSERT_EQUAL_INT(8, out_len);
+    TEST_ASSERT_EQUAL_MEMORY(sample_data, read_buf, 8);
+    TEST_ASSERT_FALSE(syn_usb_hid_report_available(&hid));
+}
+
+void test_usb_hid_class_requests(void)
+{
+    SYN_USB_Device dev;
+    SYN_USB_HID hid;
+
+    syn_usb_init(&dev, TEST_DEVICE_DESC);
+    syn_usb_hid_init(&hid);
+    syn_usb_hid_register(&dev, &hid, SAMPLE_REPORT_DESC, sizeof(SAMPLE_REPORT_DESC));
+
+    SYN_USB_SetupPacket pkt = {.bmRequestType = 0x21,
+                               .bRequest = SYN_USB_HID_REQ_SET_IDLE,
+                               .wValue = (10U << 8), /* 40ms idle rate */
+                               .wIndex = 0,
+                               .wLength = 0};
+    uint8_t resp[64];
+    uint16_t rlen = 0;
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_process_setup(&dev, &pkt, resp, &rlen));
+    TEST_ASSERT_EQUAL_UINT8(10, hid.idle_rate);
+
+    pkt.bRequest = SYN_USB_HID_REQ_GET_IDLE;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_process_setup(&dev, &pkt, resp, &rlen));
+    TEST_ASSERT_EQUAL_UINT16(1, rlen);
+    TEST_ASSERT_EQUAL_UINT8(10, resp[0]);
+
+    /* Get Report Descriptor */
+    pkt.bmRequestType = 0x81;
+    pkt.bRequest = SYN_USB_REQ_GET_DESCRIPTOR;
+    pkt.wValue = (0x22U << 8);
+    pkt.wLength = sizeof(SAMPLE_REPORT_DESC);
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_usb_process_setup(&dev, &pkt, resp, &rlen));
+    TEST_ASSERT_EQUAL_UINT16(sizeof(SAMPLE_REPORT_DESC), rlen);
+    TEST_ASSERT_EQUAL_MEMORY(SAMPLE_REPORT_DESC, resp, rlen);
+}
+
+void test_usb_hid_null_checks(void)
+{
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_usb_hid_init(NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_usb_hid_register(NULL, NULL, NULL, 0));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_usb_hid_send_report(NULL, NULL, 0));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_usb_hid_read_report(NULL, NULL, 0, NULL));
+    TEST_ASSERT_FALSE(syn_usb_hid_report_available(NULL));
+    TEST_ASSERT_FALSE(syn_usb_hid_tx_ready(NULL));
+}

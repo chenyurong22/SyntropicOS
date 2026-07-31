@@ -7,6 +7,66 @@
 
 #include <string.h>
 
+/** Standard CDC Interface Descriptor Assembly (2 interfaces, 3 endpoints, 67 bytes) */
+static const uint8_t CDC_INTERFACE_DESC[67] = {
+    /* Interface Association Descriptor (IAD) */
+    0x08, 0x0B, 0x00, 0x02, 0x02, 0x02, 0x01, 0x00,
+
+    /* Interface 0: Communication Interface Class */
+    0x09, 0x04, 0x00, 0x00, 0x01, 0x02, 0x02, 0x01, 0x00,
+    /* Header Functional Descriptor */
+    0x05, 0x24, 0x00, 0x10, 0x01,
+    /* Call Management Functional Descriptor */
+    0x05, 0x24, 0x01, 0x00, 0x01,
+    /* ACM Functional Descriptor */
+    0x04, 0x24, 0x02, 0x02,
+    /* Union Functional Descriptor */
+    0x05, 0x24, 0x06, 0x00, 0x01,
+    /* Endpoint 0x82: Interrupt IN */
+    0x07, 0x05, 0x82, 0x03, 0x08, 0x00, 0x10,
+
+    /* Interface 1: Data Interface Class */
+    0x09, 0x04, 0x01, 0x00, 0x02, 0x0A, 0x00, 0x00, 0x00,
+    /* Endpoint 0x01: Bulk OUT */
+    0x07, 0x05, 0x01, 0x02, 0x40, 0x00, 0x00,
+    /* Endpoint 0x81: Bulk IN */
+    0x07, 0x05, 0x81, 0x02, 0x40, 0x00, 0x00};
+
+/**
+ * @brief Setup request callback wrapper for CDC class requests.
+ *
+ * @param ctx Pointer to SYN_USB_CDC instance.
+ * @param pkt Pointer to received Setup Packet.
+ * @param resp Output buffer for data stage response.
+ * @param rlen Pointer to receive response length.
+ * @return SYN_OK on success.
+ */
+static SYN_Status cdc_class_setup(void *ctx, const SYN_USB_SetupPacket *pkt, uint8_t *resp,
+                                  uint16_t *rlen)
+{
+    SYN_USB_CDC *cdc = (SYN_USB_CDC *)ctx;
+    size_t size_rlen = 0;
+    SYN_Status st = syn_usb_cdc_handle_setup(cdc, pkt, resp, &size_rlen);
+    *rlen = (uint16_t)size_rlen;
+    return st;
+}
+
+/**
+ * @brief Configured callback wrapper for CDC class.
+ *
+ * @param ctx Pointer to SYN_USB_CDC instance.
+ * @param config Configuration index (0 = unconfigured).
+ * @return SYN_OK on success.
+ */
+static SYN_Status cdc_class_configured(void *ctx, uint8_t config)
+{
+    SYN_USB_CDC *cdc = (SYN_USB_CDC *)ctx;
+    if (cdc) {
+        cdc->configured = (config != 0U);
+    }
+    return SYN_OK;
+}
+
 SYN_Status syn_usb_cdc_init(SYN_USB_CDC *cdc)
 {
     if (!cdc) {
@@ -25,6 +85,23 @@ SYN_Status syn_usb_cdc_init(SYN_USB_CDC *cdc)
     cdc->line_coding.data_bits = 8;
 
     return SYN_OK;
+}
+
+SYN_Status syn_usb_cdc_register(SYN_USB_Device *dev, SYN_USB_CDC *cdc)
+{
+    if (!dev || !cdc) {
+        return SYN_INVALID_PARAM;
+    }
+
+    SYN_USB_ClassDriver cls;
+    memset(&cls, 0, sizeof(cls));
+    cls.iface_start = 0U;
+    cls.iface_count = 2U;
+    cls.ctx = cdc;
+    cls.setup = cdc_class_setup;
+    cls.configured = cdc_class_configured;
+
+    return syn_usb_register_class(dev, &cls, CDC_INTERFACE_DESC, sizeof(CDC_INTERFACE_DESC));
 }
 
 SYN_Status syn_usb_cdc_handle_setup(SYN_USB_CDC *cdc, const SYN_USB_SetupPacket *setup,
@@ -46,7 +123,7 @@ SYN_Status syn_usb_cdc_handle_setup(SYN_USB_CDC *cdc, const SYN_USB_SetupPacket 
         return SYN_OK;
 
     case SYN_USB_CDC_SET_LINE_CODING:
-        /* Line coding response parsing done on data stage */
+        /* Line coding data stage handler can update active parameters */
         return SYN_OK;
 
     case SYN_USB_CDC_GET_LINE_CODING:
@@ -111,4 +188,14 @@ SYN_Status syn_usb_cdc_read(SYN_USB_CDC *cdc, void *buf, size_t max_len, size_t 
     }
 
     return SYN_OK;
+}
+
+bool syn_usb_cdc_rx_available(const SYN_USB_CDC *cdc)
+{
+    return (cdc != NULL) && (cdc->rx_len > 0U);
+}
+
+bool syn_usb_cdc_tx_ready(const SYN_USB_CDC *cdc)
+{
+    return (cdc != NULL) && (cdc->tx_len == 0U);
 }

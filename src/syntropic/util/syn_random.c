@@ -32,14 +32,12 @@ uint32_t syn_random_range(uint32_t min, uint32_t max)
     return min + (syn_random_u32() % range);
 }
 
-/* Weak fallback: NOT SECURE. Platform port must override this. */
-SYN_WEAK SYN_Status syn_port_random_fill(
-    void *buf,
-    size_t len) /* LCOV_EXCL_LINE: Weak hardware port stub overridable by platform port */
+/* LCOV_EXCL_START: Weak hardware port stub overridable by platform port */
+SYN_WEAK SYN_Status syn_port_random_fill(void *buf, size_t len)
 {
-    return syn_random_fallback_fill(
-        buf, len); /* LCOV_EXCL_LINE: Weak hardware port stub overridable by platform port */
+    return syn_random_fallback_fill(buf, len);
 }
+/* LCOV_EXCL_STOP */
 
 /**
  * @brief Internal: XOR-shift fallback for when no hardware entropy is available.

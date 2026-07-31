@@ -346,6 +346,7 @@ static bool pop_stack(SYN_WASM_Context *ctx, uint32_t *val)
     return true;
 }
 
+#if !defined(SYN_WASM_USE_FIXED) || !SYN_WASM_USE_FIXED
 static bool push_f32(SYN_WASM_Context *ctx, float val)
 {
     uint32_t u32;
@@ -380,6 +381,7 @@ static bool pop_f64(SYN_WASM_Context *ctx, double *val)
     memcpy(val, &v64, sizeof(v64));
     return true;
 }
+#endif
 
 static void skip_instruction_immediates(uint8_t op, const uint8_t *bytes, uint32_t size,
                                         uint32_t *pc)
@@ -2258,9 +2260,6 @@ SYN_WASM_Status syn_wasm_step(SYN_WASM_Context *ctx, uint16_t max_instructions)
     }
 
     return ctx->status;
-}
-void syn_wasm_dummy_touch(void)
-{
 }
 
 /** @endcond */

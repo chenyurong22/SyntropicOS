@@ -387,6 +387,39 @@ static void test_wasm_extended_traps_and_nulls(void)
     syn_wasm_step(&ctx, 10);
 }
 
+static void test_wasm_native_f64_ops(void)
+{
+    TEST_ASSERT_TRUE(syn_wasm_init(&g_wasm_ctx, &g_wasm_mod, g_linear_mem, sizeof(g_linear_mem)));
+
+    /* Bytecode: i64.const 42, f64.const 2.0, f64.abs, end */
+    double v1 = -2.0;
+    uint8_t code_f64[30];
+    code_f64[0] = 0x42; /* OP_I64_CONST */
+    code_f64[1] = 42;   /* LEB128 42 */
+    code_f64[2] = 0x44; /* OP_F64_CONST */
+    memcpy(&code_f64[3], &v1, 8);
+    code_f64[11] = 0x99; /* OP_F64_ABS */
+    code_f64[12] = 0x0B; /* OP_END */
+
+    SYN_WASM_Module mod_f64;
+    memset(&mod_f64, 0, sizeof(mod_f64));
+    mod_f64.bytes = code_f64;
+    mod_f64.size = 13;
+    mod_f64.func_count = 1;
+    mod_f64.funcs[0].code_offset = 0;
+    mod_f64.funcs[0].code_size = 13;
+
+    g_wasm_ctx.module = &mod_f64;
+    g_wasm_ctx.call_depth = 1;
+    g_wasm_ctx.call_stack[0].func_idx = 0;
+    g_wasm_ctx.call_stack[0].return_pc = 0;
+    g_wasm_ctx.pc = 0;
+    g_wasm_ctx.sp = 0;
+    g_wasm_ctx.status = SYN_WASM_OK;
+
+    TEST_ASSERT_EQUAL(SYN_WASM_HALTED, syn_wasm_step(&g_wasm_ctx, 100));
+}
+
 void run_wasm_tests(void)
 {
     RUN_TEST(test_wasm_load_null_and_invalid);
@@ -396,6 +429,7 @@ void run_wasm_tests(void)
     RUN_TEST(test_wasm_host_function_registration);
     RUN_TEST(test_wasm_float_and_bulk_memory);
     RUN_TEST(test_wasm_fixed_point_float_ops);
+    RUN_TEST(test_wasm_native_f64_ops);
     RUN_TEST(test_wasm_fixture_arithmetic);
     RUN_TEST(test_wasm_fixture_memory);
     RUN_TEST(test_wasm_fixture_functions);

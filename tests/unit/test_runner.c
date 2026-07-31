@@ -738,7 +738,9 @@ int main(void)
     extern void run_tcp_tests(void);
     extern void run_udp_tests(void);
     extern void run_net_transport_udp_tests(void);
-    extern void run_uds_tests(void);
+    extern void run_uds_util_tests(void);
+    run_uds_tests();
+    run_uds_util_tests();
 
     RUN_TEST(test_igmp_init);
     RUN_TEST(test_igmp_join_and_leave);
@@ -754,6 +756,7 @@ int main(void)
     run_modbus_master_tests();
     run_lut_tests();
     run_uds_tests();
+    run_uds_util_tests();
 
     return UNITY_END();
 }

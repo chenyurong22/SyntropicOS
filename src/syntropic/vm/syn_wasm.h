@@ -90,55 +90,58 @@ typedef struct SYN_WASM_Context_s SYN_WASM_Context;
  */
 typedef uint64_t (*SYN_WASM_HostFunc)(SYN_WASM_Context *ctx, const uint64_t *args, uint8_t argc);
 
-/* ── Module Metadata (Zero-Heap Flash References) ────────────────────────── */
-
+/** @brief WebAssembly function definition metadata */
 typedef struct {
-    uint32_t type_idx;
-    uint32_t code_offset;
-    uint32_t code_size;
-    uint8_t param_count;
-    uint8_t result_count;
+    uint32_t type_idx;    /**< Type section index */
+    uint32_t code_offset; /**< Code offset in module bytes */
+    uint32_t code_size;   /**< Size of bytecode instructions */
+    uint8_t param_count;  /**< Number of input parameters */
+    uint8_t result_count; /**< Number of return values */
 } SYN_WASM_FuncDef;
 
+/** @brief Parsed WebAssembly module header and export registry */
 typedef struct {
-    const uint8_t *bytes;
-    uint32_t size;
+    const uint8_t *bytes; /**< Pointer to raw WebAssembly binary */
+    uint32_t size;        /**< Size of binary in bytes */
 
-    SYN_WASM_FuncDef funcs[SYN_WASM_MAX_FUNCTIONS];
-    uint16_t func_count;
-    uint16_t import_func_count;
+    SYN_WASM_FuncDef funcs[SYN_WASM_MAX_FUNCTIONS]; /**< Function registry */
+    uint16_t func_count;                            /**< Total function count */
+    uint16_t import_func_count;                     /**< Imported host function count */
 
     struct {
-        uint32_t name_offset;
-        uint16_t name_len;
-        uint16_t func_idx;
-    } exports[SYN_WASM_MAX_FUNCTIONS];
-    uint16_t export_count;
+        uint32_t name_offset;          /**< Export name offset */
+        uint16_t name_len;             /**< Export name length */
+        uint16_t func_idx;             /**< Function index */
+    } exports[SYN_WASM_MAX_FUNCTIONS]; /**< Export registry */
+    uint16_t export_count;             /**< Export count */
 
-    uint16_t table_elements[64];
-    uint16_t table_element_count;
+    uint16_t table_elements[64];  /**< Element table for indirect calls */
+    uint16_t table_element_count; /**< Element count */
 
-    uint32_t start_func_idx;
-    bool has_start_func;
+    uint32_t start_func_idx; /**< Start function index */
+    bool has_start_func;     /**< True if module has start function */
 } SYN_WASM_Module;
 
 /* ── Runtime Call Frame & Label Stacks ───────────────────────────────────── */
 
+/** @brief WebAssembly runtime call frame */
 typedef struct {
-    uint16_t func_idx;
-    uint32_t return_pc;
-    uint32_t frame_sp;
-    uint16_t local_base;
+    uint16_t func_idx;   /**< Called function index */
+    uint32_t return_pc;  /**< Return program counter */
+    uint32_t frame_sp;   /**< Frame operand stack pointer */
+    uint16_t local_base; /**< Base index in locals array */
 } SYN_WASM_CallFrame;
 
+/** @brief WebAssembly control flow label stack entry */
 typedef struct {
-    uint8_t opcode; /* 0x02 block, 0x03 loop, 0x04 if */
-    uint32_t target_pc;
-    uint32_t stack_sp;
+    uint8_t opcode;     /**< Opcode: 0x02 block, 0x03 loop, 0x04 if */
+    uint32_t target_pc; /**< Target program counter on break */
+    uint32_t stack_sp;  /**< Operand stack pointer on entry */
 } SYN_WASM_Label;
 
 /* ── Runtime Execution Context ────────────────────────────────────────────── */
 
+/** @brief WebAssembly virtual machine execution context */
 struct SYN_WASM_Context_s {
     const SYN_WASM_Module *module;
 

@@ -213,33 +213,28 @@ SyntropicOS includes a zero-heap UDS ISO 14229 diagnostic server engine operatin
 
 ### 0x11 ECU Reset Deferred Integration
 
-When handling `0x11 ECUReset` requests, the ECU **must** transmit the positive ACK payload (`0x51 <sub-function>`) over CAN/ISO-TP **before** resetting the MCU.
+When handling `0x11 ECUReset` requests, the ECU **must** transmit the positive ACK payload (`0x51 <sub-function>`) over CAN/ISO-TP **before** resetting the MCU hardware.
+
+SyntropicOS provides native deferred post-TX reset callbacks with a configurable delay window (50 ms default):
 
 ```c
 #include <syntropic/proto/syn_uds.h>
 
-static SYN_UDS_Server uds;
+static SYN_UDS_Server g_uds;
 
-void process_uds_frame(const uint8_t *req, uint16_t req_len) {
-    uint8_t resp_buf[64];
-    uint16_t resp_len = 0;
+static void on_ecu_reset(uint8_t reset_type, void *ctx) {
+    (void)ctx;
+    (void)reset_type;
+    syn_port_system_reset(); /* Trigger hardware system reset 50 ms after 0x51 response */
+}
 
-    if (syn_uds_process_request(&uds, req, req_len, resp_buf, sizeof(resp_buf), &resp_len)) {
-        /* 1. Transmit UDS response over ISO-TP FIRST */
-        isotp_send_response(resp_buf, resp_len);
+void uds_init(void) {
+    syn_uds_init(&g_uds);
+    syn_uds_set_reset_handler(&g_uds, on_ecu_reset, NULL);
+    syn_uds_set_reset_wait_ms(&g_uds, 50); /* 50 ms post-TX delay window */
+}
 
-        /* 2. Check if 0x11 ECU Reset was requested */
-        uint8_t reset_type = syn_uds_get_pending_reset(&uds);
-        if (reset_type > 0) {
-            syn_uds_clear_pending_reset(&uds);
-            
-            /* 3. Wait for ISO-TP TX completion, then trigger system reset */
-            isotp_flush_tx();
-            syn_port_system_reset();
-        }
-    }
+void uds_task_10ms(uint32_t dt_ms) {
+    syn_uds_tick(&g_uds, dt_ms); /* Automatically triggers on_ecu_reset callback after 50 ms */
 }
 ```
-
-
-

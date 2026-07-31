@@ -287,6 +287,7 @@ static void test_isotp_canfd_multi_frame(void)
 
         syn_isotp_step(&link, 150); /* Total 550 ms passed -> N_Bs timeout! */
         TEST_ASSERT_EQUAL(SYN_ISOTP_TX_IDLE, link.tx_state); /* Aborted to IDLE */
+        TEST_ASSERT_TRUE(syn_isotp_is_tx_idle(NULL));
 
         /* 2. N_Cr timeout check (Receiver waiting for Consecutive Frame) */
         SYN_CAN_Frame incoming_ff = {.id = 0x100, .dlc = 8, .data = {0x10, 20, 1, 2, 3, 4, 5, 6}};

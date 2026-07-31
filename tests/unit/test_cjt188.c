@@ -193,6 +193,13 @@ void test_cjt188_edge_cases_and_nulls(void)
     TEST_ASSERT_FALSE(
         syn_cjt188_decoder_feed(&decoder, 240, &frame)); /* data_len = 240 -> expected_len > 128 */
     TEST_ASSERT_FALSE(decoder.in_frame);
+
+    /* 4. Decoder buffer index overflow */
+    syn_cjt188_decoder_init(&decoder);
+    decoder.in_frame = true;
+    decoder.index = SYN_CJT188_MAX_FRAME_SIZE;
+    TEST_ASSERT_FALSE(syn_cjt188_decoder_feed(&decoder, 0x00, &frame));
+    TEST_ASSERT_EQUAL(0, decoder.index);
 }
 
 void run_cjt188_tests(void)

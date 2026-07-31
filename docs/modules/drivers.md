@@ -190,16 +190,30 @@ SyntropicOS provides zero-allocation drivers for common industrial and embedded 
 | `sensor/syn_biometric.h` | MAX30102 | PPG optical pulse oximeter and heart rate monitoring |
 
 ### Sensor Usage Example
-```c
-#include <syntropic/sensor/syn_climate.h>
-#include <syntropic/sensor/syn_powermon.h>
+## 9. USB 2.0 Device Core & Class Drivers (`drivers/syn_usb.h`, `syn_usb_cdc.h`, `syn_usb_hid.h`)
 
-void read_sensors(void) {
-    float temp_c, humidity;
-    if (syn_climate_read(&temp_c, &humidity) == SYN_OK) {
-        printf("Temperature: %.1f C, Humidity: %.1f%%\n", temp_c, humidity);
-    }
+Provides a zero-heap USB 2.0 device core supporting pluggable class driver registration (CDC ACM, HID), automatic configuration descriptor table assembly, and protothread coroutine integration.
+
+```c
+#include <syntropic/drivers/syn_usb.h>
+#include <syntropic/drivers/syn_usb_cdc.h>
+#include <syntropic/drivers/syn_usb_hid.h>
+
+static const uint8_t dev_desc[18] = {
+    0x12, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x40,
+    0xFE, 0xCA, 0xEF, 0xBE, 0x00, 0x01, 0x01, 0x02,
+    0x00, 0x01
+};
+
+static SYN_USB_Device usb_dev;
+static SYN_USB_CDC    usb_cdc;
+
+void usb_setup(void) {
+    syn_usb_init(&usb_dev, dev_desc);
+    syn_usb_cdc_init(&usb_cdc);
+    syn_usb_cdc_register(&usb_dev, &usb_cdc);
 }
 ```
+
 
 

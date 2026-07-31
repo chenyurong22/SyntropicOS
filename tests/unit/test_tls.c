@@ -58,12 +58,17 @@ void test_tls_psk_mode_handshake_and_record_crypto(void)
                              .psk_secret = psk,
                              .psk_secret_len = sizeof(psk)};
 
+    uint8_t rx_record_buf[2560];
+    uint8_t tx_record_buf[2560];
     SYN_TLS_Context tls;
-    TEST_ASSERT_TRUE(syn_tls_init(&tls, &config, &tr));
+    TEST_ASSERT_TRUE(syn_tls_init(&tls, &config, &tr, rx_record_buf, sizeof(rx_record_buf),
+                                  tx_record_buf, sizeof(tx_record_buf)));
 
     /* Handshake completion */
     TEST_ASSERT_TRUE(syn_tls_handshake(&tls));
     TEST_ASSERT_EQUAL(SYN_TLS_STATE_ESTABLISHED, tls.state);
+    TEST_ASSERT_TRUE(syn_tls_is_established(&tls));
+    TEST_ASSERT_EQUAL(SYN_TLS_STATE_ESTABLISHED, syn_tls_get_state(&tls));
 
     /* Encrypt & Send record */
     static const char msg[] = "Hello Zero-Dependency TLS 1.3!";
@@ -84,8 +89,11 @@ void test_tls_transport_binding_interface(void)
 
     SYN_TLS_Config config = {.mode = SYN_TLS_AUTH_MODE_RAW_PUBKEY};
 
+    uint8_t rx_record_buf[2560];
+    uint8_t tx_record_buf[2560];
     SYN_TLS_Context tls;
-    TEST_ASSERT_TRUE(syn_tls_init(&tls, &config, &raw_tr));
+    TEST_ASSERT_TRUE(syn_tls_init(&tls, &config, &raw_tr, rx_record_buf, sizeof(rx_record_buf),
+                                  tx_record_buf, sizeof(tx_record_buf)));
 
     SYN_Transport tls_tr;
     syn_tls_bind_transport(&tls, &tls_tr);
@@ -100,30 +108,59 @@ void test_tls_transport_binding_interface(void)
     TEST_ASSERT_EQUAL_MEMORY(payload, rx_buf, rx_len);
 }
 
+void test_tls_task_protothread(void)
+{
+    LoopbackTransport wire = {0};
+    SYN_Transport tr = {.send = loopback_send, .recv = loopback_recv, .ctx = &wire};
+    SYN_TLS_Config config = {.mode = SYN_TLS_AUTH_MODE_PSK};
+
+    uint8_t rx_record_buf[2560];
+    uint8_t tx_record_buf[2560];
+    SYN_TLS_Context tls;
+    TEST_ASSERT_TRUE(syn_tls_init(&tls, &config, &tr, rx_record_buf, sizeof(rx_record_buf),
+                                  tx_record_buf, sizeof(tx_record_buf)));
+
+    SYN_Task task = {.user_data = &tls};
+    SYN_PT pt;
+    PT_INIT(&pt);
+
+    SYN_PT_Status status = syn_tls_task(&pt, &task);
+    TEST_ASSERT_EQUAL(PT_YIELDED, status);
+    TEST_ASSERT_EQUAL(SYN_TLS_STATE_ESTABLISHED, tls.state);
+}
+
 void test_tls_null_and_bounds_checks(void)
 {
-    TEST_ASSERT_FALSE(syn_tls_init(NULL, NULL, NULL));
+    uint8_t rx_small[64];
+    uint8_t rx_ok[2560];
+    uint8_t tx_ok[2560];
+    SYN_TLS_Config config = {.mode = SYN_TLS_AUTH_MODE_PSK};
+    SYN_TLS_Context tls;
+    LoopbackTransport wire = {0};
+    SYN_Transport tr = {.send = loopback_send, .recv = loopback_recv, .ctx = &wire};
+
+    TEST_ASSERT_FALSE(syn_tls_init(NULL, NULL, NULL, NULL, 0, NULL, 0));
+    TEST_ASSERT_FALSE(
+        syn_tls_init(&tls, &config, &tr, rx_small, sizeof(rx_small), tx_ok, sizeof(tx_ok)));
     TEST_ASSERT_FALSE(syn_tls_handshake(NULL));
     TEST_ASSERT_FALSE(syn_tls_send(NULL, NULL, 0));
     TEST_ASSERT_FALSE(syn_tls_recv(NULL, NULL, 0, NULL));
 
     syn_tls_bind_transport(NULL, NULL);
 
-    LoopbackTransport wire = {0};
-    SYN_Transport tr = {.send = loopback_send, .recv = loopback_recv, .ctx = &wire};
-
     uint8_t long_psk[64];
     memset(long_psk, 0xAA, sizeof(long_psk));
     SYN_TLS_Config psk_cfg = {
         .mode = SYN_TLS_AUTH_MODE_PSK, .psk_secret = long_psk, .psk_secret_len = sizeof(long_psk)};
     SYN_TLS_Context psk_tls;
-    TEST_ASSERT_TRUE(syn_tls_init(&psk_tls, &psk_cfg, &tr));
+    TEST_ASSERT_TRUE(
+        syn_tls_init(&psk_tls, &psk_cfg, &tr, rx_ok, sizeof(rx_ok), tx_ok, sizeof(tx_ok)));
     TEST_ASSERT_TRUE(syn_tls_handshake(&psk_tls));
     TEST_ASSERT_TRUE(syn_tls_handshake(&psk_tls)); /* Repeat call when established */
 
     /* Zero length send */
     TEST_ASSERT_TRUE(syn_tls_send(&psk_tls, NULL, 0));
-    TEST_ASSERT_FALSE(syn_tls_send(&psk_tls, NULL, 10));
+    TEST_ASSERT_FALSE(syn_tls_send(&psk_tls, NULL, 10000));
 
     /* Recv errors */
     uint8_t rx_buf[64];
@@ -140,11 +177,13 @@ void test_tls_null_and_bounds_checks(void)
 
     /* Auto-handshake on uninitialized send/recv */
     SYN_TLS_Context auto_tls;
-    TEST_ASSERT_TRUE(syn_tls_init(&auto_tls, &psk_cfg, &tr));
+    TEST_ASSERT_TRUE(
+        syn_tls_init(&auto_tls, &psk_cfg, &tr, rx_ok, sizeof(rx_ok), tx_ok, sizeof(tx_ok)));
     TEST_ASSERT_TRUE(syn_tls_send(&auto_tls, (const uint8_t *)"test", 4));
 
     SYN_TLS_Context auto_tls2;
-    TEST_ASSERT_TRUE(syn_tls_init(&auto_tls2, &psk_cfg, &tr));
+    TEST_ASSERT_TRUE(
+        syn_tls_init(&auto_tls2, &psk_cfg, &tr, rx_ok, sizeof(rx_ok), tx_ok, sizeof(tx_ok)));
     wire.len = 0;
     TEST_ASSERT_FALSE(syn_tls_recv(&auto_tls2, rx_buf, sizeof(rx_buf), &rx_len));
 
@@ -158,11 +197,58 @@ void test_tls_null_and_bounds_checks(void)
     wire.len = 30;
     memset(wire.buf, 0x17, 30);
     TEST_ASSERT_FALSE(syn_tls_recv(&psk_tls, rx_buf, sizeof(rx_buf), &rx_len));
+
+    /* App data ring buffer drain test */
+    SYN_TLS_Context ring_tls;
+    memset(&ring_tls, 0, sizeof(ring_tls));
+    ring_tls.app_rx_buf[0] = 'X';
+    ring_tls.app_rx_buf[1] = 'Y';
+    ring_tls.app_rx_head = 0;
+    ring_tls.app_rx_tail = 2;
+    size_t ring_rx_len = 0;
+    TEST_ASSERT_TRUE(syn_tls_recv(&ring_tls, rx_buf, 1, &ring_rx_len));
+    TEST_ASSERT_EQUAL(1, ring_rx_len);
+    TEST_ASSERT_EQUAL('X', rx_buf[0]);
+
+    /* Complete drain to trigger head/tail reset */
+    TEST_ASSERT_TRUE(syn_tls_recv(&ring_tls, rx_buf, sizeof(rx_buf), &ring_rx_len));
+    TEST_ASSERT_EQUAL(1, ring_rx_len);
+    TEST_ASSERT_EQUAL('Y', rx_buf[0]);
+
+    /* Server app secret decrypt path test */
+    SYN_TLS_Context srv_tls;
+    TEST_ASSERT_TRUE(
+        syn_tls_init(&srv_tls, &psk_cfg, &tr, rx_ok, sizeof(rx_ok), tx_ok, sizeof(tx_ok)));
+    TEST_ASSERT_TRUE(syn_tls_handshake(&srv_tls));
+    memcpy(srv_tls.client_app_secret, srv_tls.server_app_secret, 32);
+    wire.len = 0;
+    TEST_ASSERT_TRUE(syn_tls_send(&srv_tls, (const uint8_t *)"SERVER_TEST", 11));
+    TEST_ASSERT_TRUE(syn_tls_recv(&srv_tls, rx_buf, sizeof(rx_buf), &rx_len));
+    TEST_ASSERT_EQUAL(11, rx_len);
+
+    /* Task error handling branch */
+    SYN_TLS_Context err_tls;
+    memset(&err_tls, 0, sizeof(err_tls));
+    err_tls.state = SYN_TLS_STATE_ERROR;
+    SYN_Task err_task = {.user_data = &err_tls};
+    SYN_PT pt_err;
+    PT_INIT(&pt_err);
+    TEST_ASSERT_EQUAL(PT_ENDED, syn_tls_task(&pt_err, &err_task));
+
+    /* Task null handling */
+    SYN_Task null_task = {.user_data = NULL};
+    SYN_PT pt_null;
+    PT_INIT(&pt_null);
+    TEST_ASSERT_EQUAL(PT_EXITED, syn_tls_task(&pt_null, &null_task));
+
+    TEST_ASSERT_FALSE(syn_tls_is_established(NULL));
+    TEST_ASSERT_EQUAL(SYN_TLS_STATE_UNINITIALIZED, syn_tls_get_state(NULL));
 }
 
 void run_tls_tests(void)
 {
     RUN_TEST(test_tls_psk_mode_handshake_and_record_crypto);
     RUN_TEST(test_tls_transport_binding_interface);
+    RUN_TEST(test_tls_task_protothread);
     RUN_TEST(test_tls_null_and_bounds_checks);
 }

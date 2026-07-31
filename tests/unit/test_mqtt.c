@@ -848,7 +848,36 @@ static void test_mqtt_ping_send_failure_and_packet_id_wraparound(void)
     TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
 }
 
+void test_mqtt_disconnect(void)
+{
+    mock_port_reset();
+
+    /* NULL check */
+    syn_mqtt_disconnect(NULL);
+
+    SYN_MqttClient c;
+    uint8_t rx[256];
+    uint8_t tx[256];
+    syn_mqtt_init(&c, "broker.example.com", 1883, "client1", NULL, NULL, 60, rx, sizeof(rx), tx,
+                  sizeof(tx));
+
+    /* Disconnect when disconnected (no-op) */
+    syn_mqtt_disconnect(&c);
+    TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
+
+    /* Disconnect when connected */
+    c.state = SYN_MQTT_CONNECTED;
+    c.sock = 10;
+    mock_sock_connected = true;
+    syn_mqtt_disconnect(&c);
+
+    TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
+    TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, c.sock);
+    TEST_ASSERT_EQUAL_UINT8(0xE0, mock_sock_tx_buf[0]); /* DISCONNECT packet */
+}
+
 void run_mqtt_tests(void)
+
 {
     RUN_TEST(test_mqtt_connect);
     RUN_TEST(test_mqtt_subscribe);
@@ -869,4 +898,5 @@ void run_mqtt_tests(void)
     RUN_TEST(test_mqtt_tx_buffer_overflow_in_connect);
     RUN_TEST(test_mqtt_rx_phase_disconnect_handling);
     RUN_TEST(test_mqtt_ping_send_failure_and_packet_id_wraparound);
+    RUN_TEST(test_mqtt_disconnect);
 }

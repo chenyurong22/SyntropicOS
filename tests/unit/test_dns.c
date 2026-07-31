@@ -258,7 +258,7 @@ static void test_dns_resolve_cname(void)
             break;
         mock_tick_ms += 1;
     }
-    TEST_ASSERT_EQUAL(SYN_TIMEOUT, r.status);
+    TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
 }
 
 static void test_mdns_join_fail(void)
@@ -523,6 +523,7 @@ static void test_dns_mdns_init_open_failure_and_truncated_records(void)
     mock_udp_open_ok = true;
 
     /* 2. Truncated A record payload in parse_response (line 131) */
+    mock_port_reset();
     uint8_t trunc_a[] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
                          /* Question: "a.com" */
                          1, 'a', 3, 'c', 'o', 'm', 0, 0x00, 0x01, 0x00, 0x01,
@@ -545,6 +546,7 @@ static void test_dns_mdns_init_open_failure_and_truncated_records(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
 
     /* 3. RCODE != 0 error response (line 100) */
+    mock_port_reset();
     uint8_t rcode_err[] = {0x00, 0x00, 0x81, 0x82, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
     mock_udp_set_response(rcode_err, sizeof(rcode_err), NULL);
     PT_INIT(&pt);
@@ -555,6 +557,7 @@ static void test_dns_mdns_init_open_failure_and_truncated_records(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
 
     /* 4. Truncated answer record header (pos + 10 > rx_len, line 121) */
+    mock_port_reset();
     uint8_t trunc_ans_hdr[] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
                                0x00, 0x00, 1,    'a',  3,    'c',  'o',  'm',  0,    0x00,
                                0x01, 0x00, 0x01, 0xC0, 0x0C, 0x00, 0x01}; /* only 4 bytes instead of
@@ -580,6 +583,7 @@ static void test_dns_mdns_init_open_failure_and_truncated_records(void)
     syn_mdns_task(&pt, &task);
 
     /* 6. Truncated answer QNAME (parse_qname fails in answer loop, line 120) */
+    mock_port_reset();
     uint8_t bad_ans_qname[] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
                                0x00,
                                /* Question: "a.com" */

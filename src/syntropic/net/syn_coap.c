@@ -293,7 +293,8 @@ SYN_PT_Status syn_coap_request_task(SYN_PT *pt, SYN_Task *task)
                     break;
                 }
             }
-            PT_DEFER(pt, task);
+            PT_WAIT_UNTIL(pt, r->sock == SYN_SOCKET_INVALID || syn_port_udp_readable(r->sock) ||
+                                  (syn_port_get_tick_ms() - r->start_ms) >= attempt_delay);
         }
 
         if (r->status == SYN_OK)

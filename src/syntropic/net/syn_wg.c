@@ -680,6 +680,39 @@ void syn_wg_init(SYN_WG *wg, const SYN_WgConfig *config, SYN_SNTP *sntp, uint8_t
     SYN_METRIC_REGISTER(wg_errors);
 }
 
+/**
+ * @brief Check if WireGuard task has pending work to process.
+ * @param wg Pointer to WireGuard state structure.
+ * @return true if work pending, false otherwise.
+ */
+static bool wg_has_work(const SYN_WG *wg)
+
+{
+    if (wg == NULL)
+        return false;
+    if (wg->state == SYN_WG_DISCONNECTED)
+        return true;
+    if (syn_port_udp_readable(wg->udp_sock))
+        return true;
+
+    uint32_t now = syn_port_get_tick_ms();
+    if (wg->state == SYN_WG_HANDSHAKE_INIT &&
+        (now - wg->last_handshake_ms) > (uint32_t)SYN_WG_REKEY_TIMEOUT * 1000) {
+        return true;
+    }
+    if (wg->state == SYN_WG_ESTABLISHED) {
+        if ((now - wg->session.established_ms) > (uint32_t)SYN_WG_REJECT_AFTER_TIME * 1000 ||
+            (now - wg->session.established_ms) > (uint32_t)SYN_WG_REKEY_AFTER_TIME * 1000) {
+            return true;
+        }
+        if (wg->config.keepalive_interval_s > 0 &&
+            (now - wg->last_sent_ms) > (uint32_t)wg->config.keepalive_interval_s * 1000) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
  *  Protothread task
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -776,7 +809,7 @@ SYN_PT_Status syn_wg_task(SYN_PT *pt, SYN_Task *task)
             }
         }
 
-        PT_YIELD(pt);
+        PT_WAIT_UNTIL(pt, wg_has_work(wg));
     }
 
     PT_END(pt); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */

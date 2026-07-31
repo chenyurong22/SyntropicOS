@@ -142,6 +142,9 @@ extern bool mock_sock_connect_fail;
 extern bool mock_sock_send_fail;
 extern int mock_sock_send_fail_after_bytes;
 
+bool syn_port_sock_readable(SYN_Socket sock);
+bool syn_port_udp_readable(SYN_Socket sock);
+
 /* Server-side mock */
 extern bool mock_sock_listen_ok;
 extern bool mock_sock_accept_ok;

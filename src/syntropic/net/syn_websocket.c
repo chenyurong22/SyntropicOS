@@ -306,7 +306,25 @@ SYN_Status syn_websocket_send(SYN_WebsocketSession *ws, uint8_t opcode, const vo
     return SYN_OK;
 }
 
+/**
+ * @brief Check if WebSocket task has actionable work.
+ * @param ws Pointer to WebSocket session instance.
+ * @return true if work pending, false otherwise.
+ */
+static bool ws_has_work(const SYN_WebsocketSession *ws)
+
+{
+    if (ws == NULL)
+        return false;
+    if (ws->state != SYN_WS_STATE_CONNECTED)
+        return true;
+    if (ws->sock != SYN_SOCKET_INVALID && syn_port_sock_readable(ws->sock))
+        return true;
+    return false;
+}
+
 SYN_PT_Status syn_websocket_task(SYN_PT *pt, SYN_Task *task)
+
 {
     SYN_WebsocketSession *ws = (SYN_WebsocketSession *)task->user_data;
     SYN_ASSERT(ws != NULL);
@@ -399,7 +417,7 @@ SYN_PT_Status syn_websocket_task(SYN_PT *pt, SYN_Task *task)
             syn_port_sock_close(ws->sock);
             ws->state = SYN_WS_STATE_CLOSED;
         }
-        PT_DEFER(pt, task);
+        PT_WAIT_UNTIL(pt, ws_has_work(ws));
     }
 
     PT_END(pt); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */

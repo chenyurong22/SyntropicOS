@@ -303,8 +303,11 @@ SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
                     c->status = SYN_ERROR;
                     PT_EXIT(pt);
                 }
-                /* Yield after each recv to keep scheduler responsive */
-                PT_DEFER(pt, task);
+                /* Yield until readable or timeout to keep scheduler responsive */
+                PT_WAIT_UNTIL(pt, c->sock == SYN_SOCKET_INVALID ||
+                                      syn_port_sock_readable(c->sock) ||
+                                      (syn_port_get_tick_ms() - c->header_timeout_ms) >=
+                                          HTTP_RECV_TIMEOUT_MS);
             } else if (n == 0) {
                 syn_port_sock_close(c->sock);
                 c->sock = SYN_SOCKET_INVALID;
@@ -319,7 +322,10 @@ SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
                     c->status = SYN_TIMEOUT;
                     PT_EXIT(pt);
                 }
-                PT_DEFER(pt, task);
+                PT_WAIT_UNTIL(pt, c->sock == SYN_SOCKET_INVALID ||
+                                      syn_port_sock_readable(c->sock) ||
+                                      (syn_port_get_tick_ms() - c->header_timeout_ms) >=
+                                          HTTP_RECV_TIMEOUT_MS);
                 continue;
             }
         }
@@ -477,7 +483,10 @@ SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
                                 c->status = SYN_TIMEOUT;
                                 PT_EXIT(pt);
                             }
-                            PT_YIELD(pt);
+                            PT_WAIT_UNTIL(pt, c->sock == SYN_SOCKET_INVALID ||
+                                                  syn_port_sock_readable(c->sock) ||
+                                                  (syn_port_get_tick_ms() - c->body_timeout_ms) >=
+                                                      HTTP_RECV_TIMEOUT_MS);
                         }
                     }
                 } else if (c->chunk_state == 1) {
@@ -516,7 +525,10 @@ SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
                                     c->status = SYN_TIMEOUT;
                                     PT_EXIT(pt);
                                 }
-                                PT_YIELD(pt);
+                                PT_WAIT_UNTIL(pt, c->sock == SYN_SOCKET_INVALID ||
+                                                      syn_port_sock_readable(c->sock) ||
+                                                      (syn_port_get_tick_ms() -
+                                                       c->body_timeout_ms) >= HTTP_RECV_TIMEOUT_MS);
                             }
                         }
                     } else {
@@ -546,7 +558,10 @@ SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
                                     c->status = SYN_TIMEOUT;
                                     PT_EXIT(pt);
                                 }
-                                PT_DEFER(pt, task);
+                                PT_WAIT_UNTIL(pt, c->sock == SYN_SOCKET_INVALID ||
+                                                      syn_port_sock_readable(c->sock) ||
+                                                      (syn_port_get_tick_ms() -
+                                                       c->body_timeout_ms) >= HTTP_RECV_TIMEOUT_MS);
                             }
                         }
                     }
@@ -573,7 +588,10 @@ SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
                                 c->status = SYN_TIMEOUT;
                                 PT_EXIT(pt);
                             }
-                            PT_DEFER(pt, task);
+                            PT_WAIT_UNTIL(pt, c->sock == SYN_SOCKET_INVALID ||
+                                                  syn_port_sock_readable(c->sock) ||
+                                                  (syn_port_get_tick_ms() - c->body_timeout_ms) >=
+                                                      HTTP_RECV_TIMEOUT_MS);
                         }
                     }
                 }
@@ -636,7 +654,10 @@ SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
                         c->status = SYN_TIMEOUT;
                         PT_EXIT(pt);
                     }
-                    PT_DEFER(pt, task);
+                    PT_WAIT_UNTIL(pt, c->sock == SYN_SOCKET_INVALID ||
+                                          syn_port_sock_readable(c->sock) ||
+                                          (syn_port_get_tick_ms() - c->body_timeout_ms) >=
+                                              HTTP_RECV_TIMEOUT_MS);
                 }
             }
         }

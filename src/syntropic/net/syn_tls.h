@@ -20,6 +20,9 @@
 #include "syntropic/crypto/syn_x25519.h"
 #include "syntropic/crypto/syn_x509.h"
 #include "syntropic/net/syn_transport.h"
+#include "syntropic/pt/syn_pt.h"
+#include "syntropic/sched/syn_task.h"
+#include "syntropic/util/syn_sha256.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -82,6 +85,12 @@ typedef struct {
     SYN_TLS_Config config;               /**< Engine configuration copy */
     SYN_Transport *underlying_transport; /**< Wire transport (TCP, UDP, Serial) */
 
+    /* Caller-owned I/O buffers */
+    uint8_t *rx_buf;    /**< Caller-owned RX record buffer */
+    size_t rx_buf_size; /**< RX record buffer capacity */
+    uint8_t *tx_buf;    /**< Caller-owned TX record buffer */
+    size_t tx_buf_size; /**< TX record buffer capacity */
+
     uint8_t my_privkey[SYN_TLS_SECRET_LEN];  /**< Ephemeral X25519 private key */
     uint8_t my_pubkey[SYN_TLS_SECRET_LEN];   /**< Ephemeral X25519 public key */
     uint8_t peer_pubkey[SYN_TLS_SECRET_LEN]; /**< Peer ephemeral X25519 public key */
@@ -92,20 +101,35 @@ typedef struct {
     uint8_t server_handshake_secret[SYN_TLS_SECRET_LEN]; /**< Server handshake traffic secret */
     uint8_t client_app_secret[SYN_TLS_SECRET_LEN];       /**< Client application traffic secret */
     uint8_t server_app_secret[SYN_TLS_SECRET_LEN];       /**< Server application traffic secret */
+    uint8_t master_secret[SYN_TLS_SECRET_LEN];           /**< Master secret */
 
     uint64_t client_seq_num; /**< Encryption record sequence counter */
     uint64_t server_seq_num; /**< Decryption record sequence counter */
+
+    size_t rx_pos;               /**< Bytes accumulated in rx_buf */
+    size_t rx_record_len;        /**< Expected record payload length */
+    uint8_t rx_content_type;     /**< Current record content type */
+    uint32_t handshake_start_ms; /**< Handshake start timestamp */
+
+    uint8_t app_rx_buf[SYN_TLS_RECORD_MAX_PAYLOAD]; /**< Decrypted app data ring buffer */
+    size_t app_rx_head;                             /**< App data head index */
+    size_t app_rx_tail;                             /**< App data tail index */
 } SYN_TLS_Context;
 
 /**
  * @brief Initialize a TLS 1.3 context.
  *
- * @param ctx       Context to initialize.
- * @param config    Configuration.
- * @param transport Wire transport instance.
+ * @param ctx         Context to initialize.
+ * @param config      Configuration.
+ * @param transport   Wire transport instance.
+ * @param rx_buf      Caller-owned RX record buffer.
+ * @param rx_buf_size RX buffer capacity.
+ * @param tx_buf      Caller-owned TX record buffer.
+ * @param tx_buf_size TX buffer capacity.
  * @return true on success.
  */
-bool syn_tls_init(SYN_TLS_Context *ctx, const SYN_TLS_Config *config, SYN_Transport *transport);
+bool syn_tls_init(SYN_TLS_Context *ctx, const SYN_TLS_Config *config, SYN_Transport *transport,
+                  uint8_t *rx_buf, size_t rx_buf_size, uint8_t *tx_buf, size_t tx_buf_size);
 
 /**
  * @brief Perform a non-blocking TLS 1.3 handshake step.
@@ -114,6 +138,15 @@ bool syn_tls_init(SYN_TLS_Context *ctx, const SYN_TLS_Config *config, SYN_Transp
  * @return true if handshake completed or progressing, false on fatal error.
  */
 bool syn_tls_handshake(SYN_TLS_Context *ctx);
+
+/**
+ * @brief Cooperative protothread task — drives the TLS 1.3 client handshake & session.
+ *
+ * @param pt   Protothread handle.
+ * @param task Task descriptor.
+ * @return PT status.
+ */
+SYN_PT_Status syn_tls_task(SYN_PT *pt, SYN_Task *task);
 
 /**
  * @brief Encrypt and transmit application data payload over TLS 1.3.
@@ -143,6 +176,28 @@ bool syn_tls_recv(SYN_TLS_Context *ctx, uint8_t *data, size_t max_len, size_t *o
  * @param tr_out   [out] Output transport instance.
  */
 void syn_tls_bind_transport(SYN_TLS_Context *tls_ctx, SYN_Transport *tr_out);
+
+/**
+ * @brief Check if the TLS 1.3 session is established and ready for app data.
+ *
+ * @param ctx TLS 1.3 context.
+ * @return true if established.
+ */
+static inline bool syn_tls_is_established(const SYN_TLS_Context *ctx)
+{
+    return (ctx != NULL && ctx->state == SYN_TLS_STATE_ESTABLISHED);
+}
+
+/**
+ * @brief Retrieve current TLS 1.3 state machine state.
+ *
+ * @param ctx TLS 1.3 context.
+ * @return Current SYN_TLS_State.
+ */
+static inline SYN_TLS_State syn_tls_get_state(const SYN_TLS_Context *ctx)
+{
+    return ctx ? ctx->state : SYN_TLS_STATE_UNINITIALIZED;
+}
 
 #ifdef __cplusplus
 }

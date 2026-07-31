@@ -113,6 +113,14 @@ int syn_port_sock_send_all(SYN_Socket sock, const void *data, size_t len);
  */
 int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len, uint32_t timeout_ms);
 
+/**
+ * @brief Check if a TCP socket has data available for reading.
+ *
+ * @param sock  Socket handle.
+ * @return true if readable without blocking, false otherwise.
+ */
+bool syn_port_sock_readable(SYN_Socket sock);
+
 /* ── Server ─────────────────────────────────────────────────────────────── */
 
 /**
@@ -175,6 +183,14 @@ int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len, const SYN
  */
 int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len, SYN_SockAddr *from,
                           uint32_t timeout_ms);
+
+/**
+ * @brief Check if a UDP socket has a datagram available.
+ *
+ * @param sock  Socket handle.
+ * @return true if readable without blocking, false otherwise.
+ */
+bool syn_port_udp_readable(SYN_Socket sock);
 
 /**
  * @brief Join a multicast group.

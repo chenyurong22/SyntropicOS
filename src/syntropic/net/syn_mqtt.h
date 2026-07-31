@@ -145,6 +145,16 @@ SYN_Status syn_mqtt_subscribe(SYN_MqttClient *client, const char *topic, uint8_t
 SYN_Status syn_mqtt_ping(SYN_MqttClient *client);
 
 /**
+ * @brief Disconnect the MQTT client and close underlying TCP socket.
+ *
+ * Sends an MQTT DISCONNECT packet if currently connected, then closes
+ * the socket and transitions client state to DISCONNECTED.
+ *
+ * @param client Pointer to client context.
+ */
+void syn_mqtt_disconnect(SYN_MqttClient *client);
+
+/**
  * @brief Cooperative task for driving the MQTT client.
  *
  * Yields during connection, socket polling, keep-alive pinging, and packet

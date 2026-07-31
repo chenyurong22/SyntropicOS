@@ -820,6 +820,13 @@ SYN_WEAK void syn_port_sock_close(SYN_Socket sock)
     mock_sock_connected = false;
 }
 
+SYN_WEAK bool syn_port_sock_readable(SYN_Socket sock)
+{
+    if (sock == SYN_SOCKET_INVALID || !mock_sock_connected)
+        return false;
+    return (mock_sock_rx_len > mock_sock_rx_pos);
+}
+
 /* ── UDP port ───────────────────────────────────────────────────────────── */
 
 #include "syntropic/port/syn_port_socket.h"
@@ -874,6 +881,13 @@ int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len, SYN_SockAd
     if (from)
         *from = p->from;
     return (int)to_copy;
+}
+
+SYN_WEAK bool syn_port_udp_readable(SYN_Socket sock)
+{
+    if (sock == SYN_SOCKET_INVALID)
+        return false;
+    return (mock_udp_rx_pos < mock_udp_rx_count);
 }
 
 SYN_WEAK SYN_Status syn_port_udp_join_multicast(SYN_Socket sock, const char *multicast_ip)

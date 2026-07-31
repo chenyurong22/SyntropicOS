@@ -520,6 +520,23 @@ int syn_httpd_read_body(const SYN_HttpdRequest *req, const SYN_HttpdResponse *re
     return n;
 }
 
+/**
+ * @brief Check if HTTP server task has actionable work.
+ * @param srv Pointer to HTTP server instance.
+ * @return true if work pending, false otherwise.
+ */
+static bool httpd_has_work(const SYN_Httpd *srv)
+
+{
+    if (srv == NULL || !srv->running)
+        return false;
+    if (srv->listener != SYN_SOCKET_INVALID && syn_port_sock_readable(srv->listener))
+        return true;
+    if (srv->client != SYN_SOCKET_INVALID && syn_port_sock_readable(srv->client))
+        return true;
+    return false;
+}
+
 /* ── Protothread task ──────────────────────────────────────────────────── */
 
 SYN_PT_Status syn_httpd_task(SYN_PT *pt, SYN_Task *task)
@@ -533,7 +550,7 @@ SYN_PT_Status syn_httpd_task(SYN_PT *pt, SYN_Task *task)
         if (srv->running) {
             syn_httpd_step(srv);
         }
-        PT_YIELD(pt);
+        PT_WAIT_UNTIL(pt, !srv->running || httpd_has_work(srv));
     }
 
     PT_END(pt); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */

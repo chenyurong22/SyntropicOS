@@ -11,6 +11,7 @@
 
 #include "../port/syn_port_system.h"
 #include "../util/syn_assert.h"
+#include "../util/syn_metrics.h"
 #include "../util/syn_pack.h"
 #include "syn_mqtt.h"
 
@@ -18,6 +19,14 @@
 
 #define MQTT_RECV_TIMEOUT_MS 5000 /**< Timeout for incomplete packet reception (ms). */
 #define MQTT_ACK_TIMEOUT_MS 5000  /**< Timeout for ACK responses (ms). */
+
+#if SYN_USE_METRICS
+SYN_METRIC_DECLARE(mqtt_tx_msgs, "mqtt_tx_msgs", "Total MQTT messages published",
+                   SYN_METRIC_TYPE_COUNTER);
+SYN_METRIC_DECLARE(mqtt_rx_msgs, "mqtt_rx_msgs", "Total MQTT messages received",
+                   SYN_METRIC_TYPE_COUNTER);
+SYN_METRIC_DECLARE(mqtt_errors, "mqtt_errors", "Total MQTT client errors", SYN_METRIC_TYPE_COUNTER);
+#endif
 
 /* ── Remaining Length Helper ────────────────────────────────────────────── */
 
@@ -385,6 +394,10 @@ SYN_Status syn_mqtt_init(SYN_MqttClient *client, const char *host, uint16_t port
     client->state = SYN_MQTT_DISCONNECTED;
     client->rx_phase = SYN_MQTT_RX_IDLE;
 
+    SYN_METRIC_REGISTER(mqtt_tx_msgs);
+    SYN_METRIC_REGISTER(mqtt_rx_msgs);
+    SYN_METRIC_REGISTER(mqtt_errors);
+
     return SYN_OK;
 }
 
@@ -487,6 +500,47 @@ SYN_Status syn_mqtt_subscribe(SYN_MqttClient *client, const char *topic, uint8_t
     return (sent == (int)pos) ? SYN_OK : SYN_ERROR;
 }
 
+void syn_mqtt_disconnect(SYN_MqttClient *client)
+{
+    if (client == NULL)
+        return;
+
+    if (client->state == SYN_MQTT_CONNECTED && client->sock != SYN_SOCKET_INVALID) {
+        static const uint8_t disc[] = {0xE0, 0x00};
+        syn_port_sock_send_all(client->sock, disc, 2);
+    }
+    if (client->sock != SYN_SOCKET_INVALID) {
+        syn_port_sock_close(client->sock);
+        client->sock = SYN_SOCKET_INVALID;
+    }
+    client->state = SYN_MQTT_DISCONNECTED;
+    client->rx_phase = SYN_MQTT_RX_IDLE;
+}
+
+/**
+ * @brief Check if MQTT client task has actionable work.
+ * @param c Pointer to MQTT client instance.
+ * @return true if work pending, false otherwise.
+ */
+static bool mqtt_has_work(const SYN_MqttClient *c)
+
+{
+    if (c == NULL)
+        return false;
+    if (c->sock != SYN_SOCKET_INVALID && syn_port_sock_readable(c->sock))
+        return true;
+
+    uint32_t now = syn_port_get_tick_ms();
+    if (c->pending_puback_id != 0 && (now - c->pending_puback_ms) >= MQTT_ACK_TIMEOUT_MS) {
+        return true;
+    }
+    if (c->state == SYN_MQTT_CONNECTED && c->keep_alive_s > 0 &&
+        (now - c->last_activity_ms) >= (uint32_t)c->keep_alive_s * 1000) {
+        return true;
+    }
+    return false;
+}
+
 SYN_PT_Status syn_mqtt_task(SYN_PT *pt, SYN_Task *task)
 {
     SYN_MqttClient *c = (SYN_MqttClient *)task->user_data;
@@ -531,6 +585,11 @@ SYN_PT_Status syn_mqtt_task(SYN_PT *pt, SYN_Task *task)
             /* Poll socket for incoming packets (non-blocking state machine) */
             poll_rx(c);
 
+            if (c->state == SYN_MQTT_DISCONNECTED) {
+                PT_TASK_DELAY_MS(pt, task, 5000);
+                continue;
+            }
+
             /* Keep alive timer */
             uint32_t now = syn_port_get_tick_ms();
             if (c->state == SYN_MQTT_CONNECTED && c->keep_alive_s > 0) {
@@ -542,11 +601,13 @@ SYN_PT_Status syn_mqtt_task(SYN_PT *pt, SYN_Task *task)
                         c->sock = SYN_SOCKET_INVALID;
                         c->state = SYN_MQTT_DISCONNECTED;
                         c->rx_phase = SYN_MQTT_RX_IDLE;
+                        PT_TASK_DELAY_MS(pt, task, 5000);
+                        continue;
                     }
                 }
             }
         }
-        PT_DEFER(pt, task);
+        PT_WAIT_UNTIL(pt, mqtt_has_work(c));
     }
 
     PT_END(pt);

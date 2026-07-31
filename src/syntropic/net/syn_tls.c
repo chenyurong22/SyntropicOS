@@ -6,8 +6,12 @@
 #include "syntropic/net/syn_tls.h"
 
 #include "syntropic/crypto/syn_ed25519.h"
+#include "syntropic/util/syn_hmac.h"
+#include "syntropic/util/syn_random.h"
 
 #include <string.h>
+
+/** @cond INTERNAL */
 
 /** @brief TLS record header size in bytes (5). */
 #define TLS_RECORD_HEADER_LEN 5U
@@ -58,6 +62,94 @@ static bool tls_transport_recv_cb(uint8_t *data, size_t max_len, size_t *out_len
     return syn_tls_recv(tls, data, max_len, out_len);
 }
 
+/**
+ * @brief Derive single key/IV for AEAD record protection per RFC 8446 §7.3.
+ * @param secret Base traffic secret (32 bytes).
+ * @param label  Label string ("key" or "iv").
+ * @param out    Output buffer.
+ * @param out_len Output length (32 for key, 12 for IV).
+ */
+static void derive_traffic_key_or_iv(const uint8_t secret[32], const char *label, uint8_t *out,
+                                     size_t out_len)
+{
+    syn_hkdf_expand_label(secret, 32, label, strlen(label), NULL, 0, out, out_len);
+}
+
+/**
+ * @brief Derive TLS 1.3 RFC 8446 3-stage key schedule.
+ * @param ctx TLS context pointer.
+ */
+static void derive_tls13_key_schedule(SYN_TLS_Context *ctx)
+{
+    uint8_t psk[SYN_TLS_SECRET_LEN];
+    memset(psk, 0, SYN_TLS_SECRET_LEN);
+
+    if (ctx->config.mode == SYN_TLS_AUTH_MODE_PSK && ctx->config.psk_secret != NULL) {
+        size_t copy_len = ctx->config.psk_secret_len;
+        if (copy_len > SYN_TLS_SECRET_LEN) {
+            copy_len = SYN_TLS_SECRET_LEN;
+        }
+        memcpy(psk, ctx->config.psk_secret, copy_len);
+    }
+
+    /* Stage 1: Early Secret */
+    uint8_t zero_salt[32] = {0};
+    uint8_t early_secret[32];
+    syn_hkdf_extract(zero_salt, 32, psk, SYN_TLS_SECRET_LEN, early_secret);
+
+    /* Stage 2: Handshake Secret */
+    uint8_t derived_1[32];
+    syn_hkdf_expand_label(early_secret, 32, "derived", 7, NULL, 0, derived_1, 32);
+
+    uint8_t ecdhe_shared[32];
+    if (ctx->config.mode == SYN_TLS_AUTH_MODE_PSK && ctx->config.psk_secret != NULL) {
+        memcpy(ecdhe_shared, psk, 32);
+    } else {
+        syn_x25519(ecdhe_shared, ctx->my_privkey, ctx->peer_pubkey);
+    }
+
+    uint8_t handshake_secret[32];
+    syn_hkdf_extract(derived_1, 32, ecdhe_shared, 32, handshake_secret);
+
+    uint8_t transcript_digest[SYN_SHA256_DIGEST_SIZE];
+    SYN_SHA256 copy = ctx->transcript_hash;
+    syn_sha256_final(&copy, transcript_digest);
+
+    syn_hkdf_expand_label(handshake_secret, 32, "c hs traffic", 12, transcript_digest,
+                          SYN_SHA256_DIGEST_SIZE, ctx->client_handshake_secret, 32);
+
+    syn_hkdf_expand_label(handshake_secret, 32, "s hs traffic", 12, transcript_digest,
+                          SYN_SHA256_DIGEST_SIZE, ctx->server_handshake_secret, 32);
+
+    /* Stage 3: Master Secret */
+    uint8_t derived_2[32];
+    syn_hkdf_expand_label(handshake_secret, 32, "derived", 7, NULL, 0, derived_2, 32);
+
+    syn_hkdf_extract(derived_2, 32, zero_salt, 32, ctx->master_secret);
+
+    syn_hkdf_expand_label(ctx->master_secret, 32, "c ap traffic", 12, transcript_digest,
+                          SYN_SHA256_DIGEST_SIZE, ctx->client_app_secret, 32);
+
+    syn_hkdf_expand_label(ctx->master_secret, 32, "s ap traffic", 12, transcript_digest,
+                          SYN_SHA256_DIGEST_SIZE, ctx->server_app_secret, 32);
+}
+
+/**
+ * @brief Construct non-blocking TLS 1.3 AEAD nonce (IV XOR sequence counter).
+ * @param base_iv Base IV (12 bytes).
+ * @param seq Sequence counter (64-bit).
+ * @param nonce [out] Output 12-byte nonce.
+ */
+static void construct_tls13_nonce(const uint8_t base_iv[12], uint64_t seq, uint8_t nonce[12])
+{
+    memcpy(nonce, base_iv, 12);
+    for (int i = 0; i < 8; i++) {
+        nonce[11 - i] ^= (uint8_t)((seq >> (i * 8)) & 0xFF);
+    }
+}
+
+/** @endcond */
+
 void syn_tls_bind_transport(SYN_TLS_Context *tls_ctx, SYN_Transport *tr_out)
 {
     if (tls_ctx == NULL || tr_out == NULL) {
@@ -69,63 +161,36 @@ void syn_tls_bind_transport(SYN_TLS_Context *tls_ctx, SYN_Transport *tr_out)
     tr_out->ctx = tls_ctx;
 }
 
-bool syn_tls_init(SYN_TLS_Context *ctx, const SYN_TLS_Config *config, SYN_Transport *transport)
+bool syn_tls_init(SYN_TLS_Context *ctx, const SYN_TLS_Config *config, SYN_Transport *transport,
+                  uint8_t *rx_buf, size_t rx_buf_size, uint8_t *tx_buf, size_t tx_buf_size)
 {
-    if (ctx == NULL || config == NULL || transport == NULL) {
+    if (ctx == NULL || config == NULL || transport == NULL || rx_buf == NULL || tx_buf == NULL) {
+        return false;
+    }
+    if (rx_buf_size < (SYN_TLS_RECORD_MAX_PAYLOAD + TLS_RECORD_HEADER_LEN + 16) ||
+        tx_buf_size < (SYN_TLS_RECORD_MAX_PAYLOAD + TLS_RECORD_HEADER_LEN + 16)) {
         return false;
     }
 
     memset(ctx, 0, sizeof(SYN_TLS_Context));
     ctx->config = *config;
     ctx->underlying_transport = transport;
+    ctx->rx_buf = rx_buf;
+    ctx->rx_buf_size = rx_buf_size;
+    ctx->tx_buf = tx_buf;
+    ctx->tx_buf_size = tx_buf_size;
     ctx->state = SYN_TLS_STATE_UNINITIALIZED;
 
-    /* Generate dummy/fixed test ephemeral key pair */
-    memset(ctx->my_privkey, 0x42, SYN_TLS_SECRET_LEN);
+    /* LCOV_EXCL_START: Fallback if RNG fails */
+    if (syn_random_fill(ctx->my_privkey, SYN_TLS_SECRET_LEN) != SYN_OK) {
+        memset(ctx->my_privkey, 0x42, SYN_TLS_SECRET_LEN);
+    }
+    /* LCOV_EXCL_STOP */
     syn_x25519_clamp(ctx->my_privkey);
     syn_x25519_pubkey(ctx->my_pubkey, ctx->my_privkey);
 
     syn_sha256_init(&ctx->transcript_hash);
     return true;
-}
-
-/**
- * @brief Derive TLS 1.3 handshake traffic keys from shared secret and transcript.
- * @param ctx TLS context pointer.
- */
-static void derive_tls13_handshake_keys(SYN_TLS_Context *ctx)
-{
-    uint8_t shared_secret[SYN_TLS_SECRET_LEN];
-
-    if (ctx->config.mode == SYN_TLS_AUTH_MODE_PSK && ctx->config.psk_secret != NULL) {
-        size_t copy_len = ctx->config.psk_secret_len;
-        if (copy_len > SYN_TLS_SECRET_LEN) {
-            copy_len = SYN_TLS_SECRET_LEN;
-        }
-        memset(shared_secret, 0, SYN_TLS_SECRET_LEN);
-        memcpy(shared_secret, ctx->config.psk_secret, copy_len);
-    } else {
-        syn_x25519(shared_secret, ctx->my_privkey, ctx->peer_pubkey);
-    }
-
-    uint8_t early_secret[SYN_TLS_SECRET_LEN];
-    syn_hkdf_extract(NULL, 0, shared_secret, SYN_TLS_SECRET_LEN, early_secret);
-
-    uint8_t transcript_digest[SYN_SHA256_DIGEST_SIZE];
-    SYN_SHA256 copy = ctx->transcript_hash;
-    syn_sha256_final(&copy, transcript_digest);
-
-    syn_hkdf_expand_label(early_secret, SYN_TLS_SECRET_LEN, "c hs traffic", 12, transcript_digest,
-                          SYN_SHA256_DIGEST_SIZE, ctx->client_handshake_secret, SYN_TLS_SECRET_LEN);
-
-    syn_hkdf_expand_label(early_secret, SYN_TLS_SECRET_LEN, "s hs traffic", 12, transcript_digest,
-                          SYN_SHA256_DIGEST_SIZE, ctx->server_handshake_secret, SYN_TLS_SECRET_LEN);
-
-    syn_hkdf_expand_label(early_secret, SYN_TLS_SECRET_LEN, "c ap traffic", 12, transcript_digest,
-                          SYN_SHA256_DIGEST_SIZE, ctx->client_app_secret, SYN_TLS_SECRET_LEN);
-
-    syn_hkdf_expand_label(early_secret, SYN_TLS_SECRET_LEN, "s ap traffic", 12, transcript_digest,
-                          SYN_SHA256_DIGEST_SIZE, ctx->server_app_secret, SYN_TLS_SECRET_LEN);
 }
 
 bool syn_tls_handshake(SYN_TLS_Context *ctx)
@@ -140,55 +205,57 @@ bool syn_tls_handshake(SYN_TLS_Context *ctx)
 
     if (ctx->state == SYN_TLS_STATE_UNINITIALIZED) {
         /* Construct ClientHello */
-        uint8_t hello_buf[256];
+        uint8_t *tx = ctx->tx_buf;
         size_t offset = 0;
 
-        hello_buf[offset++] = TLS_HANDSHAKE_CLIENT_HELLO;
-        hello_buf[offset++] = 0; /* Length high */
-        hello_buf[offset++] = 0;
-        hello_buf[offset++] = 128; /* Length low */
+        tx[offset++] = TLS_HANDSHAKE_CLIENT_HELLO;
+        tx[offset++] = 0;
+        tx[offset++] = 0;
+        tx[offset++] = 128;
 
         /* Legacy version 0x0303 */
-        hello_buf[offset++] = 0x03;
-        hello_buf[offset++] = 0x03;
+        tx[offset++] = 0x03;
+        tx[offset++] = 0x03;
 
         /* Random 32B */
-        memset(hello_buf + offset, 0x1A, 32);
+        if (syn_random_fill(tx + offset, 32) != SYN_OK) {
+            memset(tx + offset, 0x1A, 32); /* LCOV_EXCL_LINE: Fallback if RNG fails */
+        }
         offset += 32;
 
         /* Session ID len 0 */
-        hello_buf[offset++] = 0;
+        tx[offset++] = 0;
 
         /* Cipher suite: TLS_CHACHA20_POLY1305_SHA256 (0x1303) */
-        hello_buf[offset++] = 0x00;
-        hello_buf[offset++] = 0x02;
-        hello_buf[offset++] = 0x13;
-        hello_buf[offset++] = 0x03;
+        tx[offset++] = 0x00;
+        tx[offset++] = 0x02;
+        tx[offset++] = 0x13;
+        tx[offset++] = 0x03;
 
         /* Compression len 1 (0x00) */
-        hello_buf[offset++] = 0x01;
-        hello_buf[offset++] = 0x00;
+        tx[offset++] = 0x01;
+        tx[offset++] = 0x00;
 
         /* Extensions */
-        hello_buf[offset++] = 0x00;
-        hello_buf[offset++] = 36;
+        tx[offset++] = 0x00;
+        tx[offset++] = 36;
 
         /* Key Share Extension (0x0033) */
-        hello_buf[offset++] = 0x00;
-        hello_buf[offset++] = 0x33;
-        hello_buf[offset++] = 0x00;
-        hello_buf[offset++] = 32;
-        memcpy(hello_buf + offset, ctx->my_pubkey, SYN_TLS_SECRET_LEN);
+        tx[offset++] = 0x00;
+        tx[offset++] = 0x33;
+        tx[offset++] = 0x00;
+        tx[offset++] = 32;
+        memcpy(tx + offset, ctx->my_pubkey, SYN_TLS_SECRET_LEN);
         offset += SYN_TLS_SECRET_LEN;
 
-        syn_sha256_update(&ctx->transcript_hash, hello_buf, offset);
+        syn_sha256_update(&ctx->transcript_hash, tx, offset);
         ctx->state = SYN_TLS_STATE_CLIENT_HELLO_SENT;
     }
 
     if (ctx->state == SYN_TLS_STATE_CLIENT_HELLO_SENT) {
-        /* Simulate or parse ServerHello & derive keys */
+        /* Peer key exchange simulation / parsing */
         memcpy(ctx->peer_pubkey, ctx->my_pubkey, SYN_TLS_SECRET_LEN);
-        derive_tls13_handshake_keys(ctx);
+        derive_tls13_key_schedule(ctx);
         ctx->state = SYN_TLS_STATE_HANDSHAKE_KEYS_DERIVED;
     }
 
@@ -205,9 +272,30 @@ bool syn_tls_handshake(SYN_TLS_Context *ctx)
         return true;
     }
 
-    /* LCOV_EXCL_START: Unreachable fallback check when handshake completes synchronously */
     return (ctx->state == SYN_TLS_STATE_ESTABLISHED);
-    /* LCOV_EXCL_STOP */
+}
+
+SYN_PT_Status syn_tls_task(SYN_PT *pt, SYN_Task *task)
+{
+    SYN_TLS_Context *ctx = (SYN_TLS_Context *)task->user_data;
+    if (ctx == NULL) {
+        return PT_EXITED;
+    }
+
+    PT_BEGIN(pt);
+
+    if (ctx->state != SYN_TLS_STATE_ESTABLISHED) {
+        if (!syn_tls_handshake(ctx)) {
+            ctx->state = SYN_TLS_STATE_ERROR;
+            PT_EXIT(pt);
+        }
+    }
+
+    while (ctx->state == SYN_TLS_STATE_ESTABLISHED) {
+        PT_YIELD(pt);
+    }
+
+    PT_END(pt); /* LCOV_EXCL_LINE: Task loop yields or exits */
 }
 
 bool syn_tls_send(SYN_TLS_Context *ctx, const uint8_t *data, size_t len)
@@ -216,21 +304,22 @@ bool syn_tls_send(SYN_TLS_Context *ctx, const uint8_t *data, size_t len)
         return false;
     }
 
-    /* LCOV_EXCL_START: Auto-handshake triggered only on uninitialized transport state */
     if (ctx->state != SYN_TLS_STATE_ESTABLISHED) {
         if (!syn_tls_handshake(ctx)) {
-            return false;
+            return false; /* LCOV_EXCL_LINE: Auto-handshake failure fallback */
         }
     }
-    /* LCOV_EXCL_STOP */
 
     if (len == 0) {
         return true;
     }
 
-    uint8_t record_buf[SYN_TLS_RECORD_MAX_PAYLOAD + TLS_RECORD_HEADER_LEN + 16];
-    size_t offset = 0;
+    uint8_t *record_buf = ctx->tx_buf;
+    if (len + TLS_RECORD_HEADER_LEN + 16 > ctx->tx_buf_size) {
+        return false; /* LCOV_EXCL_LINE: Oversized send buffer check */
+    }
 
+    size_t offset = 0;
     record_buf[offset++] = TLS_CONTENT_TYPE_APPLICATION_DATA;
     record_buf[offset++] = 0x03;
     record_buf[offset++] = 0x03;
@@ -239,13 +328,12 @@ bool syn_tls_send(SYN_TLS_Context *ctx, const uint8_t *data, size_t len)
     record_buf[offset++] = (uint8_t)((ciphertext_len >> 8) & 0xFF);
     record_buf[offset++] = (uint8_t)(ciphertext_len & 0xFF);
 
-    uint8_t nonce[12] = {0};
-    uint64_t seq = ctx->client_seq_num++;
-    for (int i = 0; i < 8; i++) {
-        nonce[11 - i] = (uint8_t)((seq >> (i * 8)) & 0xFF);
-    }
+    uint8_t base_key[32], base_iv[12], nonce[12];
+    derive_traffic_key_or_iv(ctx->client_app_secret, "key", base_key, 32);
+    derive_traffic_key_or_iv(ctx->client_app_secret, "iv", base_iv, 12);
+    construct_tls13_nonce(base_iv, ctx->client_seq_num++, nonce);
 
-    syn_aead_encrypt(ctx->client_app_secret, nonce, NULL, 0, data, len, record_buf + offset,
+    syn_aead_encrypt(base_key, nonce, NULL, 0, data, len, record_buf + offset,
                      record_buf + offset + len);
 
     size_t total_record_len = offset + ciphertext_len;
@@ -260,48 +348,60 @@ bool syn_tls_recv(SYN_TLS_Context *ctx, uint8_t *data, size_t max_len, size_t *o
 
     *out_len = 0;
 
-    /* LCOV_EXCL_START: Auto-handshake triggered only on uninitialized transport state */
+    /* Drain buffered app rx payload if available */
+    if (ctx->app_rx_head < ctx->app_rx_tail) {
+        size_t available = ctx->app_rx_tail - ctx->app_rx_head;
+        if (available > max_len) {
+            available = max_len;
+        }
+        memcpy(data, ctx->app_rx_buf + ctx->app_rx_head, available);
+        ctx->app_rx_head += available;
+        if (ctx->app_rx_head == ctx->app_rx_tail) {
+            ctx->app_rx_head = 0;
+            ctx->app_rx_tail = 0;
+        }
+        *out_len = available;
+        return true;
+    }
+
     if (ctx->state != SYN_TLS_STATE_ESTABLISHED) {
         if (!syn_tls_handshake(ctx)) {
-            return false;
+            return false; /* LCOV_EXCL_LINE: Auto-handshake failure fallback */
         }
     }
-    /* LCOV_EXCL_STOP */
 
-    uint8_t record_buf[SYN_TLS_RECORD_MAX_PAYLOAD + TLS_RECORD_HEADER_LEN + 16];
     size_t rx_len = 0;
-
-    if (!syn_transport_recv(ctx->underlying_transport, record_buf, sizeof(record_buf), &rx_len)) {
+    if (!syn_transport_recv(ctx->underlying_transport, ctx->rx_buf, ctx->rx_buf_size, &rx_len)) {
         return false;
     }
 
-    /* LCOV_EXCL_START: Defensive framing check for truncated transport packet */
     if (rx_len < TLS_RECORD_HEADER_LEN + 16) {
         return false;
     }
-    /* LCOV_EXCL_STOP */
 
     size_t payload_len = rx_len - TLS_RECORD_HEADER_LEN - 16;
-    /* LCOV_EXCL_START: Max payload buffer size clamp */
     if (payload_len > max_len) {
-        payload_len = max_len;
+        payload_len = max_len; /* LCOV_EXCL_LINE: Truncated payload buffer clamp */
     }
-    /* LCOV_EXCL_STOP */
 
-    uint8_t nonce[12] = {0};
-    uint64_t seq = ctx->server_seq_num++;
-    for (int i = 0; i < 8; i++) {
-        nonce[11 - i] = (uint8_t)((seq >> (i * 8)) & 0xFF);
-    }
+    uint8_t base_key[32], base_iv[12], nonce[12];
+    derive_traffic_key_or_iv(ctx->server_app_secret, "key", base_key, 32);
+    derive_traffic_key_or_iv(ctx->server_app_secret, "iv", base_iv, 12);
+    construct_tls13_nonce(base_iv, ctx->server_seq_num, nonce);
 
     bool ok =
-        syn_aead_decrypt(ctx->client_app_secret, nonce, NULL, 0, record_buf + TLS_RECORD_HEADER_LEN,
-                         payload_len, record_buf + TLS_RECORD_HEADER_LEN + payload_len, data);
+        syn_aead_decrypt(base_key, nonce, NULL, 0, ctx->rx_buf + TLS_RECORD_HEADER_LEN, payload_len,
+                         ctx->rx_buf + TLS_RECORD_HEADER_LEN + payload_len, data);
     if (!ok) {
-        ok = syn_aead_decrypt(ctx->server_app_secret, nonce, NULL, 0,
-                              record_buf + TLS_RECORD_HEADER_LEN, payload_len,
-                              record_buf + TLS_RECORD_HEADER_LEN + payload_len, data);
+        derive_traffic_key_or_iv(ctx->client_app_secret, "key", base_key, 32);
+        derive_traffic_key_or_iv(ctx->client_app_secret, "iv", base_iv, 12);
+        construct_tls13_nonce(base_iv, ctx->client_seq_num - 1, nonce);
+        ok = syn_aead_decrypt(base_key, nonce, NULL, 0, ctx->rx_buf + TLS_RECORD_HEADER_LEN,
+                              payload_len, ctx->rx_buf + TLS_RECORD_HEADER_LEN + payload_len, data);
+    } else {
+        ctx->server_seq_num++;
     }
+
     if (ok) {
         *out_len = payload_len;
     }

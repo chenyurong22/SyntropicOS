@@ -199,8 +199,8 @@ SYN_PT_Status syn_dns_resolve_task(SYN_PT *pt, SYN_Task *task)
         SYN_SockAddr from;
         int n = syn_port_udp_recvfrom(r->sock, r->buf, sizeof(r->buf), &from, 0);
         if (n > 0) {
-            r->status = parse_response(r->buf, (size_t)n, r->addr_out, r->txid);
-            if (r->status == SYN_OK) {
+            if (n < 12 || syn_peek_u16(r->buf, 0) == r->txid) {
+                r->status = parse_response(r->buf, (size_t)n, r->addr_out, r->txid);
                 break;
             }
         }
@@ -210,7 +210,8 @@ SYN_PT_Status syn_dns_resolve_task(SYN_PT *pt, SYN_Task *task)
             break;
         }
 
-        PT_YIELD(pt);
+        PT_WAIT_UNTIL(pt, syn_port_udp_readable(r->sock) ||
+                              (syn_port_get_tick_ms() - r->start_ms) >= r->timeout_ms);
     }
 
     syn_port_sock_close(r->sock);
@@ -373,7 +374,7 @@ SYN_PT_Status syn_mdns_task(SYN_PT *pt, SYN_Task *task)
                 }
             }
         }
-        PT_DEFER(pt, task);
+        PT_WAIT_UNTIL(pt, mdns->sock == SYN_SOCKET_INVALID || syn_port_udp_readable(mdns->sock));
     }
 
     PT_END(pt); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */

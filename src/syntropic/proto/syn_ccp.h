@@ -33,7 +33,8 @@ extern "C" {
 #define SYN_CCP_MAX_ENTRIES_PER_ODT 7U
 #endif
 
-/* CCP Command Codes (CRO) */
+/** @name CCP Command Codes (CRO) */
+/**@{*/
 #define SYN_CCP_CMD_CONNECT 0x01U
 #define SYN_CCP_CMD_EXCHANGE_ID 0x02U
 #define SYN_CCP_CMD_DNLOAD 0x03U
@@ -54,12 +55,16 @@ extern "C" {
 #define SYN_CCP_CMD_GET_CCP_VERSION 0x1BU
 #define SYN_CCP_CMD_PROGRAM 0x22U
 #define SYN_CCP_CMD_DNLOAD_6 0x23U
+/**@}*/
 
-/* CCP Response Packet Identifiers (DTO) */
+/** @name CCP Response Packet Identifiers (DTO) */
+/**@{*/
 #define SYN_CCP_PID_CRM 0xFFU
 #define SYN_CCP_PID_EVENT 0xFEU
+/**@}*/
 
-/* CCP Error Return Codes */
+/** @name CCP Error Return Codes */
+/**@{*/
 #define SYN_CCP_ERR_SUCCESS 0x00U
 #define SYN_CCP_ERR_CMD_UNKNOWN 0x01U
 #define SYN_CCP_ERR_CMD_SYNTAX 0x02U
@@ -67,11 +72,14 @@ extern "C" {
 #define SYN_CCP_ERR_ACCESS_DENIED 0x11U
 #define SYN_CCP_ERR_NOT_CONNECTED 0x12U
 #define SYN_CCP_ERR_RESOURCE_LOCKED 0x18U
+/**@}*/
 
-/* CCP Protection Resource Masks */
+/** @name CCP Protection Resource Masks */
+/**@{*/
 #define SYN_CCP_RESOURCE_CAL 0x01U
 #define SYN_CCP_RESOURCE_DAQ 0x02U
 #define SYN_CCP_RESOURCE_PGM 0x40U
+/**@}*/
 
 /**
  * @brief ODT Element mapping entry.

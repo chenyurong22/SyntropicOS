@@ -12,6 +12,8 @@
 #include "syntropic/util/syn_qmath.h"
 #endif
 
+/** @cond INTERNAL */
+
 /* Wasm Magic Header & Version */
 #define WASM_MAGIC 0x6D736100U /* "\0asm" */
 #define WASM_VERSION 0x00000001U
@@ -2260,3 +2262,5 @@ SYN_WASM_Status syn_wasm_step(SYN_WASM_Context *ctx, uint16_t max_instructions)
 void syn_wasm_dummy_touch(void)
 {
 }
+
+/** @endcond */

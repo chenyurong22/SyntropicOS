@@ -18,7 +18,8 @@
 extern "C" {
 #endif
 
-/* Configuration constants */
+/** @name Configuration Constants */
+/**@{*/
 #ifndef SYN_XCP_MAX_DAQ_LISTS
 #define SYN_XCP_MAX_DAQ_LISTS 4U
 #endif
@@ -30,8 +31,10 @@ extern "C" {
 #ifndef SYN_XCP_MAX_ENTRIES_PER_ODT
 #define SYN_XCP_MAX_ENTRIES_PER_ODT 7U
 #endif
+/**@}*/
 
-/* XCP Command Codes (CTO) */
+/** @name XCP Command Codes (CTO) */
+/**@{*/
 #define SYN_XCP_CMD_CONNECT 0xFFU
 #define SYN_XCP_CMD_DISCONNECT 0xFEU
 #define SYN_XCP_CMD_GET_STATUS 0xFDU
@@ -51,14 +54,18 @@ extern "C" {
 #define SYN_XCP_CMD_SET_DAQ_LIST_MODE 0xE0U
 #define SYN_XCP_CMD_START_STOP_DAQ_LIST 0xDEU
 #define SYN_XCP_CMD_START_STOP_SYNCH 0xDDU
+/**@}*/
 
-/* XCP Response Packet Identifiers (CTO Response) */
+/** @name XCP Response Packet Identifiers (CTO Response) */
+/**@{*/
 #define SYN_XCP_PID_RES 0xFFU
 #define SYN_XCP_PID_ERR 0xFEU
 #define SYN_XCP_PID_EV 0xFDU
 #define SYN_XCP_PID_SERV 0xFCU
+/**@}*/
 
-/* XCP Error Return Codes */
+/** @name XCP Error Return Codes */
+/**@{*/
 #define SYN_XCP_ERR_SUCCESS 0x00U
 #define SYN_XCP_ERR_CMD_SYNTAX 0x20U
 #define SYN_XCP_ERR_OUT_OF_RANGE 0x22U
@@ -66,12 +73,15 @@ extern "C" {
 #define SYN_XCP_ERR_ACCESS_DENIED 0x24U
 #define SYN_XCP_ERR_NOT_CONNECTED 0x28U
 #define SYN_XCP_ERR_CMD_UNKNOWN 0x30U
+/**@}*/
 
-/* XCP Resource Protection Masks */
+/** @name XCP Resource Protection Masks */
+/**@{*/
 #define SYN_XCP_RESOURCE_CAL_PAG 0x01U
 #define SYN_XCP_RESOURCE_DAQ 0x04U
 #define SYN_XCP_RESOURCE_STIM 0x08U
 #define SYN_XCP_RESOURCE_PGM 0x10U
+/**@}*/
 
 /**
  * @brief ODT Element mapping entry.

@@ -18,12 +18,15 @@
 extern "C" {
 #endif
 
-/* Configuration constants */
+/** @name Configuration Constants */
+/**@{*/
 #ifndef SYN_UDS_MAX_DIDS
 #define SYN_UDS_MAX_DIDS 16U
 #endif
+/**@}*/
 
-/* UDS Service Identifiers (SID) */
+/** @name UDS Service Identifiers (ISO 14229-1 SID) */
+/**@{*/
 #define SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL 0x10U
 #define SYN_UDS_SID_ECU_RESET 0x11U
 #define SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION 0x14U
@@ -51,15 +54,19 @@ extern "C" {
 #define SYN_UDS_SID_CONTROL_DTC_SETTING 0x85U
 #define SYN_UDS_SID_RESPONSE_ON_EVENT 0x86U
 #define SYN_UDS_SID_LINK_CONTROL 0x87U
+/**@}*/
 
-/* UDS Service 0x11 ECUReset Sub-functions (ISO 14229-1) */
+/** @name UDS Service 0x11 ECUReset Sub-functions (ISO 14229-1) */
+/**@{*/
 #define SYN_UDS_RESET_HARD 0x01U
 #define SYN_UDS_RESET_KEY_OFF_ON 0x02U
 #define SYN_UDS_RESET_SOFT 0x03U
 #define SYN_UDS_RESET_ENABLE_RAPID_POWER_SHUTDOWN 0x04U
 #define SYN_UDS_RESET_DISABLE_RAPID_POWER_SHUTDOWN 0x05U
+/**@}*/
 
-/* UDS Service 0x19 ReadDTCInformation Sub-functions */
+/** @name UDS Service 0x19 ReadDTCInformation Sub-functions */
+/**@{*/
 #define SYN_UDS_DTC_REPORT_NUMBER_BY_STATUS_MASK 0x01U
 #define SYN_UDS_DTC_REPORT_BY_STATUS_MASK 0x02U
 #define SYN_UDS_DTC_REPORT_SNAPSHOT_IDENTIFICATION 0x03U
@@ -87,18 +94,24 @@ extern "C" {
 #define SYN_UDS_DTC_REPORT_USER_DEF_MEMORY_EXT_DATA_BY_DTC 0x19U
 #define SYN_UDS_DTC_REPORT_WWH_OBD_BY_MASK_RECORD 0x42U
 #define SYN_UDS_DTC_REPORT_WWH_OBD_WITH_PERMANENT_STATUS 0x55U
+/**@}*/
 
-/* UDS GroupOfDTC definitions (ISO 14229-1 / SAE J2012) */
+/** @name UDS GroupOfDTC Definitions (ISO 14229-1 / SAE J2012) */
+/**@{*/
 #define SYN_UDS_DTC_GROUP_POWERTRAIN 0x000000U
 #define SYN_UDS_DTC_GROUP_CHASSIS 0x400000U
 #define SYN_UDS_DTC_GROUP_BODY 0x800000U
 #define SYN_UDS_DTC_GROUP_NETWORK 0xC00000U
 #define SYN_UDS_DTC_GROUP_ALL 0xFFFFFFU
+/**@}*/
 
-/* UDS Response Identifiers */
+/** @name UDS Response Identifiers */
+/**@{*/
 #define SYN_UDS_RESPONSE_NEGATIVE 0x7FU
+/**@}*/
 
-/* UDS Negative Response Codes (NRC) */
+/** @name UDS Negative Response Codes (NRC) */
+/**@{*/
 #define SYN_UDS_NRC_SUCCESS 0x00U
 #define SYN_UDS_NRC_SERVICE_NOT_SUPPORTED 0x11U
 #define SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED 0x12U
@@ -114,6 +127,7 @@ extern "C" {
 #define SYN_UDS_NRC_TRANSFER_DATA_SUSPENDED 0x71U
 #define SYN_UDS_NRC_GENERAL_PROGRAMMING_FAILURE 0x72U
 #define SYN_UDS_NRC_WRONG_BLOCK_SEQUENCE_COUNTER 0x73U
+/**@}*/
 
 /* UDS Transfer States */
 typedef enum {

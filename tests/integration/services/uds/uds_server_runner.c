@@ -32,6 +32,37 @@ static bool memory_handler_cb(bool is_write, uint32_t address, uint32_t size, ui
     return true;
 }
 
+static bool comm_control_cb(uint8_t ctrl_type, uint8_t comm_type, void *user_data)
+{
+    (void)ctrl_type;
+    (void)comm_type;
+    (void)user_data;
+    return true;
+}
+
+static bool access_timing_cb(uint8_t sub_func, uint8_t *param_data, uint16_t param_len,
+                             void *user_data)
+{
+    (void)sub_func;
+    (void)param_data;
+    (void)param_len;
+    (void)user_data;
+    return true;
+}
+
+static bool auth_cb(uint8_t sub_func, const uint8_t *req, uint16_t req_len, uint8_t *resp,
+                    uint16_t *resp_len, void *user_data)
+{
+    (void)sub_func;
+    (void)req;
+    (void)req_len;
+    (void)user_data;
+    resp[0] = 0x69;
+    resp[1] = 0x00;
+    *resp_len = 2;
+    return true;
+}
+
 int main(void)
 {
     printf(
@@ -55,8 +86,11 @@ int main(void)
     /* Register DTC 0x123456 */
     syn_uds_register_dtc(&server, 0x123456U, 0x24U, 0x40U);
 
-    /* Register Memory Handler */
+    /* Register Handlers */
     syn_uds_register_memory_handler(&server, memory_handler_cb, NULL);
+    syn_uds_register_comm_control(&server, comm_control_cb, NULL);
+    syn_uds_register_access_timing(&server, access_timing_cb, NULL);
+    syn_uds_register_auth_handler(&server, auth_cb, NULL);
 
     int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd < 0) {

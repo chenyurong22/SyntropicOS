@@ -2,7 +2,7 @@
 """
 3rd-Party Python udsoncan Integration Client Test Suite for SyntropicOS UDS Server.
 Validates SyntropicOS C UDS Server (syn_uds.c) using official, independent udsoncan library.
-Includes full regression testing for user-reported Issues #83, #86, #87, #88, and spec edge cases.
+Includes full regression testing for user-reported Issues #83, #86, #87, #88, and all extended ISO 14229-1 services.
 """
 
 import os
@@ -10,6 +10,7 @@ import socket
 import sys
 import time
 import udsoncan
+from udsoncan import MemoryLocation
 from udsoncan.client import Client
 from udsoncan.connections import SocketConnection
 from udsoncan.services import (
@@ -17,6 +18,14 @@ from udsoncan.services import (
     SecurityAccess,
     ReadDataByIdentifier,
     WriteDataByIdentifier,
+    ReadMemoryByAddress,
+    WriteMemoryByAddress,
+    CommunicationControl,
+    ControlDTCSetting,
+    RoutineControl,
+    RequestDownload,
+    TransferData,
+    RequestTransferExit,
     ReadDTCInformation,
     ClearDiagnosticInformation,
     ECUReset,
@@ -131,11 +140,9 @@ def main():
         # 5. Issue #87: Session Mask Permissions & NRC 0x7E
         print("\n--- Test 5: Session Mask Perms & NRC 0x7E (Issue #87) ---")
         try:
-            # Change back to Default session
             client.change_session(DiagnosticSessionControl.Session.defaultSession)
             print("[udsoncan] Switched to Default Session")
 
-            # Try reading Programming-only DID 0x0300 in Default Session -> Expect NRC 0x7E
             try:
                 res = client.read_data_by_identifier(0x0300)
                 print("[udsoncan] FAIL: Expected NRC 0x7E for Programming DID in Default Session!")
@@ -143,23 +150,37 @@ def main():
             except NegativeResponseException as nrc_ex:
                 print(f"[udsoncan] NRC 0x7E Caught OK: {nrc_ex.response.code_name} (0x{nrc_ex.response.code:02X})")
 
-            # Switch to Programming Session
             client.change_session(DiagnosticSessionControl.Session.programmingSession)
             print("[udsoncan] Switched to Programming Session")
 
-            # Read Programming-only DID 0x0300 in Programming Session -> Expect Success
             res = client.read_data_by_identifier(0x0300)
             print(f"[udsoncan] Read Programming DID 0x0300 OK: {res.service_data.values[0x0300].hex()}")
         except Exception as e:
             print(f"[udsoncan] FAIL: Session mask perms test failed: {e}")
             failures += 1
 
-        # Re-enter Extended session and unlock for subsequent tests
-        client.change_session(DiagnosticSessionControl.Session.extendedDiagnosticSession)
+        # Re-enter Programming session and unlock for memory & transfer services
         client.unlock_security_access(level=1)
 
-        # 6. WriteDataByIdentifier (0x2E) - System Status 0x0100
-        print("\n--- Test 6: WriteDataByIdentifier (0x2E) System Status 0x0100 ---")
+        # 6. WriteMemoryByAddress (0x3D) & ReadMemoryByAddress (0x23)
+        print("\n--- Test 6: Memory Services 0x3D & 0x23 via udsoncan ---")
+        try:
+            mem_loc = MemoryLocation(address=0x10, memorysize=2, address_format=8, memorysize_format=8)
+            client.write_memory_by_address(mem_loc, b'\xDE\xAD')
+            print("[udsoncan] WriteMemoryByAddress (0x3D) OK!")
+
+            res_mem = client.read_memory_by_address(mem_loc)
+            read_bytes = res_mem.service_data.memory_block
+            print(f"[udsoncan] ReadMemoryByAddress (0x23) OK: 0x{read_bytes.hex()}")
+            if read_bytes != b'\xDE\xAD':
+                print(f"[udsoncan] FAIL: Memory mismatch! Expected DEAD, got {read_bytes.hex()}")
+                failures += 1
+        except Exception as e:
+            print(f"[udsoncan] FAIL: Memory services failed: {e}")
+            failures += 1
+
+        # 7. WriteDataByIdentifier (0x2E) - System Status 0x0100
+        print("\n--- Test 7: WriteDataByIdentifier (0x2E) System Status 0x0100 ---")
         try:
             res = client.write_data_by_identifier(0x0100, b'\xAA\xBB\xCC\xDD')
             print(f"[udsoncan] Write DID 0x0100 OK!")
@@ -167,15 +188,56 @@ def main():
             print(f"[udsoncan] FAIL: Write DID failed: {e}")
             failures += 1
 
-        # 7. Issue #88: ReadDTCInformation (0x19) Subfunctions
-        print("\n--- Test 7: ReadDTCInformation (0x19) Subfunctions (Issue #88) ---")
+        # 8. CommunicationControl (0x28)
+        print("\n--- Test 8: CommunicationControl (0x28) via udsoncan ---")
         try:
-            # Subfunction 0x02: Report DTC by Status Mask
+            res = client.communication_control(control_type=0, communication_type=1)
+            print(f"[udsoncan] CommunicationControl (0x28) OK!")
+        except Exception as e:
+            print(f"[udsoncan] FAIL: CommunicationControl failed: {e}")
+            failures += 1
+
+        # 9. ControlDTCSetting (0x85)
+        print("\n--- Test 9: ControlDTCSetting (0x85) via udsoncan ---")
+        try:
+            res = client.control_dtc_setting(1)
+            print(f"[udsoncan] ControlDTCSetting (0x85) OK!")
+        except Exception as e:
+            print(f"[udsoncan] FAIL: ControlDTCSetting failed: {e}")
+            failures += 1
+
+        # 10. RoutineControl (0x31)
+        print("\n--- Test 10: RoutineControl (0x31) via udsoncan ---")
+        try:
+            res = client.routine_control(routine_id=0x1234, control_type=RoutineControl.ControlType.startRoutine)
+            print(f"[udsoncan] RoutineControl (0x31) OK!")
+        except Exception as e:
+            print(f"[udsoncan] FAIL: RoutineControl failed: {e}")
+            failures += 1
+
+        # 11. RequestDownload (0x34), TransferData (0x36), RequestTransferExit (0x37)
+        print("\n--- Test 11: Firmware Transfer (0x34, 0x36, 0x37) via udsoncan ---")
+        try:
+            mem_dl = MemoryLocation(address=0x10, memorysize=4, address_format=8, memorysize_format=8)
+            client.request_download(mem_dl)
+            print("[udsoncan] RequestDownload (0x34) OK!")
+
+            client.transfer_data(sequence_number=1, data=b'\xAA\xBB')
+            print("[udsoncan] TransferData (0x36) OK!")
+
+            client.request_transfer_exit()
+            print("[udsoncan] RequestTransferExit (0x37) OK!")
+        except Exception as e:
+            print(f"[udsoncan] FAIL: Firmware transfer failed: {e}")
+            failures += 1
+
+        # 12. Issue #88: ReadDTCInformation (0x19) Subfunctions
+        print("\n--- Test 12: ReadDTCInformation (0x19) Subfunctions (Issue #88) ---")
+        try:
             res2 = client.get_dtc_by_status_mask(0xFF)
             dtcs2 = res2.service_data.dtcs
             print(f"[udsoncan] Get DTC By Status Mask (0x02) OK: count={len(dtcs2)}")
 
-            # Subfunction 0x0A: Report Supported DTCs
             res_a = client.get_supported_dtc()
             dtcs_a = res_a.service_data.dtcs
             print(f"[udsoncan] Get Supported DTCs (0x0A) OK: count={len(dtcs_a)}")
@@ -183,23 +245,32 @@ def main():
             print(f"[udsoncan] FAIL: ReadDTCInformation subfunctions failed: {e}")
             failures += 1
 
-        # 8. Issue #83: ClearDiagnosticInformation (0x14) Group Filtering
-        print("\n--- Test 8: ClearDiagnosticInformation (0x14) Groups (Issue #83) ---")
+        # 13. Issue #83: ClearDiagnosticInformation (0x14) Group Filtering
+        print("\n--- Test 13: ClearDiagnosticInformation (0x14) Groups (Issue #83) ---")
         try:
-            client.clear_dtc(0x000000) # Emissions Group
+            client.clear_dtc(0x000000)
             print("[udsoncan] Clear DTCs (Emissions 0x000000) OK!")
 
-            client.clear_dtc(0x100000) # Powertrain Group
+            client.clear_dtc(0x100000)
             print("[udsoncan] Clear DTCs (Powertrain 0x100000) OK!")
 
-            client.clear_dtc(0xFFFFFF) # All DTCs
+            client.clear_dtc(0xFFFFFF)
             print("[udsoncan] Clear DTCs (All 0xFFFFFF) OK!")
         except Exception as e:
             print(f"[udsoncan] FAIL: Clear DTCs failed: {e}")
             failures += 1
 
-        # 9. TesterPresent (0x3E)
-        print("\n--- Test 9: TesterPresent (0x3E) ---")
+        # 14. ECUReset (0x11)
+        print("\n--- Test 14: ECUReset (0x11) via udsoncan ---")
+        try:
+            res = client.ecu_reset(ECUReset.ResetType.softReset)
+            print(f"[udsoncan] ECUReset (0x11) OK!")
+        except Exception as e:
+            print(f"[udsoncan] FAIL: ECUReset failed: {e}")
+            failures += 1
+
+        # 15. TesterPresent (0x3E)
+        print("\n--- Test 15: TesterPresent (0x3E) via udsoncan ---")
         try:
             res = client.tester_present()
             print(f"[udsoncan] TesterPresent OK!")
@@ -207,8 +278,8 @@ def main():
             print(f"[udsoncan] FAIL: TesterPresent failed: {e}")
             failures += 1
 
-        # 10. Negative Response Code Validation (Invalid DID 0x9999 -> NRC 0x31)
-        print("\n--- Test 10: NRC Validation (Invalid DID 0x9999 -> NRC 0x31) ---")
+        # 16. Negative Response Code Validation (Invalid DID 0x9999 -> NRC 0x31)
+        print("\n--- Test 16: NRC Validation (Invalid DID 0x9999 -> NRC 0x31) ---")
         try:
             res = client.read_data_by_identifier(0x9999)
             print(f"[udsoncan] FAIL: Expected NegativeResponseException, got positive response!")

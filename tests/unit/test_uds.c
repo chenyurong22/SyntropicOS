@@ -220,19 +220,17 @@ static void test_uds_security_access(void)
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
 
-    /* Repeat Request Seed cycle when already unlocked -> returns zero seed and remains UNLOCKED */
+    /* Repeat Request Seed cycle when already unlocked */
     req[1] = 0x01;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
-    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
+    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_SEED_SENT, g_uds.security_state);
 
-    /* Sending key when already unlocked (no seed pending) returns requestSequenceError (NRC 0x24)
-     */
+    /* Sending valid key again unlocks successfully */
     req[1] = 0x02;
-    syn_poke_u32(0, req, 2);
+    syn_poke_u32(correct_key, req, 2);
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
 
     /* Re-initialize server and set delay timer to test NRC 0x37 */
@@ -376,19 +374,19 @@ static void test_uds_security_access_aes128(void)
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
     TEST_ASSERT_EQUAL_UINT8(0, g_uds.security_error_count);
 
-    /* Request Seed when already unlocked -> returns 16 zero bytes */
+    /* Request Seed when already unlocked -> returns active seed bytes */
     req[1] = 0x01;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
-    uint8_t zero_16[16] = {0};
-    TEST_ASSERT_EQUAL_MEMORY(zero_16, &resp[2], 16);
+    TEST_ASSERT_EQUAL_MEMORY(seed_16, &resp[2], 16);
+    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_SEED_SENT, g_uds.security_state);
 
-    /* Sending key when already unlocked in AES128 mode returns requestSequenceError (NRC 0x24) */
+    /* Sending valid key when unlocked unlocks successfully */
     req[1] = 0x02;
-    memset(&req[2], 0, 16);
+    memcpy(&req[2], valid_key, 16);
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 18, resp, sizeof(resp), &resp_len));
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, resp[1]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
 
     /* Verify master seed template current_seed_bytes was NOT corrupted or zeroed */
@@ -2616,12 +2614,70 @@ static void test_uds_session_mask_filtering(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp[2]);
 }
 
+void test_uds_security_access_repeated_unlock(void)
+{
+    SYN_UDS_Server server;
+    TEST_ASSERT_TRUE(syn_uds_init(&server));
+
+    uint8_t aes_key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                           0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};
+    uint8_t seed_16[16] = {0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF,
+                           0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10};
+    syn_uds_enable_aes128_security(&server, aes_key);
+    syn_uds_set_security_seed_bytes(&server, seed_16);
+
+    uint8_t req[32] = {0};
+    uint8_t resp[32] = {0};
+    uint16_t resp_len = 0;
+
+    /* Pass 1: Request Seed (27 01) */
+    req[0] = SYN_UDS_SID_SECURITY_ACCESS;
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(18, resp_len);
+    TEST_ASSERT_EQUAL_MEMORY(seed_16, &resp[2], 16);
+
+    /* Compute expected key */
+    SYN_AES128_Context aes_ctx;
+    syn_aes128_init(&aes_ctx, aes_key);
+    uint8_t expected_key[16];
+    syn_aes128_encrypt_block(&aes_ctx, seed_16, expected_key);
+
+    /* Pass 1: Send Key (27 02) */
+    req[0] = SYN_UDS_SID_SECURITY_ACCESS;
+    req[1] = 0x02;
+    memcpy(&req[2], expected_key, 16);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 18, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, resp[1]);
+
+    /* Pass 2: Repeat Request Seed (27 01) while UNLOCKED -> returns seed_16 */
+    req[0] = SYN_UDS_SID_SECURITY_ACCESS;
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(18, resp_len);
+    TEST_ASSERT_EQUAL_MEMORY(seed_16, &resp[2], 16);
+
+    /* Pass 2: Send Key (27 02) -> Success */
+    req[0] = SYN_UDS_SID_SECURITY_ACCESS;
+    req[1] = 0x02;
+    memcpy(&req[2], expected_key, 16);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 18, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, resp[1]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
     RUN_TEST(test_uds_s3_timer_tick);
     RUN_TEST(test_uds_security_access);
     RUN_TEST(test_uds_security_access_aes128);
+    RUN_TEST(test_uds_security_access_repeated_unlock);
     RUN_TEST(test_uds_communication_control);
     RUN_TEST(test_uds_access_timing_parameter);
     RUN_TEST(test_uds_secured_data_transmission);

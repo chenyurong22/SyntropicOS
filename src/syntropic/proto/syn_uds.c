@@ -326,7 +326,7 @@ static uint8_t session_to_mask(SYN_UDS_Session session)
     case SYN_UDS_SESSION_SAFETY_SYSTEM:
         return SYN_UDS_SESSION_MASK_SAFETY;
     default:
-        /* LCOV_EXCL_START: Invalid session enum guard */
+        /* LCOV_EXCL_START: Unreachable session enum guard */
         return 0U;
         /* LCOV_EXCL_STOP */
     }
@@ -443,23 +443,14 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             }
             resp_buf[0] = sid + 0x40U;
             resp_buf[1] = sub;
-            bool is_unlocked = (server->security_state == SYN_UDS_SECURITY_UNLOCKED);
-            if (!is_unlocked) {
-                server->security_state = SYN_UDS_SECURITY_SEED_SENT;
-            }
+            server->security_state = SYN_UDS_SECURITY_SEED_SENT;
             if (server->use_aes128_security) {
-                if (is_unlocked) {
-                    memset(server->active_seed_bytes, 0, 16);
-                    memset(&resp_buf[2], 0, 16);
-                } else {
-                    memcpy(server->active_seed_bytes, server->current_seed_bytes, 16);
-                    memcpy(&resp_buf[2], server->current_seed_bytes, 16);
-                }
+                memcpy(server->active_seed_bytes, server->current_seed_bytes, 16);
+                memcpy(&resp_buf[2], server->current_seed_bytes, 16);
                 *resp_len = 18U;
             } else {
-                uint32_t seed_to_send = is_unlocked ? 0x00000000U : server->current_seed;
-                server->active_seed = seed_to_send;
-                syn_poke_u32(seed_to_send, resp_buf, 2);
+                server->active_seed = server->current_seed;
+                syn_poke_u32(server->current_seed, resp_buf, 2);
                 *resp_len = 6U;
             }
             success = true;

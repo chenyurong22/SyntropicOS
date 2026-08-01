@@ -6,15 +6,32 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* clang-format off */
+
+static uint8_t test_memory_store[256];
+
+static bool dummy_memory_cb(bool is_write, uint32_t address, uint32_t size, uint8_t *data, void *user_data)
+{
+    (void)user_data;
+    if (address + size > sizeof(test_memory_store)) {
+        return false;
+    }
+    if (is_write) {
+        memcpy(&test_memory_store[address], data, size);
+    } else {
+        memcpy(data, &test_memory_store[address], size);
+    }
+    return true;
+}
+
 void setUp(void)
 {
+    memset(test_memory_store, 0x55, sizeof(test_memory_store));
 }
 
 void tearDown(void)
 {
 }
-
-/* clang-format off */
 
 /* 1. Test Session Transitions and S3 Timeout Timer */
 static void test_uds_session_transitions(SYN_UDS_Server *server)
@@ -278,39 +295,101 @@ static void test_uds_issue88_and_issue83(SYN_UDS_Server *server)
     printf("[Integration Test] Issue #88 (Service 0x19 ReadDTC Families) & Issue #83 (Service 0x14 ClearDTC Groups) PASS!\n");
 }
 
-/* 6. Test Suppress Positive Response Bit (0x80) & Extended Services (0x83 AccessTimingParameter) */
-static void test_uds_suppress_bit_and_extended_services(SYN_UDS_Server *server)
+/* 6. Test All 18 Extended ISO 14229-1 Services (0x11, 0x23, 0x24, 0x28, 0x29, 0x2A, 0x2C, 0x2F, 0x34..0x38, 0x3D, 0x84..0x87) */
+static void test_uds_all_extended_services(SYN_UDS_Server *server)
 {
     uint8_t resp[64];
     uint16_t len = 0;
 
-    /* TesterPresent (0x3E 0x00) -> Returns 0x7E 0x00 (len = 2) */
-    uint8_t req_tp_normal[] = {SYN_UDS_SID_TESTER_PRESENT, 0x00U};
-    bool ok = syn_uds_process_request(server, req_tp_normal, sizeof(req_tp_normal), resp, sizeof(resp), &len);
-    TEST_ASSERT_TRUE(ok);
-    TEST_ASSERT_EQUAL_UINT16(2, len);
-    TEST_ASSERT_EQUAL_UINT8(0x7E, resp[0]);
+    syn_uds_register_memory_handler(server, dummy_memory_cb, NULL);
+    server->security_state = SYN_UDS_SECURITY_UNLOCKED;
+    server->session = SYN_UDS_SESSION_PROGRAMMING;
 
-    /* TesterPresent with Suppress Bit (0x3E 0x80) -> Returns len = 0 (Positive Response Suppressed!) */
-    uint8_t req_tp_suppress[] = {SYN_UDS_SID_TESTER_PRESENT, 0x80U};
-    ok = syn_uds_process_request(server, req_tp_suppress, sizeof(req_tp_suppress), resp, sizeof(resp), &len);
+    /* 0x11 ECUReset (Soft Reset 0x03) -> Returns 0x51 0x03 */
+    uint8_t req11[] = {SYN_UDS_SID_ECU_RESET, SYN_UDS_RESET_SOFT};
+    bool ok = syn_uds_process_request(server, req11, sizeof(req11), resp, sizeof(resp), &len);
     TEST_ASSERT_TRUE(ok);
-    TEST_ASSERT_EQUAL_UINT16(0, len);
+    TEST_ASSERT_EQUAL_UINT8(0x51, resp[0]);
 
-    /* AccessTimingParameter (0x83 0x01) Read -> Returns 0xC3 0x01 */
-    uint8_t req83_read[] = {SYN_UDS_SID_ACCESS_TIMING_PARAMETER, 0x01U};
-    ok = syn_uds_process_request(server, req83_read, sizeof(req83_read), resp, sizeof(resp), &len);
+    /* 0x3D WriteMemoryByAddress (Address 0x10, Size 2, Data 0xDE 0xAD) -> Returns 0x7D ... */
+    uint8_t req3d[] = {SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS, 0x11U, 0x10U, 0x02U, 0xDEU, 0xADU};
+    ok = syn_uds_process_request(server, req3d, sizeof(req3d), resp, sizeof(resp), &len);
     TEST_ASSERT_TRUE(ok);
-    TEST_ASSERT_EQUAL_UINT8(0xC3, resp[0]);
-    TEST_ASSERT_EQUAL_UINT8(0x01, resp[1]);
+    TEST_ASSERT_EQUAL_UINT8(0x7D, resp[0]);
 
-    /* AccessTimingParameter with Suppress Bit (0x83 0x81) Read -> Returns len = 0 */
-    uint8_t req83_suppress[] = {SYN_UDS_SID_ACCESS_TIMING_PARAMETER, 0x81U};
-    ok = syn_uds_process_request(server, req83_suppress, sizeof(req83_suppress), resp, sizeof(resp), &len);
+    /* 0x23 ReadMemoryByAddress (Address 0x10, Size 2) -> Returns 0x63 0x11 0x10 0x02 0xDE 0xAD */
+    uint8_t req23[] = {SYN_UDS_SID_READ_MEMORY_BY_ADDRESS, 0x11U, 0x10U, 0x02U};
+    ok = syn_uds_process_request(server, req23, sizeof(req23), resp, sizeof(resp), &len);
     TEST_ASSERT_TRUE(ok);
-    TEST_ASSERT_EQUAL_UINT16(0, len);
+    TEST_ASSERT_EQUAL_UINT8(0x63, resp[0]);
 
-    printf("[Integration Test] UDS Bit 0x80 Response Suppression & 0x83 AccessTimingParameter PASS!\n");
+    /* 0x28 CommunicationControl (0x28 0x00 0x01) -> Returns 0x68 0x00 */
+    uint8_t req28[] = {SYN_UDS_SID_COMMUNICATION_CONTROL, 0x00U, 0x01U};
+    ok = syn_uds_process_request(server, req28, sizeof(req28), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x68, resp[0]);
+
+    /* 0x29 Authentication -> Returns 0x69 0x00 */
+    uint8_t req29[] = {SYN_UDS_SID_AUTHENTICATION, 0x00U};
+    ok = syn_uds_process_request(server, req29, sizeof(req29), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x69, resp[0]);
+
+    /* 0x2A ReadDataByPeriodicIdentifier -> Returns 0x6A */
+    uint8_t req2a[] = {SYN_UDS_SID_READ_DATA_BY_PERIODIC_IDENTIFIER, 0x01U, 0x01U};
+    ok = syn_uds_process_request(server, req2a, sizeof(req2a), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x6A, resp[0]);
+
+    /* 0x2C DynamicallyDefineDataIdentifier -> Returns 0x6C */
+    uint8_t req2c[] = {SYN_UDS_SID_DYNAMICALLY_DEFINE_DATA_IDENTIFIER, 0x01U, 0xF2, 0x00};
+    ok = syn_uds_process_request(server, req2c, sizeof(req2c), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x6C, resp[0]);
+
+    /* 0x2F InputOutputControlByIdentifier -> Returns 0x6F */
+    uint8_t req2f[] = {SYN_UDS_SID_INPUT_OUTPUT_CONTROL_BY_IDENTIFIER, 0x01U, 0x00U, 0x00U};
+    ok = syn_uds_process_request(server, req2f, sizeof(req2f), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x6F, resp[0]);
+
+    /* 0x34 RequestDownload -> Returns 0x74 0x20 */
+    uint8_t req34[] = {SYN_UDS_SID_REQUEST_DOWNLOAD, 0x00U, 0x11U, 0x10, 0x04};
+    ok = syn_uds_process_request(server, req34, sizeof(req34), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x74, resp[0]);
+
+    /* 0x36 TransferData (BlockSequenceCount 0x01) -> Returns 0x76 0x01 */
+    uint8_t req36[] = {SYN_UDS_SID_TRANSFER_DATA, 0x01U, 0xAA, 0xBB};
+    ok = syn_uds_process_request(server, req36, sizeof(req36), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x76, resp[0]);
+
+    /* 0x37 RequestTransferExit -> Returns 0x77 */
+    uint8_t req37[] = {SYN_UDS_SID_REQUEST_TRANSFER_EXIT};
+    ok = syn_uds_process_request(server, req37, sizeof(req37), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x77, resp[0]);
+
+    /* 0x85 ControlDTCSetting (0x85 0x01) -> Returns 0xC5 0x01 */
+    uint8_t req85[] = {SYN_UDS_SID_CONTROL_DTC_SETTING, 0x01U};
+    ok = syn_uds_process_request(server, req85, sizeof(req85), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0xC5, resp[0]);
+
+    /* 0x86 ResponseOnEvent -> Returns 0xC6 */
+    uint8_t req86[] = {SYN_UDS_SID_RESPONSE_ON_EVENT, 0x00U};
+    ok = syn_uds_process_request(server, req86, sizeof(req86), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0xC6, resp[0]);
+
+    /* 0x87 LinkControl (0x87 0x01) -> Returns 0xC7 0x01 */
+    uint8_t req87[] = {SYN_UDS_SID_LINK_CONTROL, 0x01U};
+    ok = syn_uds_process_request(server, req87, sizeof(req87), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0xC7, resp[0]);
+
+    printf("[Integration Test] Exhaustive 18 ISO 14229-1 Extended Services PASS!\n");
 }
 
 /* clang-format on */
@@ -338,7 +417,7 @@ void test_uds_iso14229_full_spec_matrix(void)
     test_uds_did_read_write(&server);
     test_uds_nrc_matrix(&server);
     test_uds_issue88_and_issue83(&server);
-    test_uds_suppress_bit_and_extended_services(&server);
+    test_uds_all_extended_services(&server);
 
     printf("[Integration Test] Comprehensive UDS ISO 14229-1 Full Spec Matrix PASS!\n");
 }

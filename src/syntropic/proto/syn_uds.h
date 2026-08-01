@@ -154,6 +154,12 @@ extern "C" {
     0x7EU /**< Sub-function not supported in active session (0x7E) */
 /**@}*/
 
+/** @brief UDS Addressing Modes (ISO 14229-1) */
+typedef enum {
+    SYN_UDS_ADDR_PHYSICAL = 0U,  /**< Physical (1:1 point-to-point) addressing mode */
+    SYN_UDS_ADDR_FUNCTIONAL = 1U /**< Functional (1:N broadcast) addressing mode */
+} SYN_UDS_AddrMode;
+
 /** @brief UDS Data Transfer States */
 typedef enum {
     SYN_UDS_TRANSFER_IDLE = 0U,     /**< Idle state */
@@ -628,10 +634,12 @@ bool syn_uds_register_file_transfer(SYN_UDS_Server *server, SYN_UDS_FileTransfer
  * @param resp_buf Output buffer for response bytes.
  * @param max_resp_len Capacity of output response buffer.
  * @param resp_len Pointer to store generated response byte length.
+ * @param addr_mode Addressing mode (SYN_UDS_ADDR_PHYSICAL or SYN_UDS_ADDR_FUNCTIONAL).
  * @return true if response frame generated, false on invalid parameters.
  */
 bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_t req_len,
-                             uint8_t *resp_buf, uint16_t max_resp_len, uint16_t *resp_len);
+                             uint8_t *resp_buf, uint16_t max_resp_len, uint16_t *resp_len,
+                             SYN_UDS_AddrMode addr_mode);
 
 /**
  * @brief Report diagnostic test result for a registered DTC according to ISO 14229-1 state

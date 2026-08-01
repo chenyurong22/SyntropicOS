@@ -90,7 +90,7 @@ static SYN_PT_Status app_10ms_task(SYN_PT *pt, SYN_Task *task)
 
         /* Process UDS diagnostic request */
         if (syn_uds_process_request(&g_uds, req_buf, (uint16_t)req_len, resp_buf,
-                                    sizeof(resp_buf), &resp_len)) {
+                                    sizeof(resp_buf), &resp_len, SYN_UDS_ADDR_PHYSICAL)) {
             /* Transmit UDS response over ISO-TP multi-frame transport */
             syn_isotp_send(&g_isotp, resp_buf, resp_len);
         }

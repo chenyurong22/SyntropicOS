@@ -100,8 +100,8 @@ void isotp_app_loop(uint32_t dt_ms)
         uint16_t resp_len = 0;
 
         /* Process request through UDS diagnostic server */
-        if (syn_uds_process_request(&uds_server, req_payload, (uint16_t)len,
-                                    resp_payload, sizeof(resp_payload), &resp_len)) {
+        if (syn_uds_process_request(&uds_server, req_payload, (uint16_t)len, resp_payload,
+                                    sizeof(resp_payload), &resp_len, SYN_UDS_ADDR_PHYSICAL)) {
             /* Transmit UDS response payload back over ISO-TP link */
             syn_isotp_send(&isotp_link, resp_payload, resp_len);
         }

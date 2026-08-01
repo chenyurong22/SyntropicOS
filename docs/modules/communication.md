@@ -257,3 +257,18 @@ syn_uds_register_did_ext(&g_uds, 0xF190, engine_speed, sizeof(engine_speed), tru
 ```
 
 ```
+
+### Addressing Mode Support (Physical vs. Functional)
+
+ISO 14229-1 mandates differentiation between **Physical** (1:1 point-to-point) and **Functional** (1:N broadcast) CAN addressing modes:
+
+- `SYN_UDS_ADDR_PHYSICAL`: Point-to-point requests. Positively or negatively responded to as per protocol rules.
+- `SYN_UDS_ADDR_FUNCTIONAL`: Broadcast requests. Physical-only services (`0x34`, `0x35`, `0x36`, `0x37`, `0x38`, `0x3D`) are silently ignored (`resp_len = 0`). Standard negative responses (`0x11`, `0x12`, `0x7E`) on functional requests are suppressed to prevent bus flooding.
+
+```c
+/* Processing a physical UDS request */
+syn_uds_process_request(&g_uds, req_buf, req_len, resp_buf, sizeof(resp_buf), &resp_len, SYN_UDS_ADDR_PHYSICAL);
+
+/* Processing a functional broadcast request */
+syn_uds_process_request(&g_uds, req_buf, req_len, resp_buf, sizeof(resp_buf), &resp_len, SYN_UDS_ADDR_FUNCTIONAL);
+```

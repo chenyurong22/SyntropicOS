@@ -52,7 +52,7 @@ static void test_uds_session_transitions(SYN_UDS_Server *server)
     printf("[Integration Test] UDS Session Control & S3 Timeout Fallback PASS!\n");
 }
 
-/* 2. Test SecurityAccess Seed/Key Challenge-Response Flow */
+/* 2. Test SecurityAccess Seed/Key Challenge-Response Flow & ISO 14229-1 Section 11.2.2 Zero Seed */
 static void test_uds_security_access_flow(SYN_UDS_Server *server)
 {
     uint8_t resp[64];
@@ -87,7 +87,17 @@ static void test_uds_security_access_flow(SYN_UDS_Server *server)
     TEST_ASSERT_EQUAL_UINT16(2, len);
     TEST_ASSERT_EQUAL_UINT8(0x67, resp[0]);
     TEST_ASSERT_EQUAL_INT(SYN_UDS_SECURITY_UNLOCKED, server->security_state);
-    printf("[Integration Test] UDS SecurityAccess Seed/Key Challenge-Response PASS!\n");
+
+    /* ISO 14229-1 Section 11.2.2 Check: Request seed while ALREADY UNLOCKED -> Must return seed = 0x00000000 */
+    ok = syn_uds_process_request(server, req_seed, sizeof(req_seed), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT16(6, len);
+    TEST_ASSERT_EQUAL_UINT8(0x67, resp[0]);
+    uint32_t zero_seed = (uint32_t)resp[2] | ((uint32_t)resp[3] << 8) | ((uint32_t)resp[4] << 16) | ((uint32_t)resp[5] << 24);
+    TEST_ASSERT_EQUAL_UINT32(0U, zero_seed);
+    TEST_ASSERT_EQUAL_INT(SYN_UDS_SECURITY_UNLOCKED, server->security_state);
+
+    printf("[Integration Test] UDS SecurityAccess Seed/Key & ISO 14229-1 Zero-Seed Unlocked Check (Issue #86) PASS!\n");
 }
 
 /* 3. Test DID Read/Write Matrix & Session/Security Rejections */

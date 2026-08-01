@@ -443,15 +443,25 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             }
             resp_buf[0] = sid + 0x40U;
             resp_buf[1] = sub;
-            server->security_state = SYN_UDS_SECURITY_SEED_SENT;
-            if (server->use_aes128_security) {
-                memcpy(server->active_seed_bytes, server->current_seed_bytes, 16);
-                memcpy(&resp_buf[2], server->current_seed_bytes, 16);
-                *resp_len = 18U;
+            if (server->security_state == SYN_UDS_SECURITY_UNLOCKED) {
+                if (server->use_aes128_security) {
+                    memset(&resp_buf[2], 0, 16);
+                    *resp_len = 18U;
+                } else {
+                    syn_poke_u32(0U, resp_buf, 2);
+                    *resp_len = 6U;
+                }
             } else {
-                server->active_seed = server->current_seed;
-                syn_poke_u32(server->current_seed, resp_buf, 2);
-                *resp_len = 6U;
+                server->security_state = SYN_UDS_SECURITY_SEED_SENT;
+                if (server->use_aes128_security) {
+                    memcpy(server->active_seed_bytes, server->current_seed_bytes, 16);
+                    memcpy(&resp_buf[2], server->current_seed_bytes, 16);
+                    *resp_len = 18U;
+                } else {
+                    server->active_seed = server->current_seed;
+                    syn_poke_u32(server->current_seed, resp_buf, 2);
+                    *resp_len = 6U;
+                }
             }
             success = true;
         } else if ((sub & 1U) == 0U &&

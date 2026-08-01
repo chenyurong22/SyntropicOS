@@ -259,3 +259,88 @@ SYN_Status syn_eth_process_frame(SYN_ETH *eth, const uint8_t *frame, size_t len,
 
     return SYN_OK;
 }
+
+uint16_t syn_ip_checksum(const void *buf, size_t len)
+{
+    if (!buf || len == 0) {
+        /* LCOV_EXCL_START: Invalid param guard */
+        return 0;
+        /* LCOV_EXCL_STOP */
+    }
+    const uint8_t *ptr = (const uint8_t *)buf;
+    uint32_t sum = 0;
+
+    while (len > 1) {
+        sum += ((uint16_t)ptr[0] << 8) | ptr[1];
+        ptr += 2;
+        len -= 2;
+    }
+
+    if (len == 1) {
+        sum += (uint16_t)ptr[0] << 8;
+    }
+
+    while (sum >> 16) {
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+
+    return (uint16_t)(~sum);
+}
+
+size_t syn_eth_pack_header(uint8_t *buf, size_t buf_size, const uint8_t dst_mac[6],
+                           const uint8_t src_mac[6], uint16_t ethertype)
+{
+    if (!buf || buf_size < SYN_ETH_HEADER_LEN || !dst_mac || !src_mac) {
+        /* LCOV_EXCL_START: Invalid param guard */
+        return 0;
+        /* LCOV_EXCL_STOP */
+    }
+
+    memcpy(&buf[0], dst_mac, 6);
+    memcpy(&buf[6], src_mac, 6);
+    buf[12] = (uint8_t)(ethertype >> 8);
+    buf[13] = (uint8_t)(ethertype & 0xFF);
+
+    return SYN_ETH_HEADER_LEN;
+}
+
+size_t syn_ip_pack_header(uint8_t *buf, size_t buf_size, uint32_t src_ip, uint32_t dst_ip,
+                          uint8_t proto, uint16_t payload_len, uint16_t id)
+{
+    if (!buf || buf_size < 20U) {
+        /* LCOV_EXCL_START: Invalid param guard */
+        return 0;
+        /* LCOV_EXCL_STOP */
+    }
+
+    uint16_t total_ip_len = (uint16_t)(20U + payload_len);
+
+    buf[0] = 0x45; /* Version 4, IHL 5 */
+    buf[1] = 0x00; /* TOS */
+    buf[2] = (uint8_t)(total_ip_len >> 8);
+    buf[3] = (uint8_t)(total_ip_len & 0xFF);
+    buf[4] = (uint8_t)(id >> 8);
+    buf[5] = (uint8_t)(id & 0xFF);
+    buf[6] = 0x40; /* Flags: Don't Fragment */
+    buf[7] = 0x00; /* Fragment Offset */
+    buf[8] = 64;   /* TTL = 64 */
+    buf[9] = proto;
+    buf[10] = 0; /* IP Checksum placeholder */
+    buf[11] = 0;
+
+    buf[12] = (uint8_t)(src_ip >> 24);
+    buf[13] = (uint8_t)(src_ip >> 16);
+    buf[14] = (uint8_t)(src_ip >> 8);
+    buf[15] = (uint8_t)(src_ip);
+
+    buf[16] = (uint8_t)(dst_ip >> 24);
+    buf[17] = (uint8_t)(dst_ip >> 16);
+    buf[18] = (uint8_t)(dst_ip >> 8);
+    buf[19] = (uint8_t)(dst_ip);
+
+    uint16_t csum = syn_ip_checksum(buf, 20);
+    buf[10] = (uint8_t)(csum >> 8);
+    buf[11] = (uint8_t)(csum & 0xFF);
+
+    return 20U;
+}

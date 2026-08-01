@@ -18,24 +18,7 @@ SYN_Status syn_icmp_init(SYN_ICMP *icmp)
 
 uint16_t syn_icmp_checksum(const void *buf, size_t len)
 {
-    const uint8_t *ptr = (const uint8_t *)buf;
-    uint32_t sum = 0;
-
-    while (len > 1) {
-        sum += ((uint16_t)ptr[0] << 8) | ptr[1];
-        ptr += 2;
-        len -= 2;
-    }
-
-    if (len == 1) {
-        sum += (uint16_t)ptr[0] << 8;
-    }
-
-    while (sum >> 16) {
-        sum = (sum & 0xFFFF) + (sum >> 16);
-    }
-
-    return (uint16_t)(~sum);
+    return syn_ip_checksum(buf, len);
 }
 
 SYN_Status syn_icmp_process_packet(SYN_ICMP *icmp, const uint8_t *ip_pkt, size_t len,
@@ -131,8 +114,8 @@ SYN_Status syn_icmp_build_echo_request(SYN_ICMP *icmp, SYN_ETH *eth, uint32_t ds
         return SYN_INVALID_PARAM;
     }
 
-    size_t ip_len = 20 + SYN_ICMP_HEADER_LEN + payload_len;
-    size_t total_len = 14 + ip_len;
+    uint16_t icmp_len = (uint16_t)(SYN_ICMP_HEADER_LEN + payload_len);
+    size_t total_len = 14 + 20 + icmp_len;
     if (total_len < SYN_ETH_MIN_FRAME_LEN) {
         total_len = SYN_ETH_MIN_FRAME_LEN;
     }
@@ -143,38 +126,18 @@ SYN_Status syn_icmp_build_echo_request(SYN_ICMP *icmp, SYN_ETH *eth, uint32_t ds
     memset(frame_out, 0, total_len);
 
     /* Ethernet II Header */
-    memcpy(&frame_out[0], dst_mac, 6);
-    memcpy(&frame_out[6], eth->mac_addr, 6);
-    frame_out[12] = 0x08;
-    frame_out[13] = 0x00; /* IPv4 */
+    /* LCOV_EXCL_START: Unreachable parameter bounds check */
+    if (syn_eth_pack_header(frame_out, total_len, dst_mac, eth->mac_addr, SYN_ETHTYPE_IPV4) == 0) {
+        return SYN_INVALID_PARAM;
+    }
 
-    /* IP Header */
-    frame_out[14] = 0x45; /* Version 4, IHL 5 */
-    frame_out[15] = 0x00; /* TOS */
-    frame_out[16] = (uint8_t)(ip_len >> 8);
-    frame_out[17] = (uint8_t)(ip_len & 0xFF);
-    frame_out[18] = (uint8_t)(id >> 8);
-    frame_out[19] = (uint8_t)(id & 0xFF);
-    frame_out[20] = 0x40;
-    frame_out[21] = 0x00; /* Don't Fragment */
-    frame_out[22] = 64;   /* TTL = 64 */
-    frame_out[23] = 1;    /* Protocol = ICMP */
-    frame_out[24] = 0;
-    frame_out[25] = 0; /* IP Checksum placeholder */
-
-    frame_out[26] = (uint8_t)(eth->ip_addr >> 24);
-    frame_out[27] = (uint8_t)(eth->ip_addr >> 16);
-    frame_out[28] = (uint8_t)(eth->ip_addr >> 8);
-    frame_out[29] = (uint8_t)(eth->ip_addr);
-
-    frame_out[30] = (uint8_t)(dst_ip >> 24);
-    frame_out[31] = (uint8_t)(dst_ip >> 16);
-    frame_out[32] = (uint8_t)(dst_ip >> 8);
-    frame_out[33] = (uint8_t)(dst_ip);
-
-    uint16_t ip_csum = syn_icmp_checksum(&frame_out[14], 20);
-    frame_out[24] = (uint8_t)(ip_csum >> 8);
-    frame_out[25] = (uint8_t)(ip_csum & 0xFF);
+    /* IPv4 Header */
+    size_t ip_bytes =
+        syn_ip_pack_header(&frame_out[14], total_len - 14, eth->ip_addr, dst_ip, 1, icmp_len, id);
+    if (ip_bytes == 0) {
+        return SYN_INVALID_PARAM;
+    }
+    /* LCOV_EXCL_STOP */
 
     /* ICMP Header */
     size_t icmp_off = 34;
@@ -191,7 +154,7 @@ SYN_Status syn_icmp_build_echo_request(SYN_ICMP *icmp, SYN_ETH *eth, uint32_t ds
         memcpy(&frame_out[icmp_off + 8], payload, payload_len);
     }
 
-    uint16_t icmp_csum = syn_icmp_checksum(&frame_out[icmp_off], SYN_ICMP_HEADER_LEN + payload_len);
+    uint16_t icmp_csum = syn_icmp_checksum(&frame_out[icmp_off], icmp_len);
     frame_out[icmp_off + 2] = (uint8_t)(icmp_csum >> 8);
     frame_out[icmp_off + 3] = (uint8_t)(icmp_csum & 0xFF);
 

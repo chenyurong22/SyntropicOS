@@ -170,33 +170,22 @@ int syn_udp_sendto(SYN_UDP *udp, uint16_t src_port, uint32_t dst_ip, uint16_t ds
         has_mac = true;
     }
     static const uint8_t bcast_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    memcpy(&tx_out[0], has_mac ? resolved_mac : bcast_mac, 6);
-    memcpy(&tx_out[6], udp->eth ? udp->eth->mac_addr : bcast_mac, 6);
-    tx_out[12] = 0x08;
-    tx_out[13] = 0x00; /* IPv4 */
+    const uint8_t *dst_mac = has_mac ? resolved_mac : bcast_mac;
+    const uint8_t *src_mac = udp->eth ? udp->eth->mac_addr : bcast_mac;
+
+    /* LCOV_EXCL_START: Unreachable parameter bounds check */
+    if (syn_eth_pack_header(tx_out, total_len, dst_mac, src_mac, SYN_ETHTYPE_IPV4) == 0) {
+        return -1;
+    }
 
     /* IPv4 Header (20) */
-    tx_out[14] = 0x45;
-    tx_out[15] = 0x00;
-    syn_poke_u16((uint16_t)(20 + 8 + data_len), tx_out, 16);
-    syn_poke_u16(0x1234, tx_out, 18);
-    syn_poke_u16(0x0000, tx_out, 20);
-    tx_out[22] = 64;
-    tx_out[23] = 17; /* UDP */
-    tx_out[24] = 0;
-    tx_out[25] = 0; /* IP CSUM */
-    syn_poke_u32(udp->eth ? udp->eth->ip_addr : 0, tx_out, 26);
-    syn_poke_u32(dst_ip, tx_out, 30);
-
-    /* IP Checksum */
-    uint32_t ip_sum = 0;
-    for (int i = 14; i < 34; i += 2) {
-        ip_sum += ((uint16_t)tx_out[i] << 8) | tx_out[i + 1];
+    uint32_t src_ip = udp->eth ? udp->eth->ip_addr : 0;
+    uint16_t udp_payload_len = (uint16_t)(8 + data_len);
+    if (syn_ip_pack_header(&tx_out[14], total_len - 14, src_ip, dst_ip, 17, udp_payload_len,
+                           0x1234) == 0) {
+        return -1;
     }
-    while (ip_sum >> 16) {
-        ip_sum = (ip_sum & 0xFFFF) + (ip_sum >> 16);
-    }
-    syn_poke_u16((uint16_t)(~ip_sum), tx_out, 24);
+    /* LCOV_EXCL_STOP */
 
     /* UDP Header (8) */
     syn_poke_u16(src_port, tx_out, 34);
@@ -208,10 +197,10 @@ int syn_udp_sendto(SYN_UDP *udp, uint16_t src_port, uint32_t dst_ip, uint16_t ds
         memcpy(&tx_out[42], data, data_len);
     }
 
-    uint16_t csum =
-        syn_udp_checksum(udp->eth ? udp->eth->ip_addr : 0, dst_ip, &tx_out[34], 8 + data_len);
+    uint16_t csum = syn_udp_checksum(src_ip, dst_ip, &tx_out[34], 8 + data_len);
     syn_poke_u16(csum, tx_out, 40);
 
     *tx_len = total_len;
+    return (int)data_len;
     return (int)data_len;
 }

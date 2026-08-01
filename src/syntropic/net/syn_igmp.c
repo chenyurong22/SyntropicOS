@@ -35,44 +35,32 @@ SYN_Status syn_igmp_build_report(SYN_IGMP *igmp, SYN_ETH *eth, uint8_t type, uin
 
     /* Multicast Destination MAC: 01:00:5E: (Group IP & 0x7FFFFF) */
     uint32_t group_low = group_ip & 0x007FFFFFUL;
-    frame_out[0] = 0x01;
-    frame_out[1] = 0x00;
-    frame_out[2] = 0x5E;
-    frame_out[3] = (uint8_t)(group_low >> 16);
-    frame_out[4] = (uint8_t)(group_low >> 8);
-    frame_out[5] = (uint8_t)(group_low);
+    uint8_t mcast_mac[6];
+    mcast_mac[0] = 0x01;
+    mcast_mac[1] = 0x00;
+    mcast_mac[2] = 0x5E;
+    mcast_mac[3] = (uint8_t)(group_low >> 16);
+    mcast_mac[4] = (uint8_t)(group_low >> 8);
+    mcast_mac[5] = (uint8_t)(group_low);
 
-    memcpy(&frame_out[6], eth->mac_addr, 6);
-    frame_out[12] = 0x08;
-    frame_out[13] = 0x00; /* IPv4 */
+    /* Ethernet II Header */
+    /* LCOV_EXCL_START: Unreachable parameter bounds check */
+    if (syn_eth_pack_header(frame_out, total_len, mcast_mac, eth->mac_addr, SYN_ETHTYPE_IPV4) ==
+        0) {
+        return SYN_INVALID_PARAM;
+    }
 
-    /* IPv4 Header */
-    frame_out[14] = 0x45;
-    frame_out[15] = 0x00;
-    frame_out[16] = (uint8_t)(ip_len >> 8);
-    frame_out[17] = (uint8_t)(ip_len & 0xFF);
-    frame_out[18] = 0x12;
-    frame_out[19] = 0x34;
-    frame_out[20] = 0x40;
-    frame_out[21] = 0x00;
-    frame_out[22] = 1; /* TTL = 1 for IGMP */
-    frame_out[23] = 2; /* Protocol = 2 (IGMP) */
-    frame_out[24] = 0;
-    frame_out[25] = 0;
+    /* IPv4 Header (Protocol 2 = IGMP, TTL = 1) */
+    size_t ip_bytes =
+        syn_ip_pack_header(&frame_out[14], total_len - 14, eth->ip_addr, group_ip, 2, 8, 0x1234);
+    if (ip_bytes == 0) {
+        return SYN_INVALID_PARAM;
+    }
+    /* LCOV_EXCL_STOP */
+    frame_out[22] = 1; /* Override TTL = 1 for IGMP multicast */
 
-    /* Sender IP */
-    frame_out[26] = (uint8_t)(eth->ip_addr >> 24);
-    frame_out[27] = (uint8_t)(eth->ip_addr >> 16);
-    frame_out[28] = (uint8_t)(eth->ip_addr >> 8);
-    frame_out[29] = (uint8_t)(eth->ip_addr);
-
-    /* Dst IP = Group IP */
-    frame_out[30] = (uint8_t)(group_ip >> 24);
-    frame_out[31] = (uint8_t)(group_ip >> 16);
-    frame_out[32] = (uint8_t)(group_ip >> 8);
-    frame_out[33] = (uint8_t)(group_ip);
-
-    uint16_t ip_csum = syn_icmp_checksum(&frame_out[14], 20);
+    /* Re-calculate IP checksum due to TTL override */
+    uint16_t ip_csum = syn_ip_checksum(&frame_out[14], 20);
     frame_out[24] = (uint8_t)(ip_csum >> 8);
     frame_out[25] = (uint8_t)(ip_csum & 0xFF);
 
@@ -88,7 +76,7 @@ SYN_Status syn_igmp_build_report(SYN_IGMP *igmp, SYN_ETH *eth, uint8_t type, uin
     frame_out[igmp_off + 6] = (uint8_t)(group_ip >> 8);
     frame_out[igmp_off + 7] = (uint8_t)(group_ip);
 
-    uint16_t igmp_csum = syn_icmp_checksum(&frame_out[igmp_off], 8);
+    uint16_t igmp_csum = syn_ip_checksum(&frame_out[igmp_off], 8);
     frame_out[igmp_off + 2] = (uint8_t)(igmp_csum >> 8);
     frame_out[igmp_off + 3] = (uint8_t)(igmp_csum & 0xFF);
 

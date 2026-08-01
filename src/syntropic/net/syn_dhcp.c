@@ -43,9 +43,9 @@ static uint32_t unpack_uint32(const uint8_t *buf)
 }
 
 SYN_Status syn_dhcp_build_discover(SYN_DHCP *dhcp, const uint8_t mac_addr[6], uint8_t *buf_out,
-                                   size_t *len_out)
+                                   size_t buf_size, size_t *len_out)
 {
-    if (!dhcp || !mac_addr || !buf_out || !len_out) {
+    if (!dhcp || !mac_addr || !buf_out || buf_size < 250U || !len_out) {
         return SYN_INVALID_PARAM;
     }
 
@@ -76,9 +76,9 @@ SYN_Status syn_dhcp_build_discover(SYN_DHCP *dhcp, const uint8_t mac_addr[6], ui
 }
 
 SYN_Status syn_dhcp_build_request(SYN_DHCP *dhcp, const uint8_t mac_addr[6], uint8_t *buf_out,
-                                  size_t *len_out)
+                                  size_t buf_size, size_t *len_out)
 {
-    if (!dhcp || !mac_addr || !buf_out || !len_out) {
+    if (!dhcp || !mac_addr || !buf_out || buf_size < 260U || !len_out) {
         return SYN_INVALID_PARAM;
     }
 

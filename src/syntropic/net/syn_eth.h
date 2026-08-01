@@ -139,6 +139,45 @@ SYN_Status syn_eth_arp_lookup(SYN_ETH *eth, uint32_t ip, uint8_t mac_out[6]);
  */
 SYN_Status syn_eth_arp_update(SYN_ETH *eth, uint32_t ip, const uint8_t mac[6]);
 
+/* ── Network Frame Serialization Helpers ───────────────────────────────── */
+
+/**
+ * @brief Calculate 16-bit Internet Checksum (RFC 1071) over buffer.
+ *
+ * @param buf Pointer to buffer.
+ * @param len Buffer byte length.
+ * @return 16-bit one's complement checksum.
+ */
+uint16_t syn_ip_checksum(const void *buf, size_t len);
+
+/**
+ * @brief Pack Ethernet II Header (14 bytes) into target buffer.
+ *
+ * @param buf       Output destination buffer.
+ * @param buf_size  Destination buffer capacity.
+ * @param dst_mac   Destination 6-byte MAC address.
+ * @param src_mac   Source 6-byte MAC address.
+ * @param ethertype 16-bit EtherType (host byte order).
+ * @return Bytes written (14) on success, 0 on invalid param / insufficient buffer.
+ */
+size_t syn_eth_pack_header(uint8_t *buf, size_t buf_size, const uint8_t dst_mac[6],
+                           const uint8_t src_mac[6], uint16_t ethertype);
+
+/**
+ * @brief Pack standard 20-byte IPv4 Header into target buffer.
+ *
+ * @param buf         Output destination buffer.
+ * @param buf_size    Destination buffer capacity.
+ * @param src_ip      Source IPv4 address (host byte order).
+ * @param dst_ip      Destination IPv4 address (host byte order).
+ * @param proto       IP Protocol number (1=ICMP, 2=IGMP, 6=TCP, 17=UDP).
+ * @param payload_len Payload byte length after IPv4 header.
+ * @param id          16-bit IP identification field.
+ * @return Bytes written (20) on success, 0 on invalid param / insufficient buffer.
+ */
+size_t syn_ip_pack_header(uint8_t *buf, size_t buf_size, uint32_t src_ip, uint32_t dst_ip,
+                          uint8_t proto, uint16_t payload_len, uint16_t id);
+
 /* ── Protocol engine injection ──────────────────────────────────────────── */
 
 /**

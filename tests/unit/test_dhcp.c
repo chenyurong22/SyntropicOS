@@ -27,7 +27,7 @@ void test_dhcp_build_discover(void)
     uint8_t buf[300];
     size_t len = 0;
 
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_build_discover(&dhcp, MAC, buf, &len));
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_build_discover(&dhcp, MAC, buf, sizeof(buf), &len));
     TEST_ASSERT_EQUAL_INT(SYN_DHCP_STATE_DISCOVER, dhcp.state);
     TEST_ASSERT_EQUAL_UINT32(1, dhcp.discovers_sent);
     TEST_ASSERT_GREATER_OR_EQUAL(244, len);
@@ -104,7 +104,8 @@ void test_dhcp_process_offer_and_ack(void)
     /* Build DHCPREQUEST */
     uint8_t req_buf[300];
     size_t req_len = 0;
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_build_request(&dhcp, MAC, req_buf, &req_len));
+    SYN_Status req_st = syn_dhcp_build_request(&dhcp, MAC, req_buf, sizeof(req_buf), &req_len);
+    TEST_ASSERT_EQUAL_INT(SYN_OK, req_st);
     TEST_ASSERT_EQUAL_INT(SYN_DHCP_STATE_REQUEST, dhcp.state);
 
     /* Construct DHCPACK payload */
@@ -209,7 +210,7 @@ void test_dhcp_extended_option_parsing(void)
     uint8_t mac[6] = {1, 2, 3, 4, 5, 6};
     uint8_t req_b[300];
     size_t req_l = 0;
-    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_build_request(&dhcp, mac, req_b, &req_l));
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_build_request(&dhcp, mac, req_b, sizeof(req_b), &req_l));
 
     /* Truncated options tests */
     uint8_t trunc_pkt[250] = {0};
@@ -242,8 +243,18 @@ void test_dhcp_extended_option_parsing(void)
 
 void test_dhcp_null_checks(void)
 {
+    SYN_DHCP dhcp;
+    uint8_t mac[6] = {1, 2, 3, 4, 5, 6};
+    uint8_t small_buf[100];
+    size_t len = 0;
+
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_init(NULL, 0));
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_build_discover(NULL, NULL, NULL, NULL));
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_build_request(NULL, NULL, NULL, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_build_discover(NULL, NULL, NULL, 0, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_build_request(NULL, NULL, NULL, 0, NULL));
+    SYN_Status disc_st = syn_dhcp_build_discover(&dhcp, mac, small_buf, sizeof(small_buf), &len);
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, disc_st);
+
+    SYN_Status req_err_st = syn_dhcp_build_request(&dhcp, mac, small_buf, sizeof(small_buf), &len);
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, req_err_st);
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_process_packet(NULL, NULL, NULL, 0));
 }

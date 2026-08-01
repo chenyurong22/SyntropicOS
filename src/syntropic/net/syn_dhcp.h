@@ -80,23 +80,25 @@ SYN_Status syn_dhcp_init(SYN_DHCP *dhcp, uint32_t xid);
  * @param dhcp     Pointer to DHCP context.
  * @param mac_addr 6-byte client MAC address.
  * @param buf_out  Output buffer (must hold at least 250 bytes).
+ * @param buf_size Output buffer capacity.
  * @param len_out  Pointer to receive byte length of generated payload.
  * @return SYN_OK on success.
  */
 SYN_Status syn_dhcp_build_discover(SYN_DHCP *dhcp, const uint8_t mac_addr[6], uint8_t *buf_out,
-                                   size_t *len_out);
+                                   size_t buf_size, size_t *len_out);
 
 /**
  * @brief Build a DHCPREQUEST UDP packet payload.
  *
  * @param dhcp     Pointer to DHCP context.
  * @param mac_addr 6-byte client MAC address.
- * @param buf_out  Output buffer (must hold at least 250 bytes).
+ * @param buf_out  Output buffer (must hold at least 260 bytes).
+ * @param buf_size Output buffer capacity.
  * @param len_out  Pointer to receive byte length of generated payload.
  * @return SYN_OK on success.
  */
 SYN_Status syn_dhcp_build_request(SYN_DHCP *dhcp, const uint8_t mac_addr[6], uint8_t *buf_out,
-                                  size_t *len_out);
+                                  size_t buf_size, size_t *len_out);
 
 /**
  * @brief Process incoming DHCP response packet payload (DHCPOFFER or DHCPACK).

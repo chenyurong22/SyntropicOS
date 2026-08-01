@@ -554,6 +554,40 @@ static void test_eth_runt_arp_frame(void)
                       syn_eth_process_frame(&eth, runt, sizeof(runt), NULL, NULL));
 }
 
+void test_eth_header_packing_helpers(void)
+{
+    uint8_t buf[64] = {0};
+    uint8_t dst_mac[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+    uint8_t src_mac[6] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+
+    /* Null / bounds parameter checks */
+    TEST_ASSERT_EQUAL_INT(0, syn_ip_checksum(NULL, 0));
+    TEST_ASSERT_EQUAL_INT(0, syn_ip_checksum(buf, 0));
+    TEST_ASSERT_EQUAL_INT(0, syn_eth_pack_header(NULL, 14, dst_mac, src_mac, SYN_ETHTYPE_IPV4));
+    TEST_ASSERT_EQUAL_INT(0, syn_eth_pack_header(buf, 10, dst_mac, src_mac, SYN_ETHTYPE_IPV4));
+    TEST_ASSERT_EQUAL_INT(0, syn_eth_pack_header(buf, 14, NULL, src_mac, SYN_ETHTYPE_IPV4));
+    TEST_ASSERT_EQUAL_INT(0, syn_eth_pack_header(buf, 14, dst_mac, NULL, SYN_ETHTYPE_IPV4));
+    TEST_ASSERT_EQUAL_INT(0, syn_ip_pack_header(NULL, 20, 0xC0A80101, 0xC0A80102, 17, 8, 1));
+    TEST_ASSERT_EQUAL_INT(0, syn_ip_pack_header(buf, 15, 0xC0A80101, 0xC0A80102, 17, 8, 1));
+
+    /* Valid Ethernet II header pack */
+    TEST_ASSERT_EQUAL_INT(
+        14, syn_eth_pack_header(buf, sizeof(buf), dst_mac, src_mac, SYN_ETHTYPE_IPV4));
+    TEST_ASSERT_EQUAL_MEMORY(dst_mac, &buf[0], 6);
+    TEST_ASSERT_EQUAL_MEMORY(src_mac, &buf[6], 6);
+    TEST_ASSERT_EQUAL_UINT8(0x08, buf[12]);
+    TEST_ASSERT_EQUAL_UINT8(0x00, buf[13]);
+
+    /* Valid IPv4 header pack */
+    size_t ip_len =
+        syn_ip_pack_header(&buf[14], sizeof(buf) - 14, 0xC0A80101, 0xC0A80102, 17, 8, 0x1234);
+    TEST_ASSERT_EQUAL_INT(20, ip_len);
+    TEST_ASSERT_EQUAL_UINT8(0x45, buf[14]);
+    TEST_ASSERT_EQUAL_UINT8(17, buf[23]); /* UDP */
+    TEST_ASSERT_EQUAL_UINT8(192, buf[26]);
+    TEST_ASSERT_EQUAL_UINT8(168, buf[27]);
+}
+
 void run_eth_tests(void)
 {
     RUN_TEST(test_eth_generate_mac);
@@ -576,4 +610,5 @@ void run_eth_tests(void)
     RUN_TEST(test_eth_generate_mac_null_checks);
     RUN_TEST(test_eth_weak_instance_getters);
     RUN_TEST(test_eth_runt_arp_frame);
+    RUN_TEST(test_eth_header_packing_helpers);
 }

@@ -443,37 +443,32 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             }
             resp_buf[0] = sid + 0x40U;
             resp_buf[1] = sub;
-            if (server->security_state == SYN_UDS_SECURITY_UNLOCKED) {
-                if (server->use_aes128_security) {
-                    memset(&resp_buf[2], 0, 16);
-                    *resp_len = 18U;
-                } else {
-                    syn_poke_u32(0U, resp_buf, 2);
-                    *resp_len = 6U;
-                }
+            server->security_state = SYN_UDS_SECURITY_SEED_SENT;
+            server->active_seed_subfunction = sub;
+            if (server->use_aes128_security) {
+                memcpy(server->active_seed_bytes, server->current_seed_bytes, 16);
+                memcpy(&resp_buf[2], server->current_seed_bytes, 16);
+                *resp_len = 18U;
             } else {
-                server->security_state = SYN_UDS_SECURITY_SEED_SENT;
-                if (server->use_aes128_security) {
-                    memcpy(server->active_seed_bytes, server->current_seed_bytes, 16);
-                    memcpy(&resp_buf[2], server->current_seed_bytes, 16);
-                    *resp_len = 18U;
-                } else {
-                    server->active_seed = server->current_seed;
-                    syn_poke_u32(server->current_seed, resp_buf, 2);
-                    *resp_len = 6U;
-                }
+                server->active_seed = server->current_seed;
+                syn_poke_u32(server->current_seed, resp_buf, 2);
+                *resp_len = 6U;
             }
             success = true;
         } else if ((sub & 1U) == 0U &&
                    sub != 0x00U) { /* Even subfunction = Send Key (0x02, 0x04...) */
+            if (server->security_state != SYN_UDS_SECURITY_SEED_SENT) {
+                return make_negative_response(sid, SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp_buf,
+                                              resp_len);
+            }
+            if (sub != (server->active_seed_subfunction + 1U)) {
+                return make_negative_response(sid, SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp_buf,
+                                              resp_len);
+            }
             if (server->use_aes128_security) {
                 if (req_len < 18U) {
                     return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH,
                                                   resp_buf, resp_len);
-                }
-                if (server->security_state != SYN_UDS_SECURITY_SEED_SENT) {
-                    return make_negative_response(sid, SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp_buf,
-                                                  resp_len);
                 }
                 SYN_AES128_Context aes_ctx;
                 syn_aes128_init(&aes_ctx, server->aes_security_key);
@@ -501,10 +496,6 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                 if (req_len < 6U) {
                     return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH,
                                                   resp_buf, resp_len);
-                }
-                if (server->security_state != SYN_UDS_SECURITY_SEED_SENT) {
-                    return make_negative_response(sid, SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp_buf,
-                                                  resp_len);
                 }
                 uint32_t key = syn_peek_u32(req, 2);
                 /* Key calculation algorithm: key = seed ^ 0xA5A5A5A5 */

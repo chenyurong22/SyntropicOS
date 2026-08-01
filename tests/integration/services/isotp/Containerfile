@@ -1,0 +1,12 @@
+FROM gcc:13
+
+WORKDIR /app
+
+COPY src /app/src
+COPY tests/integration/services/isotp/isotp_server_runner.c /app/isotp_server_runner.c
+
+RUN gcc -std=c99 -D_DEFAULT_SOURCE -I. -Isrc -Isrc/syntropic/proto -Isrc/syntropic/drivers -Isrc/syntropic/port_stubs src/syntropic/proto/syn_isotp.c src/syntropic/drivers/syn_can.c src/syntropic/port_stubs/syn_port_stubs.c isotp_server_runner.c -o isotp_server_runner
+
+EXPOSE 10887
+
+CMD ["/app/isotp_server_runner"]

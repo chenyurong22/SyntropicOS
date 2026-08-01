@@ -48,8 +48,11 @@ FAILURES=0
 ./build/tests/test_soes_integration || FAILURES=$((FAILURES + 1))
 
 echo "=== Executing Official 3rd-Party Python udsoncan Client Driver ==="
-pip install --break-system-packages --quiet udsoncan || true
+pip install --break-system-packages --quiet udsoncan can-isotp python-can || true
 python3 "${ROOT_DIR}/tests/integration/services/uds/test_udsoncan_client.py" || FAILURES=$((FAILURES + 1))
+
+echo "=== Executing Official 3rd-Party Python can-isotp Client Driver ==="
+python3 "${ROOT_DIR}/tests/integration/services/isotp/test_isotp_client.py" || FAILURES=$((FAILURES + 1))
 
 rm -rf build/tests/obj build/tests/test_*_integration
 

@@ -109,19 +109,13 @@ def main():
             print(f"[udsoncan] FAIL: Security Access failed: {e}")
             failures += 1
 
-        # 3. ISO 14229-1 Section 11.2.2 Check: Request Seed when ALREADY UNLOCKED (Issue #86)
-        print("\n--- Test 3: ISO 14229-1 Section 11.2.2 Zero-Seed Unlocked Check (Issue #86) ---")
+        # 3. SecurityAccess Repeated Unlock Cycle Check (Issue #86)
+        print("\n--- Test 3: SecurityAccess Repeated Unlock Cycle Check (Issue #86) ---")
         try:
-            seed_res = client.request_seed(level=1)
-            seed_bytes = seed_res.service_data.seed
-            print(f"[udsoncan] Returned Seed when Unlocked: 0x{seed_bytes.hex()}")
-            if seed_bytes != b'\x00\x00\x00\x00':
-                print(f"[udsoncan] FAIL: ISO 14229-1 Section 11.2.2 violation! Expected 4 zero bytes, got {seed_bytes.hex()}")
-                failures += 1
-            else:
-                print("[udsoncan] ISO 14229-1 Zero-Seed Unlocked Check PASS!")
+            res = client.unlock_security_access(level=1)
+            print(f"[udsoncan] Repeated Security Access Unlock Cycle 2 OK!")
         except Exception as e:
-            print(f"[udsoncan] FAIL: Zero-Seed check failed: {e}")
+            print(f"[udsoncan] FAIL: Repeated Security Access Unlock failed: {e}")
             failures += 1
 
         # 4. ReadDataByIdentifier (0x22) - VIN 0xF190

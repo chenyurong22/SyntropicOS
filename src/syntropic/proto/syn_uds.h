@@ -353,6 +353,7 @@ typedef struct {
     SYN_UDS_SecurityState security_state; /**< Security access unlock state */
     uint32_t current_seed;                /**< Master template security seed value */
     uint32_t active_seed;                 /**< Issued transaction security seed value */
+    uint8_t active_seed_subfunction;      /**< Active seed request subfunction (e.g. 0x01, 0x03) */
     bool use_aes128_security;             /**< True if AES-128 security mode is active */
     uint8_t aes_security_key[16];         /**< AES-128 security secret key (16 bytes) */
     uint8_t current_seed_bytes[16];       /**< Master template AES-128 security seed (16 bytes) */

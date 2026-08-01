@@ -143,12 +143,26 @@ services:
       syn_net:
         ipv4_address: 172.28.0.102
 
-  # 12. SyntropicOS Integration Test Runner Container
+  # 12. SyntropicOS ISO-TP C Server Daemon
+  isotp:
+    build:
+      context: ../..
+      dockerfile: tests/integration/services/isotp/Containerfile
+    container_name: syntropicos-isotp
+    cap_add:
+      - NET_ADMIN
+    networks:
+      syn_net:
+        ipv4_address: 172.28.0.103
+
+  # 13. SyntropicOS Integration Test Runner Container
   test-runner:
     build:
       context: ../..
       dockerfile: tools/containers/Containerfile
     container_name: syntropicos-integration-runner
+    cap_add:
+      - NET_ADMIN
     depends_on:
       - mosquitto
       - sntp
@@ -159,6 +173,7 @@ services:
       - ethercat-soem
       - ethercat-soes
       - uds
+      - isotp
     environment:
       - MQTT_HOST=mosquitto
       - SNTP_HOST=sntp
@@ -169,6 +184,7 @@ services:
       - ETHERCAT_HOST=ethercat-soem
       - ETHERCAT_SOES_HOST=ethercat-soes
       - UDS_HOST=uds
+      - ISOTP_HOST=isotp
     volumes:
       - ../..:/workspace:z
     command: ["/bin/bash", "-c", "tr -d '\\r' < /workspace/tests/integration/run_integration.sh > /tmp/run.sh && bash /tmp/run.sh"]

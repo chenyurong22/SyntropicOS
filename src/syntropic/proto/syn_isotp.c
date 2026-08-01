@@ -316,6 +316,12 @@ void syn_isotp_process_rx_frame(SYN_ISOTP_Link *link, const SYN_CAN_Frame *frame
             data_offset = 2;    /* LCOV_EXCL_LINE: CAN FD 8-bit length single frame escape path */
         }
 
+        size_t frame_cap = (frame->dlc > 0) ? frame->dlc : SYN_CAN_MAX_DATA_LEN;
+        size_t max_sf_bytes = (frame_cap > data_offset) ? (frame_cap - data_offset) : 0U;
+        if (sf_len > max_sf_bytes) {
+            sf_len = max_sf_bytes;
+        }
+
         if (sf_len >= 1 && sf_len <= link->rx_buf_size && link->rx_buf != NULL) {
             memcpy(link->rx_buf, &frame->data[data_offset], sf_len);
             link->rx_len = sf_len;

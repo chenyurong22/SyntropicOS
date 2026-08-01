@@ -58,4 +58,23 @@ clang -std=c99 -I"${ROOT_DIR}" -I"${ROOT_DIR}/src" -I"${ROOT_DIR}/tests/unit/moc
 ./fuzzer_usb -max_total_time=10 || true
 rm -f fuzzer_usb
 
+echo "=== Compiling & Fuzzing UDS Diagnostic Server (10s smoke test) ==="
+clang -std=c99 -I"${ROOT_DIR}" -I"${ROOT_DIR}/src" -I"${ROOT_DIR}/tests/unit/mocks" -DSYN_USE_MULTICORE=1 -fsanitize=fuzzer,address,undefined \
+    "${ROOT_DIR}/src/syntropic/proto/syn_uds.c" \
+    "${ROOT_DIR}/src/syntropic/util/syn_aes128.c" \
+    "${ROOT_DIR}/tests/unit/mocks/mock_port.c" \
+    "${ROOT_DIR}/tests/fuzz/fuzz_uds.c" \
+    -o fuzzer_uds
+./fuzzer_uds -max_total_time=10 || true
+rm -f fuzzer_uds
+
+echo "=== Compiling & Fuzzing ISO-TP Transport Stack (10s smoke test) ==="
+clang -std=c99 -I"${ROOT_DIR}" -I"${ROOT_DIR}/src" -I"${ROOT_DIR}/tests/unit/mocks" -DSYN_USE_MULTICORE=1 -fsanitize=fuzzer,address,undefined \
+    "${ROOT_DIR}/src/syntropic/proto/syn_isotp.c" \
+    "${ROOT_DIR}/tests/unit/mocks/mock_port.c" \
+    "${ROOT_DIR}/tests/fuzz/fuzz_isotp.c" \
+    -o fuzzer_isotp
+./fuzzer_isotp -max_total_time=10 || true
+rm -f fuzzer_isotp
+
 echo "=== Protocol Fuzzing Smoke Tests Complete ==="

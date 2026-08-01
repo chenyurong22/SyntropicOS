@@ -3,6 +3,7 @@
  * @brief Unit tests for ISO 14229 UDS server protocol implementation.
  */
 
+#include "syntropic/proto/syn_isotp.h"
 #include "syntropic/proto/syn_uds.h"
 #include "syntropic/util/syn_aes128.h"
 #include "syntropic/util/syn_pack.h"
@@ -2373,6 +2374,67 @@ static void test_uds_response_too_long_sweep(void)
     TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
 }
 
+static void pump_isotp_can_frames(SYN_ISOTP_Link *a, SYN_ISOTP_Link *b)
+{
+    SYN_CAN_Frame f;
+    while (syn_isotp_get_tx_frame(a, &f)) {
+        syn_isotp_process_rx_frame(b, &f);
+    }
+    while (syn_isotp_get_tx_frame(b, &f)) {
+        syn_isotp_process_rx_frame(a, &f);
+    }
+}
+
+static void test_uds_isotp_full_stack_loopback(void)
+{
+    SYN_ISOTP_Link client_tp, server_tp;
+    uint8_t c_rx[256], c_tx[256], s_rx[256], s_tx[256];
+    syn_isotp_init(&client_tp, 0x7E8, 0x7E0, c_rx, sizeof(c_rx), c_tx, sizeof(c_tx));
+    syn_isotp_init(&server_tp, 0x7E0, 0x7E8, s_rx, sizeof(s_rx), s_tx, sizeof(s_tx));
+
+    SYN_UDS_Server server;
+    syn_uds_init(&server);
+    const uint8_t aes_key[16] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+                                 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+    const uint8_t seed_16[16] = {0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80,
+                                 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xF0, 0x01};
+    syn_uds_enable_aes128_security(&server, aes_key);
+    syn_uds_set_security_seed_bytes(&server, seed_16);
+    syn_uds_tick(&server, 10000);
+
+    /* 1. Client sends SecurityAccess Request Seed (0x27 0x01) over ISO-TP */
+    uint8_t req[2] = {SYN_UDS_SID_SECURITY_ACCESS, 0x01};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_isotp_send(&client_tp, req, sizeof(req)));
+    pump_isotp_can_frames(&client_tp, &server_tp);
+
+    /* Server receives full request from ISO-TP */
+    uint8_t req_in[256];
+    ssize_t req_len = syn_isotp_receive(&server_tp, req_in, sizeof(req_in));
+    TEST_ASSERT_EQUAL(2, req_len);
+
+    /* Server processes request and transmits multi-frame seed response over ISO-TP */
+    uint8_t resp_buf[256];
+    uint16_t resp_len = 0;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req_in, (uint16_t)req_len, resp_buf,
+                                             sizeof(resp_buf), &resp_len));
+    TEST_ASSERT_EQUAL_UINT16(18, resp_len); /* 18 bytes require multi-frame (FF + CF1 + CF2) */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_isotp_send(&server_tp, resp_buf, resp_len));
+
+    /* Pump CAN frames between server and client (FF -> FC -> CF1 -> CF2) */
+    for (int i = 0; i < 5; i++) {
+        pump_isotp_can_frames(&server_tp, &client_tp);
+        pump_isotp_can_frames(&client_tp, &server_tp);
+    }
+
+    /* Client receives multi-frame ISO-TP response */
+    uint8_t client_rx_buf[256];
+    ssize_t client_rx_len = syn_isotp_receive(&client_tp, client_rx_buf, sizeof(client_rx_buf));
+    TEST_ASSERT_EQUAL(18, client_rx_len);
+    TEST_ASSERT_EQUAL_HEX8(0x67, client_rx_buf[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, client_rx_buf[1]);
+    TEST_ASSERT_EQUAL_MEMORY(seed_16, &client_rx_buf[2], 16);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -2402,4 +2464,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_deferred_reset_callback);
     RUN_TEST(test_uds_session_transition_policy);
     RUN_TEST(test_uds_response_too_long_sweep);
+    RUN_TEST(test_uds_isotp_full_stack_loopback);
 }

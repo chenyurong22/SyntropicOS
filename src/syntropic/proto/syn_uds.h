@@ -339,15 +339,17 @@ typedef bool (*SYN_UDS_SessionTransitionHandler)(SYN_UDS_Session from_session,
  * @brief UDS Server Instance Context.
  */
 typedef struct {
-    SYN_UDS_Session session;                      /**< Current diagnostic session state */
-    SYN_UDS_SecurityState security_state;         /**< Security access unlock state */
-    uint32_t current_seed;                        /**< Active security seed value */
-    bool use_aes128_security;                     /**< True if AES-128 security mode is active */
-    uint8_t aes_security_key[16];                 /**< AES-128 security secret key (16 bytes) */
-    uint8_t current_seed_bytes[16];               /**< Active AES-128 security seed (16 bytes) */
-    uint32_t s3_timer_ms;                         /**< S3 session timer in ms */
-    uint8_t security_error_count;                 /**< Failed security unlock attempts counter */
-    uint32_t security_delay_timer_ms;             /**< Security delay penalty timer in ms */
+    SYN_UDS_Session session;              /**< Current diagnostic session state */
+    SYN_UDS_SecurityState security_state; /**< Security access unlock state */
+    uint32_t current_seed;                /**< Master template security seed value */
+    uint32_t active_seed;                 /**< Issued transaction security seed value */
+    bool use_aes128_security;             /**< True if AES-128 security mode is active */
+    uint8_t aes_security_key[16];         /**< AES-128 security secret key (16 bytes) */
+    uint8_t current_seed_bytes[16];       /**< Master template AES-128 security seed (16 bytes) */
+    uint8_t active_seed_bytes[16];    /**< Issued transaction AES-128 security seed (16 bytes) */
+    uint32_t s3_timer_ms;             /**< S3 session timer in ms */
+    uint8_t security_error_count;     /**< Failed security unlock attempts counter */
+    uint32_t security_delay_timer_ms; /**< Security delay penalty timer in ms */
     SYN_UDS_CommControlType comm_control_state;   /**< CommunicationControl state */
     uint8_t comm_type;                            /**< Communication type byte */
     SYN_UDS_CommControlHandler comm_control_cb;   /**< CommunicationControl callback */

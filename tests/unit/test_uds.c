@@ -224,7 +224,7 @@ static void test_uds_security_access(void)
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_SEED_SENT, g_uds.security_state);
 
-    correct_key = g_uds.current_seed ^ 0xA5A5A5A5U;
+    correct_key = g_uds.active_seed ^ 0xA5A5A5A5U;
     req[1] = 0x02;
     syn_poke_u32(correct_key, req, 2);
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
@@ -378,6 +378,26 @@ static void test_uds_security_access_aes128(void)
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     uint8_t zero_16[16] = {0};
     TEST_ASSERT_EQUAL_MEMORY(zero_16, &resp[2], 16);
+
+    /* Verify key calculated from zero_16 seed unlocks server */
+    uint8_t zero_valid_key[16];
+    syn_aes128_encrypt_block(&aes_ctx, zero_16, zero_valid_key);
+    req[1] = 0x02;
+    memcpy(&req[2], zero_valid_key, 16);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 18, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
+
+    /* Verify master seed template current_seed_bytes was NOT corrupted or zeroed */
+    TEST_ASSERT_EQUAL_MEMORY(seed_16, g_uds.current_seed_bytes, 16);
+
+    /* Lock security state via DEFAULT session reset and verify cycle N works cleanly */
+    g_uds.session = SYN_UDS_SESSION_DEFAULT;
+    g_uds.security_state = SYN_UDS_SECURITY_LOCKED;
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL_MEMORY(seed_16, &resp[2], 16);
 
     /* Send Key when seed not sent in AES128 mode -> NRC 0x22 (Conditions Not Correct) */
     g_uds.security_state = SYN_UDS_SECURITY_LOCKED;

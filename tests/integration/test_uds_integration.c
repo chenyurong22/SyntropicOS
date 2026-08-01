@@ -226,6 +226,58 @@ static void test_uds_nrc_matrix(SYN_UDS_Server *server)
     printf("[Integration Test] Complete 11 ISO 14229-1 NRC Matrix PASS!\n");
 }
 
+/* 5. Test Issue #88 (0x19 ReadDTCInformation 5 Payload Families) & Issue #83 (0x14 ClearDTC Groups) */
+static void test_uds_issue88_and_issue83(SYN_UDS_Server *server)
+{
+    uint8_t resp[64];
+    uint16_t len = 0;
+
+    syn_uds_register_dtc(server, 0x123456U, 0x24U, 0x40U);
+
+    /* Issue #88 Family 1: Report Number of DTCs (0x19 0x01 0xFF) -> [0x59, 0x01, mask, format, count_hi, count_lo] */
+    uint8_t req19_01[] = {SYN_UDS_SID_READ_DTC_INFORMATION, SYN_UDS_DTC_REPORT_NUMBER_BY_STATUS_MASK, 0xFFU};
+    bool ok = syn_uds_process_request(server, req19_01, sizeof(req19_01), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT16(6, len);
+    TEST_ASSERT_EQUAL_UINT8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_DTC_REPORT_NUMBER_BY_STATUS_MASK, resp[1]);
+
+    /* Issue #88 Family 2: Report DTC By Status Mask (0x19 0x02 0xFF) -> [0x59, 0x02, mask, DTC_24bit, status] */
+    uint8_t req19_02[] = {SYN_UDS_SID_READ_DTC_INFORMATION, SYN_UDS_DTC_REPORT_BY_STATUS_MASK, 0xFFU};
+    ok = syn_uds_process_request(server, req19_02, sizeof(req19_02), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_DTC_REPORT_BY_STATUS_MASK, resp[1]);
+
+    /* Issue #88 Family 5: Report Supported DTCs (0x19 0x0A) -> [0x59, 0x0A, mask, DTC_24bit, status] */
+    uint8_t req19_0a[] = {SYN_UDS_SID_READ_DTC_INFORMATION, SYN_UDS_DTC_REPORT_SUPPORTED};
+    ok = syn_uds_process_request(server, req19_0a, sizeof(req19_0a), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_DTC_REPORT_SUPPORTED, resp[1]);
+
+    /* Issue #83 ClearDTC 0x14 Group Filtering (Emissions 0x000000, Powertrain 0x100000, All 0xFFFFFF) */
+    uint8_t req14_emissions[] = {SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION, 0x00U, 0x00U, 0x00U};
+    ok = syn_uds_process_request(server, req14_emissions, sizeof(req14_emissions), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT16(1, len);
+    TEST_ASSERT_EQUAL_UINT8(0x54, resp[0]);
+
+    uint8_t req14_powertrain[] = {SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION, 0x10U, 0x00U, 0x00U};
+    ok = syn_uds_process_request(server, req14_powertrain, sizeof(req14_powertrain), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT16(1, len);
+    TEST_ASSERT_EQUAL_UINT8(0x54, resp[0]);
+
+    uint8_t req14_all[] = {SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION, 0xFFU, 0xFFU, 0xFFU};
+    ok = syn_uds_process_request(server, req14_all, sizeof(req14_all), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT16(1, len);
+    TEST_ASSERT_EQUAL_UINT8(0x54, resp[0]);
+
+    printf("[Integration Test] Issue #88 (Service 0x19 ReadDTC Families) & Issue #83 (Service 0x14 ClearDTC Groups) PASS!\n");
+}
+
 /* clang-format on */
 
 void test_uds_iso14229_full_spec_matrix(void)
@@ -250,6 +302,7 @@ void test_uds_iso14229_full_spec_matrix(void)
     test_uds_security_access_flow(&server);
     test_uds_did_read_write(&server);
     test_uds_nrc_matrix(&server);
+    test_uds_issue88_and_issue83(&server);
 
     printf("[Integration Test] Comprehensive UDS ISO 14229-1 Full Spec Matrix PASS!\n");
 }

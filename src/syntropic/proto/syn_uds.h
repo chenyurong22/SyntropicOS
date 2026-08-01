@@ -169,14 +169,35 @@ typedef enum {
     SYN_UDS_SESSION_SAFETY_SYSTEM = 0x04U /**< Safety system diagnostic session (0x04) */
 } SYN_UDS_Session;
 
-/** @name UDS Session Mask Definitions (ISO 14229-1) */
+/** @name ISO 14229-1 Session Permission Bitmask Definitions */
 /**@{*/
-#define SYN_UDS_SESSION_MASK_DEFAULT (1U << 0)     /**< Bit 0: Default Session */
-#define SYN_UDS_SESSION_MASK_PROGRAMMING (1U << 1) /**< Bit 1: Programming Session */
-#define SYN_UDS_SESSION_MASK_EXTENDED (1U << 2)    /**< Bit 2: Extended Diagnostic Session */
-#define SYN_UDS_SESSION_MASK_SAFETY (1U << 3)      /**< Bit 3: Safety System Session */
+#define SYN_UDS_SESSION_MASK_DEFAULT (1U << 0)     /**< Default Session */
+#define SYN_UDS_SESSION_MASK_PROGRAMMING (1U << 1) /**< Programming Session */
+#define SYN_UDS_SESSION_MASK_EXTENDED (1U << 2)    /**< Extended Diagnostic Session */
+#define SYN_UDS_SESSION_MASK_SAFETY (1U << 3)      /**< Safety System Session */
 #define SYN_UDS_SESSION_MASK_ALL (0x0FU)           /**< Allowed in all sessions */
 /**@}*/
+
+/** @name ISO 14229-1 Security Level Bitmask Definitions */
+/**@{*/
+#define SYN_UDS_SECURITY_MASK_NONE (1U << 0)    /**< Unlocked without security (Level 0 / Locked) */
+#define SYN_UDS_SECURITY_MASK_LEVEL_1 (1U << 1) /**< Security Level 1 required */
+#define SYN_UDS_SECURITY_MASK_LEVEL_2 (1U << 2) /**< Security Level 2 required */
+#define SYN_UDS_SECURITY_MASK_LEVEL_3 (1U << 3) /**< Security Level 3 required */
+#define SYN_UDS_SECURITY_MASK_ALL (0xFFFFU)     /**< Allowed in all security states */
+/**@}*/
+
+/**
+ * @brief Data Identifier (DID) Registry Entry.
+ */
+typedef struct {
+    uint16_t did;           /**< 16-bit DID identifier code */
+    uint8_t *data;          /**< Pointer to DID data buffer */
+    uint16_t len;           /**< Byte length of DID data */
+    bool writable;          /**< True if DID is writable */
+    uint8_t session_mask;   /**< Permitted session bitmask */
+    uint16_t security_mask; /**< Permitted security level bitmask */
+} SYN_UDS_DIDEntry;
 
 /** @brief UDS Security Access Unlock States */
 typedef enum {
@@ -242,17 +263,6 @@ typedef bool (*SYN_UDS_AuthHandler)(uint8_t subfunction, const uint8_t *in_data,
 typedef bool (*SYN_UDS_FileTransferHandler)(uint8_t mode, const char *file_path, uint16_t path_len,
                                             uint8_t *out_buf, uint16_t max_out_len,
                                             uint16_t *out_len, void *ctx);
-
-/**
- * @brief Data Identifier (DID) Registry Entry.
- */
-typedef struct {
-    uint16_t did;         /**< 16-bit DID identifier code */
-    uint8_t *data;        /**< Pointer to DID data buffer */
-    uint16_t len;         /**< Byte length of DID data */
-    bool writable;        /**< True if DID is writable */
-    uint8_t session_mask; /**< Permitted session bitmask */
-} SYN_UDS_DIDEntry;
 
 /** @name UDS Timing & Security Constants */
 /**@{*/
@@ -351,12 +361,14 @@ typedef bool (*SYN_UDS_SessionTransitionHandler)(SYN_UDS_Session from_session,
 typedef struct {
     SYN_UDS_Session session;              /**< Current diagnostic session state */
     SYN_UDS_SecurityState security_state; /**< Security access unlock state */
-    uint32_t current_seed;                /**< Master template security seed value */
-    uint32_t active_seed;                 /**< Issued transaction security seed value */
-    uint8_t active_seed_subfunction;      /**< Active seed request subfunction (e.g. 0x01, 0x03) */
-    bool use_aes128_security;             /**< True if AES-128 security mode is active */
-    uint8_t aes_security_key[16];         /**< AES-128 security secret key (16 bytes) */
-    uint8_t current_seed_bytes[16];       /**< Master template AES-128 security seed (16 bytes) */
+    uint8_t
+        security_level;    /**< Unlocked security level (0 = locked, 1 = level 1, 2 = level 2...) */
+    uint32_t current_seed; /**< Master template security seed value */
+    uint32_t active_seed;  /**< Issued transaction security seed value */
+    uint8_t active_seed_subfunction;  /**< Active seed request subfunction (e.g. 0x01, 0x03) */
+    bool use_aes128_security;         /**< True if AES-128 security mode is active */
+    uint8_t aes_security_key[16];     /**< AES-128 security secret key (16 bytes) */
+    uint8_t current_seed_bytes[16];   /**< Master template AES-128 security seed (16 bytes) */
     uint8_t active_seed_bytes[16];    /**< Issued transaction AES-128 security seed (16 bytes) */
     uint32_t s3_timer_ms;             /**< S3 session timer in ms */
     uint8_t security_error_count;     /**< Failed security unlock attempts counter */
@@ -425,6 +437,14 @@ bool syn_uds_disable_aes128_security(SYN_UDS_Server *server);
  * @return true on success, false if server or seed is NULL.
  */
 bool syn_uds_set_security_seed_bytes(SYN_UDS_Server *server, const uint8_t seed[16]);
+
+/**
+ * @brief Get currently unlocked security level (0 = locked, 1 = level 1, 2 = level 2...).
+ *
+ * @param server Pointer to UDS server instance.
+ * @return Active security level uint8_t.
+ */
+uint8_t syn_uds_get_security_level(const SYN_UDS_Server *server);
 
 /**
  * @brief Initialize UDS Server context.
@@ -499,7 +519,7 @@ bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, u
                           bool writable);
 
 /**
- * @brief Register Data Identifier (DID) with custom session permission bitmask.
+ * @brief Register Data Identifier (DID) with custom session & security permission bitmask.
  *
  * @param server Pointer to UDS server instance.
  * @param did 16-bit Data Identifier code (e.g., 0xF190 for VIN).
@@ -507,10 +527,11 @@ bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, u
  * @param len Data byte length.
  * @param writable True if DID allows WriteDataByIdentifier (0x2E).
  * @param session_mask Permitted session bitmask (SYN_UDS_SESSION_MASK_*).
+ * @param security_mask Permitted security level bitmask (SYN_UDS_SECURITY_MASK_*).
  * @return true on success, false if table full or invalid params.
  */
 bool syn_uds_register_did_ext(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
-                              bool writable, uint8_t session_mask);
+                              bool writable, uint8_t session_mask, uint16_t security_mask);
 
 /**
  * @brief Register Diagnostic Trouble Code (DTC) in UDS Server table.

@@ -219,12 +219,14 @@ static void test_uds_security_access(void)
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
+    TEST_ASSERT_EQUAL_UINT8(1, syn_uds_get_security_level(&g_uds));
 
     /* Repeat Request Seed cycle when already unlocked */
     req[1] = 0x01;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_SEED_SENT, g_uds.security_state);
+    TEST_ASSERT_EQUAL_UINT8(0, syn_uds_get_security_level(&g_uds));
 
     /* Sending valid key again unlocks successfully */
     req[1] = 0x02;
@@ -232,6 +234,7 @@ static void test_uds_security_access(void)
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
+    TEST_ASSERT_EQUAL_UINT8(1, syn_uds_get_security_level(&g_uds));
 
     /* Re-initialize server and set delay timer to test NRC 0x37 */
     syn_uds_init(&g_uds);
@@ -2562,7 +2565,8 @@ static void test_uds_session_mask_filtering(void)
     uint8_t dummy_data[4] = {0x11, 0x22, 0x33, 0x44};
     /* Register DID 0xF190 allowed only in EXTENDED session */
     uint8_t ext_mask = SYN_UDS_SESSION_MASK_EXTENDED;
-    bool ok = syn_uds_register_did_ext(&server, 0xF190, dummy_data, 4, true, ext_mask);
+    bool ok = syn_uds_register_did_ext(&server, 0xF190, dummy_data, 4, true, ext_mask,
+                                       SYN_UDS_SECURITY_MASK_ALL);
     TEST_ASSERT_TRUE(ok);
 
     uint8_t req[16] = {0};
@@ -2612,6 +2616,66 @@ static void test_uds_session_mask_filtering(void)
     TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp[2]);
+}
+
+static void test_uds_security_mask_filtering(void)
+{
+    SYN_UDS_Server server;
+    TEST_ASSERT_TRUE(syn_uds_init(&server));
+
+    uint8_t secret_data[2] = {0xAA, 0xBB};
+    /* Register DID 0x0300 requiring Security Level 1 */
+    bool ok = syn_uds_register_did_ext(&server, 0x0300, secret_data, 2, true,
+                                       SYN_UDS_SESSION_MASK_ALL, SYN_UDS_SECURITY_MASK_LEVEL_1);
+    TEST_ASSERT_TRUE(ok);
+
+    uint8_t req[16] = {0};
+    uint8_t resp[32] = {0};
+    uint16_t resp_len = 0;
+
+    /* Read DID 0x0300 when locked (level 0) -> NRC 0x33 SecurityAccessDenied */
+    req[0] = SYN_UDS_SID_READ_DATA_BY_IDENTIFIER;
+    req[1] = 0x03;
+    req[2] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp[2]);
+
+    /* Unlock Level 1 */
+    req[0] = SYN_UDS_SID_SECURITY_ACCESS;
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    uint32_t key = server.current_seed ^ 0xA5A5A5A5U;
+    req[1] = 0x02;
+    syn_poke_u32(key, req, 2);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 6, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, server.security_state);
+    TEST_ASSERT_EQUAL_UINT8(1, syn_uds_get_security_level(&server));
+
+    /* Read DID 0x0300 now unlocked at Level 1 -> Success 0x62 */
+    req[0] = SYN_UDS_SID_READ_DATA_BY_IDENTIFIER;
+    req[1] = 0x03;
+    req[2] = 0x00;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x62, resp[0]);
+
+    /* Test SecurityAccess subfunction mismatch (line 467) */
+    server.security_state = SYN_UDS_SECURITY_LOCKED;
+    req[0] = SYN_UDS_SID_SECURITY_ACCESS;
+    req[1] = 0x01; /* Request Seed Level 1 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    req[1] = 0x04; /* Mismatched Send Key Level 2 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 6, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp[2]);
+
+    /* Test SecurityAccess short message length for Send Key (line 501) */
+    req[1] = 0x01; /* Request Seed Level 1 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    req[1] = 0x02; /* Send Key Level 1 but short len = 5 (< 6) */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 5, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
 }
 
 void test_uds_security_access_repeated_unlock(void)
@@ -2703,4 +2767,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_response_too_long_sweep);
     RUN_TEST(test_uds_isotp_full_stack_loopback);
     RUN_TEST(test_uds_session_mask_filtering);
+    RUN_TEST(test_uds_security_mask_filtering);
 }

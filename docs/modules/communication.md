@@ -243,4 +243,17 @@ void uds_init(void) {
 void uds_task_10ms(uint32_t dt_ms) {
     syn_uds_tick(&g_uds, dt_ms); /* Automatically triggers on_ecu_reset callback after 50 ms */
 }
+
+### Per-DID Session & Security Authorization Filters
+
+DIDs can be registered with explicit session and security level bitmask filters using `syn_uds_register_did_ext`:
+
+```c
+uint8_t engine_speed[2];
+/* Register DID 0xF190 accessible in DEFAULT/EXTENDED sessions and SECURITY LEVEL 1 */
+syn_uds_register_did_ext(&g_uds, 0xF190, engine_speed, sizeof(engine_speed), true,
+                         SYN_UDS_SESSION_MASK_DEFAULT | SYN_UDS_SESSION_MASK_EXTENDED,
+                         SYN_UDS_SECURITY_MASK_LEVEL_1);
+```
+
 ```

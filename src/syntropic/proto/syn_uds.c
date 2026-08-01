@@ -183,7 +183,7 @@ void syn_uds_clear_pending_reset(SYN_UDS_Server *server)
 }
 
 bool syn_uds_register_did_ext(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
-                              bool writable, uint8_t session_mask)
+                              bool writable, uint8_t session_mask, uint16_t security_mask)
 {
     if ((server == NULL) || (data == NULL) || (len == 0U)) {
         return false;
@@ -199,6 +199,7 @@ bool syn_uds_register_did_ext(SYN_UDS_Server *server, uint16_t did, uint8_t *dat
     entry->len = len;
     entry->writable = writable;
     entry->session_mask = session_mask;
+    entry->security_mask = security_mask;
 
     server->did_count++;
     return true;
@@ -207,7 +208,8 @@ bool syn_uds_register_did_ext(SYN_UDS_Server *server, uint16_t did, uint8_t *dat
 bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
                           bool writable)
 {
-    return syn_uds_register_did_ext(server, did, data, len, writable, SYN_UDS_SESSION_MASK_ALL);
+    return syn_uds_register_did_ext(server, did, data, len, writable, SYN_UDS_SESSION_MASK_ALL,
+                                    SYN_UDS_SECURITY_MASK_ALL);
 }
 
 bool syn_uds_register_comm_control(SYN_UDS_Server *server, SYN_UDS_CommControlHandler handler,
@@ -477,6 +479,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
 
                 if (memcmp(&req[2], expected_key, 16) == 0) {
                     server->security_state = SYN_UDS_SECURITY_UNLOCKED;
+                    server->security_level = sub / 2U;
                     server->security_error_count = 0U;
                     resp_buf[0] = sid + 0x40U;
                     resp_buf[1] = sub;
@@ -484,6 +487,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                     success = true;
                 } else {
                     server->security_state = SYN_UDS_SECURITY_LOCKED;
+                    server->security_level = 0U;
                     server->security_error_count++;
                     if (server->security_error_count >= SYN_UDS_SECURITY_MAX_ATTEMPTS) {
                         server->security_delay_timer_ms = SYN_UDS_SECURITY_DELAY_MS;
@@ -502,6 +506,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                 uint32_t expected_key = server->active_seed ^ 0xA5A5A5A5U;
                 if (key == expected_key) {
                     server->security_state = SYN_UDS_SECURITY_UNLOCKED;
+                    server->security_level = sub / 2U;
                     server->security_error_count = 0U;
                     resp_buf[0] = sid + 0x40U;
                     resp_buf[1] = sub;
@@ -509,6 +514,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                     success = true;
                 } else {
                     server->security_state = SYN_UDS_SECURITY_LOCKED;
+                    server->security_level = 0U;
                     server->security_error_count++;
                     if (server->security_error_count >= SYN_UDS_SECURITY_MAX_ATTEMPTS) {
                         server->security_delay_timer_ms = SYN_UDS_SECURITY_DELAY_MS;
@@ -586,6 +592,10 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(
                 sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp_buf, resp_len);
         }
+        if (((1U << server->security_level) & matched_entry->security_mask) == 0U) {
+            return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
+                                          resp_len);
+        }
         if (3U + matched_entry->len > max_resp_len) {
             return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len);
         }
@@ -622,7 +632,8 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
                                           resp_len);
         }
-        if (server->security_state != SYN_UDS_SECURITY_UNLOCKED) {
+        if (server->security_state != SYN_UDS_SECURITY_UNLOCKED ||
+            ((1U << server->security_level) & matched_entry->security_mask) == 0U) {
             return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
                                           resp_len);
         }
@@ -1856,4 +1867,12 @@ bool syn_uds_dtc_get_status(SYN_UDS_Server *server, uint32_t dtc, uint8_t *out_s
     }
 
     return false;
+}
+
+uint8_t syn_uds_get_security_level(const SYN_UDS_Server *server)
+{
+    if (server == NULL || server->security_state != SYN_UDS_SECURITY_UNLOCKED) {
+        return 0U;
+    }
+    return server->security_level;
 }

@@ -851,14 +851,12 @@ void mock_udp_set_response(const void *data, size_t len, const SYN_SockAddr *fro
     mock_udp_inject_packet(data, len, from);
 }
 
-SYN_WEAK
 SYN_Socket syn_port_udp_open(uint16_t port)
 {
     (void)port;
     return mock_udp_open_ok ? 20 : SYN_SOCKET_INVALID;
 }
 
-SYN_WEAK
 int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len, const SYN_SockAddr *to)
 {
     (void)sock;
@@ -875,7 +873,6 @@ int syn_port_udp_sendto(SYN_Socket sock, const void *data, size_t len, const SYN
     return (int)len;
 }
 
-SYN_WEAK
 int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len, SYN_SockAddr *from,
                           uint32_t timeout_ms)
 {
@@ -893,14 +890,14 @@ int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len, SYN_SockAd
     return (int)to_copy;
 }
 
-SYN_WEAK bool syn_port_udp_readable(SYN_Socket sock)
+bool syn_port_udp_readable(SYN_Socket sock)
 {
     if (sock == SYN_SOCKET_INVALID)
         return false;
     return (mock_udp_rx_pos < mock_udp_rx_count);
 }
 
-SYN_WEAK SYN_Status syn_port_udp_join_multicast(SYN_Socket sock, const char *multicast_ip)
+SYN_Status syn_port_udp_join_multicast(SYN_Socket sock, const char *multicast_ip)
 {
     (void)sock;
     (void)multicast_ip;

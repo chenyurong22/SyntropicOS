@@ -28,7 +28,6 @@ gcc ${CFLAGS} src/syntropic/net/syn_wg.c src/syntropic/crypto/*.c src/syntropic/
 gcc ${CFLAGS} src/syntropic/proto/syn_modbus.c src/syntropic/util/syn_crc.c ${CORE_PORT} tests/integration/test_modbus_integration.c -o build/tests/test_modbus_integration -lm &
 gcc ${CFLAGS} src/syntropic/proto/syn_ethercat.c ${CORE_PORT} tests/integration/test_ecat_integration.c -o build/tests/test_ecat_integration -lm &
 gcc ${CFLAGS} src/syntropic/proto/syn_ethercat.c ${CORE_PORT} tests/integration/test_soes_integration.c -o build/tests/test_soes_integration -lm &
-gcc ${CFLAGS} src/syntropic/proto/syn_uds.c src/syntropic/util/syn_aes128.c ${CORE_PORT} tests/integration/test_uds_integration.c -o build/tests/test_uds_integration -lm &
 wait
 
 echo "=== Awaiting 3rd-Party Daemon Service Readiness ==="
@@ -47,7 +46,10 @@ FAILURES=0
 ./build/tests/test_modbus_integration || FAILURES=$((FAILURES + 1))
 ./build/tests/test_ecat_integration || FAILURES=$((FAILURES + 1))
 ./build/tests/test_soes_integration || FAILURES=$((FAILURES + 1))
-./build/tests/test_uds_integration || FAILURES=$((FAILURES + 1))
+
+echo "=== Executing Official 3rd-Party Python udsoncan Client Driver ==="
+pip install --break-system-packages --quiet udsoncan || true
+python3 "${ROOT_DIR}/tests/integration/services/uds/test_udsoncan_client.py" || FAILURES=$((FAILURES + 1))
 
 rm -rf build/tests/obj build/tests/test_*_integration
 

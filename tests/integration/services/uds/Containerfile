@@ -1,15 +1,12 @@
-FROM python:3.11-slim
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    can-utils \
-    iproute2 \
-    gcc \
-    libc6-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip install --no-cache-dir python-can can-isotp udsoncan
+FROM gcc:13
 
 WORKDIR /app
-COPY uds_daemon.py /app/uds_daemon.py
 
-CMD ["python3", "-u", "/app/uds_daemon.py"]
+COPY src /app/src
+COPY tests/integration/services/uds/uds_server_runner.c /app/uds_server_runner.c
+
+RUN gcc -std=c99 -D_DEFAULT_SOURCE -I. -Isrc -Isrc/syntropic/proto -Isrc/syntropic/util -Isrc/syntropic/port_stubs src/syntropic/proto/syn_uds.c src/syntropic/util/syn_aes128.c src/syntropic/port_stubs/syn_port_stubs.c uds_server_runner.c -o uds_server_runner
+
+EXPOSE 10886
+
+CMD ["/app/uds_server_runner"]

@@ -131,11 +131,11 @@ services:
       syn_net:
         ipv4_address: 172.28.0.101
 
-  # 11. 3rd-Party Python UDS (ISO 14229-1) Diagnostic Daemon
+  # 11. SyntropicOS UDS C Server Daemon
   uds:
     build:
-      context: ./services/uds
-      dockerfile: Containerfile
+      context: ../..
+      dockerfile: tests/integration/services/uds/Containerfile
     container_name: syntropicos-uds
     ports:
       - "10886:10886"

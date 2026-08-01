@@ -446,10 +446,6 @@ static void test_modbus_broadcast(void)
     mb.rx_len = 8;
     TEST_ASSERT_FALSE(syn_modbus_process(&mb)); /* Returns false when no reply to send */
     TEST_ASSERT_EQUAL_INT(999, holding[1]);
-    printf("TX LEN: %zu, BYTES: ", mock_uart_tx_len);
-    for (size_t idx = 0; idx < mock_uart_tx_len; idx++)
-        printf("%02X ", mock_uart_tx_buf[idx]);
-    printf("\n");
     TEST_ASSERT_EQUAL_INT(0, mock_uart_tx_len);
 
     /* B. Write Multiple Broadcast */

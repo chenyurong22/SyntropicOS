@@ -47,9 +47,14 @@ void syn_at_parser_reset(SYN_AtParser *parser)
 static bool starts_with(const char *str, const char *prefix)
 {
     if (str == NULL || prefix == NULL)
-        return false; /* LCOV_EXCL_LINE: Unreachable guard; callers pass non-NULL valid string
-                         references */
-    return strncmp(str, prefix, strlen(prefix)) == 0;
+        return false;
+    while (*prefix) {
+        if (*str != *prefix)
+            return false;
+        str++;
+        prefix++;
+    }
+    return true;
 }
 
 SYN_AtRespType syn_at_parser_feed_char(SYN_AtParser *parser, char c)

@@ -143,7 +143,7 @@ static void test_fmt_q16_truncation(void)
 {
     char buf[4]; /* very small */
     /* 3.14159 in Q16.16 */
-    int32_t pi = (int32_t)(3.14159 * 65536.0);
+    int32_t pi = (int32_t)((314159L * 65536L) / 100000L);
     syn_fmt_q16(buf, sizeof(buf), pi, 2);
     TEST_ASSERT_EQUAL('\0', buf[3]);
 }

@@ -28,7 +28,7 @@ void test_scurve_motion(void)
     }
 
     if (!sc.done) {
-        printf("Failed to finish! p=%d, v=%d, a=%d, target=%d\n", sc.p, sc.v, sc.a, sc.target_p);
+        /* Failed to finish */
     }
     TEST_ASSERT_TRUE(sc.done);
     TEST_ASSERT_EQUAL(1000, sc.p);

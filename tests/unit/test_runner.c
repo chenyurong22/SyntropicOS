@@ -12,6 +12,8 @@
 
 #include <stdio.h>
 
+extern void semihosting_write0(const char *);
+
 /* ── Unity hooks ────────────────────────────────────────────────────────── */
 
 void setUp(void)

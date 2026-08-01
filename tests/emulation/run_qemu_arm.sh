@@ -9,37 +9,14 @@ cd "${ROOT_DIR}"
 
 echo "=== Cross-compiling SyntropicOS for ARM Cortex-M4 (bare-metal) ==="
 
-# Gather source C files, excluding port_stubs and syn_wg.c
-SRC_FILES=$(find src/syntropic -name "*.c" ! -path "*/port_stubs/*" ! -name "syn_wg.c")
-
-# Gather test files, excluding test_runner.c (passed explicitly)
-TEST_FILES=$(find tests/unit -name "test_*.c" ! -name "test_runner.c")
-
-# Build WASM header fixtures
-make -f tests/Makefile.unity wasm-fixtures BUILD_DIR=build
-
-arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -std=c99 -pedantic -Wall -Wextra \
-    -O2 -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections -Wl,--gc-sections -I. -Isrc -Itests/unit -Itests/unit/mocks -Ibuild \
-    -DSYN_LOG_COLOR=0 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_AT_PARSER=1 \
-    -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format -Wno-stringop-truncation -Wno-type-limits \
-    -T "${QEMU_DIR}/qemu_arm.ld" \
-    -specs=rdimon.specs \
-    "${QEMU_DIR}/startup_cortexm4.c" \
-    ${SRC_FILES} \
-    tests/unit/unity/unity.c \
-    tests/unit/mocks/mock_port.c \
-    tests/unit/test_runner.c \
-    ${TEST_FILES} \
-    -o build/test_cortexm4.elf -lm
+JOBS=${JOBS:-$(nproc 2>/dev/null || echo 4)}
+make -j"${JOBS}" -f tests/Makefile.unity qemu-build BUILD_DIR=build
 
 bash "${QEMU_DIR}/measure_arm_size.sh"
 
 echo "=== Executing in QEMU ARM Cortex-M4 (mps2-an385) ==="
 if command -v qemu-system-arm >/dev/null 2>&1; then
-    timeout 180s qemu-system-arm -machine mps2-an385 -nographic -semihosting-config enable=on,target=native -kernel build/test_cortexm4.elf || true
-
-
-    rm -f build/test_cortexm4.elf
+    stdbuf -o0 -e0 qemu-system-arm -machine mps2-an385 -nographic -monitor null -serial stdio -semihosting-config enable=on,target=native -kernel build/test_cortexm4.elf || true
     echo "=== QEMU ARM Execution Complete ==="
 else
     echo "Notice: qemu-system-arm not found on host. Run via container: make -C tools/containers container-qemu"

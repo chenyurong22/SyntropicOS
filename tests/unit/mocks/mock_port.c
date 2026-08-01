@@ -79,15 +79,16 @@ bool mock_random_skip = false;
 
 SYN_Status syn_port_random_fill(void *buf, size_t len)
 {
-    if (mock_random_skip) {
-        return SYN_ERROR; /* Forces fallback in some contexts, or we can use another approach */
-    }
-    FILE *f = fopen("/dev/urandom", "rb");
-    if (!f)
+    if (mock_random_skip || !buf) {
         return SYN_ERROR;
-    size_t n = fread(buf, 1, len, f);
-    fclose(f);
-    return (n == len) ? SYN_OK : SYN_ERROR;
+    }
+    static uint32_t seed = 0x12345678;
+    uint8_t *p = (uint8_t *)buf;
+    for (size_t i = 0; i < len; i++) {
+        seed = seed * 1103515245 + 12345;
+        p[i] = (uint8_t)(seed >> 16);
+    }
+    return SYN_OK;
 }
 
 /* ── Ethernet (PHY tx/rx) ────────────────────────────────────────────────── */

@@ -155,7 +155,11 @@ static void parse_redirect_url(const char *url, const char *orig_host, uint16_t 
                                char *host_out, size_t host_sz, char *path_out, size_t path_sz,
                                uint16_t *port_out)
 {
-    if (strncmp(url, "http://", 7) == 0) {
+    if (url == NULL)
+        return;
+
+    if (url[0] == 'h' && url[1] == 't' && url[2] == 't' && url[3] == 'p' && url[4] == ':' &&
+        url[5] == '/' && url[6] == '/') {
         url += 7;
         const char *slash = strchr(url, '/');
         const char *colon = strchr(url, ':');
@@ -240,12 +244,15 @@ SYN_Status syn_http_client_init(SYN_HttpClient *client, const char *method, cons
 
 SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
 {
+    if (task == NULL || task->user_data == NULL) {
+        return PT_EXITED;
+    }
     SYN_HttpClient *c = (SYN_HttpClient *)task->user_data;
-    SYN_ASSERT(c != NULL);
+    if (c->work_buf == NULL || c->work_buf_size < 2) {
+        return PT_EXITED;
+    }
 
     PT_BEGIN(pt);
-
-    c->hops = 0;
 
     for (;;) {
         c->state = SYN_HTTP_STATE_CONNECTING;
@@ -380,8 +387,9 @@ SYN_PT_Status syn_http_client_task(SYN_PT *pt, SYN_Task *task)
                     c->resp.location[len] = '\0';
                 }
                 cur = strchr(cur, '\n');
-                if (cur)
-                    cur++;
+                if (!cur)
+                    break;
+                cur++;
             }
         }
 

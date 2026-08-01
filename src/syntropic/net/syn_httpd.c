@@ -137,8 +137,10 @@ static int parse_headers_from_buf(SYN_Socket sock, SYN_HttpdRequest *req, uint8_
         req->headers = hdr_start;
     }
 
-    while (hdr_start && *hdr_start != '\r' && *hdr_start != '\n') {
+    while (hdr_start && *hdr_start != '\0' && *hdr_start != '\r' && *hdr_start != '\n') {
         char *next_line = strstr(hdr_start, "\r\n");
+        if (next_line == NULL)
+            break;
 
         if (prefix_icase(hdr_start, "content-length:")) {
             const char *val = hdr_start + 15;
@@ -181,6 +183,8 @@ static int parse_headers_from_buf(SYN_Socket sock, SYN_HttpdRequest *req, uint8_
  */
 static const SYN_HttpdRoute *match_route(const SYN_Httpd *srv, const SYN_HttpdRequest *req)
 {
+    if (srv == NULL || req == NULL || req->path == NULL)
+        return NULL;
     for (size_t i = 0; i < srv->route_count; i++) {
         const SYN_HttpdRoute *r = &srv->routes[i];
 
@@ -190,7 +194,14 @@ static const SYN_HttpdRoute *match_route(const SYN_Httpd *srv, const SYN_HttpdRe
         size_t plen = strlen(r->path);
         if (plen > 0 && r->path[plen - 1] == '*') {
             /* Prefix match: "/api/" with wildcard */
-            if (strncmp(req->path, r->path, plen - 1) == 0) {
+            bool match = true;
+            for (size_t k = 0; k < plen - 1; k++) {
+                if (req->path[k] != r->path[k]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
                 return r;
             }
         } else {

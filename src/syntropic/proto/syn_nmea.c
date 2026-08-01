@@ -18,6 +18,39 @@
 #include <string.h>
 
 /**
+ * @brief Lightweight ASCII string to double conversion for NMEA numerical fields.
+ * @param s NMEA field string.
+ * @return Converted double value, or 0.0 on NULL/empty input.
+ */
+static double syn_atof(const char *s)
+{
+    if (s == NULL || *s == '\0')
+        return 0.0;
+    double res = 0.0;
+    double sign = 1.0;
+    if (*s == '-') {
+        sign = -1.0;
+        s++;
+    } else if (*s == '+') {
+        s++;
+    }
+    while (*s >= '0' && *s <= '9') {
+        res = res * 10.0 + (double)(*s - '0');
+        s++;
+    }
+    if (*s == '.') {
+        s++;
+        double frac = 0.1;
+        while (*s >= '0' && *s <= '9') {
+            res += (double)(*s - '0') * frac;
+            frac *= 0.1;
+            s++;
+        }
+    }
+    return res * sign;
+}
+
+/**
  * @brief Extract comma-separated NMEA field from sentence.
  * @param sentence Input NMEA sentence string.
  * @param index Field index (0-based).
@@ -193,7 +226,7 @@ double syn_nmea_parse_coord(const char *nmea_coord, char dir)
     if (nmea_coord == NULL || strlen(nmea_coord) < 4)
         return 0.0;
 
-    double val = atof(nmea_coord);
+    double val = syn_atof(nmea_coord);
     double deg = (double)((int)(val / 100.0));
     double minutes = val - (deg * 100.0);
     double decimal = deg + (minutes / 60.0);
@@ -239,7 +272,7 @@ static void parse_time(const char *field, uint8_t *h, uint8_t *m, uint8_t *s, ui
 
     const char *dot = strchr(field, '.');
     if (dot != NULL) {
-        *ms = (uint16_t)(atof(dot) * 1000.0);
+        *ms = (uint16_t)(syn_atof(dot) * 1000.0);
     }
 }
 
@@ -271,9 +304,9 @@ bool syn_nmea_parse_gga(const char *sentence, SYN_NMEA_GGA *gga)
     if (get_field(sentence, 7, f, sizeof(f)))
         gga->num_satellites = (uint8_t)atoi(f);
     if (get_field(sentence, 8, f, sizeof(f)))
-        gga->hdop = (float)atof(f);
+        gga->hdop = (float)syn_atof(f);
     if (get_field(sentence, 9, f, sizeof(f)))
-        gga->altitude_m = (float)atof(f);
+        gga->altitude_m = (float)syn_atof(f);
 
     gga->valid = true;
     return true;
@@ -306,9 +339,9 @@ bool syn_nmea_parse_rmc(const char *sentence, SYN_NMEA_RMC *rmc)
         rmc->longitude = syn_nmea_parse_coord(lon_str, lon_dir[0]);
 
     if (get_field(sentence, 7, f, sizeof(f)))
-        rmc->speed_knots = (float)atof(f);
+        rmc->speed_knots = (float)syn_atof(f);
     if (get_field(sentence, 8, f, sizeof(f)))
-        rmc->course_deg = (float)atof(f);
+        rmc->course_deg = (float)syn_atof(f);
 
     if (get_field(sentence, 9, f, sizeof(f)) && strlen(f) >= 6) {
         char tmp[3] = {0};
@@ -338,11 +371,11 @@ bool syn_nmea_parse_vtg(const char *sentence, SYN_NMEA_VTG *vtg)
 
     char f[16];
     if (get_field(sentence, 1, f, sizeof(f)))
-        vtg->course_true_deg = (float)atof(f);
+        vtg->course_true_deg = (float)syn_atof(f);
     if (get_field(sentence, 5, f, sizeof(f)))
-        vtg->speed_knots = (float)atof(f);
+        vtg->speed_knots = (float)syn_atof(f);
     if (get_field(sentence, 7, f, sizeof(f)))
-        vtg->speed_kph = (float)atof(f);
+        vtg->speed_kph = (float)syn_atof(f);
 
     vtg->valid = true;
     return true;
@@ -362,11 +395,11 @@ bool syn_nmea_parse_gsa(const char *sentence, SYN_NMEA_GSA *gsa)
     if (get_field(sentence, 2, f, sizeof(f)))
         gsa->fix_type = (uint8_t)atoi(f);
     if (get_field(sentence, 15, f, sizeof(f)))
-        gsa->pdop = (float)atof(f);
+        gsa->pdop = (float)syn_atof(f);
     if (get_field(sentence, 16, f, sizeof(f)))
-        gsa->hdop = (float)atof(f);
+        gsa->hdop = (float)syn_atof(f);
     if (get_field(sentence, 17, f, sizeof(f)))
-        gsa->vdop = (float)atof(f);
+        gsa->vdop = (float)syn_atof(f);
 
     gsa->valid = true;
     return true;

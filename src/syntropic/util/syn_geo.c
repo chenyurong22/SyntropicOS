@@ -66,13 +66,21 @@ SYN_Status syn_geo_ecef_to_wgs84(double x, double y, double z, double *out_lat, 
     double ep2 = (a * a - b * b) / (b * b);
 
     double p = sqrt(x * x + y * y);
+    if (p < 1e-12) {
+        /* Polar region handling */
+        *out_lat = (z >= 0.0) ? 90.0 : -90.0;
+        *out_lon = 0.0;
+        *out_alt = fabs(z) - b;
+        return SYN_OK;
+    }
+
     double theta = atan2(z * a, p * b);
+    double sin_theta = sin(theta);
+    double cos_theta = cos(theta);
 
-    double sin_th = sin(theta);
-    double cos_th = cos(theta);
+    double lat_rad = atan2(z + ep2 * b * sin_theta * sin_theta * sin_theta,
+                           p - e2 * a * cos_theta * cos_theta * cos_theta);
 
-    double lat_rad =
-        atan2(z + ep2 * b * sin_th * sin_th * sin_th, p - e2 * a * cos_th * cos_th * cos_th);
     double lon_rad = atan2(y, x);
 
     double sin_lat = sin(lat_rad);
@@ -80,7 +88,7 @@ SYN_Status syn_geo_ecef_to_wgs84(double x, double y, double z, double *out_lat, 
 
     *out_lat = lat_rad * RAD_TO_DEG;
     *out_lon = lon_rad * RAD_TO_DEG;
-    *out_alt = p / cos(lat_rad) - N;
+    *out_alt = (p / cos(lat_rad)) - N;
 
     return SYN_OK;
 }
@@ -149,6 +157,10 @@ double syn_geo_haversine_m(double lat1_deg, double lon1_deg, double lat2_deg, do
 
     double a = sin(dlat / 2.0) * sin(dlat / 2.0) +
                sin(dlon / 2.0) * sin(dlon / 2.0) * cos(lat1_rad) * cos(lat2_rad);
+    if (a < 0.0)
+        a = 0.0;
+    if (a > 1.0)
+        a = 1.0;
     double c = 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
 
     return SYN_GEO_WGS84_A * c;

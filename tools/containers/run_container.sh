@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 # Signal-safe container execution wrapper with pre-run cleanup & automatic CID tracking.
-CONTAINER_ENGINE="${CONTAINER_ENGINE:-podman}"
+if [ -z "$CONTAINER_ENGINE" ]; then
+    if command -v podman >/dev/null 2>&1; then
+        CONTAINER_ENGINE="podman"
+    else
+        CONTAINER_ENGINE="docker"
+    fi
+fi
 CONTAINER_NAME="syntropicos_run_$$"
 CID_FILE="$(mktemp /tmp/syn_container_XXXXXX.cid)"
+rm -f "$CID_FILE"
 
 cleanup() {
     if [ -f "$CID_FILE" ]; then

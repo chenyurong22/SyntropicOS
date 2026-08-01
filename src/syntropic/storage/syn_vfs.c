@@ -89,12 +89,22 @@ SYN_Status syn_vfs_unmount(const char *prefix)
  */
 static const SYN_VfsMount *find_mount(const char *path, const char **rel_path)
 {
+    if (path == NULL)
+        return NULL;
+
     size_t longest_match = 0;
     const SYN_VfsMount *matched = NULL;
 
     for (size_t i = 0; i < g_mount_count; i++) {
         size_t len = g_mounts[i].prefix_len;
-        if (strncmp(path, g_mounts[i].prefix, len) == 0) {
+        bool match = true;
+        for (size_t k = 0; k < len; k++) {
+            if (path[k] != g_mounts[i].prefix[k]) {
+                match = false;
+                break;
+            }
+        }
+        if (match) {
             /* Prefix match. Check if boundary is slash or end of string */
             if (path[len] == '\0' || path[len] == '/') {
                 if (len > longest_match) {

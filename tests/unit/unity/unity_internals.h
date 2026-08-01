@@ -47,6 +47,8 @@
   #define UNITY_FUNCTION_ATTR(a)    /* ignore */
 #endif
 
+void semihosting_putc(char c);
+
 /* UNITY_NORETURN is only required if we have setjmp.h. */
 #ifndef UNITY_EXCLUDE_SETJMP_H
   #ifndef UNITY_NORETURN

@@ -73,9 +73,9 @@ static void test_biquad_attenuation(void)
     q16_t max_out_low = 0;
     syn_filter_biquad_reset(&f);
     for (int i = 0; i < 200; i++) {
-        /* sin(2 * pi * 1 * i / 100) */
+        /* sinf(2 * pi * 1 * i / 100) */
         double angle = 2.0 * 3.1415926535 * 1.0 * i / 100.0;
-        q16_t in = Q16_FROM_FLOAT(sin(angle));
+        q16_t in = Q16_FROM_FLOAT(sinf(angle));
         q16_t out = syn_filter_biquad_update(&f, in);
         if (i > 100) { /* wait for transient response to settle */
             if (q16_abs(out) > max_out_low)
@@ -89,9 +89,9 @@ static void test_biquad_attenuation(void)
     q16_t max_out_high = 0;
     syn_filter_biquad_reset(&f);
     for (int i = 0; i < 200; i++) {
-        /* sin(2 * pi * 40 * i / 100) */
+        /* sinf(2 * pi * 40 * i / 100) */
         double angle = 2.0 * 3.1415926535 * 40.0 * i / 100.0;
-        q16_t in = Q16_FROM_FLOAT(sin(angle));
+        q16_t in = Q16_FROM_FLOAT(sinf(angle));
         q16_t out = syn_filter_biquad_update(&f, in);
         if (i > 100) {
             if (q16_abs(out) > max_out_high)
@@ -212,10 +212,11 @@ static void test_fft_against_reference(void)
     double ref_real[32];
     double ref_imag[32];
 
-    /* Generate an arbitrary composite signal: x[t] = 0.5*cos(2*pi*2*t) + 0.2*sin(2*pi*7*t) + 0.1 */
+    /* Generate an arbitrary composite signal: x[t] = 0.5*cosf(2*pi*2*t) + 0.2*sinf(2*pi*7*t) + 0.1
+     */
     for (int i = 0; i < 32; i++) {
         double t = (double)i / 32.0;
-        double val = 0.5 * cos(2.0 * M_PI * 2.0 * t) + 0.2 * sin(2.0 * M_PI * 7.0 * t) + 0.1;
+        double val = 0.5 * cosf(2.0 * M_PI * 2.0 * t) + 0.2 * sinf(2.0 * M_PI * 7.0 * t) + 0.1;
         real[i] = Q16_FROM_FLOAT(val);
         imag[i] = 0;
     }
@@ -227,8 +228,8 @@ static void test_fft_against_reference(void)
         for (int n = 0; n < 32; n++) {
             double angle = 2.0 * M_PI * k * n / 32.0;
             double x_r = (double)real[n] / 65536.0;
-            sum_r += x_r * cos(angle);
-            sum_i += -x_r * sin(angle);
+            sum_r += x_r * cosf(angle);
+            sum_i += -x_r * sinf(angle);
         }
         ref_real[k] = sum_r;
         ref_imag[k] = sum_i;

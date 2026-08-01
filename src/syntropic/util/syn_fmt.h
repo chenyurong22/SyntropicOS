@@ -126,6 +126,8 @@ size_t syn_fmt_concat(char *buf, size_t size, const char *const *parts, size_t n
  */
 static inline bool syn_str_prefix_icase(const char *str, const char *prefix)
 {
+    if (str == NULL || prefix == NULL)
+        return false;
     while (*prefix) {
         char a = *str++;
         char b = *prefix++;

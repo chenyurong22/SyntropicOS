@@ -154,6 +154,8 @@ static void cli_dispatch(SYN_CLI *cli, char *line)
 #endif
 
         for (size_t i = 0; i < cli->command_count; i++) {
+            if (cli->commands[i].name == NULL)
+                continue;
             cli_puts(cli, "  ");
             cli_puts(cli, cli->commands[i].name);
             if (cli->commands[i].help != NULL) {

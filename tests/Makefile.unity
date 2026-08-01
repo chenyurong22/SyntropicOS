@@ -3,7 +3,7 @@
 
 BUILD_DIR ?= build
 CC      := gcc
-CFLAGS   = -std=c99 -fPIC -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests/unit -Itests/unit/mocks -I$(BUILD_DIR) -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_MBUS=1 -DSYN_USE_DLT645=1 -DSYN_USE_AT_PARSER=1 -DSYN_USE_BACNET=1 -DSYN_USE_DEVICENET=1
+CFLAGS   = -MMD -MP -std=c99 -fPIC -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests/unit -Itests/unit/mocks -I$(BUILD_DIR) -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_MBUS=1 -DSYN_USE_DLT645=1 -DSYN_USE_AT_PARSER=1 -DSYN_USE_BACNET=1 -DSYN_USE_DEVICENET=1
 
 
 # All SyntropicOS source files
@@ -178,6 +178,8 @@ TEST_SRCS := $(wildcard tests/unit/test_*.c)
 ALL_SRCS := $(SYN_SRCS) $(UNITY_SRCS) $(MOCK_SRCS) $(TEST_SRCS)
 OBJS     := $(patsubst %.c,$(BUILD_DIR)/%.o,$(ALL_SRCS))
 
+-include $(OBJS:.o=.d)
+
 .PHONY: all test test-cov clean
 
 all: test
@@ -207,16 +209,43 @@ $(BUILD_DIR)/%.o: %.c
 $(BUILD_DIR)/test_unity: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $@ -lm $(LDFLAGS)
 
-test_unity: wasm-fixtures $(BUILD_DIR)/test_unity
-
-test: test_unity
-	./$(BUILD_DIR)/test_unity
+.PHONY: test-cov FORCE
 
 test-cov: CFLAGS += --coverage
 test-cov: LDFLAGS += --coverage
-test-cov: test_unity
+test-cov: FORCE
+	rm -f $(BUILD_DIR)/test_unity
+	$(MAKE) -f tests/Makefile.unity $(BUILD_DIR)/test_unity CFLAGS="$(CFLAGS) --coverage" LDFLAGS="$(LDFLAGS) --coverage"
 	./$(BUILD_DIR)/test_unity
-	@echo "Coverage data generated."
+
+test: $(BUILD_DIR)/test_unity
+	./$(BUILD_DIR)/test_unity
+
+ARM_CC      := arm-none-eabi-gcc
+ARM_CFLAGS  := -MMD -MP -mcpu=cortex-m4 -mthumb -mabi=aapcs -mfloat-abi=soft -mno-unaligned-access -std=c99 -pedantic -Wall -Wextra \
+               -O2 -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables \
+               -ffunction-sections -fdata-sections -I. -Isrc -Itests/unit -Itests/unit/mocks -I$(BUILD_DIR) \
+               -DSYN_LOG_COLOR=0 -DSYN_LOG_USE_PRINTF=0 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 \
+               -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 \
+               -DUNITY_OUTPUT_CHAR=semihosting_putc -DUNITY_FLUSH=qemu_flush_dummy -DUNITY_EXCLUDE_FLOAT_PRINT -DUNITY_EXCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 \
+               -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_MBUS=1 -DSYN_USE_DLT645=1 -DSYN_USE_AT_PARSER=1 \
+               -DSYN_USE_BACNET=1 -DSYN_USE_DEVICENET=1 \
+               -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format -Wno-stringop-truncation -Wno-type-limits
+
+ARM_OBJS    := $(patsubst %.c,$(BUILD_DIR)/arm/%.o,$(ALL_SRCS))
+
+-include $(ARM_OBJS:.o=.d)
+
+$(BUILD_DIR)/arm/%.o: %.c tests/Makefile.unity | wasm-fixtures
+	@mkdir -p $(dir $@)
+	$(ARM_CC) $(ARM_CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/test_cortexm4.elf: tests/emulation/startup_cortexm4.c $(ARM_OBJS) tests/emulation/qemu_arm.ld tests/Makefile.unity
+	$(ARM_CC) $(ARM_CFLAGS) -T tests/emulation/qemu_arm.ld tests/emulation/startup_cortexm4.c $(ARM_OBJS) -Wl,--gc-sections -Wl,--start-group -lc -lm -lrdimon -Wl,--end-group -o $@
+
+.PHONY: qemu-build
+
+qemu-build: wasm-fixtures $(BUILD_DIR)/test_cortexm4.elf
 
 
 

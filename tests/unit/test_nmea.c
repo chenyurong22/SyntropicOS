@@ -2,6 +2,7 @@
 #include "unity/unity.h"
 
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 void test_nmea_checksum_and_validate(void)

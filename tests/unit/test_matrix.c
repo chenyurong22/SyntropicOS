@@ -11,16 +11,16 @@
 
 /* ── Helper: assert Q16 value is within tolerance of expected ──────────── */
 
-#define ASSERT_Q16_NEAR(expected, actual, tol_q16)                                            \
-    do {                                                                                      \
-        q16_t _e = (expected), _a = (actual), _t = (tol_q16);                                 \
-        q16_t _d = (_a > _e) ? (_a - _e) : (_e - _a);                                         \
-        if (_d > _t) {                                                                        \
-            char _msg[80];                                                                    \
-            snprintf(_msg, sizeof(_msg), "Expected %ld ± %ld, got %ld (delta %ld)", (long)_e, \
-                     (long)_t, (long)_a, (long)_d);                                           \
-            TEST_FAIL_MESSAGE(_msg);                                                          \
-        }                                                                                     \
+#define ASSERT_Q16_NEAR(expected, actual, tol_q16)                                             \
+    do {                                                                                       \
+        q16_t _e = (expected), _a = (actual), _t = (tol_q16);                                  \
+        q16_t _d = (_a > _e) ? (_a - _e) : (_e - _a);                                          \
+        if (_d > _t) {                                                                         \
+            char _msg[80];                                                                     \
+            snprintf(_msg, sizeof(_msg), "Expected %ld +- %ld, got %ld (delta %ld)", (long)_e, \
+                     (long)_t, (long)_a, (long)_d);                                            \
+            TEST_FAIL_MESSAGE(_msg);                                                           \
+        }                                                                                      \
     } while (0)
 
 /* Tolerance: ±0.002 in Q16 ≈ 131 LSBs */

@@ -18,6 +18,7 @@ else
   VOL_FLAG ?= $(shell if [ "$(CONTAINER_ENGINE)" = "podman" ]; then echo ":z"; else echo ""; fi)
   JOBS ?= $(shell nproc 2>/dev/null || echo 4)
 endif
+export CONTAINER_ENGINE
 CACHE_VOL ?= syntropicos-build-cache
 
 
@@ -100,20 +101,18 @@ integration:
 
 ifeq ($(OS),Windows_NT)
   CONTAINER_VOLUME_CMD := @"$(CONTAINER_ENGINE)" volume inspect $(CACHE_VOL) >NUL 2>&1 || "$(CONTAINER_ENGINE)" volume create $(CACHE_VOL) >NUL 2>&1 || (exit 0)
+  BUILD_FLAGS :=
+  BASH_CMD ?= "C:/Program Files/Git/bin/bash.exe"
 else
   CONTAINER_VOLUME_CMD := @"$(CONTAINER_ENGINE)" volume inspect $(CACHE_VOL) >/dev/null 2>&1 || "$(CONTAINER_ENGINE)" volume create $(CACHE_VOL) >/dev/null 2>&1 || true
+  BUILD_FLAGS := $(shell "$(CONTAINER_ENGINE)" build --help 2>&1 | grep -q -- "--format" && echo "--format docker" || true)
+  BASH_CMD ?= bash
 endif
 
 container-volume:
 	$(CONTAINER_VOLUME_CMD)
 
-ifeq ($(OS),Windows_NT)
-  BUILD_FLAGS :=
-else
-  BUILD_FLAGS := $(shell "$(CONTAINER_ENGINE)" build --help 2>&1 | grep -q -- "--format" && echo "--format docker" || true)
-endif
-
-CONTAINER_RUN := bash $(ROOT_DIR)/tools/containers/run_container.sh
+CONTAINER_RUN := $(BASH_CMD) $(ROOT_DIR)/tools/containers/run_container.sh
 
 container-build:
 	@"$(CONTAINER_ENGINE)" build $(BUILD_FLAGS) -t syntropicos-test -f $(ROOT_DIR)/tools/containers/Containerfile $(ROOT_DIR)
@@ -186,7 +185,7 @@ container-integration: container-build
 examples:
 	@bash $(ROOT_DIR)/tools/examples/run_examples_check.sh
 
-container-examples: container-build
-	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers examples
+container-examples: container-build container-volume
+	@$(CONTAINER_RUN) -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers examples JOBS=$(JOBS)
 
 

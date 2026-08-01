@@ -2,6 +2,7 @@
 #include "syntropic/net/syn_websocket.h"
 #include "unity/unity.h"
 
+#include <stdio.h>
 #include <string.h>
 
 static int s_msg_callback_count = 0;
@@ -420,10 +421,10 @@ static void test_websocket_uncovered_edge_cases(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, st);
 
     /* 2. Multi-block SHA-1 update (> 256 bytes, lines 109 & 115) */
-    char long_key[500];
+    static char long_key[500];
     memset(long_key, 'A', 400);
     long_key[400] = '\0';
-    char long_hdr[600];
+    static char long_hdr[600];
     snprintf(long_hdr, sizeof(long_hdr), "Sec-WebSocket-Key: %s\r\n\r\n", long_key);
     req.headers = long_hdr;
     TEST_ASSERT_EQUAL(SYN_OK, syn_websocket_upgrade(&req, &resp, &ws, on_ws_message, NULL));

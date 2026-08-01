@@ -205,7 +205,7 @@ SYN_Status syn_websocket_upgrade(
 
     /* Safely look through headers */
     const char *cur = headers;
-    while (*cur) {
+    while (cur && *cur) {
         if (prefix_icase(cur, "sec-websocket-key:")) {
             key_hdr = cur + 18;
             while (*key_hdr == ' ')
@@ -222,10 +222,11 @@ SYN_Status syn_websocket_upgrade(
         return SYN_ERROR; /* key header not found */
     }
 
-    /* Extract the key (terminated by \r or \n) */
+    /* Extract the key (terminated by \r or \n or \0) */
     char key[64];
     size_t key_len = 0;
-    while (key_hdr[key_len] != '\r' && key_hdr[key_len] != '\n' && key_len < sizeof(key) - 1) {
+    while (key_hdr[key_len] != '\0' && key_hdr[key_len] != '\r' && key_hdr[key_len] != '\n' &&
+           key_len < sizeof(key) - 1) {
         key[key_len] = key_hdr[key_len];
         key_len++;
     }

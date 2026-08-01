@@ -278,6 +278,41 @@ static void test_uds_issue88_and_issue83(SYN_UDS_Server *server)
     printf("[Integration Test] Issue #88 (Service 0x19 ReadDTC Families) & Issue #83 (Service 0x14 ClearDTC Groups) PASS!\n");
 }
 
+/* 6. Test Suppress Positive Response Bit (0x80) & Extended Services (0x83 AccessTimingParameter) */
+static void test_uds_suppress_bit_and_extended_services(SYN_UDS_Server *server)
+{
+    uint8_t resp[64];
+    uint16_t len = 0;
+
+    /* TesterPresent (0x3E 0x00) -> Returns 0x7E 0x00 (len = 2) */
+    uint8_t req_tp_normal[] = {SYN_UDS_SID_TESTER_PRESENT, 0x00U};
+    bool ok = syn_uds_process_request(server, req_tp_normal, sizeof(req_tp_normal), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT16(2, len);
+    TEST_ASSERT_EQUAL_UINT8(0x7E, resp[0]);
+
+    /* TesterPresent with Suppress Bit (0x3E 0x80) -> Returns len = 0 (Positive Response Suppressed!) */
+    uint8_t req_tp_suppress[] = {SYN_UDS_SID_TESTER_PRESENT, 0x80U};
+    ok = syn_uds_process_request(server, req_tp_suppress, sizeof(req_tp_suppress), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT16(0, len);
+
+    /* AccessTimingParameter (0x83 0x01) Read -> Returns 0xC3 0x01 */
+    uint8_t req83_read[] = {SYN_UDS_SID_ACCESS_TIMING_PARAMETER, 0x01U};
+    ok = syn_uds_process_request(server, req83_read, sizeof(req83_read), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0xC3, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(0x01, resp[1]);
+
+    /* AccessTimingParameter with Suppress Bit (0x83 0x81) Read -> Returns len = 0 */
+    uint8_t req83_suppress[] = {SYN_UDS_SID_ACCESS_TIMING_PARAMETER, 0x81U};
+    ok = syn_uds_process_request(server, req83_suppress, sizeof(req83_suppress), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT16(0, len);
+
+    printf("[Integration Test] UDS Bit 0x80 Response Suppression & 0x83 AccessTimingParameter PASS!\n");
+}
+
 /* clang-format on */
 
 void test_uds_iso14229_full_spec_matrix(void)
@@ -303,6 +338,7 @@ void test_uds_iso14229_full_spec_matrix(void)
     test_uds_did_read_write(&server);
     test_uds_nrc_matrix(&server);
     test_uds_issue88_and_issue83(&server);
+    test_uds_suppress_bit_and_extended_services(&server);
 
     printf("[Integration Test] Comprehensive UDS ISO 14229-1 Full Spec Matrix PASS!\n");
 }

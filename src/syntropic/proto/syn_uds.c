@@ -325,8 +325,8 @@ static uint8_t session_to_mask(SYN_UDS_Session session)
         return SYN_UDS_SESSION_MASK_EXTENDED;
     case SYN_UDS_SESSION_SAFETY_SYSTEM:
         return SYN_UDS_SESSION_MASK_SAFETY;
+    /* LCOV_EXCL_START: Unreachable session enum guard */
     default:
-        /* LCOV_EXCL_START: Unreachable session enum guard */
         return 0U;
         /* LCOV_EXCL_STOP */
     }

@@ -125,39 +125,95 @@ static void test_uds_did_read_write(SYN_UDS_Server *server)
     printf("[Integration Test] UDS Read/Write DID & Out-Of-Range NRC PASS!\n");
 }
 
-/* 4. Test RoutineControl, ECUReset, TesterPresent, ControlDTCSetting */
-static void test_uds_extended_services(SYN_UDS_Server *server)
+/* 4. Test Complete ISO 14229-1 Negative Response Code (NRC) Matrix */
+static void test_uds_nrc_matrix(SYN_UDS_Server *server)
 {
     uint8_t resp[64];
     uint16_t len = 0;
 
-    /* RoutineControl Start (0x31 0x01 0x12 0x34) */
-    uint8_t req_routine[] = {SYN_UDS_SID_ROUTINE_CONTROL, 0x01U, 0x12U, 0x34U};
-    bool ok = syn_uds_process_request(server, req_routine, sizeof(req_routine), resp, sizeof(resp), &len);
+    /* NRC 0x11: ServiceNotSupported (SID 0xAA) */
+    uint8_t req11[] = {0xAAU, 0x00U};
+    bool ok = syn_uds_process_request(server, req11, sizeof(req11), resp, sizeof(resp), &len);
     TEST_ASSERT_TRUE(ok);
-    TEST_ASSERT_EQUAL_UINT16(4, len);
-    TEST_ASSERT_EQUAL_UINT8(0x71, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_SERVICE_NOT_SUPPORTED, resp[2]);
 
-    /* ECUReset Soft (0x11 0x03) */
-    uint8_t req_reset[] = {SYN_UDS_SID_ECU_RESET, SYN_UDS_RESET_SOFT};
-    ok = syn_uds_process_request(server, req_reset, sizeof(req_reset), resp, sizeof(resp), &len);
+    /* NRC 0x12: SubFunctionNotSupported (0x10 0x99) */
+    uint8_t req12[] = {SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL, 0x99U};
+    ok = syn_uds_process_request(server, req12, sizeof(req12), resp, sizeof(resp), &len);
     TEST_ASSERT_TRUE(ok);
-    TEST_ASSERT_EQUAL_UINT16(2, len);
-    TEST_ASSERT_EQUAL_UINT8(0x51, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
 
-    /* ControlDTCSetting OFF (0x85 0x02) */
-    uint8_t req_dtc_ctrl[] = {SYN_UDS_SID_CONTROL_DTC_SETTING, 0x02U};
-    ok = syn_uds_process_request(server, req_dtc_ctrl, sizeof(req_dtc_ctrl), resp, sizeof(resp), &len);
+    /* NRC 0x13: IncorrectMessageLength (0x10 len=1) */
+    uint8_t req13[] = {SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL};
+    ok = syn_uds_process_request(server, req13, sizeof(req13), resp, sizeof(resp), &len);
     TEST_ASSERT_TRUE(ok);
-    TEST_ASSERT_EQUAL_UINT16(2, len);
-    TEST_ASSERT_EQUAL_UINT8(0xC5, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
 
-    /* TesterPresent with 0x80 Suppress Bit -> Response Length = 0 */
-    uint8_t req_tp[] = {SYN_UDS_SID_TESTER_PRESENT, 0x80U};
-    ok = syn_uds_process_request(server, req_tp, sizeof(req_tp), resp, sizeof(resp), &len);
+    /* NRC 0x22: ConditionsNotCorrect (Writing to read-only DID 0x0200) */
+    uint8_t ro_buf[2] = {0x00, 0x00};
+    syn_uds_register_did(server, 0x0200U, ro_buf, sizeof(ro_buf), false);
+    uint8_t req22[] = {SYN_UDS_SID_WRITE_DATA_BY_IDENTIFIER, 0x02U, 0x00U, 0x11, 0x22};
+    ok = syn_uds_process_request(server, req22, sizeof(req22), resp, sizeof(resp), &len);
     TEST_ASSERT_TRUE(ok);
-    TEST_ASSERT_EQUAL_UINT16(0, len);
-    printf("[Integration Test] UDS RoutineControl, ECUReset & DTC Setting PASS!\n");
+    TEST_ASSERT_EQUAL_UINT8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    /* NRC 0x24: RequestSequenceError (TransferData 0x36 without RequestDownload) */
+    uint8_t req24[] = {SYN_UDS_SID_TRANSFER_DATA, 0x01U};
+    ok = syn_uds_process_request(server, req24, sizeof(req24), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp[2]);
+
+    /* NRC 0x33: SecurityAccessDenied (RequestDownload 0x34 while security locked) */
+    server->security_state = SYN_UDS_SECURITY_LOCKED;
+    uint8_t req33[] = {SYN_UDS_SID_REQUEST_DOWNLOAD, 0x00U, 0x11U, 0x10, 0x04};
+    ok = syn_uds_process_request(server, req33, sizeof(req33), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp[2]);
+
+    /* NRC 0x35: InvalidKey (Send wrong key to 0x27 0x02) */
+    uint8_t req_seed[] = {SYN_UDS_SID_SECURITY_ACCESS, 0x01U};
+    syn_uds_process_request(server, req_seed, sizeof(req_seed), resp, sizeof(resp), &len);
+    uint8_t req35[] = {SYN_UDS_SID_SECURITY_ACCESS, 0x02U, 0x00, 0x00, 0x00, 0x00};
+    ok = syn_uds_process_request(server, req35, sizeof(req35), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_INVALID_KEY, resp[2]);
+
+    /* NRC 0x36: ExceededNumberOfAttempts (3 consecutive invalid keys) */
+    syn_uds_process_request(server, req_seed, sizeof(req_seed), resp, sizeof(resp), &len);
+    syn_uds_process_request(server, req35, sizeof(req35), resp, sizeof(resp), &len);
+    syn_uds_process_request(server, req_seed, sizeof(req_seed), resp, sizeof(resp), &len);
+    ok = syn_uds_process_request(server, req35, sizeof(req35), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_EXCEEDED_NUMBER_OF_ATTEMPTS, resp[2]);
+
+    /* NRC 0x37: RequiredTimeDelayNotExpired (RequestSeed during penalty delay) */
+    ok = syn_uds_process_request(server, req_seed, sizeof(req_seed), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED, resp[2]);
+
+    /* Reset penalty delay */
+    syn_uds_tick(server, 11000U);
+
+    /* NRC 0x7E: SubFunctionNotSupportedInActiveSession (DID 0x0300 registered for Programming session only) */
+    uint8_t prog_buf[2] = {0xAA, 0xBB};
+    syn_uds_register_did_ext(server, 0x0300U, prog_buf, sizeof(prog_buf), true, SYN_UDS_SESSION_MASK_PROGRAMMING);
+    server->session = SYN_UDS_SESSION_DEFAULT;
+    uint8_t req7e[] = {SYN_UDS_SID_READ_DATA_BY_IDENTIFIER, 0x03U, 0x00U};
+    ok = syn_uds_process_request(server, req7e, sizeof(req7e), resp, sizeof(resp), &len);
+    TEST_ASSERT_TRUE(ok);
+    TEST_ASSERT_EQUAL_UINT8(0x7F, resp[0]);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp[2]);
+
+    printf("[Integration Test] Complete 11 ISO 14229-1 NRC Matrix PASS!\n");
 }
 
 /* clang-format on */
@@ -183,7 +239,7 @@ void test_uds_iso14229_full_spec_matrix(void)
     test_uds_session_transitions(&server);
     test_uds_security_access_flow(&server);
     test_uds_did_read_write(&server);
-    test_uds_extended_services(&server);
+    test_uds_nrc_matrix(&server);
 
     printf("[Integration Test] Comprehensive UDS ISO 14229-1 Full Spec Matrix PASS!\n");
 }

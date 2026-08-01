@@ -13,6 +13,7 @@
 static uint8_t g_vin[17] = "SYN12345678901234";
 static uint8_t g_part_no[11] = "SYN-UDS-001";
 static uint8_t g_sys_status[4] = {0x11, 0x22, 0x33, 0x44};
+static uint8_t g_prog_did[2] = {0xAA, 0xBB};
 
 static uint8_t g_memory_store[256];
 
@@ -46,6 +47,10 @@ int main(void)
     syn_uds_register_did(&server, 0xF190U, g_vin, sizeof(g_vin), false);
     syn_uds_register_did(&server, 0xF187U, g_part_no, sizeof(g_part_no), false);
     syn_uds_register_did(&server, 0x0100U, g_sys_status, sizeof(g_sys_status), true);
+
+    /* Register DID 0x0300 with Programming Session mask only (Issue #87) */
+    syn_uds_register_did_ext(&server, 0x0300U, g_prog_did, sizeof(g_prog_did), true,
+                             SYN_UDS_SESSION_MASK_PROGRAMMING);
 
     /* Register DTC 0x123456 */
     syn_uds_register_dtc(&server, 0x123456U, 0x24U, 0x40U);

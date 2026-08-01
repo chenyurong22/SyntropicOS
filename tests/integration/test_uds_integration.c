@@ -392,6 +392,30 @@ static void test_uds_all_extended_services(SYN_UDS_Server *server)
     printf("[Integration Test] Exhaustive 18 ISO 14229-1 Extended Services PASS!\n");
 }
 
+/* 7. Test 3rd-Party Python UDS Daemon Socket Link Communication */
+static void test_uds_socket_daemon_communication(SYN_Socket client_sock)
+{
+    if (client_sock == SYN_SOCKET_INVALID) {
+        printf("[Integration Test] Socket invalid, skipping socket daemon test.\n");
+        return;
+    }
+
+    uint8_t rx_buf[128];
+
+    /* Send 0x22 0x01 0x00 Read DID 0x0100 over TCP socket to 3rd-party daemon */
+    uint8_t tx_req[] = {SYN_UDS_SID_READ_DATA_BY_IDENTIFIER, 0x01U, 0x00U};
+    int sent = syn_port_sock_send(client_sock, tx_req, sizeof(tx_req));
+    TEST_ASSERT_EQUAL_INT((int)sizeof(tx_req), sent);
+
+    int rcvd = syn_port_sock_recv(client_sock, rx_buf, sizeof(rx_buf), 1000U);
+    TEST_ASSERT_GREATER_THAN(0, rcvd);
+    TEST_ASSERT_EQUAL_UINT8(0x62, rx_buf[0]);
+    TEST_ASSERT_EQUAL_UINT8(0x01, rx_buf[1]);
+    TEST_ASSERT_EQUAL_UINT8(0x00, rx_buf[2]);
+
+    printf("[Integration Test] 3rd-Party Python UDS Socket Link Request/Response PASS!\n");
+}
+
 /* clang-format on */
 
 void test_uds_iso14229_full_spec_matrix(void)
@@ -409,6 +433,7 @@ void test_uds_iso14229_full_spec_matrix(void)
 
     if (client_sock != SYN_SOCKET_INVALID) {
         printf("[Integration Test] Connected to 3rd-Party UDS Daemon!\n");
+        test_uds_socket_daemon_communication(client_sock);
         syn_port_sock_close(client_sock);
     }
 

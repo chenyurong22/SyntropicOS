@@ -540,7 +540,7 @@ static void test_canopen_sdo_segmented_download_invalid_data(void)
     TEST_ASSERT_EQUAL(0x80U, tx_buf[0]); /* Abort response */
 }
 
-static void test_canopen_uncovered_edge_cases(void)
+static void test_canopen_sdo_expedited_transfer_aborts(void)
 {
     SYN_CANOpenNode node;
     SYN_CANOpenNodeConfig cfg = {.node_id = 5, .heartbeat_ms = 0};
@@ -676,7 +676,7 @@ static void test_canopen_uncovered_edge_cases(void)
     TEST_ASSERT_EQUAL(8, tx_len);
 }
 
-static void test_canopen_extra_coverage(void)
+static void test_canopen_pdo_mapping_overflow_protection(void)
 {
     /* 1. TPDO transmit with unmapped/invalid OD entry -> returns SYN_ERROR (line 502) */
     static const SYN_CANOpenODEntry od_invalid[] = {
@@ -721,6 +721,6 @@ void run_canopen_tests(void)
     RUN_TEST(test_canopen_sdo_segmented_transfer);
     RUN_TEST(test_canopen_sdo_segmented_toggle_bit_mismatch);
     RUN_TEST(test_canopen_sdo_segmented_download_invalid_data);
-    RUN_TEST(test_canopen_uncovered_edge_cases);
-    RUN_TEST(test_canopen_extra_coverage);
+    RUN_TEST(test_canopen_sdo_expedited_transfer_aborts);
+    RUN_TEST(test_canopen_pdo_mapping_overflow_protection);
 }

@@ -143,16 +143,28 @@ static void test_pos_from_gga_fix_qualities(void)
 
 static void test_geo_null_params(void)
 {
-    double val;
+    double val = 0;
+    SYN_NMEA_GGA gga = {0};
+    SYN_GeoPos pos = {0};
 
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_wgs84_to_ecef(0, 0, 0, NULL, &val, &val));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_ecef_to_wgs84(0, 0, 0, NULL, &val, &val));
+    /* PPS -> 2.50m */
+    gga.fix_quality = SYN_NMEA_FIX_PPS;
+    syn_geo_pos_from_gga(&gga, &pos);
+    TEST_ASSERT_FLOAT_WITHIN(1e-4f, 2.50f, pos.accuracy_m);
+
+    /* NULL combinations for wgs84_to_ecef, ecef_to_wgs84, ecef_to_enu, wgs84_to_enu, pos_from_gga
+     */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_wgs84_to_ecef(0, 0, 0, &val, NULL, &val));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_wgs84_to_ecef(0, 0, 0, &val, &val, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_ecef_to_wgs84(0, 0, 0, &val, NULL, &val));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_ecef_to_wgs84(0, 0, 0, &val, &val, NULL));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_ecef_to_enu(0, 0, 0, 0, 0, 0, NULL));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_wgs84_to_enu(0, 0, 0, 0, 0, 0, NULL));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_pos_from_gga(NULL, NULL));
-
-    /* NULL 3D distance check (line 162) */
-    TEST_ASSERT_EQUAL_DOUBLE(0.0, syn_geo_3d_distance_m(NULL, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_pos_from_gga(NULL, &pos));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_geo_pos_from_gga(&gga, NULL));
+    SYN_ENU enu_dummy = {0};
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, syn_geo_3d_distance_m(&enu_dummy, NULL));
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, syn_geo_3d_distance_m(NULL, &enu_dummy));
 
     /* Polar region (p < 1e-12) ECEF to WGS84 coverage (lines 71-74) */
     double lat_p, lon_p, alt_p;

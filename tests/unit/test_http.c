@@ -1403,24 +1403,45 @@ void test_http_chunk_size_recv_timeout(void)
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, client.status);
 }
 
-void test_http_redirect_no_trailing_newline(void)
+static void test_http_redirect_no_trailing_newline(void)
 {
     mock_port_reset();
     reset_accum();
-    mock_sock_connected = true;
-
-    const char *resp = "HTTP/1.1 301 Moved\r\nLocation: http://example.com/newpath\r\n\r\n";
-    mock_sock_set_response(resp, strlen(resp));
+    s_redirect_count = 0;
+    mock_sock_connect_cb = on_redirect_connect;
 
     SYN_HttpClient client;
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    SYN_Status st = run_client_task(&client);
+    TEST_ASSERT_EQUAL(SYN_OK, st);
+
+    /* Chunked response with uppercase hex chunk size "0xA\r\n0123456789\r\n0\r\n\r\n" */
+    mock_port_reset();
+    reset_accum();
+    mock_sock_connected = true;
+    const char *uc_chunk_resp =
+        "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\nA\r\n0123456789\r\n0\r\n\r\n";
+    mock_sock_set_response(uc_chunk_resp, strlen(uc_chunk_resp));
     syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
     SYN_PT pt;
     PT_INIT(&pt);
     SYN_Task task = {.user_data = &client};
-
     syn_http_client_task(&pt, &task);
-    TEST_ASSERT_EQUAL_STRING("/newpath", client.cur_path);
+    TEST_ASSERT_EQUAL(10, body_accum_len);
+
+    /* Response with NULL body_cb (lines 422-427) */
+    mock_port_reset();
+    mock_sock_connected = true;
+    const char *no_cb_resp = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello";
+    mock_sock_set_response(no_cb_resp, strlen(no_cb_resp));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0, NULL, NULL,
+                         work_buf, sizeof(work_buf));
+    PT_INIT(&pt);
+    syn_http_client_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_DONE, client.state);
+    TEST_ASSERT_EQUAL(SYN_OK, client.status);
 }
 
 void run_http_tests(void)

@@ -108,7 +108,7 @@ void test_canopen_mgr_heartbeat_monitor(void)
     TEST_ASSERT_FALSE(g_can_mgr.nodes[5].online);
 }
 
-void test_canopen_mgr_extra_coverage(void)
+void test_canopen_mgr_nmt_state_machine_transitions(void)
 {
     syn_canopen_mgr_init(&g_can_mgr);
 
@@ -162,5 +162,5 @@ void run_canopen_mgr_tests(void)
     RUN_TEST(test_canopen_mgr_sdo_read);
     RUN_TEST(test_canopen_mgr_sdo_write);
     RUN_TEST(test_canopen_mgr_heartbeat_monitor);
-    RUN_TEST(test_canopen_mgr_extra_coverage);
+    RUN_TEST(test_canopen_mgr_nmt_state_machine_transitions);
 }

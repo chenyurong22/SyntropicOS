@@ -1015,7 +1015,7 @@ static void test_wg_send_initiation_tx_buf_too_small(void)
     TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, wg.udp_sock);
 }
 
-static void test_wg_has_work_coverage(void)
+static void test_wg_handshake_rekey_timer_expiry(void)
 {
     /* wg == NULL -> false (line 691) */
     SYN_Task null_task = {.user_data = NULL};
@@ -1039,6 +1039,20 @@ static void test_wg_has_work_coverage(void)
     wg_hs.last_handshake_ms = 1000;
     mock_tick_ms = 1000 + (SYN_WG_REKEY_TIMEOUT + 1) * 1000;
     TEST_ASSERT_TRUE(wg_has_work(&wg_hs));
+
+    /* Test get_stats NULL parameters */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_wg_get_stats(NULL, NULL));
+    SYN_WgStats stats_out;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_wg_get_stats(NULL, &stats_out));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_wg_get_stats(&wg_hs, NULL));
+
+    /* Test replay check small counter jump (diff < 32, line 564) */
+    SYN_WgSession replay_sess = {0};
+    TEST_ASSERT_TRUE(wg_replay_check(&replay_sess, 10));
+    TEST_ASSERT_TRUE(wg_replay_check(&replay_sess, 15)); /* diff = 5 < 32 */
+
+    /* Test disconnect NULL check */
+    syn_wg_disconnect(NULL);
 }
 
 void run_wg_tests(void)
@@ -1091,5 +1105,5 @@ void run_wg_tests(void)
     RUN_TEST(test_wg_valid_response_exchange);
     RUN_TEST(test_wg_send_initiation_tx_buf_too_small);
     RUN_TEST(test_wg_send_buffer_too_small);
-    RUN_TEST(test_wg_has_work_coverage);
+    RUN_TEST(test_wg_handshake_rekey_timer_expiry);
 }

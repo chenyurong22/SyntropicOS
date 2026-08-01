@@ -396,7 +396,7 @@ static void test_websocket_send_too_large(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_websocket_send(&ws, 0x01, NULL, 0x10000));
 }
 
-static void test_websocket_uncovered_edge_cases(void)
+static void test_websocket_frame_masking_and_runt_payloads(void)
 {
     mock_port_reset();
     mock_sock_connected = true;
@@ -446,6 +446,26 @@ static void test_websocket_uncovered_edge_cases(void)
     ws.state = SYN_WS_STATE_CLOSED;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_websocket_send(&ws, 0x01, "test", 4));
 
+    /* Send empty payload when connected (len == 0, data == NULL) */
+    ws.state = SYN_WS_STATE_CONNECTED;
+    ws.sock = 11;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_websocket_send(&ws, 0x01, NULL, 0));
+
+    /* Recv text frame with on_message == NULL */
+    SYN_WebsocketSession ws_null_cb;
+    memset(&ws_null_cb, 0, sizeof(ws_null_cb));
+    ws_null_cb.sock = 11;
+    ws_null_cb.state = SYN_WS_STATE_CONNECTED;
+    ws_null_cb.on_message = NULL;
+    uint8_t text_frame[] = {0x81, 0x04, 't', 'e', 's', 't'};
+    mock_sock_set_response(text_frame, sizeof(text_frame));
+    SYN_PT pt_null_cb;
+    PT_INIT(&pt_null_cb);
+    SYN_Task task_null_cb = {.user_data = &ws_null_cb};
+    for (int i = 0; i < 6; i++) {
+        syn_websocket_task(&pt_null_cb, &task_null_cb);
+    }
+
     /* 4. ws_has_work(NULL) (line 318) */
     SYN_Task null_task = {.user_data = NULL};
     SYN_PT null_pt;
@@ -469,5 +489,5 @@ void run_websocket_tests(void)
     RUN_TEST(test_websocket_recv_peer_disconnect);
     RUN_TEST(test_websocket_recv_too_large);
     RUN_TEST(test_websocket_send_too_large);
-    RUN_TEST(test_websocket_uncovered_edge_cases);
+    RUN_TEST(test_websocket_frame_masking_and_runt_payloads);
 }

@@ -583,7 +583,7 @@ static void test_httpd_task_protothread(void)
     TEST_ASSERT_NOT_EQUAL(PT_ENDED, st);
 }
 
-void test_httpd_extra_coverage(void)
+void test_httpd_connection_timeout_and_payload_overflow(void)
 {
     setup_server();
     srv.running = true;
@@ -702,7 +702,7 @@ static void test_httpd_bad_request_malformed_headers(void)
     TEST_ASSERT_EQUAL(SYN_HTTPD_IDLE, srv.state);
 }
 
-static void test_httpd_uncovered_edge_cases(void)
+static void test_httpd_header_length_limits_and_malformed_lines(void)
 {
     setup_server();
 
@@ -787,7 +787,7 @@ static void test_httpd_uncovered_edge_cases(void)
     syn_httpd_step(&srv);
 }
 
-static void test_httpd_has_work_coverage(void)
+static void test_httpd_connection_listener_and_task_polling(void)
 {
     SYN_Httpd srv;
     memset(&srv, 0, sizeof(srv));
@@ -817,6 +817,28 @@ static void test_httpd_has_work_coverage(void)
     PT_INIT(&pt);
     res = syn_httpd_task(&pt, &task);
     TEST_ASSERT_TRUE(res == PT_WAITING || res == PT_YIELDED);
+
+    /* Request line with 1 space only (sp2 == NULL, line 122) */
+    setup_server();
+    srv.state = SYN_HTTPD_DISPATCHING;
+    const char req_one_space[] = "GET /path\r\n\r\n";
+    memcpy(srv.work_buf, req_one_space, sizeof(req_one_space) - 1);
+    srv.rx_total = sizeof(req_one_space) - 1;
+    syn_httpd_step(&srv);
+
+    /* Wildcard route mismatch (k mismatch in match_route, line 204) */
+    setup_server();
+    const char req_wildcard_mismatch[] = "GET /app/other HTTP/1.1\r\nHost: test\r\n\r\n";
+    mock_sock_set_response(req_wildcard_mismatch, strlen(req_wildcard_mismatch));
+    syn_httpd_step(&srv);
+
+    /* Test space == 0 in READING_HEADERS state (413 Request Too Large) */
+    setup_server();
+    srv.state = SYN_HTTPD_READING_HEADERS;
+    srv.client = 1;
+    srv.rx_total = srv.work_buf_size - 1; /* space = 0 */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_httpd_step(&srv));
+    TEST_ASSERT_EQUAL(SYN_HTTPD_IDLE, srv.state);
 }
 
 void run_httpd_tests(void)
@@ -850,11 +872,11 @@ void run_httpd_tests(void)
     RUN_TEST(test_httpd_read_body_socket_recv_consumed);
     /* Protothread */
     RUN_TEST(test_httpd_task_protothread);
-    RUN_TEST(test_httpd_extra_coverage);
+    RUN_TEST(test_httpd_connection_timeout_and_payload_overflow);
     RUN_TEST(test_httpd_body_str_direct);
     RUN_TEST(test_httpd_invalid_state_and_null_status);
     RUN_TEST(test_httpd_connection_upgrade_handler);
     RUN_TEST(test_httpd_bad_request_malformed_headers);
-    RUN_TEST(test_httpd_uncovered_edge_cases);
-    RUN_TEST(test_httpd_has_work_coverage);
+    RUN_TEST(test_httpd_header_length_limits_and_malformed_lines);
+    RUN_TEST(test_httpd_connection_listener_and_task_polling);
 }

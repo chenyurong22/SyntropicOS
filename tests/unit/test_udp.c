@@ -237,6 +237,31 @@ void test_udp_extended_edge_cases(void)
 
     /* Null parameter checks for sendto */
     TEST_ASSERT_EQUAL_INT(-1, syn_udp_sendto(NULL, 0, 0, 0, NULL, 0, NULL, NULL));
+
+    /* Zero-length payload sendto */
+    TEST_ASSERT_EQUAL_INT(0,
+                          syn_udp_sendto(&s_udp, 5000, 0x0A000002, 6000, NULL, 0, tx_out, &tx_len));
+
+    /* process_packet with udp_len < 8 */
+    uint8_t short_udplen_pkt[64] = {0};
+    syn_poke_u16(0x0800, short_udplen_pkt, 12);
+    short_udplen_pkt[23] = 17;
+    syn_poke_u16(4, &short_udplen_pkt[34], 4); /* udp_len 4 < 8 */
+    TEST_ASSERT_EQUAL_INT(
+        SYN_ERROR, syn_udp_process_packet(&s_udp, short_udplen_pkt, sizeof(short_udplen_pkt)));
+
+    /* process_packet buffer overflow check (rx_len + payload_len > SYN_UDP_BUF_SIZE) */
+    SYN_UDP ovf_udp;
+    syn_udp_init(&ovf_udp, NULL);
+    SYN_UdpSocket *ovf_sock = syn_udp_bind(&ovf_udp, 7777);
+    TEST_ASSERT_NOT_NULL(ovf_sock);
+    ovf_sock->rx_len = SYN_UDP_BUF_SIZE - 2;
+    uint8_t ovf_pkt[128] = {0};
+    syn_poke_u16(0x0800, ovf_pkt, 12);
+    ovf_pkt[23] = 17;
+    syn_poke_u16(7777, &ovf_pkt[34], 2); /* dst port 7777 */
+    syn_poke_u16(18, &ovf_pkt[34], 4);   /* UDP len 18 -> payload 10 > 2 remaining */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_udp_process_packet(&ovf_udp, ovf_pkt, 34 + 18));
 }
 
 void test_transport_udp_all_functions(void)

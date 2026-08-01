@@ -257,7 +257,7 @@ static void test_devicenet_polled_io_output_overflow(void)
     TEST_ASSERT_EQUAL_HEX8(0xDD, g_out_buf[3]); /* Only 4 bytes copied */
 }
 
-static void test_devicenet_additional_edge_cases(void)
+static void test_devicenet_explicit_msg_fragmentation(void)
 {
     syn_devicenet_init(&g_dnet, 6, SYN_DEVICENET_BAUD_500K);
     syn_devicenet_set_assembly(&g_dnet, g_in_buf, 4, g_out_buf, 4);
@@ -289,5 +289,5 @@ void run_devicenet_tests(void)
     RUN_TEST(test_devicenet_explicit_and_polled_messaging);
     RUN_TEST(test_devicenet_error_branches_and_nulls);
     RUN_TEST(test_devicenet_polled_io_output_overflow);
-    RUN_TEST(test_devicenet_additional_edge_cases);
+    RUN_TEST(test_devicenet_explicit_msg_fragmentation);
 }

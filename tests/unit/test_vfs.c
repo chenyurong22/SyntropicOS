@@ -424,6 +424,19 @@ static void test_vfs_unmount_shift_and_null_checks(void)
     TEST_ASSERT_EQUAL_INT(-1, syn_vfs_rename("/m2/file1", "/m2/file2"));
     TEST_ASSERT_EQUAL_INT(-1, syn_vfs_rename("/m2/file1", "/nonexistent/file2"));
 
+    /* Test ops without close callback */
+    syn_vfs_init();
+    static const SYN_VfsOps mock_no_close_ops = {.open = mock_open};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/noclose", &mock_no_close_ops, NULL));
+    int fd_noclose = syn_vfs_open("/noclose/file.txt", SYN_O_RDONLY);
+    TEST_ASSERT_TRUE(fd_noclose >= 0);
+    TEST_ASSERT_EQUAL_INT(0, syn_vfs_close(fd_noclose));
+
+    /* Test find_mount prefix character mismatch (line 105) */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/sd", &mock_full_ops, NULL));
+    int fd_mismatch = syn_vfs_open("/sp/file.txt", SYN_O_RDONLY);
+    TEST_ASSERT_EQUAL_INT(-1, fd_mismatch);
+
     syn_vfs_init();
 }
 

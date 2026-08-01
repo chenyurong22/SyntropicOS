@@ -99,7 +99,7 @@ void test_lss_inquire_address(void)
     TEST_ASSERT_EQUAL(0x000000A5, vendor);
 }
 
-void test_lss_extra_coverage(void)
+void test_lss_node_id_configure_and_bit_timing(void)
 {
     syn_lss_slave_init(&g_lss_slave, &g_lss_addr, 0x10);
 
@@ -192,5 +192,5 @@ void run_lss_tests(void)
     RUN_TEST(test_lss_configure_bit_timing);
     RUN_TEST(test_lss_store_config);
     RUN_TEST(test_lss_inquire_address);
-    RUN_TEST(test_lss_extra_coverage);
+    RUN_TEST(test_lss_node_id_configure_and_bit_timing);
 }

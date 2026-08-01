@@ -189,4 +189,23 @@ void test_icmp_process_packet_invalid_headers(void)
     TEST_ASSERT_EQUAL(SYN_OK,
                       syn_icmp_process_packet(&icmp, over_req, 1520, over_reply, &over_reply_len));
     TEST_ASSERT_EQUAL(1514, over_reply_len);
+
+    /* 9. ip_hl header length larger than packet length */
+    uint8_t invalid_ip_hl[60] = {0};
+    invalid_ip_hl[12] = 0x08;
+    invalid_ip_hl[13] = 0x00;
+    invalid_ip_hl[14] = 0x4F; /* ihl = 15 -> 60 bytes, 14 + 60 = 74 > 60 */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_icmp_process_packet(&icmp, invalid_ip_hl, 60, NULL, NULL));
+
+    /* 10. Echo Request with NULL frame_tx / tx_len pointers */
+    uint8_t null_tx_req[60] = {0};
+    memcpy(null_tx_req, short_req, 42);
+    TEST_ASSERT_EQUAL(SYN_OK, syn_icmp_process_packet(&icmp, null_tx_req, 60, NULL, NULL));
+
+    /* 11. Unsupported ICMP type (e.g. Type 3 Destination Unreachable) */
+    uint8_t unk_type[60] = {0};
+    memcpy(unk_type, short_req, 42);
+    unk_type[34] = 3; /* Destination Unreachable */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_icmp_process_packet(&icmp, unk_type, 60, NULL, NULL));
 }

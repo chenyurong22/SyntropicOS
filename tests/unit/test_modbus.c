@@ -18,7 +18,7 @@ static bool test_on_write(SYN_Modbus *mb, uint16_t addr, uint16_t count, void *c
     return on_write_allow && (addr != 5);
 }
 
-static void test_modbus_extra_coverage(void)
+static void test_modbus_rtu_frame_crc_and_runt_buffer(void)
 {
     static uint16_t holding[8] = {0};
     static uint8_t mb_buf[256];
@@ -1974,7 +1974,7 @@ static bool dummy_write_file_cb(SYN_Modbus *m, uint16_t f, uint16_t r, uint16_t 
     return true;
 }
 
-static void test_modbus_100_percent_coverage(void)
+static void test_modbus_exception_code_responses(void)
 {
     static uint8_t mb_buf[256];
     mock_port_reset();
@@ -2248,7 +2248,7 @@ static void test_modbus_broadcast_read_and_diagnostic_rejection(void)
     TEST_ASSERT_FALSE(syn_modbus_process(&mb));
 }
 
-static void test_modbus_broadcast_additional_fc_rejection(void)
+static void test_modbus_broadcast_unsupported_fc_rejection(void)
 {
     SYN_Modbus mb;
     SYN_Modbus_Config cfg = {.slave_addr = 1};
@@ -2402,13 +2402,13 @@ void run_modbus_tests(void)
     RUN_TEST(test_modbus_file_records);
     RUN_TEST(test_modbus_ext_error_paths);
     RUN_TEST(test_modbus_new_function_codes);
-    RUN_TEST(test_modbus_100_percent_coverage);
+    RUN_TEST(test_modbus_exception_code_responses);
     RUN_TEST(test_modbus_tight_loop_streaming);
     RUN_TEST(test_modbus_truncated_frame_protection);
     RUN_TEST(test_modbus_broadcast_read_and_diagnostic_rejection);
-    RUN_TEST(test_modbus_broadcast_additional_fc_rejection);
+    RUN_TEST(test_modbus_broadcast_unsupported_fc_rejection);
     RUN_TEST(test_modbus_short_frame_exceptions);
     RUN_TEST(test_modbus_write_multiple_short_frame_exception);
     RUN_TEST(test_modbus_fc17_on_write_rejection_and_broadcast_exception);
-    RUN_TEST(test_modbus_extra_coverage);
+    RUN_TEST(test_modbus_rtu_frame_crc_and_runt_buffer);
 }

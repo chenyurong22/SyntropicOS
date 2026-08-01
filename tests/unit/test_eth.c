@@ -588,6 +588,96 @@ void test_eth_header_packing_helpers(void)
     TEST_ASSERT_EQUAL_UINT8(168, buf[27]);
 }
 
+static void test_eth_frame_filtering_and_protocol_dispatch(void)
+{
+    SYN_ETH eth;
+    syn_eth_init(&eth, MY_MAC, MY_IP);
+
+    /* 1. arp_update with ip == 0 */
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_arp_update(&eth, 0, PEER_MAC));
+
+    /* 2. build_frame with NULL payload */
+    uint8_t frame_buf[64];
+    size_t frame_len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_build_frame(&eth, PEER_MAC, SYN_ETHTYPE_IPV4, NULL, 0,
+                                                      frame_buf, &frame_len));
+    TEST_ASSERT_EQUAL_INT(60, frame_len);
+
+    /* 3. process ARP request for different IP (not MY_IP) */
+    uint8_t arp_req[60] = {0};
+    memset(&arp_req[0], 0xFF, 6); /* Broadcast */
+    memcpy(&arp_req[6], PEER_MAC, 6);
+    arp_req[12] = 0x08;
+    arp_req[13] = 0x06; /* ARP */
+    arp_req[14] = 0x00;
+    arp_req[15] = 0x01; /* Ethernet */
+    arp_req[16] = 0x08;
+    arp_req[17] = 0x00; /* IPv4 */
+    arp_req[20] = 0x00;
+    arp_req[21] = 0x01; /* Request */
+    arp_req[38] = 10;
+    arp_req[39] = 0;
+    arp_req[40] = 0;
+    arp_req[41] = 99; /* Different IP */
+    uint8_t tx[128];
+    size_t tx_len = 99;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, arp_req, 60, tx, &tx_len));
+    TEST_ASSERT_EQUAL_INT(0, tx_len);
+
+    /* 4. ARP with invalid htype (e.g. 2) */
+    arp_req[15] = 0x02;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, arp_req, 60, tx, &tx_len));
+
+    /* 5. IPv4 frame with unknown protocol (e.g. 99) */
+    uint8_t ip_unk[60] = {0};
+    memcpy(&ip_unk[0], MY_MAC, 6);
+    memcpy(&ip_unk[6], PEER_MAC, 6);
+    ip_unk[12] = 0x08;
+    ip_unk[13] = 0x00; /* IPv4 */
+    ip_unk[14] = 0x45;
+    ip_unk[23] = 99; /* Unknown proto */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, ip_unk, 60, tx, &tx_len));
+
+    /* 6. Odd length IP checksum */
+    uint8_t odd_data[21] = {0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, 0xF8, 0xF7, 0xF6, 0xF5,
+                            0xF4, 0xF3, 0xF2, 0xF1, 0xF0, 0xEF, 0xEE, 0xED, 0xEC, 0xEB};
+    uint16_t csum_odd = syn_ip_checksum(odd_data, 21);
+    TEST_ASSERT_NOT_EQUAL(0, csum_odd);
+
+    /* 7. Short IPv4 frame (< 34 bytes) */
+    uint8_t short_ip[30] = {0};
+    memcpy(&short_ip[0], MY_MAC, 6);
+    memcpy(&short_ip[6], PEER_MAC, 6);
+    short_ip[12] = 0x08;
+    short_ip[13] = 0x00; /* IPv4 */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, short_ip, 30, tx, &tx_len));
+
+    /* 8. ICMP and TCP dispatch with NULL tx_buf / tx_len */
+    uint8_t icmp_frame[60] = {0};
+    memcpy(&icmp_frame[0], MY_MAC, 6);
+    memcpy(&icmp_frame[6], PEER_MAC, 6);
+    icmp_frame[12] = 0x08;
+    icmp_frame[13] = 0x00;
+    icmp_frame[14] = 0x45;
+    icmp_frame[23] = 1; /* ICMP */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, icmp_frame, 60, NULL, NULL));
+
+    uint8_t tcp_frame[60] = {0};
+    memcpy(&tcp_frame[0], MY_MAC, 6);
+    memcpy(&tcp_frame[6], PEER_MAC, 6);
+    tcp_frame[12] = 0x08;
+    tcp_frame[13] = 0x00;
+    tcp_frame[14] = 0x45;
+    tcp_frame[23] = 6; /* TCP */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, tcp_frame, 60, NULL, NULL));
+
+    /* 9. ARP with invalid ptype (e.g. 0x0000) */
+    arp_req[15] = 0x01; /* htype = 1 */
+    arp_req[16] = 0x00;
+    arp_req[17] = 0x00; /* ptype = 0 */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, arp_req, 60, tx, &tx_len));
+}
+
 void run_eth_tests(void)
 {
     RUN_TEST(test_eth_generate_mac);
@@ -611,4 +701,5 @@ void run_eth_tests(void)
     RUN_TEST(test_eth_weak_instance_getters);
     RUN_TEST(test_eth_runt_arp_frame);
     RUN_TEST(test_eth_header_packing_helpers);
+    RUN_TEST(test_eth_frame_filtering_and_protocol_dispatch);
 }

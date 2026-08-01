@@ -160,7 +160,7 @@ void test_modbus_tcp_edge_cases(void)
         syn_modbus_tcp_process_slave(&mb, huge_adu, 260, resp_adu, sizeof(resp_adu), &resp_len));
 }
 
-void test_modbus_tcp_additional_edge_cases(void)
+void test_modbus_tcp_header_length_mismatch(void)
 {
     static uint16_t holding_regs[16] = {0x1111};
     static uint8_t mb_buf[256];
@@ -217,5 +217,5 @@ void run_modbus_tcp_tests(void)
     RUN_TEST(test_modbus_tcp_slave);
     RUN_TEST(test_modbus_tcp_client_adu);
     RUN_TEST(test_modbus_tcp_edge_cases);
-    RUN_TEST(test_modbus_tcp_additional_edge_cases);
+    RUN_TEST(test_modbus_tcp_header_length_mismatch);
 }

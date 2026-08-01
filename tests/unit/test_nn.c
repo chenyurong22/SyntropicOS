@@ -396,7 +396,7 @@ static void test_nn_conv1d_quant_q7_param_validation_failures(void)
         syn_nn_conv1d_quant_q7(inputs, 5, 1, weights, NULL, outputs, 0, 2, 1, SYN_NN_ACT_NONE, &q));
 }
 
-static void test_nn_activation_functions_coverage_branches(void)
+static void test_nn_activation_functions_saturation(void)
 {
     q7_t inputs[2] = {Q7_FROM_FLOAT(-0.8f), Q7_FROM_FLOAT(0.8f)};
     q7_t weights[2 * 2] = {127, 0, 0, 127};
@@ -534,7 +534,7 @@ void run_nn_tests(void)
     RUN_TEST(test_nn_conv1d_coroutine);
     RUN_TEST(test_nn_conv1d_quant_q7_and_null_checks);
     RUN_TEST(test_nn_conv1d_quant_q7_param_validation_failures);
-    RUN_TEST(test_nn_activation_functions_coverage_branches);
+    RUN_TEST(test_nn_activation_functions_saturation);
     RUN_TEST(test_nn_conv1d_quant_q7_valid_conv_with_biases);
     RUN_TEST(test_nn_conv1d_quant_q7_invalid_params);
     RUN_TEST(test_nn_softmax_q7_null_and_basic);

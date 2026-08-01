@@ -1424,7 +1424,7 @@ static bool mock_failing_file_transfer_cb(uint8_t mode, const char *file_path, u
     return false;
 }
 
-static void test_uds_nrc_coverage_sweep(void)
+static void test_uds_negative_response_codes(void)
 {
     SYN_UDS_Server server;
     TEST_ASSERT_TRUE(syn_uds_init(&server));
@@ -1595,7 +1595,7 @@ static bool mock_failing_secured_data_cb(const uint8_t *req_payload, uint16_t re
     return false;
 }
 
-static void test_uds_nrc_coverage_sweep_part2(void)
+static void test_uds_negative_response_codes_extended(void)
 {
     SYN_UDS_Server server;
     TEST_ASSERT_TRUE(syn_uds_init(&server));
@@ -1834,7 +1834,7 @@ static bool mock_dtc_cb_fail_fn(uint8_t sub, const uint8_t *req, uint16_t req_le
 static bool mock_dtc_cb_ok_fn(uint8_t sub, const uint8_t *req, uint16_t req_len, uint8_t *resp,
                               uint16_t max_resp_len, uint16_t *out_len, void *user_ctx);
 
-static void test_uds_read_dtc_additional_subfunctions(void)
+static void test_uds_read_dtc_by_status_mask(void)
 {
     SYN_UDS_Server server;
     TEST_ASSERT_TRUE(syn_uds_init(&server));
@@ -2191,7 +2191,7 @@ static bool mock_mem_cb_fail_fn(bool write, uint32_t addr, uint32_t len, uint8_t
     return false;
 }
 
-static void test_uds_remaining_uncovered_paths(void)
+static void test_uds_security_and_routine_error_handling(void)
 {
     SYN_UDS_Server server;
     syn_uds_init(&server);
@@ -2324,7 +2324,7 @@ static bool dummy_mem_cb_pass(bool is_write, uint32_t addr, uint32_t len, uint8_
     return true;
 }
 
-static void test_uds_remaining_edge_branches(void)
+static void test_uds_dtc_and_transfer_boundary_conditions(void)
 {
     SYN_UDS_Server server;
     syn_uds_init(&server);
@@ -2427,7 +2427,7 @@ static void test_uds_deferred_reset_callback(void)
     syn_uds_set_reset_handler(NULL, NULL, NULL);
     syn_uds_set_reset_wait_ms(NULL, 100);
 }
-static void test_uds_response_too_long_sweep(void)
+static void test_uds_response_length_exceeded(void)
 {
     SYN_UDS_Server server;
     syn_uds_init(&server);
@@ -2753,18 +2753,18 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_stateful_data_transfer_sequence);
     RUN_TEST(test_uds_spec_nrc_and_edge_cases);
     RUN_TEST(test_uds_upload_sequence_and_nrc_handling);
-    RUN_TEST(test_uds_nrc_coverage_sweep);
-    RUN_TEST(test_uds_nrc_coverage_sweep_part2);
+    RUN_TEST(test_uds_negative_response_codes);
+    RUN_TEST(test_uds_negative_response_codes_extended);
     RUN_TEST(test_uds_bounds_and_null_checks);
     RUN_TEST(test_uds_dtc_overflow_and_short_msg_nrcs);
-    RUN_TEST(test_uds_read_dtc_additional_subfunctions);
+    RUN_TEST(test_uds_read_dtc_by_status_mask);
     RUN_TEST(test_uds_clear_dtc_group_filtering);
     RUN_TEST(test_uds_dtc_iso14229_bit_operations);
-    RUN_TEST(test_uds_remaining_uncovered_paths);
-    RUN_TEST(test_uds_remaining_edge_branches);
+    RUN_TEST(test_uds_security_and_routine_error_handling);
+    RUN_TEST(test_uds_dtc_and_transfer_boundary_conditions);
     RUN_TEST(test_uds_deferred_reset_callback);
     RUN_TEST(test_uds_session_transition_policy);
-    RUN_TEST(test_uds_response_too_long_sweep);
+    RUN_TEST(test_uds_response_length_exceeded);
     RUN_TEST(test_uds_isotp_full_stack_loopback);
     RUN_TEST(test_uds_session_mask_filtering);
     RUN_TEST(test_uds_security_mask_filtering);

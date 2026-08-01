@@ -684,6 +684,44 @@ static void test_dns_mdns_init_open_failure_and_truncated_records(void)
     mock_udp_set_response(mdns_bad_term, sizeof(mdns_bad_term), &from);
     PT_INIT(&pt);
     syn_mdns_task(&pt, &task);
+
+    /* mDNS task receiving response packet (flags & 0x8000 != 0) */
+    uint8_t mdns_resp_pkt[] = {0x00, 0x00, 0x84, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+                               0x00, 0x00, 5,    'm',  'y',  'd',  'e',  'v',  5,    'l',
+                               'o',  'c',  'a',  'l',  0,    0,    1,    0,    1};
+    mock_udp_set_response(mdns_resp_pkt, sizeof(mdns_resp_pkt), &from);
+    PT_INIT(&pt);
+    syn_mdns_task(&pt, &task);
+
+    /* mDNS with NULL hostname */
+    SYN_Mdns null_host_mdns = {.sock = 20, .hostname = NULL};
+    SYN_Task null_host_task = {.user_data = &null_host_mdns};
+    uint8_t q_null_host[] = {0,   0,   0, 0,   0,   1,   0,   0,   0, 0, 0, 0, 3, 'b',
+                             'a', 'd', 5, 'l', 'o', 'c', 'a', 'l', 0, 0, 1, 0, 1};
+    mock_udp_set_response(q_null_host, sizeof(q_null_host), &from);
+    PT_INIT(&pt);
+    syn_mdns_task(&pt, &null_host_task);
+
+    /* DNS response with RCODE != 0 (e.g. Server Failure RCODE=2) */
+    mock_port_reset();
+    uint8_t rcode_sf_resp[] = {0x00, 0x00, 0x81, 0x82, 0x00, 0x01,
+                               0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
+    mock_udp_set_response(rcode_sf_resp, sizeof(rcode_sf_resp), &from);
+    SYN_DnsResolver r_sf = {
+        .dns_server = NULL, .hostname = "a.com", .addr_out = &resolved, .timeout_ms = 10};
+    PT_INIT(&pt);
+    task.user_data = &r_sf;
+    syn_dns_resolve_task(&pt, &task);
+
+    /* DNS response with non-A record (e.g. type 28 AAAA or type 16 TXT) */
+    mock_port_reset();
+    uint8_t txt_ans[] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+                         0x00, 0x00, 1,    'a',  3,    'c',  'o',  'm',  0,    0x00,
+                         0x01, 0x00, 0x01, 0xC0, 0x0C, 0x00, 0x10, 0x00, 0x01, 0x00,
+                         0x00, 0x00, 0x3C, 0x00, 0x04, 't',  'x',  't',  '1'};
+    mock_udp_set_response(txt_ans, sizeof(txt_ans), &from);
+    PT_INIT(&pt);
+    syn_dns_resolve_task(&pt, &task);
 }
 
 void run_dns_tests(void)

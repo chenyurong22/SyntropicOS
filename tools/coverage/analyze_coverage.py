@@ -145,6 +145,17 @@ def analyze_lcov_info(filepath):
                 f"  {sf:<45} {pct:6.2f}% | {len(unc):3d} uncovered lines -> {unc[:12]}"
             )
 
+    print("\n=== Top Files with Lowest Branch Coverage ===")
+    sorted_branch_files = sorted(
+        [(sf, d) for sf, d in files_data.items() if d["branches_instrumented"] > 0],
+        key=lambda x: (x[1]["branches_covered"] / x[1]["branches_instrumented"]),
+    )
+    for sf, d in sorted_branch_files[:15]:
+        br_inst = d["branches_instrumented"]
+        br_cov = d["branches_covered"]
+        pct = (br_cov / br_inst * 100) if br_inst else 100.0
+        print(f"  {sf:<45} {pct:6.2f}% | {br_cov:4d}/{br_inst:4d} branches")
+
     print(
         "==============================================================================="
     )

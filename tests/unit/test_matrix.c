@@ -1006,7 +1006,7 @@ static void test_matrix_transforms_and_errors(void)
     TEST_ASSERT_EQUAL(0, syn_matrix_det(&M5));
 }
 
-static void test_matrix_extra_coverage(void)
+static void test_matrix_singular_inverse_and_dimension_mismatch(void)
 {
     /* 1x1 matrix det and inv */
     q16_t d1[1] = {Q16_FROM_INT(5)};
@@ -1273,7 +1273,7 @@ void run_matrix_tests(void)
     RUN_TEST(test_mat_solve_cholesky);
     RUN_TEST(test_mat_least_squares);
 
-    RUN_TEST(test_matrix_extra_coverage);
+    RUN_TEST(test_matrix_singular_inverse_and_dimension_mismatch);
     RUN_TEST(test_matrix_transforms_and_errors);
     RUN_TEST(test_mat_inverse_4x4_pivot_swap);
     RUN_TEST(test_matrix_qr_singular_and_null_checks);

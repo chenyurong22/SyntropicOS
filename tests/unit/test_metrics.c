@@ -58,7 +58,7 @@ void test_metric_registry(void)
     TEST_ASSERT_EQUAL(2, g_found_count);
 }
 
-void test_metric_extra_coverage(void)
+void test_metric_histogram_buckets_and_counter_overflow(void)
 {
     syn_metrics_init();
 
@@ -102,7 +102,7 @@ void test_metric_registry(void)
 {
     TEST_IGNORE_MESSAGE("SYN_USE_METRICS disabled");
 }
-void test_metric_extra_coverage(void)
+void test_metric_histogram_buckets_and_counter_overflow(void)
 {
     TEST_IGNORE_MESSAGE("SYN_USE_METRICS disabled");
 }
@@ -117,5 +117,5 @@ void run_metrics_tests(void)
     RUN_TEST(test_metric_counter_inc);
     RUN_TEST(test_metric_gauge_ops);
     RUN_TEST(test_metric_registry);
-    RUN_TEST(test_metric_extra_coverage);
+    RUN_TEST(test_metric_histogram_buckets_and_counter_overflow);
 }

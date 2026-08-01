@@ -172,7 +172,7 @@ static void test_dali_manchester_codec(void)
     TEST_ASSERT_FALSE(syn_dali_manchester_decode_byte(bit_out, &decoded));
 }
 
-static void test_dali_extended_coverage(void)
+static void test_dali_forward_frame_settling_and_timing(void)
 {
     SYN_DALI_SlaveState slave;
     SYN_DALI_SlaveConfig cfg = {.short_address = 10,
@@ -475,5 +475,5 @@ void run_dali_tests(void)
     RUN_TEST(test_dali_frame_codec);
     RUN_TEST(test_dali_slave_commands);
     RUN_TEST(test_dali_manchester_codec);
-    RUN_TEST(test_dali_extended_coverage);
+    RUN_TEST(test_dali_forward_frame_settling_and_timing);
 }

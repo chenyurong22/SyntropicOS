@@ -241,7 +241,7 @@ static void test_nmea_checksum_null_and_short_stars(void)
     TEST_ASSERT_DOUBLE_WITHIN(0.0001, 0.0, syn_nmea_parse_coord("12", 'N')); /* Length < 4 */
 }
 
-static void test_nmea_uncovered_edge_cases(void)
+static void test_nmea_sentence_checksum_and_field_truncation(void)
 {
     /* 1. Valid sentence with lowercase hex checksum */
     const char *valid_lc = "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6a";
@@ -273,6 +273,64 @@ static void test_nmea_uncovered_edge_cases(void)
     TEST_ASSERT_TRUE(parsed);
 }
 
+static void test_nmea_date_time_parsing_and_null_coordinates(void)
+{
+    char sentence_buf[128];
+
+    /* 1. Feed parser invalid checksum sentence with \r\n and pos > 6 */
+    SYN_NMEA_Parser parser;
+    syn_nmea_parser_init(&parser);
+    const char *bad_cs_sentence =
+        "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*00\r\n";
+    for (size_t i = 0; i < strlen(bad_cs_sentence); i++) {
+        syn_nmea_parser_feed(&parser, bad_cs_sentence[i], sentence_buf);
+    }
+    TEST_ASSERT_FALSE(parser.in_sentence);
+
+    /* 2. Feed parser short sentence with \r\n (pos <= 6) */
+    syn_nmea_parser_init(&parser);
+    const char *short_sentence = "$GP*00\r\n";
+    for (size_t i = 0; i < strlen(short_sentence); i++) {
+        syn_nmea_parser_feed(&parser, short_sentence[i], sentence_buf);
+    }
+
+    /* 3. Feed parser '$' while already in sentence */
+    syn_nmea_parser_init(&parser);
+    syn_nmea_parser_feed(&parser, '$', NULL);
+    syn_nmea_parser_feed(&parser, 'G', NULL);
+    syn_nmea_parser_feed(&parser, '$', NULL); /* Resets pos */
+    TEST_ASSERT_EQUAL(1, parser.pos);
+
+    /* 4. RMC with status 'V' (Invalid) and 2-digit year < 70 (e.g. 23 -> 2023) */
+    SYN_NMEA_RMC rmc;
+    const char *rmc_v_p = "GPRMC,123519,V,,,,,022.4,084.4,230323,003.1,W";
+    snprintf(sentence_buf, sizeof(sentence_buf), "$%s*%02X", rmc_v_p, syn_nmea_checksum(rmc_v_p));
+    TEST_ASSERT_TRUE(syn_nmea_parse_rmc(sentence_buf, &rmc));
+    TEST_ASSERT_FALSE(rmc.status_valid);
+    TEST_ASSERT_EQUAL(2023, rmc.year);
+
+    /* 5. GSA with vdop (field 17) */
+    SYN_NMEA_GSA gsa;
+    const char *gsa_vdop_p = "GPGSA,A,3,01,02,03,,,,,,,,,,2.5,1.3,2.1";
+    snprintf(sentence_buf, sizeof(sentence_buf), "$%s*%02X", gsa_vdop_p,
+             syn_nmea_checksum(gsa_vdop_p));
+    TEST_ASSERT_TRUE(syn_nmea_parse_gsa(sentence_buf, &gsa));
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, 2.1f, gsa.vdop);
+
+    /* 6. GGA without latitude and longitude fields */
+    SYN_NMEA_GGA gga_no_ll;
+    const char *gga_no_ll_p = "GPGGA,123519,,,,,,0,08,0.9,545.4,M,46.9,M,,";
+    snprintf(sentence_buf, sizeof(sentence_buf), "$%s*%02X", gga_no_ll_p,
+             syn_nmea_checksum(gga_no_ll_p));
+    TEST_ASSERT_TRUE(syn_nmea_parse_gga(sentence_buf, &gga_no_ll));
+
+    /* 7. RMC without latitude/longitude and short date field (<6 chars) */
+    SYN_NMEA_RMC rmc_short_date;
+    const char *rmc_sd_p = "GPRMC,123519,A,,,,,,022.4,084.4,123,003.1,W";
+    snprintf(sentence_buf, sizeof(sentence_buf), "$%s*%02X", rmc_sd_p, syn_nmea_checksum(rmc_sd_p));
+    TEST_ASSERT_TRUE(syn_nmea_parse_rmc(sentence_buf, &rmc_short_date));
+}
+
 void run_nmea_tests(void)
 {
     RUN_TEST(test_nmea_checksum_and_validate);
@@ -284,5 +342,6 @@ void run_nmea_tests(void)
     RUN_TEST(test_nmea_edge_cases);
     RUN_TEST(test_nmea_lowercase_checksum_and_overflow);
     RUN_TEST(test_nmea_checksum_null_and_short_stars);
-    RUN_TEST(test_nmea_uncovered_edge_cases);
+    RUN_TEST(test_nmea_sentence_checksum_and_field_truncation);
+    RUN_TEST(test_nmea_date_time_parsing_and_null_coordinates);
 }

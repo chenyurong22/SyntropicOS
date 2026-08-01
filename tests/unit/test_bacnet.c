@@ -194,7 +194,7 @@ static void test_bacnet_mstp_decode_error_cases(void)
     TEST_ASSERT_FALSE(syn_bacnet_mstp_decode_frame(bad_data_crc, 12, &frame));
 }
 
-static void test_bacnet_uncovered_edge_cases(void)
+static void test_bacnet_mstp_frame_header_checksum_errors(void)
 {
     SYN_BACnet_Node node;
     syn_bacnet_node_init(&node, 10, 100);
@@ -258,5 +258,5 @@ void run_bacnet_tests(void)
     RUN_TEST(test_bacnet_edge_cases_and_nulls);
     RUN_TEST(test_bacnet_add_object_max_capacity);
     RUN_TEST(test_bacnet_mstp_decode_error_cases);
-    RUN_TEST(test_bacnet_uncovered_edge_cases);
+    RUN_TEST(test_bacnet_mstp_frame_header_checksum_errors);
 }

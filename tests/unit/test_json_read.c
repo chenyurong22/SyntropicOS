@@ -257,7 +257,7 @@ void test_json_read_unterminated_string(void)
 }
 
 /** Unexpected char in parse_object — exercises line 249 */
-void test_json_read_extended_edge_cases(void)
+void test_json_read_nested_object_depth_limit(void)
 {
     SYN_JsonReader r;
 
@@ -368,7 +368,7 @@ static void test_json_read_unterminated_object_key(void)
     TEST_ASSERT_FALSE(syn_json_get_str(&r, "key", out, sizeof(out)));
 }
 
-static void test_json_read_more_edge_cases(void)
+static void test_json_read_string_escape_sequences(void)
 {
     SYN_JsonReader r;
     char out[16];
@@ -432,12 +432,12 @@ void run_json_read_tests(void)
     RUN_TEST(test_json_read_token_overflow_skip_string);
     RUN_TEST(test_json_read_token_overflow_skip_object);
     RUN_TEST(test_json_read_unterminated_string);
-    RUN_TEST(test_json_read_extended_edge_cases);
+    RUN_TEST(test_json_read_nested_object_depth_limit);
     RUN_TEST(test_json_read_escaped_skip_value_and_nested_array);
     RUN_TEST(test_json_read_skipped_string_escapes_and_unterminated);
     RUN_TEST(test_json_read_escaped_string_inside_token_overflow_skip);
     RUN_TEST(test_json_get_str_null_and_missing_key);
     RUN_TEST(test_json_read_skip_value_unterminated_string);
     RUN_TEST(test_json_read_unterminated_object_key);
-    RUN_TEST(test_json_read_more_edge_cases);
+    RUN_TEST(test_json_read_string_escape_sequences);
 }

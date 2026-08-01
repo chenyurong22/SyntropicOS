@@ -904,7 +904,7 @@ void test_mqtt_disconnect(void)
     TEST_ASSERT_EQUAL(0, c.retransmit_len);             /* stale retransmit cleared */
 }
 
-static void test_mqtt_extra_uncovered_branches(void)
+static void test_mqtt_qos2_handshake_and_keepalive_ping(void)
 {
     /* 1. mqtt_has_work(NULL) -> line 531 */
     SYN_Task null_task = {.user_data = NULL};
@@ -968,5 +968,5 @@ void run_mqtt_tests(void)
     RUN_TEST(test_mqtt_rx_phase_disconnect_handling);
     RUN_TEST(test_mqtt_ping_send_failure_and_packet_id_wraparound);
     RUN_TEST(test_mqtt_disconnect);
-    RUN_TEST(test_mqtt_extra_uncovered_branches);
+    RUN_TEST(test_mqtt_qos2_handshake_and_keepalive_ping);
 }

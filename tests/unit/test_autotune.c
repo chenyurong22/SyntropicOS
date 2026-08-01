@@ -741,7 +741,7 @@ static void test_autotune_calc_relay_gains_zero_tu_and_default_state(void)
     TEST_ASSERT_EQUAL((SYN_AutoTune_State)99, syn_autotune_update(&at));
 }
 
-void test_autotune_extended_coverage(void)
+void test_autotune_relay_hysteresis_and_limit_cycles(void)
 {
     SYN_MotorCtrl ctrl;
     SYN_MotorCtrl_Config mcfg =
@@ -802,5 +802,5 @@ void run_autotune_tests(void)
     RUN_TEST(test_autotune_ka_identification_calculation);
     RUN_TEST(test_autotune_zn_no_overshoot_and_tyreus_luyben);
     RUN_TEST(test_autotune_calc_relay_gains_zero_tu_and_default_state);
-    RUN_TEST(test_autotune_extended_coverage);
+    RUN_TEST(test_autotune_relay_hysteresis_and_limit_cycles);
 }

@@ -283,7 +283,7 @@ static void test_j1939_single_frame_rx_and_dm2_encoding(void)
     TEST_ASSERT_EQUAL(6, len);
 }
 
-static void test_j1939_edge_coverage(void)
+static void test_j1939_pgn_filter_and_claim_conflict(void)
 {
     /* 1. DM1 encoding buffer truncation (break in dtc_list loop) */
     SYN_J1939_DTC dtcs[3] = {{.spn = 100, .fmi = 1, .occurrence_count = 1, .conversion_method = 0},
@@ -326,5 +326,5 @@ void run_j1939_tests(void)
     RUN_TEST(test_j1939_dtc_log_manager);
     RUN_TEST(test_j1939_dtc_log_null_checks_and_multi_packet_short_last_frame);
     RUN_TEST(test_j1939_single_frame_rx_and_dm2_encoding);
-    RUN_TEST(test_j1939_edge_coverage);
+    RUN_TEST(test_j1939_pgn_filter_and_claim_conflict);
 }

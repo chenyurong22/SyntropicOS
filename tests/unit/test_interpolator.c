@@ -90,7 +90,7 @@ void test_interpolator_edge_cases(void)
     TEST_ASSERT_FALSE(syn_interpolator_step(&interp, &out));
 }
 
-void test_interpolator_additional_coverage(void)
+void test_interpolator_out_of_bounds_extrapolation(void)
 {
     SYN_Interpolator interp;
     syn_interpolator_init(&interp);
@@ -173,7 +173,7 @@ void run_interpolator_tests(void)
     RUN_TEST(test_interpolator_circular_arc);
     RUN_TEST(test_interpolator_eval_time);
     RUN_TEST(test_interpolator_edge_cases);
-    RUN_TEST(test_interpolator_additional_coverage);
+    RUN_TEST(test_interpolator_out_of_bounds_extrapolation);
     RUN_TEST(test_scurve3d);
     RUN_TEST(test_interpolator_bezier);
 }

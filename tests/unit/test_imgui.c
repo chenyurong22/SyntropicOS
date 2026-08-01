@@ -1371,7 +1371,7 @@ static void test_imgui_layout_resolve_tabs(void)
     syn_imgui_end(&ctx);
 }
 
-static void test_imgui_edge_cases_and_uncovered_paths(void)
+static void test_imgui_text_wrapping_and_clip_rects(void)
 {
     uint8_t fb[128 * 128 / 8];
     SYN_Canvas canvas;
@@ -1667,7 +1667,7 @@ static void test_imgui_slider_and_progress_bar_bounds_clamping(void)
     syn_imgui_end(&ctx);
 }
 
-static void test_imgui_remaining_uncovered_paths(void)
+static void test_imgui_widget_active_state_and_focus(void)
 {
     uint8_t fb[128 * 128 / 8] = {0};
     SYN_Canvas canvas;
@@ -1768,7 +1768,7 @@ static void test_imgui_remaining_uncovered_paths(void)
     syn_imgui_end(&ctx);
 }
 
-static void test_imgui_remaining_42_lines(void)
+static void test_imgui_viewport_scissor_stack_clamping(void)
 {
     uint8_t fb[128 * 64 / 8];
     SYN_Canvas canvas;
@@ -1848,7 +1848,7 @@ static void test_imgui_remaining_42_lines(void)
     syn_imgui_end(&ctx);
 }
 
-static void test_imgui_extra_coverage(void)
+static void test_imgui_docking_tab_bar_overflow(void)
 {
     uint8_t fb[128 * 64 / 8];
     SYN_Canvas canvas;
@@ -2036,13 +2036,13 @@ void run_imgui_tests(void)
     RUN_TEST(test_imgui_layout_resolve_combo);
     RUN_TEST(test_imgui_layout_resolve_page0_stacking);
     RUN_TEST(test_imgui_layout_resolve_tabs);
-    RUN_TEST(test_imgui_edge_cases_and_uncovered_paths);
+    RUN_TEST(test_imgui_text_wrapping_and_clip_rects);
     RUN_TEST(test_imgui_spinner_arrow_and_encoder_wrapping);
     RUN_TEST(test_imgui_slider_and_progress_bar_bounds_clamping);
     RUN_TEST(test_imgui_encoder_wrap_clamping_and_focus_cap);
     RUN_TEST(test_imgui_slider_touch_out_of_bounds_clamping);
     RUN_TEST(test_imgui_begin_focused_id_zero);
-    RUN_TEST(test_imgui_remaining_uncovered_paths);
-    RUN_TEST(test_imgui_remaining_42_lines);
-    RUN_TEST(test_imgui_extra_coverage);
+    RUN_TEST(test_imgui_widget_active_state_and_focus);
+    RUN_TEST(test_imgui_viewport_scissor_stack_clamping);
+    RUN_TEST(test_imgui_docking_tab_bar_overflow);
 }

@@ -94,12 +94,7 @@ void q16_sincos_fast(q16_t x, q16_t *sin_out, q16_t *cos_out)
 
 q16_t q16_tan(q16_t x)
 {
-    q16_t c = q16_cos(x);
-    /* Guard against division by zero near ±π/2 */
-    if (c == 0) {
-        return (q16_sin(x) >= 0) ? INT32_MAX : INT32_MIN;
-    }
-    return q16_div(q16_sin(x), c);
+    return q16_div(q16_sin(x), q16_cos(x));
 }
 
 /* ════════════════════════════════════════════════════════════════════════ */

@@ -566,7 +566,7 @@ static void dummy_cb(uint8_t slave_addr, uint8_t fc, const uint16_t *data, uint1
     }
 }
 
-static void test_modbus_master_extra_coverage(void)
+static void test_modbus_master_exception_response_handling(void)
 {
     SYN_ModbusMaster m;
     syn_modbus_master_init(&m, 10);
@@ -616,5 +616,5 @@ void run_modbus_master_tests(void)
     RUN_TEST(test_modbus_master_parameter_bounds);
     RUN_TEST(test_modbus_master_queue_null_and_full_checks);
     RUN_TEST(test_modbus_master_busy_state_checks);
-    RUN_TEST(test_modbus_master_extra_coverage);
+    RUN_TEST(test_modbus_master_exception_response_handling);
 }

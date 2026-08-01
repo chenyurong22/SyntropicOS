@@ -183,7 +183,7 @@ void test_json_bool_array(void)
 }
 
 /** Extra escape chars: \\ \r \t — exercises lines 65, 67, 68 */
-static void test_json_extra_escapes(void)
+static void test_json_write_control_character_escaping(void)
 {
     reset();
     syn_json_obj_open(&w);
@@ -301,7 +301,7 @@ void run_json_write_tests(void)
     RUN_TEST(test_json_zero);
     RUN_TEST(test_json_int_min);
     RUN_TEST(test_json_bool_array);
-    RUN_TEST(test_json_extra_escapes);
+    RUN_TEST(test_json_write_control_character_escaping);
     RUN_TEST(test_json_write_puts_overflow);
     RUN_TEST(test_json_val_uint);
     RUN_TEST(test_json_write_max_depth_overflow_and_null_checks);

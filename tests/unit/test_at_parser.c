@@ -201,7 +201,7 @@ static void test_at_parser_overflow(void)
     TEST_ASSERT_EQUAL_STRING("VERYLON", syn_at_parser_get_line(&small_parser));
 }
 
-static void test_at_parser_uncovered_edge_cases(void)
+static void test_at_parser_cmd_formatting_and_overflow(void)
 {
     /* 1. Uninitialized parser line_buf == NULL */
     SYN_AtParser null_buf_parser;
@@ -234,7 +234,7 @@ static void test_at_parser_uncovered_edge_cases(void)
     TEST_ASSERT_FALSE(syn_at_parser_get_param_int("", 0, &val));
 }
 
-static void test_at_parser_additional_branch_coverage(void)
+static void test_at_parser_response_delimiter_handling(void)
 {
     /* 1. Unquoted string parameter extraction */
     char str_buf[32];
@@ -260,6 +260,6 @@ void run_at_parser_tests(void)
     RUN_TEST(test_at_parser_stream);
     RUN_TEST(test_at_parser_param_str);
     RUN_TEST(test_at_parser_overflow);
-    RUN_TEST(test_at_parser_uncovered_edge_cases);
-    RUN_TEST(test_at_parser_additional_branch_coverage);
+    RUN_TEST(test_at_parser_cmd_formatting_and_overflow);
+    RUN_TEST(test_at_parser_response_delimiter_handling);
 }

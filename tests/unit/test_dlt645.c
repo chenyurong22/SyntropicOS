@@ -187,7 +187,7 @@ static void test_dlt645_error_handling(void)
     TEST_ASSERT_EQUAL_INT(0, dec.rx_len);
 }
 
-static void test_dlt645_additional_error_cases(void)
+static void test_dlt645_frame_checksum_and_address_mismatch(void)
 {
     SYN_DLT645_Frame frame;
 
@@ -256,5 +256,5 @@ void run_dlt645_tests(void)
     RUN_TEST(test_dlt645_1997_roundtrip);
     RUN_TEST(test_dlt645_streaming_decoder);
     RUN_TEST(test_dlt645_error_handling);
-    RUN_TEST(test_dlt645_additional_error_cases);
+    RUN_TEST(test_dlt645_frame_checksum_and_address_mismatch);
 }

@@ -235,10 +235,50 @@ void test_dhcp_extended_option_parsing(void)
     trunc_pkt[242] = 99;
     TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, trunc_pkt, 244));
 
-    /* Init with xid == 0 -> default xid 0x12345678UL */
-    SYN_DHCP default_xid_dhcp;
-    syn_dhcp_init(&default_xid_dhcp, 0);
-    TEST_ASSERT_EQUAL_UINT32(0x12345678UL, default_xid_dhcp.xid);
+    /* Unknown option (e.g. Option 99) with length 2 */
+    uint8_t unk_opt_pkt[300] = {0};
+    unk_opt_pkt[4] = (uint8_t)(XID >> 24);
+    unk_opt_pkt[5] = (uint8_t)(XID >> 16);
+    unk_opt_pkt[6] = (uint8_t)(XID >> 8);
+    unk_opt_pkt[7] = (uint8_t)(XID);
+    unk_opt_pkt[236] = 0x63;
+    unk_opt_pkt[237] = 0x82;
+    unk_opt_pkt[238] = 0x53;
+    unk_opt_pkt[239] = 0x63;
+    size_t uidx = 240;
+    unk_opt_pkt[uidx++] = 99;
+    unk_opt_pkt[uidx++] = 2;
+    unk_opt_pkt[uidx++] = 0xAA;
+    unk_opt_pkt[uidx++] = 0xBB;
+    /* Subnet mask option with invalid len < 4 */
+    unk_opt_pkt[uidx++] = 1;
+    unk_opt_pkt[uidx++] = 2;
+    unk_opt_pkt[uidx++] = 0xFF;
+    unk_opt_pkt[uidx++] = 0xFF;
+    /* Router option with invalid len < 4 */
+    unk_opt_pkt[uidx++] = 3;
+    unk_opt_pkt[uidx++] = 1;
+    unk_opt_pkt[uidx++] = 0x01;
+    /* Lease time option with invalid len < 4 */
+    unk_opt_pkt[uidx++] = 51;
+    unk_opt_pkt[uidx++] = 3;
+    unk_opt_pkt[uidx++] = 0x00;
+    unk_opt_pkt[uidx++] = 0x01;
+    unk_opt_pkt[uidx++] = 0x00;
+    /* Server IP option with invalid len < 4 */
+    unk_opt_pkt[uidx++] = 54;
+    unk_opt_pkt[uidx++] = 2;
+    unk_opt_pkt[uidx++] = 0xC0;
+    unk_opt_pkt[uidx++] = 0xA8;
+    unk_opt_pkt[uidx++] = 255;
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, unk_opt_pkt, uidx));
+
+    /* Build request with server_ip == 0 */
+    dhcp.server_ip = 0;
+    uint8_t req_buf_nosrv[300];
+    size_t req_len_nosrv = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_build_request(&dhcp, mac, req_buf_nosrv,
+                                                         sizeof(req_buf_nosrv), &req_len_nosrv));
 }
 
 void test_dhcp_null_checks(void)

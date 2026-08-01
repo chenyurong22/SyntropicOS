@@ -410,7 +410,7 @@ static void test_sntp_task_send_fail(void)
 
 /* ── Runner ─────────────────────────────────────────────────────────────── */
 
-static void test_sntp_uncovered_edge_cases(void)
+static void test_sntp_kiss_of_death_and_stratum_validation(void)
 {
     SYN_SNTP sntp;
     SYN_SockAddr server = {.ip = {1, 2, 3, 4}, .port = 123};
@@ -488,5 +488,5 @@ void run_sntp_tests(void)
     RUN_TEST(test_sntp_task_fail_and_retry);
     RUN_TEST(test_sntp_task_timeout_and_retry);
     RUN_TEST(test_sntp_task_send_fail);
-    RUN_TEST(test_sntp_uncovered_edge_cases);
+    RUN_TEST(test_sntp_kiss_of_death_and_stratum_validation);
 }

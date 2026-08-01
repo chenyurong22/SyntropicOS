@@ -234,6 +234,8 @@ static void test_q16_q7_q15_edge_cases(void)
     q16_t q16_conv = q7_to_q16(q7_val);
     TEST_ASSERT_EQUAL_INT32(Q16_HALF, q16_conv);
     TEST_ASSERT_EQUAL_INT8(q7_val, q16_to_q7(q16_conv));
+    TEST_ASSERT_EQUAL_INT8(127, q16_to_q7(Q16_FROM_INT(500)));
+    TEST_ASSERT_EQUAL_INT8(-128, q16_to_q7(-Q16_FROM_INT(500)));
 
     q15_t q15_val = 16384; /* 0.5 in Q15 */
     q16_t q16_q15 = q15_to_q16(q15_val);
@@ -355,7 +357,7 @@ static void test_q16_exp_fast_negative_underflow(void)
     TEST_ASSERT_INT32_WITHIN(5, 2, q16_exp_fast(-Q16_FROM_INT(20)));
 }
 
-static void test_qmath_extended_edge_cases(void)
+static void test_q16_trig_overflow_and_atan2_poles(void)
 {
     /* q16_div with zero divisor */
     TEST_ASSERT_EQUAL_INT32(INT32_MAX, q16_div(Q16_ONE, 0));
@@ -399,5 +401,5 @@ void run_math_tests(void)
     RUN_TEST(test_q16_exp_large_k_clamping_and_underflow);
     RUN_TEST(test_q16_exp_fast_k_overflow);
     RUN_TEST(test_q16_exp_fast_negative_underflow);
-    RUN_TEST(test_qmath_extended_edge_cases);
+    RUN_TEST(test_q16_trig_overflow_and_atan2_poles);
 }

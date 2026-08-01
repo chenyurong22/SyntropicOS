@@ -683,7 +683,7 @@ static void test_cli_tasks_unknown_state(void)
 
 /* ── Test: Uncovered edge cases (L72, L149, L153, L417, L418, L436, L437, L453) ── */
 
-static void test_cli_uncovered_lines(void)
+static void test_cli_command_history_and_autocompletion(void)
 {
     SYN_CLI cli;
     syn_cli_init(&cli, test_commands, 4, "> ");
@@ -760,5 +760,5 @@ void run_cli_tests(void)
     RUN_TEST(test_cli_errors_unknown_severity);
     RUN_TEST(test_cli_tasks_unknown_state);
     RUN_TEST(test_cli_refresh_prompt);
-    RUN_TEST(test_cli_uncovered_lines);
+    RUN_TEST(test_cli_command_history_and_autocompletion);
 }

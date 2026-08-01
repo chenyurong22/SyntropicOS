@@ -218,17 +218,19 @@ static void test_uds_security_access(void)
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
 
-    /* Repeat Request Seed + Send Key cycle when already unlocked */
+    /* Repeat Request Seed cycle when already unlocked -> returns zero seed and remains UNLOCKED */
     req[1] = 0x01;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
-    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_SEED_SENT, g_uds.security_state);
+    TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
 
-    correct_key = g_uds.active_seed ^ 0xA5A5A5A5U;
+    /* Sending key when already unlocked (no seed pending) returns requestSequenceError (NRC 0x24)
+     */
     req[1] = 0x02;
-    syn_poke_u32(correct_key, req, 2);
+    syn_poke_u32(0, req, 2);
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
-    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp[2]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
 
     /* Re-initialize server and set delay timer to test NRC 0x37 */
@@ -259,10 +261,10 @@ static void test_uds_security_access(void)
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
     TEST_ASSERT_EQUAL_UINT8(0, g_uds.security_error_count);
 
-    /* Send Key when seed not sent -> Conditions not correct */
+    /* Send Key when seed not sent -> Request sequence error (NRC 0x24) */
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 6, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp[2]);
 
     /* Programming session mode transition bypasses power-on delay timer */
     syn_uds_init(&g_uds);
@@ -379,13 +381,12 @@ static void test_uds_security_access_aes128(void)
     uint8_t zero_16[16] = {0};
     TEST_ASSERT_EQUAL_MEMORY(zero_16, &resp[2], 16);
 
-    /* Verify key calculated from zero_16 seed unlocks server */
-    uint8_t zero_valid_key[16];
-    syn_aes128_encrypt_block(&aes_ctx, zero_16, zero_valid_key);
+    /* Sending key when already unlocked in AES128 mode returns requestSequenceError (NRC 0x24) */
     req[1] = 0x02;
-    memcpy(&req[2], zero_valid_key, 16);
+    memset(&req[2], 0, 16);
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 18, resp, sizeof(resp), &resp_len));
-    TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp[2]);
     TEST_ASSERT_EQUAL(SYN_UDS_SECURITY_UNLOCKED, g_uds.security_state);
 
     /* Verify master seed template current_seed_bytes was NOT corrupted or zeroed */
@@ -399,12 +400,12 @@ static void test_uds_security_access_aes128(void)
     TEST_ASSERT_EQUAL_HEX8(0x67, resp[0]);
     TEST_ASSERT_EQUAL_MEMORY(seed_16, &resp[2], 16);
 
-    /* Send Key when seed not sent in AES128 mode -> NRC 0x22 (Conditions Not Correct) */
+    /* Send Key when seed not sent in AES128 mode -> Request sequence error (NRC 0x24) */
     g_uds.security_state = SYN_UDS_SECURITY_LOCKED;
     req[1] = 0x02;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 18, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp[2]);
 
     /* Invalid subfunction in AES128 mode -> NRC 0x12 */
     req[1] = 0x00;

@@ -394,7 +394,9 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             resp_buf[0] = sid + 0x40U;
             resp_buf[1] = sub;
             bool is_unlocked = (server->security_state == SYN_UDS_SECURITY_UNLOCKED);
-            server->security_state = SYN_UDS_SECURITY_SEED_SENT;
+            if (!is_unlocked) {
+                server->security_state = SYN_UDS_SECURITY_SEED_SENT;
+            }
             if (server->use_aes128_security) {
                 if (is_unlocked) {
                     memset(server->active_seed_bytes, 0, 16);
@@ -419,7 +421,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                                   resp_buf, resp_len);
                 }
                 if (server->security_state != SYN_UDS_SECURITY_SEED_SENT) {
-                    return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                    return make_negative_response(sid, SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp_buf,
                                                   resp_len);
                 }
                 SYN_AES128_Context aes_ctx;
@@ -450,7 +452,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                                   resp_buf, resp_len);
                 }
                 if (server->security_state != SYN_UDS_SECURITY_SEED_SENT) {
-                    return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                    return make_negative_response(sid, SYN_UDS_NRC_REQUEST_SEQUENCE_ERROR, resp_buf,
                                                   resp_len);
                 }
                 uint32_t key = syn_peek_u32(req, 2);

@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    can-utils \
+    iproute2 \
+    gcc \
+    libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir python-can can-isotp udsoncan
+
+WORKDIR /app
+COPY uds_daemon.py /app/uds_daemon.py
+
+CMD ["python3", "-u", "/app/uds_daemon.py"]

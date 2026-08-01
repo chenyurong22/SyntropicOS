@@ -1763,8 +1763,23 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
     }
     }
 
-    if (success && (server->session != SYN_UDS_SESSION_DEFAULT)) {
-        server->s3_timer_ms = SYN_UDS_S3_TIMEOUT_MS;
+    if (success) {
+        if (server->session != SYN_UDS_SESSION_DEFAULT) {
+            server->s3_timer_ms = SYN_UDS_S3_TIMEOUT_MS;
+        }
+
+        /* ISO 14229-1: Suppress positive response if bit 7 (0x80) of sub-function is set */
+        if (req_len >= 2U) {
+            if ((sid == SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL || sid == SYN_UDS_SID_ECU_RESET ||
+                 sid == SYN_UDS_SID_SECURITY_ACCESS || sid == SYN_UDS_SID_COMMUNICATION_CONTROL ||
+                 sid == SYN_UDS_SID_ROUTINE_CONTROL || sid == SYN_UDS_SID_TESTER_PRESENT ||
+                 sid == SYN_UDS_SID_ACCESS_TIMING_PARAMETER ||
+                 sid == SYN_UDS_SID_CONTROL_DTC_SETTING || sid == SYN_UDS_SID_RESPONSE_ON_EVENT ||
+                 sid == SYN_UDS_SID_LINK_CONTROL) &&
+                ((req[1] & 0x80U) != 0U)) {
+                *resp_len = 0U;
+            }
+        }
     }
 
     return true;

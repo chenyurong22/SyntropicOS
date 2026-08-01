@@ -769,6 +769,22 @@ static void test_httpd_uncovered_edge_cases(void)
 
     /* 9. NULL resp in finalize_headers (line 458) */
     syn_httpd_body(NULL, "data", 4);
+
+    /* 10. Header line ending before CRLFCRLF (line 143) */
+    setup_server();
+    const char *hdr_with_crlfcrlf = "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n";
+    mock_sock_set_response(hdr_with_crlfcrlf, strlen(hdr_with_crlfcrlf));
+    srv.client = 1;
+    mock_sock_connected = true;
+    syn_httpd_step(&srv);
+
+    /* 11. Bad request line (line 187) */
+    setup_server();
+    const char *bad_req = "BADREQ\r\n\r\n";
+    mock_sock_set_response(bad_req, strlen(bad_req));
+    srv.client = 1;
+    mock_sock_connected = true;
+    syn_httpd_step(&srv);
 }
 
 static void test_httpd_has_work_coverage(void)
@@ -783,6 +799,7 @@ static void test_httpd_has_work_coverage(void)
     SYN_PT pt;
     PT_INIT(&pt);
     TEST_ASSERT_EQUAL(PT_WAITING, syn_httpd_task(&pt, &task));
+    TEST_ASSERT_EQUAL(PT_WAITING, syn_httpd_task(&pt, &task));
 
     srv.running = true;
     srv.listener = 1;
@@ -791,6 +808,14 @@ static void test_httpd_has_work_coverage(void)
     uint8_t dummy[] = {0x00};
     mock_sock_set_response(dummy, 1);
     SYN_PT_Status res = syn_httpd_task(&pt, &task);
+    TEST_ASSERT_TRUE(res == PT_WAITING || res == PT_YIELDED);
+
+    /* Client socket readable (line 546) */
+    srv.listener = SYN_SOCKET_INVALID;
+    srv.client = 2;
+    mock_sock_set_response(dummy, 1);
+    PT_INIT(&pt);
+    res = syn_httpd_task(&pt, &task);
     TEST_ASSERT_TRUE(res == PT_WAITING || res == PT_YIELDED);
 }
 

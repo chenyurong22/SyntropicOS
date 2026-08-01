@@ -446,7 +446,7 @@ static void test_websocket_uncovered_edge_cases(void)
     ws.state = SYN_WS_STATE_CLOSED;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_websocket_send(&ws, 0x01, "test", 4));
 
-    /* 4. ws_has_work(NULL) (line 317) */
+    /* 4. ws_has_work(NULL) (line 318) */
     SYN_Task null_task = {.user_data = NULL};
     SYN_PT null_pt;
     PT_INIT(&null_pt);

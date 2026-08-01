@@ -153,6 +153,23 @@ static void test_geo_null_params(void)
 
     /* NULL 3D distance check (line 162) */
     TEST_ASSERT_EQUAL_DOUBLE(0.0, syn_geo_3d_distance_m(NULL, NULL));
+
+    /* Polar region (p < 1e-12) ECEF to WGS84 coverage (lines 71-74) */
+    double lat_p, lon_p, alt_p;
+    SYN_Status st_p1 = syn_geo_ecef_to_wgs84(0.0, 0.0, 6356752.314, &lat_p, &lon_p, &alt_p);
+    TEST_ASSERT_EQUAL(SYN_OK, st_p1);
+    TEST_ASSERT_DOUBLE_WITHIN(1e-3, 90.0, lat_p);
+    SYN_Status st_p2 = syn_geo_ecef_to_wgs84(0.0, 0.0, -6356752.314, &lat_p, &lon_p, &alt_p);
+    TEST_ASSERT_EQUAL(SYN_OK, st_p2);
+    TEST_ASSERT_DOUBLE_WITHIN(1e-3, -90.0, lat_p);
+
+    /* Haversine boundary clamping (a > 1.0, a < 0.0) (lines 161, 163) */
+    double dist_opposite = syn_geo_haversine_m(0.0, 0.0, 0.0, 180.0);
+    TEST_ASSERT_DOUBLE_WITHIN(100.0, 20037508.34, dist_opposite);
+    double dist_clamp1 = syn_geo_haversine_m(89.99999, 0.0, -89.99999, 180.0);
+    TEST_ASSERT_TRUE(dist_clamp1 > 0.0);
+    double dist_clamp2 = syn_geo_haversine_m(89.9999999999, 0.0, -89.9999999999, 180.0);
+    TEST_ASSERT_TRUE(dist_clamp2 > 0.0);
 }
 
 void run_geo_tests(void)

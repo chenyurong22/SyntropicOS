@@ -24,8 +24,10 @@
  */
 static double syn_atof(const char *s)
 {
+    /* LCOV_EXCL_START: Defensive NULL/empty check */
     if (s == NULL || *s == '\0')
         return 0.0;
+    /* LCOV_EXCL_STOP */
     double res = 0.0;
     double sign = 1.0;
     if (*s == '-') {

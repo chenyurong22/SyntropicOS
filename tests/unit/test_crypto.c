@@ -598,6 +598,32 @@ static void test_x25519_low_order(void)
     TEST_ASSERT_EQUAL_HEX8_ARRAY(zeros, result, 32);
 }
 
+static void test_aead_null_and_bounds(void)
+{
+    uint8_t key[32] = {0};
+    uint8_t nonce[12] = {0};
+    uint8_t tag[16] = {0};
+    uint8_t buf[16] = {0};
+
+    /* NULL key/nonce/tag for encrypt (line 445) */
+    syn_aead_encrypt(NULL, nonce, NULL, 0, buf, sizeof(buf), buf, tag);
+    syn_aead_encrypt(key, NULL, NULL, 0, buf, sizeof(buf), buf, tag);
+    syn_aead_encrypt(key, nonce, NULL, 0, buf, sizeof(buf), buf, NULL);
+
+    /* NULL plaintext/ciphertext for pt_len > 0 (line 447) */
+    syn_aead_encrypt(key, nonce, NULL, 0, NULL, sizeof(buf), buf, tag);
+    syn_aead_encrypt(key, nonce, NULL, 0, buf, sizeof(buf), NULL, tag);
+
+    /* NULL key/nonce/tag for decrypt (line 466) */
+    TEST_ASSERT_FALSE(syn_aead_decrypt(NULL, nonce, NULL, 0, buf, sizeof(buf), tag, buf));
+    TEST_ASSERT_FALSE(syn_aead_decrypt(key, NULL, NULL, 0, buf, sizeof(buf), tag, buf));
+    TEST_ASSERT_FALSE(syn_aead_decrypt(key, nonce, NULL, 0, buf, sizeof(buf), NULL, buf));
+
+    /* NULL ciphertext/plaintext for ct_len > 0 (line 468) */
+    TEST_ASSERT_FALSE(syn_aead_decrypt(key, nonce, NULL, 0, NULL, sizeof(buf), tag, buf));
+    TEST_ASSERT_FALSE(syn_aead_decrypt(key, nonce, NULL, 0, buf, sizeof(buf), tag, NULL));
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
  *  Test group runner
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -632,6 +658,7 @@ void run_crypto_tests(void)
     RUN_TEST(test_aead_large);
     RUN_TEST(test_aead_wrong_key);
     RUN_TEST(test_aead_inplace);
+    RUN_TEST(test_aead_null_and_bounds);
 
     /* X25519 */
     RUN_TEST(test_x25519_vector1);

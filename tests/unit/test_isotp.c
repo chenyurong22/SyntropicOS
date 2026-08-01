@@ -511,6 +511,19 @@ static void test_isotp_canfd_multi_frame(void)
         link.tx_offset = 2;
         TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&link, &frame));
         TEST_ASSERT_EQUAL_UINT32(0, link.tx_st_timer_us);
+
+        /* 3. syn_isotp_set_fc_params coverage (lines 88-93) */
+        syn_isotp_set_fc_params(NULL, 0, 0);
+        syn_isotp_set_fc_params(&link, 4, 10);
+        TEST_ASSERT_EQUAL_UINT8(4, link.rx_fc_bs);
+        TEST_ASSERT_EQUAL_UINT8(10, link.rx_fc_stmin);
+
+        /* 4. Single frame sf_len > max_sf_bytes clamping (line 322) */
+        SYN_CAN_Frame sf_over = {0};
+        sf_over.id = 0x700;
+        sf_over.dlc = 8;
+        sf_over.data[0] = 0x0F; /* Single frame with sf_len = 15 > 7 max bytes */
+        syn_isotp_process_rx_frame(&link, &sf_over);
     }
 
     void run_isotp_tests(void)

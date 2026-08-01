@@ -1174,8 +1174,12 @@ static void test_http_long_redirect_and_header_write_failures(void)
     mock_sock_set_response(resp_red1, strlen(resp_red1));
     syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
-    client.hops = 5;
-    run_client_task(&client);
+    client.hops = 0;
+    mock_sock_connected = true;
+    SYN_PT pt_red1;
+    PT_INIT(&pt_red1);
+    SYN_Task task_red1 = {.user_data = &client};
+    syn_http_client_task(&pt_red1, &task_red1);
 
     mock_port_reset();
     reset_accum();
@@ -1188,6 +1192,12 @@ static void test_http_long_redirect_and_header_write_failures(void)
     mock_sock_set_response(resp_red2, strlen(resp_red2));
     syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
                          body_accumulate, NULL, work_buf, sizeof(work_buf));
+    client.hops = 0;
+    mock_sock_connected = true;
+    SYN_PT pt_red2;
+    PT_INIT(&pt_red2);
+    SYN_Task task_red2 = {.user_data = &client};
+    syn_http_client_task(&pt_red2, &task_red2);
     client.hops = 5;
     run_client_task(&client);
 
@@ -1268,6 +1278,151 @@ static void test_http_chunked_crlf_boundary_and_timeouts(void)
     TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
 }
 
+static bool body_cb_reject(const uint8_t *data, size_t len, void *ctx)
+{
+    (void)data;
+    (void)len;
+    (void)ctx;
+    return false;
+}
+
+void test_http_body_cb_failure_and_eof_branches(void)
+{
+    SYN_HttpClient client;
+    SYN_PT pt;
+    SYN_Task task;
+    task.user_data = &client;
+
+    /* 1. body_cb failure with extra body data in initial buffer */
+    mock_port_reset();
+    mock_sock_connected = true;
+    const char *resp_extra = "HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n1234567890";
+    mock_sock_set_response(resp_extra, strlen(resp_extra));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_cb_reject, NULL, work_buf, sizeof(work_buf));
+    PT_INIT(&pt);
+    syn_http_client_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+    TEST_ASSERT_EQUAL(SYN_ERROR, client.status);
+
+    /* 2. body_cb failure during subsequent socket recv (lines 637-643) */
+    mock_port_reset();
+    mock_sock_connected = true;
+    const char *resp_hdr_only = "HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n";
+    mock_sock_set_response(resp_hdr_only, strlen(resp_hdr_only));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_cb_reject, NULL, work_buf, sizeof(work_buf));
+    PT_INIT(&pt);
+    syn_http_client_task(&pt, &task); /* Parses headers */
+    const char *body_chunk = "1234567890";
+    mock_sock_set_response(body_chunk, strlen(body_chunk));
+    syn_http_client_task(&pt, &task); /* Tries to deliver body, body_cb returns false */
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+    TEST_ASSERT_EQUAL(SYN_ERROR, client.status);
+
+    /* 3. NULL task and small work_buf checks (lines 248, 252) */
+    TEST_ASSERT_EQUAL(PT_EXITED, syn_http_client_task(NULL, NULL));
+    SYN_Task empty_task = {.user_data = NULL};
+    TEST_ASSERT_EQUAL(PT_EXITED, syn_http_client_task(&pt, &empty_task));
+
+    client.work_buf = NULL;
+    client.work_buf_size = 0;
+    empty_task.user_data = &client;
+    TEST_ASSERT_EQUAL(PT_EXITED, syn_http_client_task(&pt, &empty_task));
+
+    /* 4. Multi-packet chunked body streaming (lines 518-520) */
+    mock_port_reset();
+    reset_accum();
+    mock_sock_connected = true;
+    const char *chunk_hdr = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\n";
+    mock_sock_set_response(chunk_hdr, strlen(chunk_hdr));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    PT_INIT(&pt);
+    syn_http_client_task(&pt, &empty_task); /* Parses headers & chunk size 5 */
+
+    const char *chunk_data = "Hello\r\n0\r\n\r\n";
+    mock_sock_set_response(chunk_data, strlen(chunk_data));
+    syn_http_client_task(&pt, &empty_task); /* Recv chunk data in packet 2 */
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_DONE, client.state);
+    TEST_ASSERT_EQUAL(5, body_accum_len);
+}
+
+void test_http_eof_during_fixed_length_body_recv(void)
+{
+    mock_port_reset();
+    reset_accum();
+    mock_sock_connected = true;
+
+    const char *resp = "HTTP/1.1 200 OK\r\nContent-Length: 50\r\n\r\n";
+    mock_sock_set_response(resp, strlen(resp));
+
+    SYN_HttpClient client;
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &client};
+
+    syn_http_client_task(&pt, &task);
+    TEST_ASSERT_EQUAL(200, client.resp.status_code);
+
+    mock_sock_connected = true;
+    mock_sock_eof_on_empty = true;
+    mock_sock_set_response("", 0);
+    syn_http_client_task(&pt, &task);
+
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+    TEST_ASSERT_EQUAL(SYN_ERROR, client.status);
+}
+
+void test_http_chunk_size_recv_timeout(void)
+{
+    mock_port_reset();
+    reset_accum();
+    mock_sock_connected = true;
+
+    const char *resp = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n";
+    mock_sock_set_response(resp, strlen(resp));
+
+    SYN_HttpClient client;
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &client};
+
+    syn_http_client_task(&pt, &task);
+
+    mock_sock_rx_len = 0;
+    mock_sock_rx_pos = 0;
+    mock_tick_ms += 15000;
+    syn_http_client_task(&pt, &task);
+
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+    TEST_ASSERT_EQUAL(SYN_TIMEOUT, client.status);
+}
+
+void test_http_redirect_no_trailing_newline(void)
+{
+    mock_port_reset();
+    reset_accum();
+    mock_sock_connected = true;
+
+    const char *resp = "HTTP/1.1 301 Moved\r\nLocation: http://example.com/newpath\r\n\r\n";
+    mock_sock_set_response(resp, strlen(resp));
+
+    SYN_HttpClient client;
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &client};
+
+    syn_http_client_task(&pt, &task);
+    TEST_ASSERT_EQUAL_STRING("/newpath", client.cur_path);
+}
+
 void run_http_tests(void)
 {
     RUN_TEST(test_http_get_200);
@@ -1299,4 +1454,8 @@ void run_http_tests(void)
     RUN_TEST(test_http_connect_fail_branch);
     RUN_TEST(test_http_long_redirect_and_header_write_failures);
     RUN_TEST(test_http_chunked_crlf_boundary_and_timeouts);
+    RUN_TEST(test_http_body_cb_failure_and_eof_branches);
+    RUN_TEST(test_http_eof_during_fixed_length_body_recv);
+    RUN_TEST(test_http_chunk_size_recv_timeout);
+    RUN_TEST(test_http_redirect_no_trailing_newline);
 }

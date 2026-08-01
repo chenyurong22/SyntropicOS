@@ -227,6 +227,10 @@ static void test_transport_tcp_has_data(void)
     TEST_ASSERT_TRUE(tcp.state > 0);
     mock_port_reset();
     TEST_ASSERT_TRUE(syn_transport_has_data(&t));
+
+    /* t->has_data == NULL hook -> line 112 */
+    t.has_data = NULL;
+    TEST_ASSERT_TRUE(syn_transport_has_data(&t));
 }
 
 void run_transport_tcp_tests(void)

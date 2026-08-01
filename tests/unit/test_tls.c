@@ -283,6 +283,16 @@ void test_tls_null_and_bounds_checks(void)
 
     TEST_ASSERT_FALSE(syn_tls_is_established(NULL));
     TEST_ASSERT_EQUAL(SYN_TLS_STATE_UNINITIALIZED, syn_tls_get_state(NULL));
+
+    /* tls_has_work(NULL) (line 68) and underlying_transport == NULL (line 76) */
+    SYN_Transport null_ctx_tr = {.has_data = bound_tr.has_data, .ctx = NULL};
+    TEST_ASSERT_FALSE(syn_transport_has_data(&null_ctx_tr));
+
+    SYN_TLS_Context no_tr_tls;
+    memset(&no_tr_tls, 0, sizeof(no_tr_tls));
+    SYN_Transport no_tr_bound;
+    syn_tls_bind_transport(&no_tr_tls, &no_tr_bound);
+    TEST_ASSERT_TRUE(syn_transport_has_data(&no_tr_bound));
 }
 
 void run_tls_tests(void)

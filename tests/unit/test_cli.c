@@ -716,6 +716,13 @@ static void test_cli_uncovered_lines(void)
     syn_cli_process_char(&cli, 'a');
     syn_cli_process_char(&cli, 'b'); /* prompt_visible = true, line_pos = 2 */
     syn_cli_printf(&cli, "Async log message\n");
+
+    /* 4. Help output command name NULL guard -> line 158 */
+    SYN_CLI_Command cmds_null[1] = {{.name = NULL, .handler = NULL, .help = NULL}};
+    SYN_CLI cli_null;
+    syn_cli_init(&cli_null, cmds_null, 1, "test> ");
+    clear_output();
+    syn_cli_process_line(&cli_null, "help");
 }
 
 /* ── Test runner ─────────────────────────────────────────────────────── */

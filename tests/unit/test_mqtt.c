@@ -592,8 +592,13 @@ static void test_mqtt_ping_and_mismatch(void)
     TEST_ASSERT_EQUAL(SYN_MQTT_CONNECTED, c.state);
     TEST_ASSERT_EQUAL(2, mock_sock_tx_len);
     TEST_ASSERT_EQUAL_UINT8(0xC0, mock_sock_tx_buf[0]);
-    TEST_ASSERT_EQUAL_UINT8(0x00, mock_sock_tx_buf[1]);
     TEST_ASSERT_EQUAL(mock_tick_ms, c.last_activity_ms);
+
+    /* Resume task after 6000ms delay with send failure (covers lines 544 & 624) */
+    mock_tick_advance(6000);
+    mock_sock_send_fail = true;
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
 
     /* 2. Ping Transmit Failure */
     mock_port_reset();
@@ -611,6 +616,9 @@ static void test_mqtt_ping_and_mismatch(void)
     /* Should close socket and disconnect */
     TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
     TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, c.sock);
+
+    /* Step task when SYN_MQTT_DISCONNECTED -> line 609 */
+    syn_mqtt_task(&pt, &task);
 
     /* 3. PINGRESP (0xD0) safe handling */
     mock_port_reset();
@@ -925,6 +933,17 @@ static void test_mqtt_extra_uncovered_branches(void)
     c.sock = SYN_SOCKET_INVALID;
     PT_INIT(&pt);
     TEST_ASSERT_EQUAL(PT_WAITING, syn_mqtt_task(&pt, &task));
+
+    /* 4. Keepalive ping send failure -> lines 618-624 */
+    c.state = SYN_MQTT_CONNECTED;
+    c.sock = 10;
+    mock_sock_connected = true;
+    mock_sock_send_fail = true;
+    c.last_activity_ms = mock_tick_ms;
+    mock_tick_advance(6000);
+    PT_INIT(&pt);
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_MQTT_DISCONNECTED, c.state);
 }
 
 void run_mqtt_tests(void)

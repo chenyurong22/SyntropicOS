@@ -48,6 +48,10 @@ void test_nmea_coord_parsing(void)
     double lon = syn_nmea_parse_coord("01131.000", 'W');
     TEST_ASSERT_DOUBLE_WITHIN(0.0001, -11.516666, lon);
 
+    /* NULL and empty string test for syn_atof / syn_nmea_parse_coord (line 28) */
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, 0.0, syn_nmea_parse_coord(NULL, 'N'));
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, 0.0, syn_nmea_parse_coord("", 'N'));
+
     (void)lat;
     (void)lon;
 }
@@ -72,6 +76,24 @@ void test_nmea_parse_gga(void)
     TEST_ASSERT_EQUAL(8, gga.num_satellites);
     TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.9f, gga.hdop);
     TEST_ASSERT_FLOAT_WITHIN(0.1f, 545.4f, gga.altitude_m);
+
+    /* Positive (+, line 35), negative (-, lines 31-33), and empty (line 28) altitude */
+    const char *payload_pos = "GPGGA,123519.50,4807.038,N,01131.000,E,1,08,0.9,+545.4,M,46.9,M,,";
+    snprintf(gga_str, sizeof(gga_str), "$%s*%02X", payload_pos, syn_nmea_checksum(payload_pos));
+    TEST_ASSERT_TRUE(syn_nmea_parse_gga(gga_str, &gga));
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, 545.4f, gga.altitude_m);
+
+    const char *payload_neg = "GPGGA,123519.50,4807.038,N,01131.000,E,1,08,0.9,-545.4,M,46.9,M,,";
+    snprintf(gga_str, sizeof(gga_str), "$%s*%02X", payload_neg, syn_nmea_checksum(payload_neg));
+    TEST_ASSERT_TRUE(syn_nmea_parse_gga(gga_str, &gga));
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, -545.4f, gga.altitude_m);
+
+    const char *payload_empty_alt = "GPGGA,123519.50,4807.038,N,01131.000,E,1,08,,,M,46.9,M,,";
+    uint8_t cs = syn_nmea_checksum(payload_empty_alt);
+    snprintf(gga_str, sizeof(gga_str), "$%s*%02X", payload_empty_alt, cs);
+    TEST_ASSERT_TRUE(syn_nmea_parse_gga(gga_str, &gga));
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, 0.0f, gga.hdop);
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, 0.0f, gga.altitude_m);
 }
 
 void test_nmea_parse_rmc(void)

@@ -1027,9 +1027,10 @@ static void test_wg_has_work_coverage(void)
     SYN_WG wg_disc;
     memset(&wg_disc, 0, sizeof(wg_disc));
     wg_disc.state = SYN_WG_DISCONNECTED;
-    SYN_Task disc_task = {.user_data = &wg_disc};
-    PT_INIT(&pt);
-    syn_wg_task(&pt, &disc_task);
+    TEST_ASSERT_TRUE(wg_has_work(&wg_disc));
+
+    /* wg_has_work(NULL) -> line 691 */
+    TEST_ASSERT_FALSE(wg_has_work(NULL));
 
     /* SYN_WG_HANDSHAKE_INIT rekey timeout -> line 700 */
     SYN_WG wg_hs;
@@ -1037,9 +1038,7 @@ static void test_wg_has_work_coverage(void)
     wg_hs.state = SYN_WG_HANDSHAKE_INIT;
     wg_hs.last_handshake_ms = 1000;
     mock_tick_ms = 1000 + (SYN_WG_REKEY_TIMEOUT + 1) * 1000;
-    SYN_Task hs_task = {.user_data = &wg_hs};
-    PT_INIT(&pt);
-    syn_wg_task(&pt, &hs_task);
+    TEST_ASSERT_TRUE(wg_has_work(&wg_hs));
 }
 
 void run_wg_tests(void)

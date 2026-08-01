@@ -89,8 +89,10 @@ SYN_Status syn_vfs_unmount(const char *prefix)
  */
 static const SYN_VfsMount *find_mount(const char *path, const char **rel_path)
 {
+    /* LCOV_EXCL_START: Defensive NULL check; callers call SYN_ASSERT */
     if (path == NULL)
         return NULL;
+    /* LCOV_EXCL_STOP */
 
     size_t longest_match = 0;
     const SYN_VfsMount *matched = NULL;

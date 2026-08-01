@@ -314,8 +314,10 @@ SYN_Status syn_websocket_send(SYN_WebsocketSession *ws, uint8_t opcode, const vo
  */
 static bool ws_has_work(const SYN_WebsocketSession *ws)
 {
+    /* LCOV_EXCL_START: Defensive NULL check */
     if (ws == NULL)
         return false;
+    /* LCOV_EXCL_STOP */
     if (ws->state != SYN_WS_STATE_CONNECTED)
         return true;
     if (ws->sock != SYN_SOCKET_INVALID && syn_port_sock_readable(ws->sock))

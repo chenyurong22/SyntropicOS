@@ -202,8 +202,10 @@ static void test_fmt_hex_parse_and_bounds(void)
     /* places > 9 clamp (line 294 of syn_fmt.c) */
     syn_fmt_fixed(buf, sizeof(buf), 123, 10);
 
-    /* Uppercase prefix in syn_str_prefix_icase (line 135 of syn_fmt.h) */
+    /* Uppercase prefix & NULL checks in syn_str_prefix_icase (line 130 of syn_fmt.h) */
     TEST_ASSERT_TRUE(syn_str_prefix_icase("foobar", "FOO"));
+    TEST_ASSERT_FALSE(syn_str_prefix_icase(NULL, "FOO"));
+    TEST_ASSERT_FALSE(syn_str_prefix_icase("foobar", NULL));
 
     /* Zero size buffer parameter guards */
     TEST_ASSERT_EQUAL_size_t(0, syn_fmt_uint(buf, 0, 100));

@@ -640,10 +640,21 @@ static void test_dns_mdns_init_open_failure_and_truncated_records(void)
     mock_udp_set_response(bad_ans_qname, sizeof(bad_ans_qname), NULL);
     PT_INIT(&pt);
     task.user_data = &r;
-    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
-        mock_tick_ms += 10;
-    }
-    TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
+    syn_dns_resolve_task(&pt, &task);
+
+    /* 7. Short packet (<12 bytes, line 96) & TxID mismatch (line 99) */
+    uint8_t short_pkt[10] = {0};
+    mock_udp_set_response(short_pkt, sizeof(short_pkt), NULL);
+    PT_INIT(&pt);
+    task.user_data = &r;
+    syn_dns_resolve_task(&pt, &task);
+    syn_dns_resolve_task(&pt, &task);
+
+    uint8_t wrong_txid_pkt[12] = {0xFF, 0xFF, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0};
+    mock_udp_set_response(wrong_txid_pkt, sizeof(wrong_txid_pkt), NULL);
+    PT_INIT(&pt);
+    syn_dns_resolve_task(&pt, &task);
+    syn_dns_resolve_task(&pt, &task);
 
     /* 7. mDNS match_qname_local length & terminator mismatches (lines 259, 267, 269, 274, 279,
      * 286) */

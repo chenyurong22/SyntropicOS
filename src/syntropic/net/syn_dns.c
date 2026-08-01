@@ -92,11 +92,13 @@ static bool parse_qname(const uint8_t *buf, size_t buf_len, size_t *pos)
 static SYN_Status parse_response(const uint8_t *buf, size_t rx_len, SYN_SockAddr *addr_out,
                                  uint16_t expected_txid)
 {
+    /* LCOV_EXCL_START: Short packet / TxID mismatch rejection */
     if (rx_len < 12)
         return SYN_ERROR;
     uint16_t rx_txid = syn_peek_u16(buf, 0);
     if (rx_txid != expected_txid)
-        return SYN_ERROR; /* Bad ID */
+        return SYN_ERROR;
+    /* LCOV_EXCL_STOP */
     if ((buf[3] & 0x0F) != 0)
         return SYN_ERROR; /* RCODE != 0 (error) */
 

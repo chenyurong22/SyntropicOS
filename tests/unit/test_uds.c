@@ -204,8 +204,9 @@ static void test_uds_security_access(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUIRED_TIME_DELAY_NOT_EXPIRED, resp[2]);
 
-    /* Tick 10s to expire lockout timer */
-    syn_uds_tick(&g_uds, 10000);
+    /* Tick 1s then remaining 9s to expire lockout timer (covers line 109 decrement) */
+    syn_uds_tick(&g_uds, 1000);
+    syn_uds_tick(&g_uds, 9000);
 
     /* Request Seed and unlock with correct key */
     req[1] = 0x01;
@@ -1827,6 +1828,11 @@ static void test_uds_dtc_overflow_and_short_msg_nrcs(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
 }
 
+static bool mock_dtc_cb_fail_fn(uint8_t sub, const uint8_t *req, uint16_t req_len, uint8_t *resp,
+                                uint16_t max_resp_len, uint16_t *out_len, void *user_ctx);
+static bool mock_dtc_cb_ok_fn(uint8_t sub, const uint8_t *req, uint16_t req_len, uint8_t *resp,
+                              uint16_t max_resp_len, uint16_t *out_len, void *user_ctx);
+
 static void test_uds_read_dtc_additional_subfunctions(void)
 {
     SYN_UDS_Server server;
@@ -1838,26 +1844,48 @@ static void test_uds_read_dtc_additional_subfunctions(void)
 
     req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
 
-    /* 1. Subfunctions requiring req_len >= 5 (0x04, 0x06, 0x10, 0x18, 0x19) */
-    uint8_t subs5[] = {0x04, 0x06, 0x10, 0x18, 0x19};
-    for (size_t i = 0; i < sizeof(subs5); i++) {
-        req[1] = subs5[i];
+    /* 1. Subfunctions requiring req_len >= 6 (0x04, 0x06, 0x10) */
+    uint8_t subs6[] = {0x04, 0x06, 0x10};
+    for (size_t i = 0; i < sizeof(subs6); i++) {
+        req[1] = subs6[i];
         req[2] = 0x01;
         req[3] = 0x23;
         req[4] = 0x45;
-        /* Short request (<5 bytes) -> NRC 0x13 */
-        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+        req[5] = 0x01;
+        /* Short request (<6 bytes) -> NRC 0x13 */
+        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 5, resp, sizeof(resp), &resp_len));
         TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
         TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
 
-        /* Valid request (5 bytes) -> Positive response (0x59, sub) */
-        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 5, resp, sizeof(resp), &resp_len));
+        /* Valid request (6 bytes) -> Positive response (0x59, sub) */
+        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 6, resp, sizeof(resp), &resp_len));
         TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
-        TEST_ASSERT_EQUAL_HEX8(subs5[i], resp[1]);
+        TEST_ASSERT_EQUAL_HEX8(subs6[i], resp[1]);
         TEST_ASSERT_EQUAL_UINT16(6, resp_len);
     }
 
-    /* 2. Subfunction 0x03 (valid at req_len >= 2) */
+    /* 2. Subfunctions requiring req_len >= 7 (0x18, 0x19) */
+    uint8_t subs7[] = {0x18, 0x19};
+    for (size_t i = 0; i < sizeof(subs7); i++) {
+        req[1] = subs7[i];
+        req[2] = 0x01;
+        req[3] = 0x23;
+        req[4] = 0x45;
+        req[5] = 0x01;
+        req[6] = 0x01;
+        /* Short request (<7 bytes) -> NRC 0x13 */
+        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 6, resp, sizeof(resp), &resp_len));
+        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+        /* Valid request (7 bytes) -> Positive response (0x59, sub) */
+        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 7, resp, sizeof(resp), &resp_len));
+        TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+        TEST_ASSERT_EQUAL_HEX8(subs7[i], resp[1]);
+        TEST_ASSERT_EQUAL_UINT16(7, resp_len);
+    }
+
+    /* 3. Subfunction 0x03 (valid at req_len >= 2) */
     req[1] = 0x03;
     TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
@@ -1880,23 +1908,113 @@ static void test_uds_read_dtc_additional_subfunctions(void)
         TEST_ASSERT_EQUAL_UINT16(3, resp_len);
     }
 
-    /* 3. Subfunctions requiring req_len >= 4 (0x17, 0x42) */
-    uint8_t subs4[] = {0x17, 0x42};
-    for (size_t i = 0; i < sizeof(subs4); i++) {
-        req[1] = subs4[i];
-        req[2] = 0xFF;
-        req[3] = 0x01;
-        /* Short request (<4 bytes) -> NRC 0x13 */
-        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
-        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
-        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+    /* 3. Subfunction 0x17 (requiring req_len >= 4) */
+    req[1] = 0x17;
+    req[2] = 0xFF;
+    req[3] = 0x01;
+    /* Short request (<4 bytes) -> NRC 0x13 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
 
-        /* Valid request (4 bytes) -> Positive response */
-        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
-        TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
-        TEST_ASSERT_EQUAL_HEX8(subs4[i], resp[1]);
-        TEST_ASSERT_EQUAL_UINT16(3, resp_len);
+    /* Valid request (4 bytes) -> Positive response (4 bytes) */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x17, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(4, resp_len);
+
+    /* 4. Subfunction 0x42 (requiring req_len >= 8) */
+    uint8_t req42[8] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x42, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+    /* Short request (<8 bytes) -> NRC 0x13 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req42, 7, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* Valid request (8 bytes) -> Positive response (4 bytes) */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req42, 8, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x42, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(4, resp_len);
+
+    /* 5. Subfunction 0x09 (severity info) & 0x55 (WWH-OBD permanent status) with registered DTC */
+    TEST_ASSERT_TRUE(syn_uds_register_dtc(&server, 0x012345, 0x09, 0xA0));
+    uint8_t req09[5] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x09, 0x01, 0x23, 0x45};
+    /* Short request (<5 bytes) -> NRC 0x13 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req09, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* Valid 5-byte request with registered DTC -> 8-byte response */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req09, 5, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x09, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0xA0, resp[2]); /* Severity */
+    TEST_ASSERT_EQUAL_UINT16(8, resp_len);
+
+    /* Unregistered DTC lookup for 0x09 -> 2-byte default response */
+    uint8_t req09_unreg[5] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x09, 0x99, 0x99, 0x99};
+    TEST_ASSERT_TRUE(
+        syn_uds_process_request(&server, req09_unreg, 5, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x09, resp[1]);
+    TEST_ASSERT_EQUAL_UINT16(2, resp_len);
+
+    /* Subfunction 0x55 */
+    uint8_t req55[4] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x55, 0x01, 0x00};
+    /* Short request (<4 bytes) -> NRC 0x13 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req55, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    /* Valid 4-byte request -> positive response */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req55, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x55, resp[1]);
+
+    /* Small buffer NRC 0x14 (RESPONSE_TOO_LONG) coverage for 0x09, 0x06, 0x18 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req09, 5, resp, 6, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    uint8_t req06[6] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x06, 0x01, 0x23, 0x45, 0x01};
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req06, 6, resp, 5, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    uint8_t req18[7] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x18, 0x01, 0x23, 0x45, 0x01, 0x01};
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req18, 7, resp, 6, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    /* Coverage for 0x55 buffer overflow (line 932) */
+    SYN_UDS_Server server_overflow;
+    TEST_ASSERT_TRUE(syn_uds_init(&server_overflow));
+    for (uint32_t i = 1; i <= 5; i++) {
+        TEST_ASSERT_TRUE(syn_uds_register_dtc(&server_overflow, i, 0x09, 0x01));
     }
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server_overflow, req55, 4, resp, 10, &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    /* dtc_cb delegation for 0x42 and vendor sub-function 0x7E (lines 1257-1265, 1280-1288) */
+    server.dtc_cb = mock_dtc_cb_ok_fn;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req42, 8, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x42, resp[1]);
+
+    uint8_t req7e[3] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x7E, 0x01};
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req7e, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x7E, resp[1]);
+
+    server.dtc_cb = mock_dtc_cb_fail_fn;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req42, 8, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req7e, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
 }
 
 static void test_uds_clear_dtc_group_filtering(void)
@@ -2103,17 +2221,20 @@ static void test_uds_remaining_uncovered_paths(void)
     server.dtc_cb = mock_dtc_cb_ok_fn;
     uint8_t subs[] = {0x05, 0x06, 0x09, 0x0B, 0x0C, 0x0D, 0x17, 0x18};
     for (size_t i = 0; i < sizeof(subs); i++) {
-        uint8_t req_dtc[6] = {SYN_UDS_SID_READ_DTC_INFORMATION, subs[i], 0x01, 0x02, 0x03, 0xFF};
-        syn_uds_process_request(&server, req_dtc, 6, resp, sizeof(resp), &resp_len);
+        uint8_t req_dtc[8] = {
+            SYN_UDS_SID_READ_DTC_INFORMATION, subs[i], 0x01, 0x02, 0x03, 0xFF, 0x01, 0x00};
+        uint16_t req_len_sub = (subs[i] == 0x18) ? 7 : 6;
+        syn_uds_process_request(&server, req_dtc, req_len_sub, resp, sizeof(resp), &resp_len);
         TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SID_READ_DTC_INFORMATION + 0x40, resp[0]);
     }
 
     server.dtc_cb = mock_dtc_cb_fail_fn;
     uint8_t subs_nrc[] = {0x05, 0x06, 0x09, 0x17, 0x18};
     for (size_t i = 0; i < sizeof(subs_nrc); i++) {
-        uint8_t req_dtc[6] = {
-            SYN_UDS_SID_READ_DTC_INFORMATION, subs_nrc[i], 0x01, 0x02, 0x03, 0xFF};
-        syn_uds_process_request(&server, req_dtc, 6, resp, sizeof(resp), &resp_len);
+        uint8_t req_dtc[8] = {
+            SYN_UDS_SID_READ_DTC_INFORMATION, subs_nrc[i], 0x01, 0x02, 0x03, 0xFF, 0x01, 0x00};
+        uint16_t req_len_sub = (subs_nrc[i] == 0x18) ? 7 : 6;
+        syn_uds_process_request(&server, req_dtc, req_len_sub, resp, sizeof(resp), &resp_len);
         TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);
     }
     uint8_t subs_pos[] = {0x0B, 0x0C, 0x0D};

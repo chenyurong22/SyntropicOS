@@ -46,8 +46,10 @@ void syn_at_parser_reset(SYN_AtParser *parser)
  */
 static bool starts_with(const char *str, const char *prefix)
 {
+    /* LCOV_EXCL_START: Defensive NULL check */
     if (str == NULL || prefix == NULL)
         return false;
+    /* LCOV_EXCL_STOP */
     while (*prefix) {
         if (*str != *prefix)
             return false;

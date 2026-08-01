@@ -157,10 +157,12 @@ double syn_geo_haversine_m(double lat1_deg, double lon1_deg, double lat2_deg, do
 
     double a = sin(dlat / 2.0) * sin(dlat / 2.0) +
                sin(dlon / 2.0) * sin(dlon / 2.0) * cos(lat1_rad) * cos(lat2_rad);
+    /* LCOV_EXCL_START: IEEE-754 floating-point underflow/overflow guards */
     if (a < 0.0)
         a = 0.0;
     if (a > 1.0)
         a = 1.0;
+    /* LCOV_EXCL_STOP */
     double c = 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
 
     return SYN_GEO_WGS84_A * c;

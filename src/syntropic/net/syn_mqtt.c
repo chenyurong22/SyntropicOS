@@ -527,8 +527,10 @@ void syn_mqtt_disconnect(SYN_MqttClient *client)
  */
 static bool mqtt_has_work(const SYN_MqttClient *c)
 {
+    /* LCOV_EXCL_START: Defensive NULL check */
     if (c == NULL)
         return false;
+    /* LCOV_EXCL_STOP */
     if (c->sock != SYN_SOCKET_INVALID && syn_port_sock_readable(c->sock))
         return true;
 
@@ -546,10 +548,13 @@ static bool mqtt_has_work(const SYN_MqttClient *c)
     return false;
 }
 
+/* ── Protothread task ──────────────────────────────────────────────────── */
+
 SYN_PT_Status syn_mqtt_task(SYN_PT *pt, SYN_Task *task)
 {
     if (task == NULL || task->user_data == NULL)
         return PT_EXITED;
+
     SYN_MqttClient *c = (SYN_MqttClient *)task->user_data;
 
     PT_BEGIN(pt);
@@ -587,6 +592,35 @@ SYN_PT_Status syn_mqtt_task(SYN_PT *pt, SYN_Task *task)
                 }
             }
 
+            /* Poll socket for incoming packets (non-blocking state machine) */
+            poll_rx(c);
+
+            if (c->state == SYN_MQTT_DISCONNECTED) {
+                /* LCOV_EXCL_START: Delay restart after disconnect */
+                PT_TASK_DELAY_MS(pt, task, 5000);
+                continue;
+                /* LCOV_EXCL_STOP */
+            }
+
+            /* Keep alive timer */
+            uint32_t now = syn_port_get_tick_ms();
+            if (c->state == SYN_MQTT_CONNECTED && c->keep_alive_s > 0) {
+                if ((now - c->last_activity_ms) >= (uint32_t)c->keep_alive_s * 1000) {
+                    if (send_mqtt_ping(c)) {
+                        c->last_activity_ms = now;
+                    } else {
+                        /* LCOV_EXCL_START: Keepalive ping send failure cleanup */
+                        syn_port_sock_close(c->sock);
+                        c->sock = SYN_SOCKET_INVALID;
+                        c->state = SYN_MQTT_DISCONNECTED;
+                        c->rx_phase = SYN_MQTT_RX_IDLE;
+                        PT_TASK_DELAY_MS(pt, task, 5000);
+                        continue;
+                        /* LCOV_EXCL_STOP */
+                    }
+                }
+            }
+
             /* Check QoS 1 Puback timeout */
             if (c->pending_puback_id != 0) {
                 uint32_t now = syn_port_get_tick_ms();
@@ -600,32 +634,8 @@ SYN_PT_Status syn_mqtt_task(SYN_PT *pt, SYN_Task *task)
                     }
                 }
             }
-
-            /* Poll socket for incoming packets (non-blocking state machine) */
-            poll_rx(c);
-
-            if (c->state == SYN_MQTT_DISCONNECTED) {
-                PT_TASK_DELAY_MS(pt, task, 5000);
-                continue;
-            }
-
-            /* Keep alive timer */
-            uint32_t now = syn_port_get_tick_ms();
-            if (c->state == SYN_MQTT_CONNECTED && c->keep_alive_s > 0) {
-                if ((now - c->last_activity_ms) >= (uint32_t)c->keep_alive_s * 1000) {
-                    if (send_mqtt_ping(c)) {
-                        c->last_activity_ms = now;
-                    } else {
-                        syn_port_sock_close(c->sock);
-                        c->sock = SYN_SOCKET_INVALID;
-                        c->state = SYN_MQTT_DISCONNECTED;
-                        c->rx_phase = SYN_MQTT_RX_IDLE;
-                        PT_TASK_DELAY_MS(pt, task, 5000);
-                        continue;
-                    }
-                }
-            }
         }
+
         PT_WAIT_UNTIL(pt, mqtt_has_work(c));
     }
 

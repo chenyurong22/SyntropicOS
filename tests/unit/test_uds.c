@@ -2556,6 +2556,66 @@ static void test_uds_isotp_full_stack_loopback(void)
     TEST_ASSERT_EQUAL_MEMORY(seed_16, &client_rx_buf[2], 16);
 }
 
+static void test_uds_session_mask_filtering(void)
+{
+    SYN_UDS_Server server;
+    TEST_ASSERT_TRUE(syn_uds_init(&server));
+
+    uint8_t dummy_data[4] = {0x11, 0x22, 0x33, 0x44};
+    /* Register DID 0xF190 allowed only in EXTENDED session */
+    uint8_t ext_mask = SYN_UDS_SESSION_MASK_EXTENDED;
+    bool ok = syn_uds_register_did_ext(&server, 0xF190, dummy_data, 4, true, ext_mask);
+    TEST_ASSERT_TRUE(ok);
+
+    uint8_t req[16] = {0};
+    uint8_t resp[32] = {0};
+    uint16_t resp_len = 0;
+
+    /* 1. Read DID 0xF190 in DEFAULT session -> NRC 0x7E */
+    req[0] = SYN_UDS_SID_READ_DATA_BY_IDENTIFIER;
+    req[1] = 0xF1;
+    req[2] = 0x90;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp[2]);
+
+    /* 2. Write DID 0xF190 in DEFAULT session -> NRC 0x7E */
+    req[0] = SYN_UDS_SID_WRITE_DATA_BY_IDENTIFIER;
+    req[1] = 0xF1;
+    req[2] = 0x90;
+    req[3] = 0xAA;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp[2]);
+
+    /* 3. Switch to EXTENDED session */
+    req[0] = SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL;
+    req[1] = SYN_UDS_SESSION_EXTENDED;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x50, resp[0]);
+
+    /* 4. Read DID 0xF190 in EXTENDED session -> Success (0x62) */
+    req[0] = SYN_UDS_SID_READ_DATA_BY_IDENTIFIER;
+    req[1] = 0xF1;
+    req[2] = 0x90;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x62, resp[0]);
+
+    /* 5. Switch to SAFETY_SYSTEM session */
+    req[0] = SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL;
+    req[1] = SYN_UDS_SESSION_SAFETY_SYSTEM;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(0x50, resp[0]);
+
+    /* Read DID 0xF190 in SAFETY_SYSTEM session -> NRC 0x7E */
+    req[0] = SYN_UDS_SID_READ_DATA_BY_IDENTIFIER;
+    req[1] = 0xF1;
+    req[2] = 0x90;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp[2]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -2586,4 +2646,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_session_transition_policy);
     RUN_TEST(test_uds_response_too_long_sweep);
     RUN_TEST(test_uds_isotp_full_stack_loopback);
+    RUN_TEST(test_uds_session_mask_filtering);
 }

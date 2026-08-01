@@ -169,6 +169,15 @@ typedef enum {
     SYN_UDS_SESSION_SAFETY_SYSTEM = 0x04U /**< Safety system diagnostic session (0x04) */
 } SYN_UDS_Session;
 
+/** @name UDS Session Mask Definitions (ISO 14229-1) */
+/**@{*/
+#define SYN_UDS_SESSION_MASK_DEFAULT (1U << 0)     /**< Bit 0: Default Session */
+#define SYN_UDS_SESSION_MASK_PROGRAMMING (1U << 1) /**< Bit 1: Programming Session */
+#define SYN_UDS_SESSION_MASK_EXTENDED (1U << 2)    /**< Bit 2: Extended Diagnostic Session */
+#define SYN_UDS_SESSION_MASK_SAFETY (1U << 3)      /**< Bit 3: Safety System Session */
+#define SYN_UDS_SESSION_MASK_ALL (0x0FU)           /**< Allowed in all sessions */
+/**@}*/
+
 /** @brief UDS Security Access Unlock States */
 typedef enum {
     SYN_UDS_SECURITY_LOCKED = 0x00U,    /**< Security locked */
@@ -238,10 +247,11 @@ typedef bool (*SYN_UDS_FileTransferHandler)(uint8_t mode, const char *file_path,
  * @brief Data Identifier (DID) Registry Entry.
  */
 typedef struct {
-    uint16_t did;  /**< 16-bit DID identifier code */
-    uint8_t *data; /**< Pointer to DID data buffer */
-    uint16_t len;  /**< Byte length of DID data */
-    bool writable; /**< True if DID is writable */
+    uint16_t did;         /**< 16-bit DID identifier code */
+    uint8_t *data;        /**< Pointer to DID data buffer */
+    uint16_t len;         /**< Byte length of DID data */
+    bool writable;        /**< True if DID is writable */
+    uint8_t session_mask; /**< Permitted session bitmask */
 } SYN_UDS_DIDEntry;
 
 /** @name UDS Timing & Security Constants */
@@ -486,6 +496,20 @@ void syn_uds_clear_pending_reset(SYN_UDS_Server *server);
  */
 bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
                           bool writable);
+
+/**
+ * @brief Register Data Identifier (DID) with custom session permission bitmask.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param did 16-bit Data Identifier code (e.g., 0xF190 for VIN).
+ * @param data Pointer to data memory buffer.
+ * @param len Data byte length.
+ * @param writable True if DID allows WriteDataByIdentifier (0x2E).
+ * @param session_mask Permitted session bitmask (SYN_UDS_SESSION_MASK_*).
+ * @return true on success, false if table full or invalid params.
+ */
+bool syn_uds_register_did_ext(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
+                              bool writable, uint8_t session_mask);
 
 /**
  * @brief Register Diagnostic Trouble Code (DTC) in UDS Server table.

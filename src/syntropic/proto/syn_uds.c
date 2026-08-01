@@ -182,8 +182,8 @@ void syn_uds_clear_pending_reset(SYN_UDS_Server *server)
     }
 }
 
-bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
-                          bool writable)
+bool syn_uds_register_did_ext(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
+                              bool writable, uint8_t session_mask)
 {
     if ((server == NULL) || (data == NULL) || (len == 0U)) {
         return false;
@@ -198,9 +198,16 @@ bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, u
     entry->data = data;
     entry->len = len;
     entry->writable = writable;
+    entry->session_mask = session_mask;
 
     server->did_count++;
     return true;
+}
+
+bool syn_uds_register_did(SYN_UDS_Server *server, uint16_t did, uint8_t *data, uint16_t len,
+                          bool writable)
+{
+    return syn_uds_register_did_ext(server, did, data, len, writable, SYN_UDS_SESSION_MASK_ALL);
 }
 
 bool syn_uds_register_comm_control(SYN_UDS_Server *server, SYN_UDS_CommControlHandler handler,
@@ -302,6 +309,40 @@ static bool make_negative_response(uint8_t sid, uint8_t nrc, uint8_t *resp_buf, 
 }
 /** @endcond */
 
+/**
+ * @brief Convert UDS Session enum to session bitmask representation.
+ * @param session Active UDS session.
+ * @return Bitmask representing active session (SYN_UDS_SESSION_MASK_*).
+ */
+static uint8_t session_to_mask(SYN_UDS_Session session)
+{
+    switch (session) {
+    case SYN_UDS_SESSION_DEFAULT:
+        return SYN_UDS_SESSION_MASK_DEFAULT;
+    case SYN_UDS_SESSION_PROGRAMMING:
+        return SYN_UDS_SESSION_MASK_PROGRAMMING;
+    case SYN_UDS_SESSION_EXTENDED:
+        return SYN_UDS_SESSION_MASK_EXTENDED;
+    case SYN_UDS_SESSION_SAFETY_SYSTEM:
+        return SYN_UDS_SESSION_MASK_SAFETY;
+    default:
+        /* LCOV_EXCL_START: Invalid session enum guard */
+        return 0U;
+        /* LCOV_EXCL_STOP */
+    }
+}
+
+/**
+ * @brief Get standard allowed session bitmask for target Service Identifier.
+ * @param sid Service Identifier (SID).
+ * @return Allowed session bitmask for SID.
+ */
+static uint8_t get_sid_allowed_session_mask(uint8_t sid)
+{
+    (void)sid;
+    return SYN_UDS_SESSION_MASK_ALL;
+}
+
 bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_t req_len,
                              uint8_t *resp_buf, uint16_t max_resp_len, uint16_t *resp_len)
 {
@@ -312,6 +353,15 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
 
     uint8_t sid = req[0];
     bool success = false;
+
+    uint8_t allowed_mask = get_sid_allowed_session_mask(sid);
+    uint8_t current_mask = session_to_mask(server->session);
+    if ((sid != SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL) && ((allowed_mask & current_mask) == 0U)) {
+        /* LCOV_EXCL_START: SID session mask rejection */
+        return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION,
+                                      resp_buf, resp_len);
+        /* LCOV_EXCL_STOP */
+    }
 
     switch (sid) {
     case SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL: {
@@ -540,6 +590,10 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf,
                                           resp_len);
         }
+        if ((matched_entry->session_mask & session_to_mask(server->session)) == 0U) {
+            return make_negative_response(
+                sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp_buf, resp_len);
+        }
         if (3U + matched_entry->len > max_resp_len) {
             return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len);
         }
@@ -567,6 +621,10 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         if (matched_entry == NULL) {
             return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf,
                                           resp_len);
+        }
+        if ((matched_entry->session_mask & session_to_mask(server->session)) == 0U) {
+            return make_negative_response(
+                sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp_buf, resp_len);
         }
         if (!matched_entry->writable) {
             return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,

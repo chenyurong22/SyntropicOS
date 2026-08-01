@@ -113,78 +113,80 @@ else
   BUILD_FLAGS := $(shell "$(CONTAINER_ENGINE)" build --help 2>&1 | grep -q -- "--format" && echo "--format docker" || true)
 endif
 
+CONTAINER_RUN := bash $(ROOT_DIR)/tools/containers/run_container.sh
+
 container-build:
 	@"$(CONTAINER_ENGINE)" build $(BUILD_FLAGS) -t syntropicos-test -f $(ROOT_DIR)/tools/containers/Containerfile $(ROOT_DIR)
 
 container-format: container-build
-	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers format FIX=$(FIX) JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers format FIX=$(FIX) JOBS=$(JOBS)
 
 container-lint: container-build
-	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers lint JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers lint JOBS=$(JOBS)
 
 container-misra: container-build
-	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers misra JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers misra JOBS=$(JOBS)
 
 container-stack: container-build container-volume
-	@"$(CONTAINER_ENGINE)" run --rm -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers stack JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers stack JOBS=$(JOBS)
 
 container-size: container-build container-volume
-	@"$(CONTAINER_ENGINE)" run --rm -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers size JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers size JOBS=$(JOBS)
 
 container-complexity: container-build
-	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers complexity JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers complexity JOBS=$(JOBS)
 
 container-san: container-build container-volume
-	@"$(CONTAINER_ENGINE)" run --rm -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers san JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers san JOBS=$(JOBS)
 
 container-qemu: container-build container-volume
-	@"$(CONTAINER_ENGINE)" run --rm -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers qemu JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers qemu JOBS=$(JOBS)
 
 container-renode: container-build container-volume
-	@"$(CONTAINER_ENGINE)" run --rm -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers renode JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers renode JOBS=$(JOBS)
 
 container-fuzz: container-build container-volume
-	@"$(CONTAINER_ENGINE)" run --rm -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers fuzz JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers fuzz JOBS=$(JOBS)
 
 container-test: container-cov
 
 container-cov: container-build container-volume
-	@"$(CONTAINER_ENGINE)" run --rm -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers cov JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers cov JOBS=$(JOBS)
 
 container-static: container-build container-volume
-	@"$(CONTAINER_ENGINE)" run --rm -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers static JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers static JOBS=$(JOBS)
 
 container-dox: container-build
-	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers dox JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers dox JOBS=$(JOBS)
 
 container-pio: container-build container-volume
-	@"$(CONTAINER_ENGINE)" run --rm -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers pio JOBS=$(JOBS)
+	@$(CONTAINER_RUN) -v $(CACHE_VOL):/workspace/build -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers pio JOBS=$(JOBS)
 
 valgrind:
 	@bash $(ROOT_DIR)/tools/valgrind/run_valgrind.sh
 
 container-valgrind: container-build
-	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers valgrind
+	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers valgrind
 
 analyzer:
 	@bash $(ROOT_DIR)/tools/analyzer/run_analyzer.sh
 
 container-analyzer: container-build
-	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers analyzer
+	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers analyzer
 
 flawfinder:
 	@python3 $(ROOT_DIR)/tools/flawfinder/run_flawfinder.py
 
 container-flawfinder: container-build
-	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers flawfinder
+	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers flawfinder
 
 container-integration: container-build
-	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers integration
+	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers integration
 
 examples:
 	@bash $(ROOT_DIR)/tools/examples/run_examples_check.sh
 
 container-examples: container-build
-	@"$(CONTAINER_ENGINE)" run --rm -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers examples
+	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers examples
 
 

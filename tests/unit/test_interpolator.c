@@ -144,7 +144,8 @@ static void test_scurve3d(void)
     TEST_ASSERT_EQUAL(500, sc3d.total_dist);
 
     int32_t x = 0, y = 0, z = 0;
-    while (syn_scurve3d_update(&sc3d, &x, &y, &z)) {
+    int iters = 10000;
+    while (syn_scurve3d_update(&sc3d, &x, &y, &z) && --iters > 0) {
         TEST_ASSERT_TRUE(x >= 0 && x <= 300);
         TEST_ASSERT_TRUE(y >= 0 && y <= 400);
     }

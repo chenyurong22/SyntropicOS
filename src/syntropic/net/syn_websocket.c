@@ -324,8 +324,9 @@ static bool ws_has_work(const SYN_WebsocketSession *ws)
 
 SYN_PT_Status syn_websocket_task(SYN_PT *pt, SYN_Task *task)
 {
+    if (task == NULL || task->user_data == NULL)
+        return PT_EXITED;
     SYN_WebsocketSession *ws = (SYN_WebsocketSession *)task->user_data;
-    SYN_ASSERT(ws != NULL);
 
     PT_BEGIN(pt);
 

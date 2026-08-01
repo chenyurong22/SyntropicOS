@@ -896,6 +896,37 @@ void test_mqtt_disconnect(void)
     TEST_ASSERT_EQUAL(0, c.retransmit_len);             /* stale retransmit cleared */
 }
 
+static void test_mqtt_extra_uncovered_branches(void)
+{
+    /* 1. mqtt_has_work(NULL) -> line 531 */
+    SYN_Task null_task = {.user_data = NULL};
+    SYN_PT pt;
+    PT_INIT(&pt);
+    TEST_ASSERT_EQUAL(PT_EXITED, syn_mqtt_task(&pt, &null_task));
+
+    /* 2. mqtt_has_work keepalive timeout check -> line 544 */
+    SYN_MqttClient c;
+    uint8_t rx[128], tx[128];
+    syn_mqtt_init(&c, "broker.hivemq.com", 1883, "myclient", NULL, NULL, 5, rx, sizeof(rx), tx,
+                  sizeof(tx));
+    c.state = SYN_MQTT_CONNECTED;
+    c.sock = 10;
+    mock_sock_connected = true;
+    c.last_activity_ms = mock_tick_ms;
+
+    mock_tick_advance(6000);
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &c};
+    syn_mqtt_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_MQTT_CONNECTED, c.state);
+
+    /* 3. Disconnected task delay loop -> line 608 */
+    c.state = SYN_MQTT_DISCONNECTED;
+    c.sock = SYN_SOCKET_INVALID;
+    PT_INIT(&pt);
+    TEST_ASSERT_EQUAL(PT_WAITING, syn_mqtt_task(&pt, &task));
+}
+
 void run_mqtt_tests(void)
 {
     RUN_TEST(test_mqtt_connect);
@@ -918,4 +949,5 @@ void run_mqtt_tests(void)
     RUN_TEST(test_mqtt_rx_phase_disconnect_handling);
     RUN_TEST(test_mqtt_ping_send_failure_and_packet_id_wraparound);
     RUN_TEST(test_mqtt_disconnect);
+    RUN_TEST(test_mqtt_extra_uncovered_branches);
 }

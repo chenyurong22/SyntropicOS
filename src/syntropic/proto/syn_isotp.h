@@ -155,9 +155,19 @@ typedef struct {
     SYN_ISOTP_RxState rx_state;   /**< Receive state              */
     bool rx_fc_pending;           /**< Pending Flow Control frame */
     uint8_t rx_fc_status;         /**< Flow Control status to tx  */
+    uint8_t rx_fc_bs;             /**< Flow Control Block Size to transmit (default 8) */
+    uint8_t rx_fc_stmin;          /**< Flow Control STmin to transmit (default 0)      */
     uint32_t n_cr_timeout_us;     /**< N_Cr timeout (microseconds)*/
     uint32_t rx_timeout_timer_us; /**< Active N_Cr timer us  */
 } SYN_ISOTP_Link;
+
+/**
+ * @brief Configure Flow Control transmission parameters (BS and STmin).
+ * @param link  Link handle.
+ * @param bs    Block size (0 = unlimited, 8 = default 8 frames per block).
+ * @param stmin STmin separation time byte value (0 = 0ms).
+ */
+void syn_isotp_set_fc_params(SYN_ISOTP_Link *link, uint8_t bs, uint8_t stmin);
 
 /**
  * @brief Configure custom ISO 15765-2 network layer timeouts.

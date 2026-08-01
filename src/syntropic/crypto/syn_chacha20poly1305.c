@@ -396,6 +396,11 @@ static void poly1305_finish(Poly1305_Ctx *ctx, uint8_t mac[16])
 static void aead_mac(const uint8_t poly_key[32], const uint8_t *aad, size_t aad_len,
                      const uint8_t *ct, size_t ct_len, uint8_t tag[16])
 {
+    if (aad == NULL)
+        aad_len = 0;
+    if (ct == NULL)
+        ct_len = 0;
+
     Poly1305_Ctx poly;
     poly1305_init(&poly, poly_key);
 
@@ -436,6 +441,11 @@ void syn_aead_encrypt(const uint8_t key[32], const uint8_t nonce[12], const uint
                       size_t aad_len, const uint8_t *plaintext, size_t pt_len, uint8_t *ciphertext,
                       uint8_t tag[16])
 {
+    if (key == NULL || nonce == NULL || tag == NULL)
+        return;
+    if (pt_len > 0 && (plaintext == NULL || ciphertext == NULL))
+        return;
+
     /* Step 1: Generate Poly1305 one-time key (counter = 0) */
     uint8_t poly_key[64];
     syn_chacha20_block(key, nonce, 0, poly_key);
@@ -452,6 +462,11 @@ bool syn_aead_decrypt(const uint8_t key[32], const uint8_t nonce[12], const uint
                       size_t aad_len, const uint8_t *ciphertext, size_t ct_len,
                       const uint8_t tag[16], uint8_t *plaintext)
 {
+    if (key == NULL || nonce == NULL || tag == NULL)
+        return false;
+    if (ct_len > 0 && (ciphertext == NULL || plaintext == NULL))
+        return false;
+
     /* Step 1: Generate Poly1305 one-time key */
     uint8_t poly_key[64];
     syn_chacha20_block(key, nonce, 0, poly_key);

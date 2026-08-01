@@ -545,11 +545,9 @@ SYN_PT_Status syn_httpd_task(SYN_PT *pt, SYN_Task *task)
     PT_BEGIN(pt);
 
     for (;;) {
-        /* Non-blocking step — always returns immediately */
-        if (srv->running) {
-            syn_httpd_step(srv);
-        }
-        PT_WAIT_UNTIL(pt, !srv->running || httpd_has_work(srv));
+        PT_WAIT_UNTIL(pt, srv->running && httpd_has_work(srv));
+        syn_httpd_step(srv);
+        PT_YIELD(pt);
     }
 
     PT_END(pt); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */

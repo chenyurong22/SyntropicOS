@@ -718,8 +718,9 @@ static bool wg_has_work(const SYN_WG *wg)
 
 SYN_PT_Status syn_wg_task(SYN_PT *pt, SYN_Task *task)
 {
+    if (task == NULL || task->user_data == NULL)
+        return PT_EXITED;
     SYN_WG *wg = (SYN_WG *)task->user_data;
-    SYN_ASSERT(wg != NULL);
 
     PT_BEGIN(pt);
 

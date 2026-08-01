@@ -70,10 +70,12 @@ static void test_isotp_canfd_multi_frame(void)
 
     syn_isotp_process_rx_frame(&receiver, &ff_frame);
 
-    /* 2. Receiver produces Flow Control (FC) frame */
+    /* 2. Receiver produces Flow Control (FC) frame with BS = 8 (0x08) */
     SYN_CAN_Frame fc_frame;
     TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&receiver, &fc_frame));
     TEST_ASSERT_EQUAL(0x30, fc_frame.data[0]);
+    TEST_ASSERT_EQUAL(0x08, fc_frame.data[1]); /* BS = 8 default */
+    TEST_ASSERT_EQUAL(0x00, fc_frame.data[2]); /* STmin = 0 default */
 
     syn_isotp_process_rx_frame(&sender, &fc_frame);
 

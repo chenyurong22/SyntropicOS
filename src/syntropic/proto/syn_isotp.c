@@ -78,9 +78,19 @@ void syn_isotp_init(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id, uint8_
     link->tx_buf_size = tx_buf_size;
     link->tx_state = SYN_ISOTP_TX_IDLE;
     link->rx_state = SYN_ISOTP_RX_IDLE;
+    link->rx_fc_bs = 8;
+    link->rx_fc_stmin = 0;
     link->n_bs_timeout_us = SYN_ISOTP_DEFAULT_N_BS_MS * 1000U;
     link->n_cr_timeout_us = SYN_ISOTP_DEFAULT_N_CR_MS * 1000U;
 #endif
+}
+
+void syn_isotp_set_fc_params(SYN_ISOTP_Link *link, uint8_t bs, uint8_t stmin)
+{
+    if (link == NULL)
+        return;
+    link->rx_fc_bs = bs;
+    link->rx_fc_stmin = stmin;
 }
 
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
@@ -99,6 +109,8 @@ void syn_isotp_init_fd(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id, uin
     link->tx_buf_size = tx_buf_size;
     link->tx_state = SYN_ISOTP_TX_IDLE;
     link->rx_state = SYN_ISOTP_RX_IDLE;
+    link->rx_fc_bs = 8;
+    link->rx_fc_stmin = 0;
     link->n_bs_timeout_us = SYN_ISOTP_DEFAULT_N_BS_MS * 1000U;
     link->n_cr_timeout_us = SYN_ISOTP_DEFAULT_N_CR_MS * 1000U;
 }
@@ -152,8 +164,8 @@ bool syn_isotp_get_tx_frame(SYN_ISOTP_Link *link, SYN_CAN_Frame *frame)
     if (link->rx_fc_pending) {
         link->rx_fc_pending = false;
         frame->data[0] = SYN_ISOTP_PCI_FC | link->rx_fc_status;
-        frame->data[1] = 0; /* BS = 0 (unlimited) */
-        frame->data[2] = 0; /* STmin = 0 ms */
+        frame->data[1] = link->rx_fc_bs;    /* BS = 8 (0x08) default */
+        frame->data[2] = link->rx_fc_stmin; /* STmin = 0 ms default */
         frame->dlc = 8;
         return true;
     }

@@ -1015,6 +1015,33 @@ static void test_wg_send_initiation_tx_buf_too_small(void)
     TEST_ASSERT_EQUAL(SYN_SOCKET_INVALID, wg.udp_sock);
 }
 
+static void test_wg_has_work_coverage(void)
+{
+    /* wg == NULL -> false (line 691) */
+    SYN_Task null_task = {.user_data = NULL};
+    SYN_PT pt;
+    PT_INIT(&pt);
+    TEST_ASSERT_EQUAL(PT_EXITED, syn_wg_task(&pt, &null_task));
+
+    /* SYN_WG_DISCONNECTED -> true (line 693) */
+    SYN_WG wg_disc;
+    memset(&wg_disc, 0, sizeof(wg_disc));
+    wg_disc.state = SYN_WG_DISCONNECTED;
+    SYN_Task disc_task = {.user_data = &wg_disc};
+    PT_INIT(&pt);
+    syn_wg_task(&pt, &disc_task);
+
+    /* SYN_WG_HANDSHAKE_INIT rekey timeout -> line 700 */
+    SYN_WG wg_hs;
+    memset(&wg_hs, 0, sizeof(wg_hs));
+    wg_hs.state = SYN_WG_HANDSHAKE_INIT;
+    wg_hs.last_handshake_ms = 1000;
+    mock_tick_ms = 1000 + (SYN_WG_REKEY_TIMEOUT + 1) * 1000;
+    SYN_Task hs_task = {.user_data = &wg_hs};
+    PT_INIT(&pt);
+    syn_wg_task(&pt, &hs_task);
+}
+
 void run_wg_tests(void)
 {
     /* Handshake internals */
@@ -1065,4 +1092,5 @@ void run_wg_tests(void)
     RUN_TEST(test_wg_valid_response_exchange);
     RUN_TEST(test_wg_send_initiation_tx_buf_too_small);
     RUN_TEST(test_wg_send_buffer_too_small);
+    RUN_TEST(test_wg_has_work_coverage);
 }

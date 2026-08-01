@@ -771,6 +771,29 @@ static void test_httpd_uncovered_edge_cases(void)
     syn_httpd_body(NULL, "data", 4);
 }
 
+static void test_httpd_has_work_coverage(void)
+{
+    SYN_Httpd srv;
+    memset(&srv, 0, sizeof(srv));
+    uint8_t wbuf[256];
+    srv.work_buf = wbuf;
+    srv.work_buf_size = sizeof(wbuf);
+    srv.running = false;
+    SYN_Task task = {.user_data = &srv};
+    SYN_PT pt;
+    PT_INIT(&pt);
+    TEST_ASSERT_EQUAL(PT_WAITING, syn_httpd_task(&pt, &task));
+
+    srv.running = true;
+    srv.listener = 1;
+    srv.client = SYN_SOCKET_INVALID;
+    mock_sock_connected = true;
+    uint8_t dummy[] = {0x00};
+    mock_sock_set_response(dummy, 1);
+    SYN_PT_Status res = syn_httpd_task(&pt, &task);
+    TEST_ASSERT_TRUE(res == PT_WAITING || res == PT_YIELDED);
+}
+
 void run_httpd_tests(void)
 {
     RUN_TEST(test_httpd_get_root);
@@ -808,4 +831,5 @@ void run_httpd_tests(void)
     RUN_TEST(test_httpd_connection_upgrade_handler);
     RUN_TEST(test_httpd_bad_request_malformed_headers);
     RUN_TEST(test_httpd_uncovered_edge_cases);
+    RUN_TEST(test_httpd_has_work_coverage);
 }

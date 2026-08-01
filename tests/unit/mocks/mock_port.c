@@ -763,14 +763,18 @@ SYN_WEAK int syn_port_sock_send(SYN_Socket sock, const void *data, size_t len)
     (void)sock;
     if (!mock_sock_connected || mock_sock_send_fail)
         return -1;
+    if (mock_sock_tx_len >= MOCK_SOCK_BUF_SIZE)
+        return -1;
     if (mock_sock_send_fail_after_bytes >= 0 &&
         (int)mock_sock_tx_len >= mock_sock_send_fail_after_bytes)
         return -1;
     size_t space = MOCK_SOCK_BUF_SIZE - mock_sock_tx_len;
     if (mock_sock_send_fail_after_bytes >= 0) {
-        size_t limit = (size_t)(mock_sock_send_fail_after_bytes - (int)mock_sock_tx_len);
-        if (space > limit)
-            space = limit;
+        int rem = mock_sock_send_fail_after_bytes - (int)mock_sock_tx_len;
+        if (rem <= 0)
+            return -1;
+        if (space > (size_t)rem)
+            space = (size_t)rem;
     }
     if (len > space)
         len = space;
@@ -783,6 +787,8 @@ SYN_WEAK int syn_port_sock_send_all(SYN_Socket sock, const void *data, size_t le
 {
     (void)sock;
     if (!mock_sock_connected || mock_sock_send_fail)
+        return -1;
+    if (mock_sock_tx_len >= MOCK_SOCK_BUF_SIZE)
         return -1;
     if (mock_sock_send_fail_after_bytes >= 0 &&
         (int)mock_sock_tx_len + (int)len > mock_sock_send_fail_after_bytes)
@@ -799,14 +805,14 @@ SYN_WEAK int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len, uint
 {
     (void)sock;
     (void)timeout_ms;
-    if (!mock_sock_connected)
+    if (buf == NULL || !mock_sock_connected)
         return -1;
-    size_t avail = mock_sock_rx_len - mock_sock_rx_pos;
-    if (avail == 0) {
+    if (mock_sock_rx_pos >= mock_sock_rx_len) {
         if (mock_sock_eof_on_empty)
             return 0;
         return -1; /* timeout / no data */
     }
+    size_t avail = mock_sock_rx_len - mock_sock_rx_pos;
     if (max_len > avail)
         max_len = avail;
     memcpy(buf, mock_sock_rx_buf + mock_sock_rx_pos, max_len);
@@ -824,7 +830,7 @@ SYN_WEAK bool syn_port_sock_readable(SYN_Socket sock)
 {
     if (sock == SYN_SOCKET_INVALID || !mock_sock_connected)
         return false;
-    return (mock_sock_rx_len > mock_sock_rx_pos);
+    return (mock_sock_rx_len > mock_sock_rx_pos) || mock_sock_eof_on_empty;
 }
 
 /* ── UDP port ───────────────────────────────────────────────────────────── */

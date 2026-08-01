@@ -224,6 +224,52 @@ static void test_dns_resolve_timeout(void)
     TEST_ASSERT_EQUAL(SYN_TIMEOUT, r.status);
 }
 
+static void test_dns_resolve_bad_packet_header(void)
+{
+    mock_port_reset();
+    /* Short packet (< 12 bytes) -> line 96 */
+    uint8_t short_rx[] = {0x00, 0x00, 0x81, 0x80};
+    mock_udp_set_response(short_rx, sizeof(short_rx), NULL);
+
+    SYN_SockAddr resolved;
+    SYN_DnsResolver r;
+    r.dns_server = NULL;
+    r.hostname = "example.com";
+    r.addr_out = &resolved;
+    r.timeout_ms = 1000;
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task;
+    task.user_data = &r;
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 1;
+    }
+    TEST_ASSERT_EQUAL(SYN_TIMEOUT, r.status);
+
+    /* TXID mismatch -> line 99 */
+    mock_port_reset();
+    uint8_t wrong_txid_rx[] = {0x99, 0x99, 0x81, 0x80, 0x00, 0x01,
+                               0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
+    mock_udp_set_response(wrong_txid_rx, sizeof(wrong_txid_rx), NULL);
+    PT_INIT(&pt);
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 1;
+    }
+    TEST_ASSERT_EQUAL(SYN_TIMEOUT, r.status);
+
+    /* Answers == 0 -> line 107 */
+    mock_port_reset();
+    uint8_t zero_answers_rx[] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x01,
+                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    mock_udp_set_response(zero_answers_rx, sizeof(zero_answers_rx), NULL);
+    PT_INIT(&pt);
+    while (syn_dns_resolve_task(&pt, &task) == PT_WAITING) {
+        mock_tick_ms += 1;
+    }
+    TEST_ASSERT_EQUAL(SYN_ERROR, r.status);
+}
+
 static void test_dns_resolve_cname(void)
 {
     mock_port_reset();
@@ -650,4 +696,5 @@ void run_dns_tests(void)
     RUN_TEST(test_dns_mdns_invalid_qtype);
     RUN_TEST(test_dns_resolve_null_params);
     RUN_TEST(test_dns_mdns_init_open_failure_and_truncated_records);
+    RUN_TEST(test_dns_resolve_bad_packet_header);
 }

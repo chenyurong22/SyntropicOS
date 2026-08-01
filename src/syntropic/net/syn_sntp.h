@@ -169,7 +169,7 @@ int32_t syn_sntp_get_drift_ppm(const SYN_SNTP *sntp);
  */
 static inline bool syn_sntp_is_synced(const SYN_SNTP *sntp)
 {
-    return sntp->synced;
+    return sntp != NULL && sntp->synced;
 }
 
 #ifdef __cplusplus

@@ -25,31 +25,14 @@ void tearDown(void)
 
 static int connect_to_soes_container(const char *host, int port)
 {
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0)
-        return -1;
-
-    struct sockaddr_in serv_addr;
-    memset(&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(port);
-
-    if (inet_pton(AF_INET, host, &serv_addr.sin_addr) <= 0) {
-        close(sock);
-        return -1;
-    }
-
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-        close(sock);
-        return -1;
-    }
-
-    return sock;
+    return syn_port_sock_connect_host(host, (uint16_t)port);
 }
 
 void test_soes_slave_container_integration(void)
 {
-    const char *host = "127.0.0.1";
+    const char *host = getenv("ETHERCAT_SOES_HOST");
+    if (!host)
+        host = "127.0.0.1";
     int port = 10885;
 
     printf("[Integration Test] Connecting to 3rd-Party SOES Slave Daemon at %s:%d...\n", host,

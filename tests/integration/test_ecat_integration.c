@@ -33,20 +33,10 @@ void test_ethercat_container_integration(void)
 
     printf("[Integration Test] Connecting to EtherCAT Industrial Server at %s:%d...\n", host, port);
 
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    TEST_ASSERT_TRUE(sock >= 0);
-
-    struct sockaddr_in sa;
-    memset(&sa, 0, sizeof(sa));
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons(port);
-    inet_pton(AF_INET, host, &sa.sin_addr);
-
-    /* Try connecting to container service or fall back to loopback socketpair */
-    int res = connect(sock, (struct sockaddr *)&sa, sizeof(sa));
+    int sock = syn_port_sock_connect_host(host, port);
     int peer_sock = sock;
 
-    if (res < 0) {
+    if (sock < 0) {
         printf("[Integration Test] Notice: Container server not listening on %s:%d, using loopback "
                "socketpair...\n",
                host, port);

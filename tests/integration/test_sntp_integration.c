@@ -1,6 +1,7 @@
 #include "syntropic/net/syn_sntp.h"
 #include "unity/unity.h"
 
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,12 +24,9 @@ void test_sntp_chrony_e2e(void)
     SYN_SockAddr server = {0};
     server.port = port;
 
-    int a, b, c, d;
-    if (sscanf(host, "%d.%d.%d.%d", &a, &b, &c, &d) == 4) {
-        server.ip[0] = (uint8_t)a;
-        server.ip[1] = (uint8_t)b;
-        server.ip[2] = (uint8_t)c;
-        server.ip[3] = (uint8_t)d;
+    struct hostent *he = gethostbyname(host);
+    if (he && he->h_addr_list[0]) {
+        memcpy(server.ip, he->h_addr_list[0], 4);
     } else {
         server.ip[0] = 127;
         server.ip[1] = 0;

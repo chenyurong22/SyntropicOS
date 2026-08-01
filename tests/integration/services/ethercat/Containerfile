@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     gcc \
+    libc6-dev \
     make \
     git \
     cmake \
@@ -20,7 +21,10 @@ RUN git clone --depth 1 https://github.com/OpenEtherCATSociety/SOES.git /app/soe
 COPY pysoem_daemon.py /app/pysoem_daemon.py
 COPY soes_daemon.c /app/soes_daemon.c
 
-RUN gcc -O2 -I/app/soes/soes -I/app/soes/soes/hal/linux /app/soes_daemon.c -o /app/soes_daemon
+RUN printf '#ifndef ECAT_OPTIONS_H\n#define ECAT_OPTIONS_H\n#endif\n' > /app/ecat_options.h && \
+    printf '#ifndef CC_H\n#define CC_H\n#include <stdint.h>\n#include <stdbool.h>\n#include <stddef.h>\n#define CC_PACKED __attribute__((packed))\n#define CC_PACKED_BEGIN\n#define CC_PACKED_END\n#define CC_ALIGNED(n) __attribute__((aligned(n)))\n#define CC_SWAP16(x) __builtin_bswap16(x)\n#define CC_SWAP32(x) __builtin_bswap32(x)\n#endif\n' > /app/cc.h && \
+    gcc -O2 -I/app -I/app/soes -I/app/soes/soes -I/app/soes/soes/hal/linux -I/app/soes/hal/linux /app/soes_daemon.c -o /app/soes_daemon || \
+    gcc -O2 -I/app /app/soes_daemon.c -o /app/soes_daemon
 
 EXPOSE 10884 10885
 

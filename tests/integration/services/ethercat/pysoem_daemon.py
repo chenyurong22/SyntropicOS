@@ -13,7 +13,7 @@ def main():
     host = '0.0.0.0'
     port = 10884
 
-    server = socket.socket(socket.AF_INET, SOCK_STREAM=socket.SOCK_STREAM)
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((host, port))
     server.listen(5)

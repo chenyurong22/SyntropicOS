@@ -179,8 +179,15 @@ flawfinder:
 container-flawfinder: container-build
 	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers flawfinder
 
+ifeq ($(OS),Windows_NT)
+  COMPOSE_CMD ?= docker compose
+else
+  COMPOSE_CMD ?= $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; else echo "docker compose"; fi)
+endif
+
 container-integration: container-build
-	@$(CONTAINER_RUN) -v $(ROOT_DIR):/workspace$(VOL_FLAG) syntropicos-test make -C tools/containers integration
+	@$(COMPOSE_CMD) -f $(ROOT_DIR)/tests/integration/docker-compose.yml up --build --exit-code-from test-runner --abort-on-container-exit
+	@$(COMPOSE_CMD) -f $(ROOT_DIR)/tests/integration/docker-compose.yml down
 
 examples:
 	@bash $(ROOT_DIR)/tools/examples/run_examples_check.sh

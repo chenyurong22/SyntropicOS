@@ -27,18 +27,8 @@ void test_modbus_tcp_integration(void)
 
     printf("[Integration Test] Connecting to Modbus TCP Server at %s:%d...\n", host, port);
 
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    TEST_ASSERT_TRUE(sock >= 0);
-
-    struct sockaddr_in sa;
-    memset(&sa, 0, sizeof(sa));
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons(port);
-    inet_pton(AF_INET, host, &sa.sin_addr);
-
-    int res = connect(sock, (struct sockaddr *)&sa, sizeof(sa));
-    if (res != 0) {
-        close(sock);
+    int sock = syn_port_sock_connect_host(host, port);
+    if (sock < 0) {
         printf("[Integration Test] Notice: Modbus TCP server at %s:%d not reachable (skipping "
                "loopback test)\n",
                host, port);

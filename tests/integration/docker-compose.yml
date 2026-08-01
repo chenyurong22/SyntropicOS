@@ -131,6 +131,37 @@ services:
       syn_net:
         ipv4_address: 172.28.0.101
 
+  # 11. SyntropicOS Integration Test Runner Container
+  test-runner:
+    build:
+      context: ../..
+      dockerfile: tools/containers/Containerfile
+    container_name: syntropicos-integration-runner
+    depends_on:
+      - mosquitto
+      - sntp
+      - http
+      - ws
+      - dns
+      - modbus
+      - ethercat-soem
+      - ethercat-soes
+    environment:
+      - MQTT_HOST=mosquitto
+      - SNTP_HOST=sntp
+      - HTTP_HOST=http
+      - WS_HOST=ws
+      - DNS_HOST=dns
+      - MODBUS_HOST=modbus
+      - ETHERCAT_HOST=ethercat-soem
+      - ETHERCAT_SOES_HOST=ethercat-soes
+    volumes:
+      - ../..:/workspace:z
+    command: ["/bin/bash", "-c", "tr -d '\\r' < /workspace/tests/integration/run_integration.sh > /tmp/run.sh && bash /tmp/run.sh"]
+    networks:
+      syn_net:
+        ipv4_address: 172.28.0.200
+
 networks:
   syn_net:
     driver: bridge

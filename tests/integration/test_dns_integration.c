@@ -2,6 +2,7 @@
 #include "syntropic/net/syn_dns.h"
 #include "unity/unity.h"
 
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,10 +26,16 @@ void test_dns_resolver_e2e(void)
 
     SYN_SockAddr server = {0};
     server.port = port;
-    server.ip[0] = 127;
-    server.ip[1] = 0;
-    server.ip[2] = 0;
-    server.ip[3] = 1;
+
+    struct hostent *he = gethostbyname(host);
+    if (he && he->h_addr_list[0]) {
+        memcpy(server.ip, he->h_addr_list[0], 4);
+    } else {
+        server.ip[0] = 127;
+        server.ip[1] = 0;
+        server.ip[2] = 0;
+        server.ip[3] = 1;
+    }
 
     SYN_SockAddr resolved_addr = {0};
     SYN_DnsResolver dns;

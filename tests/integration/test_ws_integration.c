@@ -33,15 +33,22 @@ void tearDown(void)
 
 void test_websocket_embedded_server(void)
 {
-    SYN_WebsocketSession ws_session;
-    memset(&ws_session, 0, sizeof(ws_session));
+    const char *host = getenv("WS_HOST");
+    if (!host)
+        host = "127.0.0.1";
+    uint16_t port = (strcmp(host, "127.0.0.1") == 0) ? 10081 : 8080;
 
-    SYN_Socket client_sock = syn_port_sock_connect_host("127.0.0.1", 10081);
+    printf("[Integration Test] Connecting to Node.js WS Server at %s:%d...\n", host, port);
+    SYN_Socket client_sock = syn_port_sock_connect_host(host, port);
     if (client_sock == SYN_SOCKET_INVALID) {
-        printf(
-            "[Integration Test] WS Node.js container not reachable (Skipping loopback connect)\n");
+        printf("[Integration Test] WS Node.js container at %s:%d not reachable (Skipping loopback "
+               "connect)\n",
+               host, port);
         return;
     }
+
+    SYN_WebsocketSession ws_session;
+    memset(&ws_session, 0, sizeof(ws_session));
 
     ws_session.sock = client_sock;
     ws_session.state = SYN_WS_STATE_CONNECTED;

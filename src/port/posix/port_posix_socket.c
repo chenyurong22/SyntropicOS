@@ -101,9 +101,19 @@ SYN_Status syn_port_udp_join_multicast(SYN_Socket sock, const char *multicast_ip
     memset(&mreq, 0, sizeof(mreq));
     mreq.imr_multiaddr.s_addr = inet_addr(multicast_ip);
     mreq.imr_interface.s_addr = INADDR_ANY;
-    if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
-        return SYN_ERROR;
-    return SYN_OK;
+    int res = setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
+    return (res == 0) ? SYN_OK : SYN_ERROR;
+}
+
+bool syn_port_udp_readable(SYN_Socket sock)
+{
+    if (sock < 0)
+        return false;
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(sock, &fds);
+    struct timeval tv = {0, 0};
+    return (select(sock + 1, &fds, NULL, NULL, &tv) > 0);
 }
 
 /* ── TCP ────────────────────────────────────────────────────────────────── */
@@ -190,6 +200,17 @@ int syn_port_sock_recv(SYN_Socket sock, void *buf, size_t max_len, uint32_t time
     if (n < 0)
         return -1;
     return n;
+}
+
+bool syn_port_sock_readable(SYN_Socket sock)
+{
+    if (sock < 0)
+        return false;
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(sock, &fds);
+    struct timeval tv = {0, 0};
+    return (select(sock + 1, &fds, NULL, NULL, &tv) > 0);
 }
 
 /* ── Common ─────────────────────────────────────────────────────────────── */

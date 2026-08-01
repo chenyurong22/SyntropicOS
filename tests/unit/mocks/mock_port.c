@@ -303,7 +303,7 @@ int syn_port_serial_read(uint8_t *buf, size_t max_len)
 
 /* ── Assert handler ─────────────────────────────────────────────────────── */
 
-void syn_assert_failed(const char *file, int line)
+SYN_NORETURN void syn_assert_failed(const char *file, int line)
 {
     fprintf(stderr, "ASSERT FAILED: %s:%d\n", file, line);
     exit(1);

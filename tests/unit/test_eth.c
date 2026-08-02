@@ -676,6 +676,20 @@ static void test_eth_frame_filtering_and_protocol_dispatch(void)
     arp_req[16] = 0x00;
     arp_req[17] = 0x00; /* ptype = 0 */
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, arp_req, 60, tx, &tx_len));
+
+    /* 10. Fill ARP cache and then call syn_eth_arp_update for existing entry */
+    SYN_ETH eth_full;
+    syn_eth_init(&eth_full, MY_MAC, MY_IP);
+    uint8_t dummy_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
+    for (size_t i = 0; i < SYN_ETH_ARP_CACHE_SIZE; i++) {
+        TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_arp_update(&eth_full, 0xC0A80101 + i, dummy_mac));
+    }
+    /* Update existing entry in full cache */
+    dummy_mac[5] = 0x99;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_arp_update(&eth_full, 0xC0A80101, dummy_mac));
+    uint8_t lookup_mac[6];
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_arp_lookup(&eth_full, 0xC0A80101, lookup_mac));
+    TEST_ASSERT_EQUAL_INT(0, memcmp(dummy_mac, lookup_mac, 6));
 }
 
 void run_eth_tests(void)

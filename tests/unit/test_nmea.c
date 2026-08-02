@@ -331,6 +331,50 @@ static void test_nmea_date_time_parsing_and_null_coordinates(void)
     TEST_ASSERT_TRUE(syn_nmea_parse_rmc(sentence_buf, &rmc_short_date));
 }
 
+void test_nmea_branch_coverage(void)
+{
+    /* 1. RMC year parsing: yr < 70 -> 20xx, yr >= 70 -> 19xx */
+    SYN_NMEA_RMC rmc;
+    const char *payload_2000 = "GPRMC,123519.50,A,4807.038,N,01131.000,E,022.4,084.4,230324,,,";
+    char rmc_str[128];
+    snprintf(rmc_str, sizeof(rmc_str), "$%s*%02X", payload_2000, syn_nmea_checksum(payload_2000));
+    TEST_ASSERT_TRUE(syn_nmea_parse_rmc(rmc_str, &rmc));
+    TEST_ASSERT_EQUAL_UINT16(2024, rmc.year);
+
+    const char *payload_1990 = "GPRMC,123519.50,A,4807.038,N,01131.000,E,022.4,084.4,230395,,,";
+    snprintf(rmc_str, sizeof(rmc_str), "$%s*%02X", payload_1990, syn_nmea_checksum(payload_1990));
+    TEST_ASSERT_TRUE(syn_nmea_parse_rmc(rmc_str, &rmc));
+    TEST_ASSERT_EQUAL_UINT16(1995, rmc.year);
+
+    /* 2. Parser buffer overflow test (exceeding SYN_NMEA_MAX_SENTENCE_LEN = 128) */
+    SYN_NMEA_Parser parser;
+    syn_nmea_parser_init(&parser);
+    TEST_ASSERT_FALSE(syn_nmea_parser_feed(&parser, '$', NULL));
+    for (int i = 0; i < 140; i++) {
+        TEST_ASSERT_FALSE(syn_nmea_parser_feed(&parser, 'A', NULL));
+    }
+
+    /* 3. Short talker ID (< 3 chars) in validate/get_type */
+    const char *short_talker = "AB,1,2";
+    char short_str[64];
+    snprintf(short_str, sizeof(short_str), "$%s*%02X", short_talker,
+             syn_nmea_checksum(short_talker));
+    TEST_ASSERT_EQUAL(SYN_NMEA_SENTENCE_UNKNOWN, syn_nmea_get_type(short_str));
+
+    /* 4. Lowercase hex characters in checksum validation ('a'-'f') */
+    const char *hex_lower = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47";
+    char hex_lower_str[128];
+    snprintf(hex_lower_str, sizeof(hex_lower_str), "%s", hex_lower);
+    /* Replace uppercase hex with lowercase '4' '7' */
+    hex_lower_str[strlen(hex_lower_str) - 2] = '4';
+    hex_lower_str[strlen(hex_lower_str) - 1] = '7';
+    TEST_ASSERT_TRUE(syn_nmea_validate(hex_lower_str));
+
+    /* Invalid non-hex character in checksum string */
+    hex_lower_str[strlen(hex_lower_str) - 1] = 'Z';
+    TEST_ASSERT_FALSE(syn_nmea_validate(hex_lower_str));
+}
+
 void run_nmea_tests(void)
 {
     RUN_TEST(test_nmea_checksum_and_validate);
@@ -344,4 +388,5 @@ void run_nmea_tests(void)
     RUN_TEST(test_nmea_checksum_null_and_short_stars);
     RUN_TEST(test_nmea_sentence_checksum_and_field_truncation);
     RUN_TEST(test_nmea_date_time_parsing_and_null_coordinates);
+    RUN_TEST(test_nmea_branch_coverage);
 }

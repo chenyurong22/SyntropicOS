@@ -59,6 +59,8 @@ bool syn_uds_init(SYN_UDS_Server *server)
     server->reset_wait_elapsed_ms = 0U;
     server->session_transition_cb = NULL;
     server->session_transition_ctx = NULL;
+    server->custom_session_count = 0U;
+    server->custom_security_count = 0U;
 
     return true;
 }

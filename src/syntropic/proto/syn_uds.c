@@ -362,14 +362,83 @@ static uint8_t session_to_mask(SYN_UDS_Session session)
 }
 
 /**
- * @brief Get standard allowed session bitmask for target Service Identifier.
+ * @brief Get allowed session bitmask for target Service Identifier.
+ * @param server UDS server instance pointer.
  * @param sid Service Identifier (SID).
  * @return Allowed session bitmask for SID.
  */
-static uint8_t get_sid_allowed_session_mask(uint8_t sid)
+static uint8_t get_sid_allowed_session_mask(const SYN_UDS_Server *server, uint8_t sid)
 {
-    (void)sid;
+    if (server != NULL) {
+        for (uint8_t i = 0U; i < server->custom_session_count; i++) {
+            if (server->custom_session_sids[i] == sid) {
+                return server->custom_session_masks[i];
+            }
+        }
+    }
     return SYN_UDS_SESSION_MASK_ALL;
+}
+
+/**
+ * @brief Get required security level bitmask for target Service Identifier.
+ * @param server UDS server instance pointer.
+ * @param sid Service Identifier (SID).
+ * @return Required security level bitmask for SID (0 = no security check at top level).
+ */
+static uint16_t get_sid_required_security_mask(const SYN_UDS_Server *server, uint8_t sid)
+{
+    if (server != NULL) {
+        for (uint8_t i = 0U; i < server->custom_security_count; i++) {
+            if (server->custom_security_sids[i] == sid) {
+                return server->custom_security_masks[i];
+            }
+        }
+    }
+    return 0U;
+}
+
+bool syn_uds_set_service_session_mask(SYN_UDS_Server *server, uint8_t sid, uint8_t session_mask)
+{
+    if (server == NULL) {
+        return false;
+    }
+    for (uint8_t i = 0U; i < server->custom_session_count; i++) {
+        if (server->custom_session_sids[i] == sid) {
+            /* LCOV_EXCL_START: Update existing service session mask override */
+            server->custom_session_masks[i] = session_mask;
+            return true;
+            /* LCOV_EXCL_STOP */
+        }
+    }
+    if (server->custom_session_count < 8U) {
+        uint8_t idx = server->custom_session_count++;
+        server->custom_session_sids[idx] = sid;
+        server->custom_session_masks[idx] = session_mask;
+        return true;
+    }
+    return false;
+}
+
+bool syn_uds_set_service_security_mask(SYN_UDS_Server *server, uint8_t sid, uint16_t security_mask)
+{
+    if (server == NULL) {
+        return false;
+    }
+    for (uint8_t i = 0U; i < server->custom_security_count; i++) {
+        if (server->custom_security_sids[i] == sid) {
+            /* LCOV_EXCL_START: Update existing service security mask override */
+            server->custom_security_masks[i] = security_mask;
+            return true;
+            /* LCOV_EXCL_STOP */
+        }
+    }
+    if (server->custom_security_count < 8U) {
+        uint8_t idx = server->custom_security_count++;
+        server->custom_security_sids[idx] = sid;
+        server->custom_security_masks[idx] = security_mask;
+        return true;
+    }
+    return false;
 }
 
 bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_t req_len,
@@ -389,13 +458,20 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         return true;
     }
 
-    uint8_t allowed_mask = get_sid_allowed_session_mask(sid);
+    uint8_t allowed_mask = get_sid_allowed_session_mask(server, sid);
     uint8_t current_mask = session_to_mask(server->session);
     if ((sid != SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL) && ((allowed_mask & current_mask) == 0U)) {
-        /* LCOV_EXCL_START: SID session mask rejection */
         return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION,
                                       resp_buf, resp_len, addr_mode);
-        /* LCOV_EXCL_STOP */
+    }
+
+    uint16_t req_sec_mask = get_sid_required_security_mask(server, sid);
+    if (req_sec_mask != 0U) {
+        if (server->security_state != SYN_UDS_SECURITY_UNLOCKED ||
+            ((1U << server->security_level) & req_sec_mask) == 0U) {
+            return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
+                                          resp_len, addr_mode);
+        }
     }
 
     switch (sid) {

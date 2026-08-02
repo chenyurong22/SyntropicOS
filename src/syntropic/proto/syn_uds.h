@@ -416,6 +416,12 @@ typedef struct {
     uint32_t transfer_bytes_processed;            /**< Transferred byte count */
     uint8_t expected_block_seq;                   /**< Expected block sequence counter */
     uint8_t reset_type_requested;                 /**< Pending ECU reset type requested */
+    uint8_t custom_session_sids[8];               /**< Custom session mask SID overrides */
+    uint8_t custom_session_masks[8];              /**< Custom session mask values */
+    uint8_t custom_session_count;                 /**< Custom session override count */
+    uint8_t custom_security_sids[8];              /**< Custom security mask SID overrides */
+    uint16_t custom_security_masks[8];            /**< Custom security mask values */
+    uint8_t custom_security_count;                /**< Custom security override count */
 } SYN_UDS_Server;
 
 /**
@@ -624,6 +630,26 @@ bool syn_uds_register_auth_handler(SYN_UDS_Server *server, SYN_UDS_AuthHandler h
  */
 bool syn_uds_register_file_transfer(SYN_UDS_Server *server, SYN_UDS_FileTransferHandler handler,
                                     void *ctx);
+
+/**
+ * @brief Configure allowed diagnostic session mask for a specific Service Identifier.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param sid Service Identifier (e.g. 0x27, 0x34).
+ * @param session_mask Allowed session bitmask (SYN_UDS_SESSION_MASK_*).
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_set_service_session_mask(SYN_UDS_Server *server, uint8_t sid, uint8_t session_mask);
+
+/**
+ * @brief Configure required security level mask for a specific Service Identifier.
+ *
+ * @param server Pointer to UDS server instance.
+ * @param sid Service Identifier (e.g. 0x27, 0x34).
+ * @param security_mask Required security level bitmask (SYN_UDS_SECURITY_MASK_*).
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_set_service_security_mask(SYN_UDS_Server *server, uint8_t sid, uint16_t security_mask);
 
 /**
  * @brief Process incoming UDS request diagnostic payload and format response.

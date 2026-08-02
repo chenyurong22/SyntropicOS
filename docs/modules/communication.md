@@ -272,3 +272,16 @@ syn_uds_process_request(&g_uds, req_buf, req_len, resp_buf, sizeof(resp_buf), &r
 /* Processing a functional broadcast request */
 syn_uds_process_request(&g_uds, req_buf, req_len, resp_buf, sizeof(resp_buf), &resp_len, SYN_UDS_ADDR_FUNCTIONAL);
 ```
+
+### Per-Service Session & Security Policy Overrides
+
+Configure custom session permission masks or required security levels for top-level Service Identifiers (SIDs):
+
+```c
+/* Restrict ReadDataByIdentifier (0x22) to EXTENDED session */
+syn_uds_set_service_session_mask(&g_uds, 0x22, SYN_UDS_SESSION_MASK_EXTENDED);
+
+/* Require Security Level 1 before ReadDataByIdentifier (0x22) can be executed */
+syn_uds_set_service_security_mask(&g_uds, 0x22, SYN_UDS_SECURITY_MASK_LEVEL_1);
+```
+

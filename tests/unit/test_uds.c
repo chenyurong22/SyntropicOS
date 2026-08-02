@@ -3090,6 +3090,65 @@ static void test_uds_addressing_modes(void)
     TEST_ASSERT_EQUAL_UINT16(0, resp_len);
 }
 
+static void test_uds_custom_service_policies(void)
+{
+    syn_uds_init(&g_uds);
+    uint8_t resp[256];
+    uint16_t resp_len = 0;
+
+    /* Null server checks */
+    TEST_ASSERT_FALSE(syn_uds_set_service_session_mask(NULL, 0x22, SYN_UDS_SESSION_MASK_EXTENDED));
+    TEST_ASSERT_FALSE(syn_uds_set_service_security_mask(NULL, 0x22, SYN_UDS_SECURITY_MASK_LEVEL_1));
+
+    /* Restrict ReadDataByIdentifier (0x22) to EXTENDED session */
+    TEST_ASSERT_TRUE(syn_uds_set_service_session_mask(&g_uds, 0x22, SYN_UDS_SESSION_MASK_EXTENDED));
+
+    static const uint8_t req_22[3] = {0x22, 0xF1, 0x90};
+    /* In DEFAULT session, 0x22 returns NRC 0x7F */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req_22, sizeof(req_22), resp, sizeof(resp),
+                                             &resp_len, SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_UINT16(3, resp_len);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp[2]);
+
+    /* Switch to EXTENDED session */
+    g_uds.session = SYN_UDS_SESSION_EXTENDED;
+
+    /* Require Security Level 1 for 0x22 */
+    TEST_ASSERT_TRUE(
+        syn_uds_set_service_security_mask(&g_uds, 0x22, SYN_UDS_SECURITY_MASK_LEVEL_1));
+
+    /* Locked security returns NRC 0x33 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req_22, sizeof(req_22), resp, sizeof(resp),
+                                             &resp_len, SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_UINT16(3, resp_len);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp[2]);
+
+    /* Unlock security level 1 */
+    g_uds.security_state = SYN_UDS_SECURITY_UNLOCKED;
+    g_uds.security_level = 1;
+
+    /* Now request succeeds (returns NRC 0x31 for unknown DID 0xF190) */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req_22, sizeof(req_22), resp, sizeof(resp),
+                                             &resp_len, SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_UINT16(3, resp_len);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
+
+    /* Fill capacity of overrides array (8 slots) - 0x22 is already 1 slot, so add 7 more */
+    for (uint8_t sid = 0x40; sid < 0x47; sid++) {
+        TEST_ASSERT_TRUE(
+            syn_uds_set_service_session_mask(&g_uds, sid, SYN_UDS_SESSION_MASK_EXTENDED));
+        TEST_ASSERT_TRUE(
+            syn_uds_set_service_security_mask(&g_uds, sid, SYN_UDS_SECURITY_MASK_LEVEL_1));
+    }
+    /* 9th override fails */
+    TEST_ASSERT_FALSE(
+        syn_uds_set_service_session_mask(&g_uds, 0x50, SYN_UDS_SESSION_MASK_EXTENDED));
+    TEST_ASSERT_FALSE(
+        syn_uds_set_service_security_mask(&g_uds, 0x50, SYN_UDS_SECURITY_MASK_LEVEL_1));
+    TEST_ASSERT_FALSE(
+        syn_uds_set_service_security_mask(&g_uds, 0x50, SYN_UDS_SECURITY_MASK_LEVEL_1));
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -3124,4 +3183,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_session_mask_filtering);
     RUN_TEST(test_uds_security_mask_filtering);
     RUN_TEST(test_uds_addressing_modes);
+    RUN_TEST(test_uds_custom_service_policies);
 }

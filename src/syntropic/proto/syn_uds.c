@@ -1029,8 +1029,11 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         }
         uint8_t sub = req[1] & 0x7FU;
         switch (sub) {
+        /* ISO 14229-1 Table 246: reportNumberOfDTCByStatusMask (0x01) */
         case SYN_UDS_DTC_REPORT_NUMBER_BY_STATUS_MASK:
+        /* ISO 14229-1 Table 248: reportNumberOfMirrorMemoryDTCByStatusMask (0x11) */
         case SYN_UDS_DTC_REPORT_NUMBER_MIRROR_MEMORY_BY_STATUS_MASK:
+        /* ISO 14229-1 Table 250: reportNumberOfEmissionsOBDDTCByStatusMask (0x12) */
         case SYN_UDS_DTC_REPORT_NUMBER_EMISSIONS_OBD_BY_STATUS_MASK: {
             if (server->dtc_cb != NULL) {
                 uint16_t cb_out_len = 0U;
@@ -1069,8 +1072,11 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             break;
         }
 
+        /* ISO 14229-1 Table 252: reportDTCByStatusMask (0x02) */
         case SYN_UDS_DTC_REPORT_BY_STATUS_MASK:
+        /* ISO 14229-1 Table 254: reportMirrorMemoryDTCByStatusMask (0x0F) */
         case SYN_UDS_DTC_REPORT_MIRROR_MEMORY_BY_STATUS_MASK:
+        /* ISO 14229-1 Table 253: reportEmissionsOBDDTCByStatusMask (0x13) */
         case SYN_UDS_DTC_REPORT_EMISSIONS_OBD_BY_STATUS_MASK: {
             if (server->dtc_cb != NULL) {
                 uint16_t cb_out_len = 0U;
@@ -1111,7 +1117,9 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             break;
         }
 
+        /* ISO 14229-1 Table 255: reportSupportedDTC (0x0A) */
         case SYN_UDS_DTC_REPORT_SUPPORTED:
+        /* ISO 14229-1 Table 255: reportDTCWithPermanentStatus (0x15) */
         case SYN_UDS_DTC_REPORT_WITH_PERMANENT_STATUS: {
             if (server->dtc_cb != NULL) {
                 uint16_t cb_out_len = 0U;
@@ -1175,9 +1183,13 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             break;
         }
 
+        /* ISO 14229-1 Table 256: reportFirstTestFailedDTC (0x0B) */
         case SYN_UDS_DTC_REPORT_FIRST_TEST_FAILED:
+        /* ISO 14229-1 Table 256: reportMostRecentTestFailedDTC (0x0D) */
         case SYN_UDS_DTC_REPORT_MOST_RECENT_TEST_FAILED:
+        /* ISO 14229-1 Table 256: reportFirstConfirmedDTC (0x0C) */
         case SYN_UDS_DTC_REPORT_FIRST_CONFIRMED:
+        /* ISO 14229-1 Table 256: reportMostRecentConfirmedDTC (0x0E) */
         case SYN_UDS_DTC_REPORT_MOST_RECENT_CONFIRMED: {
             if (req_len != 2U) {
                 return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,

@@ -3191,12 +3191,22 @@ static void test_uds_addressing_modes(void)
     uint16_t resp_len = 0;
 
     /* 1. Physical-only SIDs silences response when requested functionally */
+    static const uint8_t req_27[2] = {0x27, 0x01};
+    static const uint8_t req_2E[3] = {0x2E, 0xF1, 0x90};
     static const uint8_t req_34[3] = {0x34, 0x00, 0x11};
     static const uint8_t req_35[3] = {0x35, 0x00, 0x11};
     static const uint8_t req_36[2] = {0x36, 0x01};
     static const uint8_t req_37[1] = {0x37};
     static const uint8_t req_38[3] = {0x38, 0x01, 0x00};
     static const uint8_t req_3D[3] = {0x3D, 0x11, 0x00};
+
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req_27, sizeof(req_27), resp, sizeof(resp),
+                                             &resp_len, SYN_UDS_ADDR_FUNCTIONAL));
+    TEST_ASSERT_EQUAL_UINT16(0, resp_len);
+
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req_2E, sizeof(req_2E), resp, sizeof(resp),
+                                             &resp_len, SYN_UDS_ADDR_FUNCTIONAL));
+    TEST_ASSERT_EQUAL_UINT16(0, resp_len);
 
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req_34, sizeof(req_34), resp, sizeof(resp),
                                              &resp_len, SYN_UDS_ADDR_FUNCTIONAL));
@@ -3221,6 +3231,21 @@ static void test_uds_addressing_modes(void)
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req_3D, sizeof(req_3D), resp, sizeof(resp),
                                              &resp_len, SYN_UDS_ADDR_FUNCTIONAL));
     TEST_ASSERT_EQUAL_UINT16(0, resp_len);
+
+    /* Verify syn_uds_is_sid_functional_supported queries for ISO 14229-1 SIDs */
+    TEST_ASSERT_TRUE(syn_uds_is_sid_functional_supported(0x10));
+    TEST_ASSERT_TRUE(syn_uds_is_sid_functional_supported(0x11));
+    TEST_ASSERT_TRUE(syn_uds_is_sid_functional_supported(0x14));
+    TEST_ASSERT_TRUE(syn_uds_is_sid_functional_supported(0x19));
+    TEST_ASSERT_TRUE(syn_uds_is_sid_functional_supported(0x22));
+    TEST_ASSERT_TRUE(syn_uds_is_sid_functional_supported(0x28));
+    TEST_ASSERT_TRUE(syn_uds_is_sid_functional_supported(0x3E));
+    TEST_ASSERT_TRUE(syn_uds_is_sid_functional_supported(0x85));
+
+    TEST_ASSERT_FALSE(syn_uds_is_sid_functional_supported(0x23));
+    TEST_ASSERT_FALSE(syn_uds_is_sid_functional_supported(0x27));
+    TEST_ASSERT_FALSE(syn_uds_is_sid_functional_supported(0x2E));
+    TEST_ASSERT_FALSE(syn_uds_is_sid_functional_supported(0x34));
 
     /* Physical addressing on physical-only SID produces response (e.g. NRC or positive) */
     g_uds.security_state = SYN_UDS_SECURITY_UNLOCKED;

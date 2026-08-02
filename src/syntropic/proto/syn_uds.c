@@ -320,24 +320,30 @@ static bool make_negative_response(uint8_t sid, uint8_t nrc, uint8_t *resp_buf, 
 }
 /** @endcond */
 
-/**
- * @brief Check if Service Identifier supports Functional Addressing (1:N Broadcast).
- * @param sid Service Identifier (SID).
- * @return true if service supports functional addressing, false if physical addressing only.
- */
-static bool get_sid_functional_support(uint8_t sid)
+bool syn_uds_is_sid_functional_supported(uint8_t sid)
 {
     switch (sid) {
-    case SYN_UDS_SID_REQUEST_DOWNLOAD:
-    case SYN_UDS_SID_REQUEST_UPLOAD:
-    case SYN_UDS_SID_TRANSFER_DATA:
-    case SYN_UDS_SID_REQUEST_TRANSFER_EXIT:
-    case SYN_UDS_SID_REQUEST_FILE_TRANSFER:
-    case SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS:
-        return false;
-    default:
+    case SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL:   /* 0x10 */
+    case SYN_UDS_SID_ECU_RESET:                    /* 0x11 */
+    case SYN_UDS_SID_CLEAR_DIAGNOSTIC_INFORMATION: /* 0x14 */
+    case SYN_UDS_SID_READ_DTC_INFORMATION:         /* 0x19 */
+    case SYN_UDS_SID_READ_DATA_BY_IDENTIFIER:      /* 0x22 */
+    case SYN_UDS_SID_COMMUNICATION_CONTROL:        /* 0x28 */
+    case SYN_UDS_SID_AUTHENTICATION:               /* 0x29 */
+    case SYN_UDS_SID_ROUTINE_CONTROL:              /* 0x31 */
+    case SYN_UDS_SID_TESTER_PRESENT:               /* 0x3E */
+    case SYN_UDS_SID_ACCESS_TIMING_PARAMETER:      /* 0x83 */
+    case SYN_UDS_SID_CONTROL_DTC_SETTING:          /* 0x85 */
+    case SYN_UDS_SID_LINK_CONTROL:                 /* 0x87 */
         return true;
+    default:
+        return false;
     }
+}
+
+static bool get_sid_functional_support(uint8_t sid)
+{
+    return syn_uds_is_sid_functional_supported(sid);
 }
 
 /**

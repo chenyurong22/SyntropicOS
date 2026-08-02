@@ -675,6 +675,13 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                              SYN_UDS_AddrMode addr_mode);
 
 /**
+ * @brief Check if Service Identifier (SID) supports Functional Addressing (1:N Broadcast).
+ * @param sid Service Identifier (SID).
+ * @return true if service supports functional addressing, false if physical addressing only.
+ */
+bool syn_uds_is_sid_functional_supported(uint8_t sid);
+
+/**
  * @brief Report diagnostic test result for a registered DTC according to ISO 14229-1 state
  * transitions.
  *

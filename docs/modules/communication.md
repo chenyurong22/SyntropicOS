@@ -285,3 +285,34 @@ syn_uds_set_service_session_mask(&g_uds, 0x22, SYN_UDS_SESSION_MASK_EXTENDED);
 syn_uds_set_service_security_mask(&g_uds, 0x22, SYN_UDS_SECURITY_MASK_LEVEL_1);
 ```
 
+### AccessTimingParameter (0x83) Callback Handler
+
+Register a callback handler to monitor or override P2Server_max and P2*Server_max timing parameters for Service `0x83` subfunctions (`0x01` Read Extended, `0x02` Set Default, `0x03` Read Active, `0x04` Set Given):
+
+```c
+static bool on_access_timing(SYN_UDS_AccessTimingType timing_type, uint16_t *p2_max_ms,
+                             uint16_t *p2_star_max_10ms, void *ctx)
+{
+    (void)ctx;
+    switch (timing_type) {
+    case SYN_UDS_TIMING_READ_EXTENDED:
+    case SYN_UDS_TIMING_READ_ACTIVE:
+        if (p2_max_ms != NULL) *p2_max_ms = 50U;         /* 50 ms */
+        if (p2_star_max_10ms != NULL) *p2_star_max_10ms = 500U; /* 5000 ms */
+        return true;
+    case SYN_UDS_TIMING_SET_TO_DEFAULT:
+        if (p2_max_ms != NULL) *p2_max_ms = 50U;
+        if (p2_star_max_10ms != NULL) *p2_star_max_10ms = 500U;
+        return true;
+    case SYN_UDS_TIMING_SET_TO_GIVEN:
+        return (p2_max_ms != NULL && *p2_max_ms >= 10U);
+    default:
+        return false;
+    }
+}
+
+/* Register handler on UDS server context */
+syn_uds_register_access_timing(&g_uds, on_access_timing, NULL);
+```
+
+

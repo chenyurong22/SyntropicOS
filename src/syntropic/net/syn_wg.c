@@ -54,6 +54,9 @@ static const uint8_t WG_LABEL_COOKIE[] SYN_UNUSED = "cookie--"; /**< Cookie labe
  */
 static inline void store32_le(uint8_t *p, uint32_t v)
 {
+    if (p == NULL) {
+        return; /* LCOV_EXCL_LINE: Defensive NULL check */
+    }
     p[0] = (uint8_t)(v);
     p[1] = (uint8_t)(v >> 8);
     p[2] = (uint8_t)(v >> 16);
@@ -67,6 +70,9 @@ static inline void store32_le(uint8_t *p, uint32_t v)
  */
 static inline uint32_t load32_le(const uint8_t *p)
 {
+    if (p == NULL) {
+        return 0U; /* LCOV_EXCL_LINE: Defensive NULL check */
+    }
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 

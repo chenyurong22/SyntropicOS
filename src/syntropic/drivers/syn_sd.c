@@ -71,12 +71,22 @@
 #define SD_BUSY_RETRIES 2000u   /**< Max busy wait retries                */
 /** @} */
 
+/**
+ * @brief Assert SPI Chip Select pin (active low).
+ * @param spi_bus SPI bus index.
+ * @param cs GPIO CS pin.
+ */
 static inline void syn_port_spi_cs_assert(uint8_t spi_bus, SYN_GPIO_Pin cs)
 {
     (void)spi_bus;
     syn_port_gpio_write(cs, SYN_GPIO_LOW);
 }
 
+/**
+ * @brief Deassert SPI Chip Select pin (idle high).
+ * @param spi_bus SPI bus index.
+ * @param cs GPIO CS pin.
+ */
 static inline void syn_port_spi_cs_deassert(uint8_t spi_bus, SYN_GPIO_Pin cs)
 {
     (void)spi_bus;

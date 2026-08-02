@@ -341,6 +341,11 @@ bool syn_uds_is_sid_functional_supported(uint8_t sid)
     }
 }
 
+/**
+ * @brief Check if Service Identifier supports Functional Addressing (1:N Broadcast).
+ * @param sid Service Identifier (SID).
+ * @return true if service supports functional addressing, false if physical addressing only.
+ */
 static bool get_sid_functional_support(uint8_t sid)
 {
     return syn_uds_is_sid_functional_supported(sid);

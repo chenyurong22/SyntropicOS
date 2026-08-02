@@ -4,7 +4,7 @@
  *
  * Demonstrates integrating UDS diagnostic server on STM32 using ISO-TP transport over CAN.
  * Supports DiagnosticSessionControl, SecurityAccess, ReadDataByIdentifier (RDBI),
- * WriteDataByIdentifier (WDBI), RoutineControl, and ECUReset.
+ * WriteDataByIdentifier (WDBI), AccessTimingParameter (0x83), RoutineControl, and ECUReset.
  */
 
 #include "syntropic/syntropic.h"
@@ -99,6 +99,41 @@ static SYN_PT_Status app_10ms_task(SYN_PT *pt, SYN_Task *task)
     PT_END(pt);
 }
 
+/* Custom Callback Handler for Service 0x83 AccessTimingParameter */
+static bool on_access_timing(SYN_UDS_AccessTimingType timing_type, uint16_t *p2_max_ms,
+                             uint16_t *p2_star_max_10ms, void *ctx)
+{
+    (void)ctx;
+    switch (timing_type) {
+    case SYN_UDS_TIMING_READ_EXTENDED:
+    case SYN_UDS_TIMING_READ_ACTIVE:
+        /* Report configured timing limits: P2Server_max = 50 ms, P2*Server_max = 500 ms (5000 ms) */
+        if (p2_max_ms != NULL) {
+            *p2_max_ms = 50U;
+        }
+        if (p2_star_max_10ms != NULL) {
+            *p2_star_max_10ms = 500U;
+        }
+        return true;
+    case SYN_UDS_TIMING_SET_TO_DEFAULT:
+        if (p2_max_ms != NULL) {
+            *p2_max_ms = 50U;
+        }
+        if (p2_star_max_10ms != NULL) {
+            *p2_star_max_10ms = 500U;
+        }
+        return true;
+    case SYN_UDS_TIMING_SET_TO_GIVEN:
+        /* Validate requested timing parameters before applying */
+        if (p2_max_ms != NULL && *p2_max_ms < 10U) {
+            return false; /* Reject invalid / unsafe P2Server_max */
+        }
+        return true;
+    default:
+        return false;
+    }
+}
+
 /* Custom DTC Callback Handler for Service 0x19 Snapshot/Extended Data */
 static bool on_custom_dtc_handler(uint8_t subfunction, const uint8_t *in_data, uint16_t in_len,
                                   uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len,
@@ -124,6 +159,9 @@ void stm32_uds_isotp_example_init(void)
 
     /* Initialize UDS Server */
     syn_uds_init(&g_uds);
+
+    /* Register AccessTimingParameter (0x83) callback handler */
+    syn_uds_register_access_timing(&g_uds, on_access_timing, NULL);
 
     /* Register custom DTC callback handler */
     syn_uds_register_dtc_handler(&g_uds, on_custom_dtc_handler, NULL);

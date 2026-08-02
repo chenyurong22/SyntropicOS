@@ -454,41 +454,30 @@ SYN_WEAK void syn_port_can_set_filter(uint8_t port, uint32_t id, uint32_t mask)
 
 #if defined(SYN_USE_DMA) && SYN_USE_DMA
 
-SYN_WEAK SYN_Status syn_port_dma_init(const SYN_DMA_Config *cfg)
+SYN_WEAK SYN_Status syn_port_dma_start(const SYN_PortDmaTransfer *xfer)
 {
-    (void)cfg;
+    (void)xfer;
     syn_assert_failed(__FILE__, __LINE__);
     return SYN_NOT_IMPLEMENTED;
 }
 
-SYN_WEAK SYN_Status syn_port_dma_start(uint8_t channel, const volatile void *src,
-                                       volatile void *dst, size_t count)
+SYN_WEAK SYN_Status syn_port_dma_stop(uint8_t channel_id)
 {
-    (void)channel;
-    (void)src;
-    (void)dst;
-    (void)count;
+    (void)channel_id;
     syn_assert_failed(__FILE__, __LINE__);
     return SYN_NOT_IMPLEMENTED;
 }
 
-SYN_WEAK SYN_Status syn_port_dma_stop(uint8_t channel)
+SYN_WEAK bool syn_port_dma_is_busy(uint8_t channel_id)
 {
-    (void)channel;
-    syn_assert_failed(__FILE__, __LINE__);
-    return SYN_NOT_IMPLEMENTED;
-}
-
-SYN_WEAK bool syn_port_dma_busy(uint8_t channel)
-{
-    (void)channel;
+    (void)channel_id;
     syn_assert_failed(__FILE__, __LINE__);
     return false;
 }
 
-SYN_WEAK size_t syn_port_dma_remaining(uint8_t channel)
+SYN_WEAK uint32_t syn_port_dma_get_counter(uint8_t channel_id)
 {
-    (void)channel;
+    (void)channel_id;
     syn_assert_failed(__FILE__, __LINE__);
     return 0;
 }

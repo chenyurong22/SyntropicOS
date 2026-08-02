@@ -108,11 +108,17 @@ SYN_Status syn_kalman_update(SYN_Kalman *kf, const SYN_Matrix *z)
     syn_matrix_add(c->x, kf->temp_n1, c->x);      /* x += K·y */
 
     /* ── Covariance update: P = (I − K·H)·P⁻ ─────────────────────────── */
-    syn_matrix_mul(&K, c->H, kf->temp_nn_1);                     /* K·H (ns×ns) */
-    syn_matrix_identity(kf->temp_nn_2);                          /* I */
-    syn_matrix_sub(kf->temp_nn_2, kf->temp_nn_1, kf->temp_nn_1); /* I - K·H */
+    syn_matrix_copy(kf->temp_nn_2, c->P);                         /* Save P⁻ into temp_nn_2 */
+    syn_matrix_mul(&K, c->H, kf->temp_nn_1);                       /* K·H (ns×ns) */
 
-    syn_matrix_copy(kf->temp_nn_2, c->P);               /* save P⁻  */
+    /* Construct (I - K·H) in temp_nn_1 */
+    for (uint8_t i = 0; i < ns; i++) {
+        for (uint8_t j = 0; j < ns; j++) {
+            q16_t eye = (i == j) ? Q16_ONE : 0;
+            SYN_MAT_AT(kf->temp_nn_1, i, j) = eye - SYN_MAT_AT(kf->temp_nn_1, i, j);
+        }
+    }
+
     syn_matrix_mul(kf->temp_nn_1, kf->temp_nn_2, c->P); /* (I-K·H)·P⁻ → P */
 
     return SYN_OK;

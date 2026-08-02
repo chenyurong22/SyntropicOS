@@ -127,9 +127,52 @@ static void test_uart_init_fail(void)
     mock_uart_init_fail = false;
 }
 
+/** Init config: DMA and non-DMA paths */
+static void test_uart_init_config(void)
+{
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_uart_init_config(NULL, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_uart_init_config(&uart, NULL));
+
+    static const uint8_t dummy_reg = 0;
+    SYN_UART_Config cfg = {.instance = 1,
+                           .baudrate = 115200,
+                           .use_dma = false,
+#if defined(SYN_USE_DMA) && SYN_USE_DMA
+                           .dma_channel_rx = 0,
+                           .periph_rx_reg = &dummy_reg
+#endif
+    };
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_init_config(&uart, &cfg));
+    TEST_ASSERT_TRUE(uart.initialized);
+    TEST_ASSERT_EQUAL(1, uart.instance);
+    TEST_ASSERT_FALSE(uart.use_dma);
+
+    syn_uart_deinit(&uart);
+
+#if defined(SYN_USE_DMA) && SYN_USE_DMA
+    cfg.use_dma = true;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_init_config(&uart, &cfg));
+    TEST_ASSERT_TRUE(uart.initialized);
+    TEST_ASSERT_TRUE(uart.use_dma);
+
+    uint8_t rx_data[16];
+    size_t read_bytes = syn_uart_read(&uart, rx_data, sizeof(rx_data));
+    (void)read_bytes;
+
+    syn_uart_deinit(&uart);
+
+    /* DMA start failure path when periph_rx_reg is NULL */
+    cfg.periph_rx_reg = NULL;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_uart_init_config(&uart, &cfg));
+    TEST_ASSERT_FALSE(uart.initialized);
+#endif
+}
+
 void run_uart_tests(void)
 {
     RUN_TEST(test_uart_init);
+    RUN_TEST(test_uart_init_config);
     RUN_TEST(test_uart_init_fail);
     RUN_TEST(test_uart_deinit);
     RUN_TEST(test_uart_deinit_not_initialized);

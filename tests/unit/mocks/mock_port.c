@@ -1483,3 +1483,27 @@ SYN_WEAK SYN_Status syn_port_hrpwm_enable(uint8_t channel, bool enable)
     (void)enable;
     return SYN_OK;
 }
+
+/* ── Analog Comparator mock port ────────────────────────────────────────── */
+
+bool mock_comp_output_state = false;
+
+SYN_WEAK SYN_Status syn_port_comp_init(uint8_t comp_id, SYN_COMP_InvertingInput inv_in)
+{
+    (void)comp_id;
+    (void)inv_in;
+    return SYN_OK;
+}
+
+SYN_WEAK bool syn_port_comp_read(uint8_t comp_id)
+{
+    (void)comp_id;
+    return mock_comp_output_state;
+}
+
+SYN_WEAK SYN_Status syn_port_comp_enable(uint8_t comp_id, bool enable)
+{
+    (void)comp_id;
+    (void)enable;
+    return SYN_OK;
+}

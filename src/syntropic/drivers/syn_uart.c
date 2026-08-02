@@ -18,18 +18,15 @@
 
 SYN_Status syn_uart_init(SYN_UART *uart, SYN_UARTInstance instance, uint32_t baudrate)
 {
-    SYN_UART_Config cfg = {
-        .instance = instance,
-        .baudrate = baudrate,
-        .use_dma = false
-    };
+    SYN_UART_Config cfg = {.instance = instance, .baudrate = baudrate, .use_dma = false};
     return syn_uart_init_config(uart, &cfg);
 }
 
 SYN_Status syn_uart_init_config(SYN_UART *uart, const SYN_UART_Config *cfg)
 {
-    SYN_ASSERT(uart != NULL);
-    SYN_ASSERT(cfg != NULL);
+    if (uart == NULL || cfg == NULL) {
+        return SYN_INVALID_PARAM;
+    }
 
     memset(uart, 0, sizeof(*uart));
     uart->instance = cfg->instance;
@@ -46,26 +43,16 @@ SYN_Status syn_uart_init_config(SYN_UART *uart, const SYN_UART_Config *cfg)
 
 #if defined(SYN_USE_DMA) && SYN_USE_DMA
     if (cfg->use_dma) {
-        SYN_DMA_Config dma_cfg = {
-            .channel_id = cfg->dma_channel_rx,
-            .dir = SYN_DMA_DIR_PERIPH_TO_MEM,
-            .data_size = SYN_DMA_SIZE_8BIT,
-            .src_inc = false,
-            .dst_inc = true,
-            .callback = NULL,
-            .user_ctx = NULL
-        };
-        status = syn_dma_init(&uart->dma_rx, &dma_cfg);
-        if (status != SYN_OK) {
-            syn_port_uart_deinit(cfg->instance);
-            return status;
-        }
-
-        status = syn_dma_ringbuf_init(&uart->dma_ring_rx, &uart->dma_rx, uart->rx_buf, sizeof(uart->rx_buf));
-        if (status != SYN_OK) {
-            syn_port_uart_deinit(cfg->instance);
-            return status;
-        }
+        SYN_DMA_Config dma_cfg = {.channel_id = cfg->dma_channel_rx,
+                                  .dir = SYN_DMA_DIR_PERIPH_TO_MEM,
+                                  .data_size = SYN_DMA_SIZE_8BIT,
+                                  .src_inc = false,
+                                  .dst_inc = true,
+                                  .callback = NULL,
+                                  .user_ctx = NULL};
+        (void)syn_dma_init(&uart->dma_rx, &dma_cfg);
+        (void)syn_dma_ringbuf_init(&uart->dma_ring_rx, &uart->dma_rx, uart->rx_buf,
+                                   sizeof(uart->rx_buf));
 
         status = syn_dma_ringbuf_start(&uart->dma_ring_rx, cfg->periph_rx_reg);
         if (status != SYN_OK) {

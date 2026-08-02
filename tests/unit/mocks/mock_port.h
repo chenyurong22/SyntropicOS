@@ -9,6 +9,7 @@
 #ifndef MOCK_PORT_H
 #define MOCK_PORT_H
 
+#include "syntropic/port/syn_port_comp.h"
 #include "syntropic/port/syn_port_socket.h"
 
 #include <stdbool.h>

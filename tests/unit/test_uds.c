@@ -1293,6 +1293,22 @@ static void test_uds_read_dtc_information_subfunctions(void)
     TEST_ASSERT_EQUAL_HEX8(0x03, resp[1]);
     TEST_ASSERT_EQUAL_HEX8(0x01, resp[2]);
     TEST_ASSERT_EQUAL_HEX8(0x23, resp[3]);
+
+    /* 9. Subfunction length mismatch tests -> NRC 0x13 */
+    syn_uds_register_dtc_handler(&server, NULL, NULL);
+    req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
+    req[1] = 0x01; /* Expected 3 bytes, send 2 bytes */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[1] = 0x0A; /* Expected 2 bytes, send 3 bytes */
+    req[2] = 0xFF;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
 }
 
 static void test_uds_stateful_data_transfer_sequence(void)
@@ -2172,7 +2188,7 @@ static void test_uds_read_dtc_by_status_mask(void)
     TEST_ASSERT_EQUAL_UINT16(2, resp_len);
 
     /* Subfunction 0x55 */
-    uint8_t req55[4] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x55, 0x01, 0x00};
+    uint8_t req55[4] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x55, 0x01, 0x01};
     /* Short request (<4 bytes) -> NRC 0x13 */
     TEST_ASSERT_TRUE(syn_uds_process_request(&server, req55, 3, resp, sizeof(resp), &resp_len,
                                              SYN_UDS_ADDR_PHYSICAL));
@@ -2454,7 +2470,7 @@ static void test_uds_security_and_routine_error_handling(void)
 
     /* 2. Read DTC subfunctions with dtc_cb (lines 894-905, 925, 948-956, 974-982, 996-1004) */
     server.dtc_cb = mock_dtc_cb_ok_fn;
-    uint8_t subs[] = {0x05, 0x06, 0x09, 0x0B, 0x0C, 0x0D, 0x17, 0x18};
+    uint8_t subs[] = {0x05, 0x06, 0x09, 0x17, 0x18};
     for (size_t i = 0; i < sizeof(subs); i++) {
         uint8_t req_dtc[8] = {
             SYN_UDS_SID_READ_DTC_INFORMATION, subs[i], 0x01, 0x02, 0x03, 0xFF, 0x01, 0x00};
@@ -2476,9 +2492,8 @@ static void test_uds_security_and_routine_error_handling(void)
     }
     uint8_t subs_pos[] = {0x0B, 0x0C, 0x0D};
     for (size_t i = 0; i < sizeof(subs_pos); i++) {
-        uint8_t req_dtc[6] = {
-            SYN_UDS_SID_READ_DTC_INFORMATION, subs_pos[i], 0x01, 0x02, 0x03, 0xFF};
-        syn_uds_process_request(&server, req_dtc, 6, resp, sizeof(resp), &resp_len,
+        uint8_t req_dtc[2] = {SYN_UDS_SID_READ_DTC_INFORMATION, subs_pos[i]};
+        syn_uds_process_request(&server, req_dtc, 2, resp, sizeof(resp), &resp_len,
                                 SYN_UDS_ADDR_PHYSICAL);
         TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SID_READ_DTC_INFORMATION + 0x40, resp[0]);
     }
@@ -2613,6 +2628,7 @@ static void test_uds_dtc_and_transfer_boundary_conditions(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SID_WRITE_MEMORY_BY_ADDRESS + 0x40, resp[0]);
 
     /* 5. ReadDTCInformation small resp_buf_size < 6 -> NRC 0x14 Response Too Long (L905) */
+    server.dtc_cb = NULL;
     uint8_t dtc_req2[3] = {SYN_UDS_SID_READ_DTC_INFORMATION, 0x01, 0xFF};
     syn_uds_process_request(&server, dtc_req2, 3, resp, 5, &resp_len, SYN_UDS_ADDR_PHYSICAL);
     TEST_ASSERT_EQUAL_HEX8(0x7F, resp[0]);

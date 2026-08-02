@@ -758,6 +758,7 @@ int main(void)
     extern void run_hkdf_tests(void);
     extern void run_asn1_x509_tests(void);
     extern void run_tls_tests(void);
+    extern void run_pwm_tests(void);
 
     run_tcp_tests();
     run_udp_tests();
@@ -770,6 +771,7 @@ int main(void)
     run_hkdf_tests();
     run_asn1_x509_tests();
     run_tls_tests();
+    run_pwm_tests();
 
     return UNITY_END();
 }

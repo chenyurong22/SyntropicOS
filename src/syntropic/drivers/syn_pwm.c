@@ -9,8 +9,8 @@
  * @brief Hardware PWM driver implementation.
  */
 
-#include "syn_pwm.h"
 #include "../util/syn_assert.h"
+#include "syn_pwm.h"
 
 SYN_Status syn_pwm_init(SYN_PWM *pwm, uint8_t channel, uint32_t freq_hz)
 {

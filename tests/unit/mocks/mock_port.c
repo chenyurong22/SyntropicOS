@@ -528,9 +528,7 @@ void syn_port_can_set_filter(uint8_t p, uint32_t id, uint32_t m)
     (void)m;
 }
 
-/* ── PWM port (mock for DC motor/servo) ─────────────────────────────────── */
-
-void syn_port_pwm_set_duty(uint8_t ch, uint16_t duty)
+SYN_WEAK void syn_port_pwm_set_duty(uint8_t ch, uint8_t duty)
 {
     (void)ch;
     (void)duty;
@@ -1412,4 +1410,76 @@ SYN_WEAK SYN_Status syn_port_usb_host_xfer_result(uint8_t pipe, uint16_t *actual
         *actual_len = mock_usb_host_xfer_len;
     }
     return mock_usb_host_xfer_status;
+}
+
+/* ── PWM & HRPWM mock ports ─────────────────────────────────────────────── */
+
+SYN_WEAK SYN_Status syn_port_pwm_init(uint8_t channel, uint32_t freq_hz)
+{
+    (void)channel;
+    (void)freq_hz;
+    return SYN_OK;
+}
+
+SYN_WEAK void syn_port_pwm_set_duty_raw(uint8_t channel, uint16_t duty_u16)
+{
+    (void)channel;
+    (void)duty_u16;
+}
+
+SYN_WEAK void syn_port_pwm_enable(uint8_t channel, bool enable)
+{
+    (void)channel;
+    (void)enable;
+}
+
+SYN_WEAK void syn_port_pwm_set_freq(uint8_t channel, uint32_t freq_hz)
+{
+    (void)channel;
+    (void)freq_hz;
+}
+
+SYN_WEAK SYN_Status syn_port_hrpwm_init(uint8_t channel, uint32_t freq_hz)
+{
+    (void)channel;
+    (void)freq_hz;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_hrpwm_set_duty_q16(uint8_t channel, int32_t duty_q16)
+{
+    (void)channel;
+    (void)duty_q16;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_hrpwm_set_deadtime_ns(uint8_t channel, uint16_t rise_ns,
+                                                   uint16_t fall_ns)
+{
+    (void)channel;
+    (void)rise_ns;
+    (void)fall_ns;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_hrpwm_set_phase_deg(uint8_t channel, uint16_t phase_deg)
+{
+    (void)channel;
+    (void)phase_deg;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_hrpwm_enable_fault(uint8_t channel, uint8_t fault_id, bool enable)
+{
+    (void)channel;
+    (void)fault_id;
+    (void)enable;
+    return SYN_OK;
+}
+
+SYN_WEAK SYN_Status syn_port_hrpwm_enable(uint8_t channel, bool enable)
+{
+    (void)channel;
+    (void)enable;
+    return SYN_OK;
 }

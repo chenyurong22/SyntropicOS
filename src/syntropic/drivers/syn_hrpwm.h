@@ -32,12 +32,12 @@ extern "C" {
 
 /** @brief High-Resolution PWM handle. Caller allocates; zero heap. */
 typedef struct {
-    uint8_t  channel;   /**< Platform channel index */
+    uint8_t channel;    /**< Platform channel index */
     uint32_t freq_hz;   /**< Switching frequency in Hz */
     uint16_t rise_ns;   /**< Rise dead-time in nanoseconds */
     uint16_t fall_ns;   /**< Fall dead-time in nanoseconds */
     uint16_t phase_deg; /**< Phase offset in degrees */
-    bool     enabled;   /**< Output state flag */
+    bool enabled;       /**< Output state flag */
 } SYN_HRPWM;
 
 /**

@@ -9,8 +9,8 @@
  * @brief High-Resolution Power & Motion Control Driver implementation.
  */
 
-#include "syn_hrpwm.h"
 #include "../util/syn_assert.h"
+#include "syn_hrpwm.h"
 
 SYN_Status syn_hrpwm_init(SYN_HRPWM *hrpwm, uint8_t channel, uint32_t freq_hz)
 {
@@ -34,8 +34,10 @@ SYN_Status syn_hrpwm_set_duty_q16(const SYN_HRPWM *hrpwm, int32_t duty_q16)
         return SYN_INVALID_PARAM;
     }
 
-    if (duty_q16 < 0) duty_q16 = 0;
-    if (duty_q16 > 65536) duty_q16 = 65536;
+    if (duty_q16 < 0)
+        duty_q16 = 0;
+    if (duty_q16 > 65536)
+        duty_q16 = 65536;
 
     return syn_port_hrpwm_set_duty_q16(hrpwm->channel, duty_q16);
 }
@@ -46,8 +48,10 @@ SYN_Status syn_hrpwm_set_duty_float(const SYN_HRPWM *hrpwm, float duty_float)
         return SYN_INVALID_PARAM;
     }
 
-    if (duty_float < 0.0f) duty_float = 0.0f;
-    if (duty_float > 1.0f) duty_float = 1.0f;
+    if (duty_float < 0.0f)
+        duty_float = 0.0f;
+    if (duty_float > 1.0f)
+        duty_float = 1.0f;
 
     int32_t duty_q16 = (int32_t)(duty_float * 65536.0f);
     return syn_port_hrpwm_set_duty_q16(hrpwm->channel, duty_q16);

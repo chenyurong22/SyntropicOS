@@ -30,7 +30,7 @@ extern "C" {
 
 /** @brief PWM channel handle. Caller allocates; zero heap. */
 typedef struct {
-    uint8_t  channel; /**< Platform PWM channel index */
+    uint8_t channel;  /**< Platform PWM channel index */
     uint32_t freq_hz; /**< Configured frequency in Hz */
 } SYN_PWM;
 

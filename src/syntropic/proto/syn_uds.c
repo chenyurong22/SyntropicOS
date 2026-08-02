@@ -1424,7 +1424,41 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             break;
         }
 
-        case SYN_UDS_DTC_REPORT_SNAPSHOT_RECORD_BY_DTC:
+        /* ISO 14229-1 Table 257: reportDTCSnapshotRecordByDTCNumber (0x04) */
+        case SYN_UDS_DTC_REPORT_SNAPSHOT_RECORD_BY_DTC: {
+            if (server->dtc_cb != NULL) {
+                uint16_t cb_out_len = 0U;
+                if (!server->dtc_cb(sub, &req[2], req_len - 2U, &resp_buf[2], max_resp_len - 2U,
+                                    &cb_out_len, server->dtc_ctx)) {
+                    return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                                  resp_len, addr_mode);
+                }
+                resp_buf[0] = sid + 0x40U;
+                resp_buf[1] = sub;
+                *resp_len = 2U + cb_out_len;
+            } else {
+                if (req_len != 6U) {
+                    return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH,
+                                                  resp_buf, resp_len, addr_mode);
+                }
+                if (max_resp_len < 6U) {
+                    return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                                  resp_len, addr_mode);
+                }
+                resp_buf[0] = sid + 0x40U;
+                resp_buf[1] = sub;
+                resp_buf[2] = req[2];
+                resp_buf[3] = req[3];
+                resp_buf[4] = req[4];
+                resp_buf[5] = SYN_UDS_DTC_STATUS_AVAILABILITY_MASK;
+                *resp_len = 6U;
+            }
+            success = true;
+            break;
+        }
+
+        /* ISO 14229-1 Table 259: reportDTCExtDataRecordByDTCNumber (0x06),
+         * reportMirrorMemoryDTCExtDataRecordByDTCNumber (0x10) */
         case SYN_UDS_DTC_REPORT_EXT_DATA_RECORD_BY_DTC:
         case SYN_UDS_DTC_REPORT_MIRROR_MEMORY_EXT_DATA: {
             if (server->dtc_cb != NULL) {

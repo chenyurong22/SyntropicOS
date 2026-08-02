@@ -299,30 +299,36 @@ SYN_WEAK uint32_t syn_port_flash_sector_size(uint32_t addr)
 
 #include "../port/syn_port_adc.h"
 
-SYN_WEAK SYN_Status syn_port_adc_init(uint8_t channel)
+SYN_WEAK SYN_Status syn_port_adc_init(uint8_t adc_id, uint32_t channel_mask)
 {
-    (void)channel;
+    (void)adc_id;
+    (void)channel_mask;
     syn_assert_failed(__FILE__, __LINE__);
     return SYN_NOT_IMPLEMENTED;
 }
 
-SYN_WEAK uint16_t syn_port_adc_read(uint8_t channel)
+SYN_WEAK SYN_Status syn_port_adc_deinit(uint8_t adc_id)
 {
+    (void)adc_id;
+    syn_assert_failed(__FILE__, __LINE__);
+    return SYN_NOT_IMPLEMENTED;
+}
+
+SYN_WEAK uint16_t syn_port_adc_read_channel(uint8_t adc_id, uint8_t channel)
+{
+    (void)adc_id;
     (void)channel;
     syn_assert_failed(__FILE__, __LINE__);
     return 0;
 }
 
-SYN_WEAK uint8_t syn_port_adc_resolution(void)
+SYN_WEAK SYN_Status syn_port_adc_start_dma_scan(uint8_t adc_id, uint16_t *dest, size_t num_channels)
 {
+    (void)adc_id;
+    (void)dest;
+    (void)num_channels;
     syn_assert_failed(__FILE__, __LINE__);
-    return 0;
-}
-
-SYN_WEAK uint16_t syn_port_adc_reference_mv(void)
-{
-    syn_assert_failed(__FILE__, __LINE__);
-    return 0;
+    return SYN_NOT_IMPLEMENTED;
 }
 
 /* ── PWM stubs ──────────────────────────────────────────────────────────── */

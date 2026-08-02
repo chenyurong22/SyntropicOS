@@ -164,6 +164,10 @@ extern "C" {
 #include "drivers/syn_dma.h"
 #endif
 
+#if !defined(SYN_USE_ADC) || SYN_USE_ADC
+#include "drivers/syn_adc.h"
+#endif
+
 #if !defined(SYN_USE_ONEWIRE) || SYN_USE_ONEWIRE
 #include "drivers/syn_soft_onewire.h"
 #endif

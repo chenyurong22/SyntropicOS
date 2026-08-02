@@ -6,12 +6,11 @@
 
 /**
  * @file syn_adc.c
- * @brief ADC abstraction implementation.
+ * @brief General-purpose ADC driver implementation.
  */
 
-#include "../util/syn_assert.h"
 #include "syn_adc.h"
-
+#include "../util/syn_assert.h"
 #include <string.h>
 
 SYN_Status syn_adc_init(SYN_ADC *adc, const SYN_ADC_Config *cfg)
@@ -22,99 +21,57 @@ SYN_Status syn_adc_init(SYN_ADC *adc, const SYN_ADC_Config *cfg)
     memset(adc, 0, sizeof(*adc));
     adc->cfg = *cfg;
 
-    if (adc->cfg.oversample == 0)
-        adc->cfg.oversample = 1;
-    if (adc->cfg.cal_scale == 0)
-        adc->cfg.cal_scale = 1;
+    if (adc->cfg.vref_mv == 0) {
+        adc->cfg.vref_mv = 3300; /* Default 3.3V reference */
+    }
 
-    return syn_port_adc_init(cfg->channel);
+    SYN_Status status = syn_port_adc_init(cfg->adc_id, cfg->channel_mask);
+    if (status != SYN_OK) {
+        return status;
+    }
+
+    adc->initialized = true;
+    return SYN_OK;
 }
 
-/**
- * @brief Apply the configured filter to an ADC reading.
- * @param adc    ADC instance.
- * @param value  Raw ADC value.
- * @return Filtered value.
- */
-static int16_t apply_filter(SYN_ADC *adc, int16_t value)
-{
-    if (adc->cfg.filter == NULL)
-        return value;
-
-    switch (adc->cfg.filter_type) {
-    case SYN_ADC_FILTER_MA:
-        return syn_filter_ma_update((SYN_FilterMA *)adc->cfg.filter, value);
-    case SYN_ADC_FILTER_EMA:
-        return syn_filter_ema_update((SYN_FilterEMA *)adc->cfg.filter, value);
-    case SYN_ADC_FILTER_MEDIAN:
-        return syn_filter_median_update((SYN_FilterMedian *)adc->cfg.filter, value);
-    default:
-        return value;
-    }
-}
-
-int32_t syn_adc_read(SYN_ADC *adc)
-{
-    SYN_ASSERT(adc != NULL);
-    if (adc == NULL)
-        return 0; /* LCOV_EXCL_LINE: Defensive NULL check after SYN_ASSERT macro in release mode */
-
-    /* Oversampling */
-
-    uint8_t oversample = adc->cfg.oversample > 0 ? adc->cfg.oversample : 1;
-    int32_t sum = 0;
-    for (uint8_t i = 0; i < oversample; i++) {
-        sum += (int32_t)syn_port_adc_read(adc->cfg.channel);
-    }
-    adc->raw = sum / oversample;
-
-    /* Filter */
-    adc->filtered = apply_filter(adc, (int16_t)adc->raw);
-
-    /* Calibration: (filtered + offset) * scale >> shift */
-    int32_t cal = ((int32_t)adc->filtered + adc->cfg.cal_offset);
-    if (adc->cfg.cal_scale != 1 || adc->cfg.cal_scale_shift != 0) {
-        cal = (int32_t)(((int64_t)cal * (int32_t)adc->cfg.cal_scale) >> adc->cfg.cal_scale_shift);
-    }
-    adc->calibrated = cal;
-
-    /* Push to stats window (if attached) */
-    if (adc->stats != NULL) {
-        syn_signal_push(adc->stats, adc->calibrated);
-    }
-
-    return adc->calibrated;
-}
-
-int32_t syn_adc_read_mv(SYN_ADC *adc)
+SYN_Status syn_adc_deinit(SYN_ADC *adc)
 {
     SYN_ASSERT(adc != NULL);
 
-    syn_adc_read(adc);
+    if (!adc->initialized) {
+        return SYN_OK;
+    }
 
-    /* Convert raw (after oversample) to millivolts */
-    uint16_t ref_mv = syn_port_adc_reference_mv();
-    uint8_t bits = syn_port_adc_resolution();
-    int32_t max_raw = (int32_t)((1L << bits) - 1);
+    SYN_Status status = syn_port_adc_deinit(adc->cfg.adc_id);
+    adc->initialized = false;
+    return status;
+}
 
-    if (max_raw == 0)
+uint16_t syn_adc_read_raw(SYN_ADC *adc, uint8_t channel)
+{
+    SYN_ASSERT(adc != NULL);
+    if (!adc->initialized) {
         return 0;
+    }
 
-    return (int32_t)(((int64_t)adc->raw * (int32_t)ref_mv) / max_raw);
+    return syn_port_adc_read_channel(adc->cfg.adc_id, channel);
 }
 
-void syn_adc_set_calibration(SYN_ADC *adc, int16_t offset, uint16_t scale, uint8_t shift)
+uint32_t syn_adc_read_mv(SYN_ADC *adc, uint8_t channel)
 {
-    SYN_ASSERT(adc != NULL);
-    adc->cfg.cal_offset = offset;
-    adc->cfg.cal_scale = scale;
-    adc->cfg.cal_scale_shift = shift;
+    uint16_t raw = syn_adc_read_raw(adc, channel);
+    return ((uint32_t)raw * adc->cfg.vref_mv) / 4095U;
 }
 
-void syn_adc_set_stats(SYN_ADC *adc, SYN_Signal *stats)
+SYN_Status syn_adc_start_dma_scan(SYN_ADC *adc, uint16_t *buf, size_t num_channels)
 {
     SYN_ASSERT(adc != NULL);
-    adc->stats = stats;
+    SYN_ASSERT(buf != NULL);
+    if (!adc->initialized) {
+        return SYN_INVALID_PARAM;
+    }
+
+    return syn_port_adc_start_dma_scan(adc->cfg.adc_id, buf, num_channels);
 }
 
 #endif /* SYN_USE_ADC */

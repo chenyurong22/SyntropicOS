@@ -1,7 +1,7 @@
 /**
  * @file syn_port_adc.h
- * @brief ADC port interface — implement these for your platform.
- * @ingroup syn_system
+ * @brief Port contract for Analog-to-Digital Converter (ADC) hardware.
+ * @ingroup syn_port
  */
 
 #ifndef SYN_PORT_ADC_H
@@ -9,41 +9,45 @@
 
 #include "../common/syn_defs.h"
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Initialize an ADC channel.
+ * @brief Initialize the ADC peripheral.
  *
- * @param channel  ADC channel number.
+ * @param adc_id        ADC instance index (0 = ADC1, 1 = ADC2, etc.).
+ * @param channel_mask  Bitmask of channels to configure for analog input.
  * @return SYN_OK on success.
  */
-SYN_Status syn_port_adc_init(uint8_t channel);
+SYN_Status syn_port_adc_init(uint8_t adc_id, uint32_t channel_mask);
 
 /**
- * @brief Read a single ADC sample.
+ * @brief De-initialize the ADC peripheral.
  *
- * @param channel  ADC channel number.
- * @return Raw ADC value (resolution depends on platform).
+ * @param adc_id ADC instance index.
+ * @return SYN_OK on success.
  */
-uint16_t syn_port_adc_read(uint8_t channel);
+SYN_Status syn_port_adc_deinit(uint8_t adc_id);
 
 /**
- * @brief Get the ADC resolution in bits.
+ * @brief Read a single analog channel (single-shot polled read).
  *
- * @return Resolution (e.g., 10, 12, 16).
+ * @param adc_id   ADC instance index.
+ * @param channel  Channel index (0..18).
+ * @return 12-bit raw conversion value (0..4095).
  */
-uint8_t syn_port_adc_resolution(void);
+uint16_t syn_port_adc_read_channel(uint8_t adc_id, uint8_t channel);
 
 /**
- * @brief Get the ADC reference voltage in millivolts.
+ * @brief Start continuous multi-channel background scan via DMA.
  *
- * @return Reference voltage (e.g., 3300 for 3.3V).
+ * @param adc_id        ADC instance index.
+ * @param dest          Destination buffer in SRAM.
+ * @param num_channels  Number of active channels in scan sequence.
+ * @return SYN_OK on success.
  */
-uint16_t syn_port_adc_reference_mv(void);
+SYN_Status syn_port_adc_start_dma_scan(uint8_t adc_id, uint16_t *dest, size_t num_channels);
 
 #ifdef __cplusplus
 }

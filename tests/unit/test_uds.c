@@ -1191,7 +1191,9 @@ static bool mock_dtc_custom_cb(uint8_t subfunction, const uint8_t *in_data, uint
     (void)in_len;
     (void)max_out_len;
     (void)ctx;
-    if (subfunction == 0x03) {
+    if (subfunction == 0x01 || subfunction == 0x02 || subfunction == 0x03 || subfunction == 0x04 ||
+        subfunction == 0x07 || subfunction == 0x08 || subfunction == 0x0A || subfunction == 0x14 ||
+        subfunction == 0x15 || subfunction == 0x55) {
         out_buf[0] = 0x01;
         out_buf[1] = 0x23;
         out_buf[2] = 0x45;
@@ -1199,6 +1201,19 @@ static bool mock_dtc_custom_cb(uint8_t subfunction, const uint8_t *in_data, uint
         *out_len = 4;
         return true;
     }
+    return false;
+}
+
+static bool mock_dtc_reject_cb(uint8_t subfunction, const uint8_t *in_data, uint16_t in_len,
+                               uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len, void *ctx)
+{
+    (void)subfunction;
+    (void)in_data;
+    (void)in_len;
+    (void)out_buf;
+    (void)max_out_len;
+    (void)out_len;
+    (void)ctx;
     return false;
 }
 
@@ -1284,8 +1299,20 @@ static void test_uds_read_dtc_information_subfunctions(void)
     TEST_ASSERT_EQUAL_HEX8(0x08, resp[1]);
     TEST_ASSERT_EQUAL_UINT16(9, resp_len); /* 3 + 6 * 1 */
 
-    /* 8. Custom DTC callback (0x03) */
+    /* 8. Custom DTC callback (0x01, 0x02, 0x03, 0x07, 0x0A, 0x15) */
     syn_uds_register_dtc_handler(&server, mock_dtc_custom_cb, NULL);
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
+
+    req[1] = 0x02;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x02, resp[1]);
+
     req[1] = 0x03;
     TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
                                              SYN_UDS_ADDR_PHYSICAL));
@@ -1294,11 +1321,102 @@ static void test_uds_read_dtc_information_subfunctions(void)
     TEST_ASSERT_EQUAL_HEX8(0x01, resp[2]);
     TEST_ASSERT_EQUAL_HEX8(0x23, resp[3]);
 
-    /* 9. Subfunction length mismatch tests -> NRC 0x13 */
+    req[1] = 0x04;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 6, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x04, resp[1]);
+
+    req[1] = 0x07;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x07, resp[1]);
+
+    req[1] = 0x08;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x08, resp[1]);
+
+    req[1] = 0x0A;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x0A, resp[1]);
+
+    req[1] = 0x14;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x14, resp[1]);
+
+    req[1] = 0x15;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x15, resp[1]);
+
+    req[1] = 0x55;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x59, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x55, resp[1]);
+
+    /* Callback rejection tests -> NRC 0x22 */
+    syn_uds_register_dtc_handler(&server, mock_dtc_reject_cb, NULL);
+    uint8_t reject_subs[] = {0x01, 0x02, 0x04, 0x07, 0x08, 0x0A, 0x14, 0x55};
+    for (size_t i = 0; i < sizeof(reject_subs); i++) {
+        req[1] = reject_subs[i];
+        TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 6, resp, sizeof(resp), &resp_len,
+                                                 SYN_UDS_ADDR_PHYSICAL));
+        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+        TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+    }
+
+    req[1] = 0x99;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+
+    /* 9. Subfunction length & overflow mismatch tests -> NRC 0x13 / 0x38 */
     syn_uds_register_dtc_handler(&server, NULL, NULL);
     req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
     req[1] = 0x01; /* Expected 3 bytes, send 2 bytes */
     TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+
+    req[1] = 0x03; /* Expected 2 bytes, send 3 bytes */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[1] = 0x14; /* Expected 2 bytes, send 3 bytes */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[1] = 0x16; /* Expected 3 bytes (sub + recNum), send 2 bytes */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[1] = 0x04; /* Send 6 bytes, but max_resp_len = 5 -> NRC 0x38 */
+    req[2] = 0x12;
+    req[3] = 0x34;
+    req[4] = 0x56;
+    req[5] = 0x01;
+    TEST_ASSERT_TRUE(
+        syn_uds_process_request(&server, req, 6, resp, 5, &resp_len, SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
+    req[1] = 0x0B; /* Expected 2 bytes, send 3 bytes */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 3, resp, sizeof(resp), &resp_len,
                                              SYN_UDS_ADDR_PHYSICAL));
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);

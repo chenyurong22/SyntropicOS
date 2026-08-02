@@ -45,11 +45,12 @@ extern "C" {
 #endif
 
 #ifndef SYN_GEO_USE_FIXED_POINT
-#define SYN_GEO_USE_FIXED_POINT SYN_GNSS_USE_FIXED_POINT
+#define SYN_GEO_USE_FIXED_POINT SYN_GNSS_USE_FIXED_POINT /**< Geodesy fixed-point mode flag */
 #endif
 
 #if (SYN_GNSS_USE_FIXED_POINT != SYN_GEO_USE_FIXED_POINT)
-#error "SyntropicOS Config Error: Mismatched GNSS numeric mode! SYN_GEO_USE_FIXED_POINT must match SYN_GNSS_USE_FIXED_POINT."
+#error \
+    "SyntropicOS Config Error: Mismatched GNSS numeric mode! SYN_GEO_USE_FIXED_POINT must match SYN_GNSS_USE_FIXED_POINT."
 #endif
 
 /* ── WGS-84 Ellipsoid Constants ────────────────────────────────────────── */
@@ -70,13 +71,13 @@ extern "C" {
  */
 typedef struct {
 #if SYN_GEO_USE_FIXED_POINT
-    int32_t lat_udeg;             /**< Micro-degrees (+N, -S, 1e-7 deg LSB) */
-    int32_t lon_udeg;             /**< Micro-degrees (+E, -W, 1e-7 deg LSB) */
-    int32_t altitude_mm;          /**< Altitude above MSL in millimeters   */
+    int32_t lat_udeg;    /**< Micro-degrees (+N, -S, 1e-7 deg LSB) */
+    int32_t lon_udeg;    /**< Micro-degrees (+E, -W, 1e-7 deg LSB) */
+    int32_t altitude_mm; /**< Altitude above MSL in millimeters   */
 #else
-    double latitude;              /**< Decimal degrees (+N, -S)            */
-    double longitude;             /**< Decimal degrees (+E, -W)            */
-    double altitude_m;            /**< Altitude above MSL/ellipsoid (m)    */
+    double latitude;   /**< Decimal degrees (+N, -S)            */
+    double longitude;  /**< Decimal degrees (+E, -W)            */
+    double altitude_m; /**< Altitude above MSL/ellipsoid (m)    */
 #endif
     float accuracy_m;             /**< Estimated 3D position error bound   */
     SYN_NMEA_FixQuality fix_type; /**< GPS, DGPS, RTK_FIXED, RTK_FLOAT     */
@@ -170,8 +171,8 @@ SYN_Status syn_geo_wgs84_to_enu(double lat_deg, double lon_deg, double alt_m, do
  * @param lon2_udeg Point 2 Longitude in micro-degrees (1e-7 deg).
  * @return 2D Surface distance in millimeters (mm).
  */
-uint32_t syn_geo_distance_fixed_mm(int32_t lat1_udeg, int32_t lon1_udeg,
-                                   int32_t lat2_udeg, int32_t lon2_udeg);
+uint32_t syn_geo_distance_fixed_mm(int32_t lat1_udeg, int32_t lon1_udeg, int32_t lat2_udeg,
+                                   int32_t lon2_udeg);
 
 /**
  * @brief Compute 2D surface geodesic distance using the Haversine formula.

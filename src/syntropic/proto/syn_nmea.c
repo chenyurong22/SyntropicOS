@@ -247,7 +247,8 @@ int32_t syn_nmea_parse_coord_udeg(const char *nmea_coord, char dir)
         return 0;
 
     const char *dot = strchr(nmea_coord, '.');
-    if (!dot || (dot - nmea_coord) < 3) return 0;
+    if (!dot || (dot - nmea_coord) < 3)
+        return 0;
 
     int deg_digits = (int)(dot - nmea_coord) - 2;
     int32_t deg = 0;

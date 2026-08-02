@@ -184,6 +184,17 @@ static void test_geo_null_params(void)
     TEST_ASSERT_TRUE(dist_clamp2 > 0.0);
 }
 
+static void test_geo_distance_fixed_mm(void)
+{
+    int32_t lat1 = 377749290;
+    int32_t lon1 = -1224194160;
+    int32_t lat2 = 377758280;
+    int32_t lon2 = -1224194160;
+
+    uint32_t dist_mm = syn_geo_distance_fixed_mm(lat1, lon1, lat2, lon2);
+    TEST_ASSERT_UINT32_WITHIN(5000, 100000, dist_mm);
+}
+
 void run_geo_tests(void)
 {
     RUN_TEST(test_wgs84_to_ecef_prime_meridian_equator);
@@ -195,4 +206,5 @@ void run_geo_tests(void)
     RUN_TEST(test_3d_distance);
     RUN_TEST(test_pos_from_gga_fix_qualities);
     RUN_TEST(test_geo_null_params);
+    RUN_TEST(test_geo_distance_fixed_mm);
 }

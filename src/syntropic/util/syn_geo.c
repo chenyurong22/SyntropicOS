@@ -182,8 +182,8 @@ double syn_geo_3d_distance_m(const SYN_ENU *p1, const SYN_ENU *p2)
     return sqrt(de * de + dn * dn + du * du);
 }
 
-uint32_t syn_geo_distance_fixed_mm(int32_t lat1_udeg, int32_t lon1_udeg,
-                                   int32_t lat2_udeg, int32_t lon2_udeg)
+uint32_t syn_geo_distance_fixed_mm(int32_t lat1_udeg, int32_t lon1_udeg, int32_t lat2_udeg,
+                                   int32_t lon2_udeg)
 {
     int64_t dlat = (int64_t)lat2_udeg - (int64_t)lat1_udeg;
     int64_t dlon = (int64_t)lon2_udeg - (int64_t)lon1_udeg;

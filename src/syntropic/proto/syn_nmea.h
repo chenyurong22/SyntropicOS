@@ -33,19 +33,37 @@ extern "C" {
 #endif
 
 #ifndef SYN_GNSS_USE_FIXED_POINT
-#define SYN_GNSS_USE_FIXED_POINT 0
+#define SYN_GNSS_USE_FIXED_POINT 0 /**< Enable fixed-point GNSS calculations if non-zero */
 #endif
 
 #ifndef SYN_NMEA_USE_FIXED_POINT
-#define SYN_NMEA_USE_FIXED_POINT SYN_GNSS_USE_FIXED_POINT
+#define SYN_NMEA_USE_FIXED_POINT SYN_GNSS_USE_FIXED_POINT /**< NMEA fixed-point mode flag */
 #endif
 
 #if (SYN_GNSS_USE_FIXED_POINT != SYN_NMEA_USE_FIXED_POINT)
-#error "SyntropicOS Config Error: Mismatched GNSS numeric mode! SYN_NMEA_USE_FIXED_POINT must match SYN_GNSS_USE_FIXED_POINT."
+#error \
+    "SyntropicOS Config Error: Mismatched GNSS numeric mode! SYN_NMEA_USE_FIXED_POINT must match SYN_GNSS_USE_FIXED_POINT."
 #endif
 
-static inline double syn_udeg_to_deg(int32_t udeg) { return (double)udeg / 10000000.0; }
-static inline int32_t syn_deg_to_udeg(double deg)  { return (int32_t)(deg * 10000000.0 + (deg >= 0.0 ? 0.5 : -0.5)); }
+/**
+ * @brief Convert microdegrees (1e-7 deg) to decimal degrees.
+ * @param udeg Microdegrees input value.
+ * @return Decimal degrees equivalent.
+ */
+static inline double syn_udeg_to_deg(int32_t udeg)
+{
+    return (double)udeg / 10000000.0;
+}
+
+/**
+ * @brief Convert decimal degrees to microdegrees (1e-7 deg).
+ * @param deg Decimal degrees input value.
+ * @return Microdegrees (1e-7 deg) equivalent.
+ */
+static inline int32_t syn_deg_to_udeg(double deg)
+{
+    return (int32_t)(deg * 10000000.0 + (deg >= 0.0 ? 0.5 : -0.5));
+}
 
 #define SYN_NMEA_MAX_SENTENCE_LEN 82 /**< Max NMEA 0183 sentence length */
 
@@ -72,16 +90,16 @@ typedef enum {
 
 /** @brief Parsed NMEA GGA (Fix Data) Structure */
 typedef struct {
-    uint8_t hours;                   /**< UTC hours (0..23) */
-    uint8_t minutes;                 /**< UTC minutes (0..59) */
-    uint8_t seconds;                 /**< UTC seconds (0..59) */
-    uint16_t milliseconds;           /**< UTC milliseconds (0..999) */
+    uint8_t hours;         /**< UTC hours (0..23) */
+    uint8_t minutes;       /**< UTC minutes (0..59) */
+    uint8_t seconds;       /**< UTC seconds (0..59) */
+    uint16_t milliseconds; /**< UTC milliseconds (0..999) */
 #if SYN_NMEA_USE_FIXED_POINT
-    int32_t lat_udeg;                /**< Micro-degrees (+N, -S, 1e-7 deg LSB) */
-    int32_t lon_udeg;                /**< Micro-degrees (+E, -W, 1e-7 deg LSB) */
+    int32_t lat_udeg; /**< Micro-degrees (+N, -S, 1e-7 deg LSB) */
+    int32_t lon_udeg; /**< Micro-degrees (+E, -W, 1e-7 deg LSB) */
 #else
-    double latitude;                 /**< Decimal degrees (+N, -S) */
-    double longitude;                /**< Decimal degrees (+E, -W) */
+    double latitude;  /**< Decimal degrees (+N, -S) */
+    double longitude; /**< Decimal degrees (+E, -W) */
 #endif
     SYN_NMEA_FixQuality fix_quality; /**< Fix quality indicator */
     uint8_t num_satellites;          /**< Number of satellites in view/use */
@@ -98,18 +116,18 @@ typedef struct {
     uint16_t milliseconds; /**< UTC milliseconds (0..999) */
     bool status_valid;     /**< 'A' = valid, 'V' = receiver warning */
 #if SYN_NMEA_USE_FIXED_POINT
-    int32_t lat_udeg;      /**< Micro-degrees (+N, -S, 1e-7 deg LSB) */
-    int32_t lon_udeg;      /**< Micro-degrees (+E, -W, 1e-7 deg LSB) */
+    int32_t lat_udeg; /**< Micro-degrees (+N, -S, 1e-7 deg LSB) */
+    int32_t lon_udeg; /**< Micro-degrees (+E, -W, 1e-7 deg LSB) */
 #else
-    double latitude;       /**< Decimal degrees (+N, -S) */
-    double longitude;      /**< Decimal degrees (+E, -W) */
+    double latitude;  /**< Decimal degrees (+N, -S) */
+    double longitude; /**< Decimal degrees (+E, -W) */
 #endif
-    float speed_knots;     /**< Speed over ground in knots */
-    float course_deg;      /**< Course over ground in true degrees */
-    uint8_t day;           /**< Day of month (1..31) */
-    uint8_t month;         /**< Month of year (1..12) */
-    uint16_t year;         /**< Full year (e.g. 2026) */
-    bool valid;            /**< True if frame parsed successfully */
+    float speed_knots; /**< Speed over ground in knots */
+    float course_deg;  /**< Course over ground in true degrees */
+    uint8_t day;       /**< Day of month (1..31) */
+    uint8_t month;     /**< Month of year (1..12) */
+    uint16_t year;     /**< Full year (e.g. 2026) */
+    bool valid;        /**< True if frame parsed successfully */
 } SYN_NMEA_RMC;
 
 /** @brief Parsed NMEA VTG (Velocity & Course) Structure */

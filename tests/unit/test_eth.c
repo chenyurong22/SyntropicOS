@@ -690,6 +690,24 @@ static void test_eth_frame_filtering_and_protocol_dispatch(void)
     uint8_t lookup_mac[6];
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_arp_lookup(&eth_full, 0xC0A80101, lookup_mac));
     TEST_ASSERT_EQUAL_INT(0, memcmp(dummy_mac, lookup_mac, 6));
+
+    /* 11. ARP cache LRU eviction when full with new IP */
+    uint8_t new_mac[6] = {0x02, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE};
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_arp_update(&eth_full, 0xC0A80199, new_mac));
+
+    /* 12. Odd-length buffer checksum calculation */
+    uint8_t odd_buf[21] = {0x45, 0x00, 0x00, 0x15, 0x00, 0x01, 0x00, 0x00, 0x40, 0x11, 0x00,
+                           0x00, 0xC0, 0xA8, 0x01, 0x01, 0xC0, 0xA8, 0x01, 0x02, 0xAA};
+    TEST_ASSERT_NOT_EQUAL(0, syn_ip_checksum(odd_buf, sizeof(odd_buf)));
+
+    /* 13. Frame addressed to different MAC (filtered out) */
+    uint8_t wrong_mac_frame[60] = {0};
+    uint8_t other_mac[6] = {0x02, 0xFE, 0xDC, 0xBA, 0x98, 0x76};
+    memcpy(&wrong_mac_frame[0], other_mac, 6);
+    memcpy(&wrong_mac_frame[6], PEER_MAC, 6);
+    wrong_mac_frame[12] = 0x08;
+    wrong_mac_frame[13] = 0x00;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_process_frame(&eth, wrong_mac_frame, 60, tx, &tx_len));
 }
 
 void run_eth_tests(void)

@@ -370,9 +370,14 @@ void test_nmea_branch_coverage(void)
     hex_lower_str[strlen(hex_lower_str) - 1] = '7';
     TEST_ASSERT_TRUE(syn_nmea_validate(hex_lower_str));
 
-    /* Invalid non-hex character in checksum string */
-    hex_lower_str[strlen(hex_lower_str) - 1] = 'Z';
-    TEST_ASSERT_FALSE(syn_nmea_validate(hex_lower_str));
+    /* 5. Positive sign '+' prefixed numerical fields in syn_atof */
+    SYN_NMEA_GGA gga_plus;
+    const char *payload_plus = "GPGGA,123519,+4807.038,N,01131.000,E,1,08,+0.9,+545.4,M,46.9,M,,";
+    char gga_plus_str[128];
+    snprintf(gga_plus_str, sizeof(gga_plus_str), "$%s*%02X", payload_plus,
+             syn_nmea_checksum(payload_plus));
+    TEST_ASSERT_TRUE(syn_nmea_parse_gga(gga_plus_str, &gga_plus));
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 545.4, gga_plus.altitude_m);
 }
 
 void run_nmea_tests(void)

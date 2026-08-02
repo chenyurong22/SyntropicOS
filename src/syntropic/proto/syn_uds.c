@@ -399,6 +399,20 @@ static uint16_t get_sid_required_security_mask(const SYN_UDS_Server *server, uin
     return 0U;
 }
 
+/**
+ * @brief Get currently active security level bitmask for server.
+ * @param server UDS server instance pointer.
+ * @return Currently active security level bitmask (bit 0 = level 0/none, bit N = level N).
+ */
+static uint16_t get_active_security_mask(const SYN_UDS_Server *server)
+{
+    uint16_t mask = (1U << 0);
+    if (server != NULL && server->security_state == SYN_UDS_SECURITY_UNLOCKED) {
+        mask |= (uint16_t)(1U << server->security_level);
+    }
+    return mask;
+}
+
 bool syn_uds_set_service_session_mask(SYN_UDS_Server *server, uint8_t sid, uint8_t session_mask)
 {
     if (server == NULL) {
@@ -469,8 +483,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
 
     uint16_t req_sec_mask = get_sid_required_security_mask(server, sid);
     if (req_sec_mask != 0U) {
-        if (server->security_state != SYN_UDS_SECURITY_UNLOCKED ||
-            ((1U << server->security_level) & req_sec_mask) == 0U) {
+        if ((get_active_security_mask(server) & req_sec_mask) == 0U) {
             return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
                                           resp_len, addr_mode);
         }
@@ -706,7 +719,7 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                           SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION,
                                           resp_buf, resp_len, addr_mode);
         }
-        if (((1U << server->security_level) & matched_entry->security_mask) == 0U) {
+        if ((get_active_security_mask(server) & matched_entry->security_mask) == 0U) {
             return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
                                           resp_len, addr_mode);
         }
@@ -748,8 +761,9 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
                                           resp_len, addr_mode);
         }
-        if (server->security_state != SYN_UDS_SECURITY_UNLOCKED ||
-            ((1U << server->security_level) & matched_entry->security_mask) == 0U) {
+        if ((server->security_state != SYN_UDS_SECURITY_UNLOCKED &&
+             matched_entry->security_mask == SYN_UDS_SECURITY_MASK_ALL) ||
+            ((get_active_security_mask(server) & matched_entry->security_mask) == 0U)) {
             return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
                                           resp_len, addr_mode);
         }

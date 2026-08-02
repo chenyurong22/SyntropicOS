@@ -3113,6 +3113,28 @@ static void test_uds_custom_service_policies(void)
     /* Switch to EXTENDED session */
     g_uds.session = SYN_UDS_SESSION_EXTENDED;
 
+    /* Configure SYN_UDS_SECURITY_MASK_NONE for 0x22 while locked */
+    g_uds.security_state = SYN_UDS_SECURITY_LOCKED;
+    g_uds.security_level = 0;
+    TEST_ASSERT_TRUE(syn_uds_set_service_security_mask(&g_uds, 0x22, SYN_UDS_SECURITY_MASK_NONE));
+
+    /* Locked security with SYN_UDS_SECURITY_MASK_NONE allows access (returns NRC 0x31 for unknown
+     * DID 0xF190, NOT NRC 0x33) */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req_22, sizeof(req_22), resp, sizeof(resp),
+                                             &resp_len, SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_UINT16(3, resp_len);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
+
+    /* Unlocking Level 1 while SYN_UDS_SECURITY_MASK_NONE is configured preserves Level 0 access */
+    g_uds.security_state = SYN_UDS_SECURITY_UNLOCKED;
+    g_uds.security_level = 1;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req_22, sizeof(req_22), resp, sizeof(resp),
+                                             &resp_len, SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_UINT16(3, resp_len);
+    TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
+    g_uds.security_state = SYN_UDS_SECURITY_LOCKED;
+    g_uds.security_level = 0;
+
     /* Require Security Level 1 for 0x22 */
     TEST_ASSERT_TRUE(
         syn_uds_set_service_security_mask(&g_uds, 0x22, SYN_UDS_SECURITY_MASK_LEVEL_1));

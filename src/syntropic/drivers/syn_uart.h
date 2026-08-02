@@ -15,6 +15,10 @@
 #include "../port/syn_port_uart.h"
 #include "../util/syn_ringbuf.h"
 
+#if defined(SYN_USE_DMA) && SYN_USE_DMA
+#include "syn_dma.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,14 +40,29 @@ extern "C" {
 #define SYN_UART_MAX_INSTANCES 2
 #endif
 
+/* ── UART Configuration ─────────────────────────────────────────────────── */
+
+/**
+ * @brief Configuration struct for UART initialization with optional DMA.
+ */
+typedef struct {
+    SYN_UARTInstance instance;            /**< Hardware UART peripheral index */
+    uint32_t baudrate;                    /**< Desired baud rate */
+    bool use_dma;                         /**< Enable DMA for this UART instance */
+#if defined(SYN_USE_DMA) && SYN_USE_DMA
+    uint8_t dma_channel_rx;               /**< Assigned RX DMA channel ID */
+    const void *periph_rx_reg;            /**< Peripheral RX data register address */
+#endif
+} SYN_UART_Config;
+
 /* ── UART handle ────────────────────────────────────────────────────────── */
 
 /**
  * @brief UART driver handle.
  *
  * The user allocates this struct (stack or static) and passes it to
- * syn_uart_init(). The backing buffers are embedded so no dynamic
- * allocation is needed.
+ * syn_uart_init() or syn_uart_init_config(). The backing buffers are embedded
+ * so no dynamic allocation is needed.
  */
 typedef struct {
     SYN_UARTInstance instance;            /**< Hardware UART peripheral index */
@@ -52,6 +71,11 @@ typedef struct {
     uint8_t tx_buf[SYN_UART_TX_BUF_SIZE]; /**< Physical storage memory for TX ring buffer */
     uint8_t rx_buf[SYN_UART_RX_BUF_SIZE]; /**< Physical storage memory for RX ring buffer */
     bool initialized;                     /**< Initialization flag status */
+    bool use_dma;                         /**< Per-instance DMA enablement flag */
+#if defined(SYN_USE_DMA) && SYN_USE_DMA
+    SYN_DMA dma_rx;                       /**< Underlying RX DMA channel handle */
+    SYN_DMA_RingBuf dma_ring_rx;          /**< Zero-CPU RX circular DMA ring buffer */
+#endif
 } SYN_UART;
 
 /* ── API ────────────────────────────────────────────────────────────────── */
@@ -65,6 +89,15 @@ typedef struct {
  * @return SYN_OK on success.
  */
 SYN_Status syn_uart_init(SYN_UART *uart, SYN_UARTInstance instance, uint32_t baudrate);
+
+/**
+ * @brief Initialize a UART instance with custom configuration (optional DMA).
+ *
+ * @param uart  Pointer to a caller-owned SYN_UART struct.
+ * @param cfg   Pointer to initialization configuration.
+ * @return SYN_OK on success.
+ */
+SYN_Status syn_uart_init_config(SYN_UART *uart, const SYN_UART_Config *cfg);
 
 /**
  * @brief De-initialize a UART instance.

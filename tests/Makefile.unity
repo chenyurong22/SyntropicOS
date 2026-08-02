@@ -17,7 +17,8 @@ SYN_SRCS := \
 	src/syntropic/drivers/syn_rtc.c src/syntropic/drivers/syn_soft_onewire.c \
 	src/syntropic/drivers/syn_dac.c src/syntropic/drivers/syn_dma.c \
 	src/syntropic/drivers/syn_pwm.c src/syntropic/drivers/syn_hrpwm.c \
-	src/syntropic/drivers/syn_comp.c \
+	src/syntropic/drivers/syn_comp.c src/syntropic/drivers/syn_i2c.c \
+	src/syntropic/drivers/syn_spi.c \
 	src/syntropic/util/syn_ringbuf.c src/syntropic/util/syn_fsm.c \
 	src/syntropic/util/syn_crc.c src/syntropic/util/syn_fmt.c \
 	src/syntropic/util/syn_ramp.c src/syntropic/util/syn_scurve.c \

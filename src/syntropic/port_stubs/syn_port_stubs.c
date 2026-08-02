@@ -167,9 +167,13 @@ SYN_WEAK SYN_NORETURN void syn_port_system_reset(void)
 
 #include "../port/syn_port_i2c.h"
 
-SYN_WEAK SYN_Status syn_port_i2c_init(uint8_t i2c_id, uint32_t clock_speed_hz, uint8_t role, uint16_t own_addr)
+SYN_WEAK SYN_Status syn_port_i2c_init(uint8_t i2c_id, uint32_t clock_speed_hz, uint8_t role,
+                                      uint16_t own_addr)
 {
-    (void)i2c_id; (void)clock_speed_hz; (void)role; (void)own_addr;
+    (void)i2c_id;
+    (void)clock_speed_hz;
+    (void)role;
+    (void)own_addr;
     syn_assert_failed(__FILE__, __LINE__);
     return SYN_NOT_IMPLEMENTED;
 }
@@ -181,9 +185,15 @@ SYN_WEAK SYN_Status syn_port_i2c_deinit(uint8_t i2c_id)
     return SYN_NOT_IMPLEMENTED;
 }
 
-SYN_WEAK SYN_Status syn_port_i2c_transfer(uint8_t i2c_id, uint16_t addr, const uint8_t *tx, size_t tx_len, uint8_t *rx, size_t rx_len)
+SYN_WEAK SYN_Status syn_port_i2c_transfer(uint8_t i2c_id, uint16_t addr, const uint8_t *tx,
+                                          size_t tx_len, uint8_t *rx, size_t rx_len)
 {
-    (void)i2c_id; (void)addr; (void)tx; (void)tx_len; (void)rx; (void)rx_len;
+    (void)i2c_id;
+    (void)addr;
+    (void)tx;
+    (void)tx_len;
+    (void)rx;
+    (void)rx_len;
     syn_assert_failed(__FILE__, __LINE__);
     return SYN_NOT_IMPLEMENTED;
 }
@@ -192,9 +202,13 @@ SYN_WEAK SYN_Status syn_port_i2c_transfer(uint8_t i2c_id, uint16_t addr, const u
 
 #include "../port/syn_port_spi.h"
 
-SYN_WEAK SYN_Status syn_port_spi_init(uint8_t spi_id, uint32_t baudrate_hz, uint8_t mode, uint8_t role)
+SYN_WEAK SYN_Status syn_port_spi_init(uint8_t spi_id, uint32_t baudrate_hz, uint8_t mode,
+                                      uint8_t role)
 {
-    (void)spi_id; (void)baudrate_hz; (void)mode; (void)role;
+    (void)spi_id;
+    (void)baudrate_hz;
+    (void)mode;
+    (void)role;
     syn_assert_failed(__FILE__, __LINE__);
     return SYN_NOT_IMPLEMENTED;
 }
@@ -206,9 +220,13 @@ SYN_WEAK SYN_Status syn_port_spi_deinit(uint8_t spi_id)
     return SYN_NOT_IMPLEMENTED;
 }
 
-SYN_WEAK SYN_Status syn_port_spi_transfer(uint8_t spi_id, const uint8_t *tx, uint8_t *rx, size_t len)
+SYN_WEAK SYN_Status syn_port_spi_transfer(uint8_t spi_id, const uint8_t *tx, uint8_t *rx,
+                                          size_t len)
 {
-    (void)spi_id; (void)tx; (void)rx; (void)len;
+    (void)spi_id;
+    (void)tx;
+    (void)rx;
+    (void)len;
     syn_assert_failed(__FILE__, __LINE__);
     return SYN_NOT_IMPLEMENTED;
 }

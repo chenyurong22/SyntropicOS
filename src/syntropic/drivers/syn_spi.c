@@ -9,14 +9,16 @@
  * @brief Hardware-decoupled SPI driver implementation.
  */
 
-#include "syn_spi.h"
 #include "../util/syn_assert.h"
+#include "syn_spi.h"
+
 #include <string.h>
 
 SYN_Status syn_spi_init(SYN_SPI *spi, const SYN_SPI_Config *cfg)
 {
-    SYN_ASSERT(spi != NULL);
-    SYN_ASSERT(cfg != NULL);
+    if (spi == NULL || cfg == NULL) {
+        return SYN_INVALID_PARAM;
+    }
 
     memset(spi, 0, sizeof(*spi));
     spi->cfg = *cfg;
@@ -25,7 +27,8 @@ SYN_Status syn_spi_init(SYN_SPI *spi, const SYN_SPI_Config *cfg)
         spi->cfg.baudrate_hz = 1000000; /* Default 1 MHz */
     }
 
-    SYN_Status status = syn_port_spi_init(cfg->spi_id, cfg->baudrate_hz, (uint8_t)cfg->mode, (uint8_t)cfg->role);
+    SYN_Status status =
+        syn_port_spi_init(cfg->spi_id, cfg->baudrate_hz, (uint8_t)cfg->mode, (uint8_t)cfg->role);
     if (status != SYN_OK) {
         return status;
     }
@@ -36,7 +39,9 @@ SYN_Status syn_spi_init(SYN_SPI *spi, const SYN_SPI_Config *cfg)
 
 SYN_Status syn_spi_deinit(SYN_SPI *spi)
 {
-    SYN_ASSERT(spi != NULL);
+    if (spi == NULL) {
+        return SYN_INVALID_PARAM;
+    }
 
     if (!spi->initialized) {
         return SYN_OK;
@@ -49,8 +54,7 @@ SYN_Status syn_spi_deinit(SYN_SPI *spi)
 
 SYN_Status syn_spi_transfer(SYN_SPI *spi, const uint8_t *tx, uint8_t *rx, size_t len)
 {
-    SYN_ASSERT(spi != NULL);
-    if (!spi->initialized || len == 0) {
+    if (spi == NULL || !spi->initialized || len == 0) {
         return SYN_INVALID_PARAM;
     }
 

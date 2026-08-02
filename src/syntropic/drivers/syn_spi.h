@@ -14,11 +14,13 @@
 extern "C" {
 #endif
 
+/** @brief SPI operational mode role */
 typedef enum {
-    SYN_SPI_ROLE_MASTER = 0,
-    SYN_SPI_ROLE_SLAVE
+    SYN_SPI_ROLE_MASTER = 0, /**< Master mode */
+    SYN_SPI_ROLE_SLAVE       /**< Slave mode */
 } SYN_SPI_Role;
 
+/** @brief SPI clock phase and polarity mode */
 typedef enum {
     SYN_SPI_MODE_0 = 0, /**< CPOL=0, CPHA=0 */
     SYN_SPI_MODE_1 = 1, /**< CPOL=0, CPHA=1 */
@@ -26,17 +28,19 @@ typedef enum {
     SYN_SPI_MODE_3 = 3  /**< CPOL=1, CPHA=1 */
 } SYN_SPI_Mode;
 
+/** @brief SPI driver instance configuration parameters */
 typedef struct {
-    uint8_t spi_id;           /**< Hardware SPI instance (0 = SPI1) */
-    uint32_t baudrate_hz;     /**< Clock frequency in Hz (e.g. 1000000) */
-    SYN_SPI_Mode mode;        /**< SPI clock phase & polarity mode */
-    SYN_SPI_Role role;        /**< Master or Slave mode */
-    bool use_dma;             /**< Enable DMA transfers */
+    uint8_t spi_id;       /**< Hardware SPI instance (0 = SPI1) */
+    uint32_t baudrate_hz; /**< Clock frequency in Hz (e.g. 1000000) */
+    SYN_SPI_Mode mode;    /**< SPI clock phase & polarity mode */
+    SYN_SPI_Role role;    /**< Master or Slave mode */
+    bool use_dma;         /**< Enable DMA transfers */
 } SYN_SPI_Config;
 
+/** @brief SPI driver handle structure */
 typedef struct {
-    SYN_SPI_Config cfg;       /**< Instance configuration */
-    bool initialized;         /**< Initialization state */
+    SYN_SPI_Config cfg; /**< Instance configuration */
+    bool initialized;   /**< Initialization state */
 } SYN_SPI;
 
 /**

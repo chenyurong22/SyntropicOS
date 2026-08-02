@@ -14,22 +14,25 @@
 extern "C" {
 #endif
 
+/** @brief I2C operational mode role */
 typedef enum {
-    SYN_I2C_ROLE_MASTER = 0,
-    SYN_I2C_ROLE_SLAVE
+    SYN_I2C_ROLE_MASTER = 0, /**< Master mode */
+    SYN_I2C_ROLE_SLAVE       /**< Slave mode */
 } SYN_I2C_Role;
 
+/** @brief I2C driver instance configuration parameters */
 typedef struct {
-    uint8_t i2c_id;           /**< Hardware I2C instance (0 = I2C1) */
-    uint32_t clock_speed_hz;  /**< Bus speed in Hz (e.g. 100000, 400000) */
-    SYN_I2C_Role role;        /**< Master or Slave mode */
-    uint16_t own_address;     /**< 7-bit own slave address */
-    bool use_dma;             /**< Enable DMA transfers */
+    uint8_t i2c_id;          /**< Hardware I2C instance (0 = I2C1) */
+    uint32_t clock_speed_hz; /**< Bus speed in Hz (e.g. 100000, 400000) */
+    SYN_I2C_Role role;       /**< Master or Slave mode */
+    uint16_t own_address;    /**< 7-bit own slave address */
+    bool use_dma;            /**< Enable DMA transfers */
 } SYN_I2C_Config;
 
+/** @brief I2C driver handle structure */
 typedef struct {
-    SYN_I2C_Config cfg;       /**< Instance configuration */
-    bool initialized;         /**< Initialization state */
+    SYN_I2C_Config cfg; /**< Instance configuration */
+    bool initialized;   /**< Initialization state */
 } SYN_I2C;
 
 /**
@@ -60,7 +63,8 @@ SYN_Status syn_i2c_deinit(SYN_I2C *i2c);
  * @param rx_len  RX byte count.
  * @return SYN_OK on success.
  */
-SYN_Status syn_i2c_transfer(SYN_I2C *i2c, uint16_t addr, const uint8_t *tx, size_t tx_len, uint8_t *rx, size_t rx_len);
+SYN_Status syn_i2c_transfer(SYN_I2C *i2c, uint16_t addr, const uint8_t *tx, size_t tx_len,
+                            uint8_t *rx, size_t rx_len);
 
 /**
  * @brief Read an 8-bit register from a slave device.

@@ -18,18 +18,18 @@ extern "C" {
  * @brief ADC driver configuration structure.
  */
 typedef struct {
-    uint8_t adc_id;           /**< Hardware ADC instance index (0 = ADC1) */
-    uint32_t channel_mask;    /**< Active analog channels bitmask */
-    uint32_t vref_mv;         /**< Reference voltage in millivolts (e.g. 3300) */
-    bool use_dma;             /**< Enable DMA background scan mode */
+    uint8_t adc_id;        /**< Hardware ADC instance index (0 = ADC1) */
+    uint32_t channel_mask; /**< Active analog channels bitmask */
+    uint32_t vref_mv;      /**< Reference voltage in millivolts (e.g. 3300) */
+    bool use_dma;          /**< Enable DMA background scan mode */
 } SYN_ADC_Config;
 
 /**
  * @brief ADC driver handle structure.
  */
 typedef struct {
-    SYN_ADC_Config cfg;       /**< Instance configuration params */
-    bool initialized;         /**< Initialization status */
+    SYN_ADC_Config cfg; /**< Instance configuration params */
+    bool initialized;   /**< Initialization status */
 } SYN_ADC;
 
 /**

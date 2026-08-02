@@ -22,7 +22,8 @@ extern "C" {
  * @param own_addr        7-bit own slave address (used in Slave mode).
  * @return SYN_OK on success.
  */
-SYN_Status syn_port_i2c_init(uint8_t i2c_id, uint32_t clock_speed_hz, uint8_t role, uint16_t own_addr);
+SYN_Status syn_port_i2c_init(uint8_t i2c_id, uint32_t clock_speed_hz, uint8_t role,
+                             uint16_t own_addr);
 
 /**
  * @brief De-initialize an I2C hardware instance.
@@ -43,7 +44,8 @@ SYN_Status syn_port_i2c_deinit(uint8_t i2c_id);
  * @param rx_len  Bytes to receive.
  * @return SYN_OK on success.
  */
-SYN_Status syn_port_i2c_transfer(uint8_t i2c_id, uint16_t addr, const uint8_t *tx, size_t tx_len, uint8_t *rx, size_t rx_len);
+SYN_Status syn_port_i2c_transfer(uint8_t i2c_id, uint16_t addr, const uint8_t *tx, size_t tx_len,
+                                 uint8_t *rx, size_t rx_len);
 
 #ifdef __cplusplus
 }

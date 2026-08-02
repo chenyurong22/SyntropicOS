@@ -9,14 +9,16 @@
  * @brief General-purpose ADC driver implementation.
  */
 
-#include "syn_adc.h"
 #include "../util/syn_assert.h"
+#include "syn_adc.h"
+
 #include <string.h>
 
 SYN_Status syn_adc_init(SYN_ADC *adc, const SYN_ADC_Config *cfg)
 {
-    SYN_ASSERT(adc != NULL);
-    SYN_ASSERT(cfg != NULL);
+    if (adc == NULL || cfg == NULL) {
+        return SYN_INVALID_PARAM;
+    }
 
     memset(adc, 0, sizeof(*adc));
     adc->cfg = *cfg;
@@ -36,7 +38,9 @@ SYN_Status syn_adc_init(SYN_ADC *adc, const SYN_ADC_Config *cfg)
 
 SYN_Status syn_adc_deinit(SYN_ADC *adc)
 {
-    SYN_ASSERT(adc != NULL);
+    if (adc == NULL) {
+        return SYN_INVALID_PARAM;
+    }
 
     if (!adc->initialized) {
         return SYN_OK;
@@ -49,8 +53,7 @@ SYN_Status syn_adc_deinit(SYN_ADC *adc)
 
 uint16_t syn_adc_read_raw(SYN_ADC *adc, uint8_t channel)
 {
-    SYN_ASSERT(adc != NULL);
-    if (!adc->initialized) {
+    if (adc == NULL || !adc->initialized) {
         return 0;
     }
 
@@ -59,14 +62,18 @@ uint16_t syn_adc_read_raw(SYN_ADC *adc, uint8_t channel)
 
 uint32_t syn_adc_read_mv(SYN_ADC *adc, uint8_t channel)
 {
+    if (adc == NULL) {
+        return 0;
+    }
     uint16_t raw = syn_adc_read_raw(adc, channel);
     return ((uint32_t)raw * adc->cfg.vref_mv) / 4095U;
 }
 
 SYN_Status syn_adc_start_dma_scan(SYN_ADC *adc, uint16_t *buf, size_t num_channels)
 {
-    SYN_ASSERT(adc != NULL);
-    SYN_ASSERT(buf != NULL);
+    if (adc == NULL || buf == NULL) {
+        return SYN_INVALID_PARAM;
+    }
     if (!adc->initialized) {
         return SYN_INVALID_PARAM;
     }

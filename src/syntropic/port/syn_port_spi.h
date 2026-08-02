@@ -18,7 +18,8 @@ extern "C" {
  *
  * @param spi_id       Instance index (0 = SPI1, 1 = SPI2).
  * @param baudrate_hz  Baudrate frequency in Hz (e.g. 1000000, 18000000).
- * @param mode         SPI Mode: 0 (CPOL=0, CPHA=0), 1 (CPOL=0, CPHA=1), 2 (CPOL=1, CPHA=0), 3 (CPOL=1, CPHA=1).
+ * @param mode         SPI Mode: 0 (CPOL=0, CPHA=0), 1 (CPOL=0, CPHA=1), 2 (CPOL=1, CPHA=0), 3
+ * (CPOL=1, CPHA=1).
  * @param role         0 = Master, 1 = Slave.
  * @return SYN_OK on success.
  */

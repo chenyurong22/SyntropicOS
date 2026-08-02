@@ -370,41 +370,30 @@ uint32_t syn_port_flash_sector_size(uint32_t addr)
 /* ── I2C ────────────────────────────────────────────────────────────────── */
 
 #include "syntropic/port/syn_port_i2c.h"
-SYN_Status syn_port_i2c_init(const SYN_I2C_Config *c)
+bool mock_i2c_init_ok = true;
+SYN_Status syn_port_i2c_init(uint8_t i2c_id, uint32_t clock_speed_hz, uint8_t role,
+                             uint16_t own_address)
 {
-    (void)c;
+    (void)i2c_id;
+    (void)clock_speed_hz;
+    (void)role;
+    (void)own_address;
+    return mock_i2c_init_ok ? SYN_OK : SYN_ERROR;
+}
+SYN_Status syn_port_i2c_deinit(uint8_t i2c_id)
+{
+    (void)i2c_id;
     return SYN_OK;
 }
-SYN_Status syn_port_i2c_deinit(uint8_t b)
+SYN_Status syn_port_i2c_transfer(uint8_t i2c_id, uint16_t addr, const uint8_t *tx, size_t tx_len,
+                                 uint8_t *rx, size_t rx_len)
 {
-    (void)b;
-    return SYN_OK;
-}
-SYN_Status syn_port_i2c_write(uint8_t b, uint8_t a, const uint8_t *d, size_t l)
-{
-    (void)b;
-    (void)a;
-    (void)d;
-    (void)l;
-    return SYN_OK;
-}
-SYN_Status syn_port_i2c_read(uint8_t b, uint8_t a, uint8_t *d, size_t l)
-{
-    (void)b;
-    (void)a;
-    (void)d;
-    (void)l;
-    return SYN_OK;
-}
-SYN_Status syn_port_i2c_write_read(uint8_t b, uint8_t a, const uint8_t *t, size_t tl, uint8_t *r,
-                                   size_t rl)
-{
-    (void)b;
-    (void)a;
-    (void)t;
-    (void)tl;
-    (void)r;
-    (void)rl;
+    (void)i2c_id;
+    (void)addr;
+    (void)tx;
+    (void)tx_len;
+    (void)rx;
+    (void)rx_len;
     return SYN_OK;
 }
 
@@ -413,15 +402,30 @@ SYN_Status syn_port_i2c_write_read(uint8_t b, uint8_t a, const uint8_t *t, size_
 #include "syntropic/port/syn_port_adc.h"
 uint16_t mock_adc_value = 2048;
 uint8_t mock_adc_resolution = 12;
-SYN_Status syn_port_adc_init(uint8_t ch)
+bool mock_adc_init_ok = true;
+SYN_Status syn_port_adc_init(uint8_t adc_id, uint32_t channel_mask)
 {
-    (void)ch;
+    (void)adc_id;
+    (void)channel_mask;
+    return mock_adc_init_ok ? SYN_OK : SYN_ERROR;
+}
+SYN_Status syn_port_adc_deinit(uint8_t adc_id)
+{
+    (void)adc_id;
     return SYN_OK;
 }
-uint16_t syn_port_adc_read(uint8_t ch)
+uint16_t syn_port_adc_read_channel(uint8_t adc_id, uint8_t channel)
 {
-    (void)ch;
+    (void)adc_id;
+    (void)channel;
     return mock_adc_value;
+}
+SYN_Status syn_port_adc_start_dma_scan(uint8_t adc_id, uint16_t *buf, size_t num_channels)
+{
+    (void)adc_id;
+    (void)buf;
+    (void)num_channels;
+    return SYN_OK;
 }
 uint8_t syn_port_adc_resolution(void)
 {
@@ -644,9 +648,12 @@ void mock_spi_set_response(const void *data, size_t len)
     mock_spi_rx_pos = 0;
 }
 
-SYN_Status syn_port_spi_init(const SYN_SPI_Config *cfg)
+SYN_Status syn_port_spi_init(uint8_t spi_id, uint32_t baudrate_hz, uint8_t mode, uint8_t role)
 {
-    (void)cfg;
+    (void)spi_id;
+    (void)baudrate_hz;
+    (void)mode;
+    (void)role;
     return mock_spi_init_ok ? SYN_OK : SYN_ERROR;
 }
 

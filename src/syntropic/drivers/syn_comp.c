@@ -9,8 +9,8 @@
  * @brief High-Speed Rail-to-Rail Analog Comparator Driver implementation.
  */
 
-#include "syn_comp.h"
 #include "../util/syn_assert.h"
+#include "syn_comp.h"
 
 SYN_Status syn_comp_init(SYN_COMP *comp, uint8_t comp_id, SYN_COMP_InvertingInput inv_in)
 {

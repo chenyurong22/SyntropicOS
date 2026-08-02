@@ -25,9 +25,9 @@ typedef enum {
     SYN_COMP_INV_VREFINT_1_4 = 0, /**< 1/4 VREFINT (~0.307 V) */
     SYN_COMP_INV_VREFINT_1_2 = 1, /**< 1/2 VREFINT (~0.615 V) */
     SYN_COMP_INV_VREFINT_3_4 = 2, /**< 3/4 VREFINT (~0.923 V) */
-    SYN_COMP_INV_VREFINT     = 3, /**< Full VREFINT (~1.230 V) */
-    SYN_COMP_INV_DAC1_CH1   = 4, /**< DAC1 Channel 1 output */
-    SYN_COMP_INV_EXTERNAL   = 5  /**< External I/O pin */
+    SYN_COMP_INV_VREFINT = 3,     /**< Full VREFINT (~1.230 V) */
+    SYN_COMP_INV_DAC1_CH1 = 4,    /**< DAC1 Channel 1 output */
+    SYN_COMP_INV_EXTERNAL = 5     /**< External I/O pin */
 } SYN_COMP_InvertingInput;
 
 /**

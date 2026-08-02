@@ -30,9 +30,9 @@ extern "C" {
 
 /** @brief Analog Comparator handle. Caller allocates; zero heap. */
 typedef struct {
-    uint8_t comp_id;                 /**< Hardware comparator index */
-    SYN_COMP_InvertingInput inv_in;  /**< Configured reference input */
-    bool enabled;                    /**< Enable state flag */
+    uint8_t comp_id;                /**< Hardware comparator index */
+    SYN_COMP_InvertingInput inv_in; /**< Configured reference input */
+    bool enabled;                   /**< Enable state flag */
 } SYN_COMP;
 
 /**

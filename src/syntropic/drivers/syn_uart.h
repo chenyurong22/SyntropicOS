@@ -46,12 +46,12 @@ extern "C" {
  * @brief Configuration struct for UART initialization with optional DMA.
  */
 typedef struct {
-    SYN_UARTInstance instance;            /**< Hardware UART peripheral index */
-    uint32_t baudrate;                    /**< Desired baud rate */
-    bool use_dma;                         /**< Enable DMA for this UART instance */
+    SYN_UARTInstance instance; /**< Hardware UART peripheral index */
+    uint32_t baudrate;         /**< Desired baud rate */
+    bool use_dma;              /**< Enable DMA for this UART instance */
 #if defined(SYN_USE_DMA) && SYN_USE_DMA
-    uint8_t dma_channel_rx;               /**< Assigned RX DMA channel ID */
-    const void *periph_rx_reg;            /**< Peripheral RX data register address */
+    uint8_t dma_channel_rx;    /**< Assigned RX DMA channel ID */
+    const void *periph_rx_reg; /**< Peripheral RX data register address */
 #endif
 } SYN_UART_Config;
 
@@ -73,8 +73,8 @@ typedef struct {
     bool initialized;                     /**< Initialization flag status */
     bool use_dma;                         /**< Per-instance DMA enablement flag */
 #if defined(SYN_USE_DMA) && SYN_USE_DMA
-    SYN_DMA dma_rx;                       /**< Underlying RX DMA channel handle */
-    SYN_DMA_RingBuf dma_ring_rx;          /**< Zero-CPU RX circular DMA ring buffer */
+    SYN_DMA dma_rx;              /**< Underlying RX DMA channel handle */
+    SYN_DMA_RingBuf dma_ring_rx; /**< Zero-CPU RX circular DMA ring buffer */
 #endif
 } SYN_UART;
 

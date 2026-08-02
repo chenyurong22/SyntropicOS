@@ -163,75 +163,52 @@ SYN_WEAK SYN_NORETURN void syn_port_system_reset(void)
     } /* satisfy noreturn */
 }
 
-/* ── SPI stubs ──────────────────────────────────────────────────────────── */
-
-#include "../port/syn_port_spi.h"
-
-SYN_WEAK SYN_Status syn_port_spi_init(const SYN_SPI_Config *cfg)
-{
-    (void)cfg;
-    syn_assert_failed(__FILE__, __LINE__);
-    return SYN_NOT_IMPLEMENTED;
-}
-
-SYN_WEAK SYN_Status syn_port_spi_deinit(uint8_t bus)
-{
-    (void)bus;
-    syn_assert_failed(__FILE__, __LINE__);
-    return SYN_NOT_IMPLEMENTED;
-}
-
-SYN_WEAK SYN_Status syn_port_spi_transfer(uint8_t bus, const uint8_t *tx_buf, uint8_t *rx_buf,
-                                          size_t len)
-{
-    (void)bus;
-    (void)tx_buf;
-    (void)rx_buf;
-    (void)len;
-    syn_assert_failed(__FILE__, __LINE__);
-    return SYN_NOT_IMPLEMENTED;
-}
-
-SYN_WEAK SYN_Status syn_port_spi_cs_assert(uint8_t bus, SYN_GPIO_Pin cs_pin)
-{
-    (void)bus;
-    (void)cs_pin;
-    syn_assert_failed(__FILE__, __LINE__);
-    return SYN_NOT_IMPLEMENTED;
-}
-
-SYN_WEAK SYN_Status syn_port_spi_cs_deassert(uint8_t bus, SYN_GPIO_Pin cs_pin)
-{
-    (void)bus;
-    (void)cs_pin;
-    syn_assert_failed(__FILE__, __LINE__);
-    return SYN_NOT_IMPLEMENTED;
-}
-
 /* ── I2C stubs ──────────────────────────────────────────────────────────── */
 
 #include "../port/syn_port_i2c.h"
 
-SYN_WEAK SYN_Status syn_port_i2c_init(const SYN_I2C_Config *cfg)
+SYN_WEAK SYN_Status syn_port_i2c_init(uint8_t i2c_id, uint32_t clock_speed_hz, uint8_t role, uint16_t own_addr)
 {
-    (void)cfg;
+    (void)i2c_id; (void)clock_speed_hz; (void)role; (void)own_addr;
     syn_assert_failed(__FILE__, __LINE__);
     return SYN_NOT_IMPLEMENTED;
 }
 
-SYN_WEAK SYN_Status syn_port_i2c_deinit(uint8_t bus)
+SYN_WEAK SYN_Status syn_port_i2c_deinit(uint8_t i2c_id)
 {
-    (void)bus;
+    (void)i2c_id;
     syn_assert_failed(__FILE__, __LINE__);
     return SYN_NOT_IMPLEMENTED;
 }
 
-SYN_WEAK SYN_Status syn_port_i2c_write(uint8_t bus, uint8_t addr, const uint8_t *data, size_t len)
+SYN_WEAK SYN_Status syn_port_i2c_transfer(uint8_t i2c_id, uint16_t addr, const uint8_t *tx, size_t tx_len, uint8_t *rx, size_t rx_len)
 {
-    (void)bus;
-    (void)addr;
-    (void)data;
-    (void)len;
+    (void)i2c_id; (void)addr; (void)tx; (void)tx_len; (void)rx; (void)rx_len;
+    syn_assert_failed(__FILE__, __LINE__);
+    return SYN_NOT_IMPLEMENTED;
+}
+
+/* ── SPI stubs ──────────────────────────────────────────────────────────── */
+
+#include "../port/syn_port_spi.h"
+
+SYN_WEAK SYN_Status syn_port_spi_init(uint8_t spi_id, uint32_t baudrate_hz, uint8_t mode, uint8_t role)
+{
+    (void)spi_id; (void)baudrate_hz; (void)mode; (void)role;
+    syn_assert_failed(__FILE__, __LINE__);
+    return SYN_NOT_IMPLEMENTED;
+}
+
+SYN_WEAK SYN_Status syn_port_spi_deinit(uint8_t spi_id)
+{
+    (void)spi_id;
+    syn_assert_failed(__FILE__, __LINE__);
+    return SYN_NOT_IMPLEMENTED;
+}
+
+SYN_WEAK SYN_Status syn_port_spi_transfer(uint8_t spi_id, const uint8_t *tx, uint8_t *rx, size_t len)
+{
+    (void)spi_id; (void)tx; (void)rx; (void)len;
     syn_assert_failed(__FILE__, __LINE__);
     return SYN_NOT_IMPLEMENTED;
 }

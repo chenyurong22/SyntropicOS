@@ -1,7 +1,7 @@
 /**
  * @file syn_port_i2c.h
- * @brief I2C port interface — implement these for your platform.
- * @ingroup syn_system
+ * @brief Port contract for Inter-Integrated Circuit (I2C) hardware.
+ * @ingroup syn_port
  */
 
 #ifndef SYN_PORT_I2C_H
@@ -9,75 +9,41 @@
 
 #include "../common/syn_defs.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* ── I2C configuration ──────────────────────────────────────────────────── */
-
-/** @brief I2C bus configuration. */
-typedef struct {
-    uint8_t bus;       /**< I2C bus index (0, 1, ...)             */
-    uint32_t clock_hz; /**< I2C clock frequency (100k, 400k, etc) */
-} SYN_I2C_Config;
-
-/* ── Port functions (user implements) ───────────────────────────────────── */
-
 /**
- * @brief Initialize an I2C bus.
- * @param cfg  I2C configuration.
+ * @brief Initialize an I2C hardware instance.
+ *
+ * @param i2c_id          Instance index (0 = I2C1, 1 = I2C2).
+ * @param clock_speed_hz  Bus clock frequency in Hz (e.g. 100000, 400000).
+ * @param role            0 = Master, 1 = Slave.
+ * @param own_addr        7-bit own slave address (used in Slave mode).
  * @return SYN_OK on success.
  */
-SYN_Status syn_port_i2c_init(const SYN_I2C_Config *cfg);
+SYN_Status syn_port_i2c_init(uint8_t i2c_id, uint32_t clock_speed_hz, uint8_t role, uint16_t own_addr);
 
 /**
- * @brief Deinitialize an I2C bus.
- * @param bus  I2C bus index.
+ * @brief De-initialize an I2C hardware instance.
+ *
+ * @param i2c_id Instance index.
  * @return SYN_OK on success.
  */
-SYN_Status syn_port_i2c_deinit(uint8_t bus);
+SYN_Status syn_port_i2c_deinit(uint8_t i2c_id);
 
 /**
- * @brief Write data to an I2C device.
+ * @brief Perform an I2C transaction (Write, Read, or Write-Then-Read restart).
  *
- * @param bus     I2C bus index.
- * @param addr    7-bit device address.
- * @param data    Data to write.
- * @param len     Number of bytes.
- * @return SYN_OK on ACK, SYN_ERROR on NACK/timeout.
- */
-SYN_Status syn_port_i2c_write(uint8_t bus, uint8_t addr, const uint8_t *data, size_t len);
-
-/**
- * @brief Read data from an I2C device.
- *
- * @param bus     I2C bus index.
- * @param addr    7-bit device address.
- * @param data    Buffer to receive data.
- * @param len     Number of bytes to read.
- * @return SYN_OK on ACK, SYN_ERROR on NACK/timeout.
- */
-SYN_Status syn_port_i2c_read(uint8_t bus, uint8_t addr, uint8_t *data, size_t len);
-
-/**
- * @brief Write then read (register access pattern).
- *
- * Sends a write (typically a register address) followed by a repeated
- * start and read. This is the most common I2C transaction pattern.
- *
- * @param bus      I2C bus index.
- * @param addr     7-bit device address.
- * @param tx_data  Data to write (e.g., register address).
- * @param tx_len   Write length.
- * @param rx_data  Buffer for read data.
- * @param rx_len   Read length.
+ * @param i2c_id  Instance index.
+ * @param addr    Target 7-bit slave address.
+ * @param tx      TX data buffer (can be NULL if rx_len > 0).
+ * @param tx_len  Bytes to transmit.
+ * @param rx      RX destination buffer (can be NULL if tx_len > 0).
+ * @param rx_len  Bytes to receive.
  * @return SYN_OK on success.
  */
-SYN_Status syn_port_i2c_write_read(uint8_t bus, uint8_t addr, const uint8_t *tx_data, size_t tx_len,
-                                   uint8_t *rx_data, size_t rx_len);
+SYN_Status syn_port_i2c_transfer(uint8_t i2c_id, uint16_t addr, const uint8_t *tx, size_t tx_len, uint8_t *rx, size_t rx_len);
 
 #ifdef __cplusplus
 }

@@ -141,9 +141,6 @@ extern "C" {
 #include "drivers/syn_adc.h"
 #endif
 
-#include "drivers/syn_i2c_dev.h"
-#include "drivers/syn_spi_dev.h"
-
 #if !defined(SYN_USE_EXTI) || SYN_USE_EXTI
 #include "drivers/syn_exti.h"
 #endif
@@ -166,6 +163,14 @@ extern "C" {
 
 #if !defined(SYN_USE_ADC) || SYN_USE_ADC
 #include "drivers/syn_adc.h"
+#endif
+
+#if !defined(SYN_USE_I2C) || SYN_USE_I2C
+#include "drivers/syn_i2c.h"
+#endif
+
+#if !defined(SYN_USE_SPI) || SYN_USE_SPI
+#include "drivers/syn_spi.h"
 #endif
 
 #if !defined(SYN_USE_ONEWIRE) || SYN_USE_ONEWIRE

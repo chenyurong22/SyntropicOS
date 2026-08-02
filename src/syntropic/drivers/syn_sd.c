@@ -24,8 +24,8 @@
  * data blocks use 0xFF dummy bytes (CRC mode off by default in SPI).
  */
 
-#include "../util/syn_assert.h"
 #include "../port/syn_port_gpio.h"
+#include "../util/syn_assert.h"
 #include "syn_sd.h"
 
 #include <string.h>

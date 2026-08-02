@@ -664,10 +664,6 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
                                           resp_len, addr_mode);
         }
-        if (server->session == SYN_UDS_SESSION_DEFAULT) {
-            return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
-                                          resp_len, addr_mode);
-        }
         uint8_t sub = req[1] & 0x7FU;
         if (sub > 0x05U) {
             return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,

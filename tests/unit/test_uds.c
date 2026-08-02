@@ -725,14 +725,20 @@ static void test_uds_communication_control(void)
     uint8_t resp[16] = {0};
     uint16_t resp_len = 0;
 
-    /* 1. Request in DEFAULT session -> Conditions not correct (NRC 0x22) */
+    /* 1. By default, CommunicationControl succeeds in DEFAULT session */
     req[0] = SYN_UDS_SID_COMMUNICATION_CONTROL;
     req[1] = SYN_UDS_COMM_ENABLE_RX_AND_TX;
     req[2] = 0x01;
     TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len,
                                              SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x68, resp[0]);
+
+    /* Restrict CommunicationControl to EXTENDED session -> NRC 0x7F in DEFAULT session */
+    TEST_ASSERT_TRUE(syn_uds_set_service_session_mask(&g_uds, 0x28, SYN_UDS_SESSION_MASK_EXTENDED));
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp[2]);
 
     /* Switch to EXTENDED session */
     uint8_t sess_ext[2] = {SYN_UDS_SID_DIAGNOSTIC_SESSION_CONTROL, SYN_UDS_SESSION_EXTENDED};

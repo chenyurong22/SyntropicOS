@@ -240,6 +240,45 @@ double syn_nmea_parse_coord(const char *nmea_coord, char dir)
     return decimal;
 }
 
+#if SYN_NMEA_USE_FIXED_POINT
+int32_t syn_nmea_parse_coord_udeg(const char *nmea_coord, char dir)
+{
+    if (nmea_coord == NULL || strlen(nmea_coord) < 4)
+        return 0;
+
+    const char *dot = strchr(nmea_coord, '.');
+    if (!dot || (dot - nmea_coord) < 3) return 0;
+
+    int deg_digits = (int)(dot - nmea_coord) - 2;
+    int32_t deg = 0;
+    for (int i = 0; i < deg_digits; i++) {
+        deg = deg * 10 + (nmea_coord[i] - '0');
+    }
+
+    int32_t min_int = (nmea_coord[deg_digits] - '0') * 10 + (nmea_coord[deg_digits + 1] - '0');
+
+    int32_t min_frac = 0;
+    const char *p = dot + 1;
+    for (int i = 0; i < 4; i++) {
+        if (*p >= '0' && *p <= '9') {
+            min_frac = min_frac * 10 + (*p - '0');
+            p++;
+        } else {
+            min_frac = min_frac * 10;
+        }
+    }
+
+    int64_t total_min_scaled = (int64_t)min_int * 10000LL + min_frac;
+    int64_t min_udeg = (total_min_scaled * 10000000LL) / (60LL * 10000LL);
+
+    int32_t udeg = (deg * 10000000) + (int32_t)min_udeg;
+    if (dir == 'S' || dir == 'W') {
+        udeg = -udeg;
+    }
+    return udeg;
+}
+#endif
+
 /**
  * @brief Parse NMEA UTC time field (hhmmss.ss) into components.
  * @param field NMEA time field string.
@@ -296,10 +335,17 @@ bool syn_nmea_parse_gga(const char *sentence, SYN_NMEA_GGA *gga)
     bool has_lon = get_field(sentence, 4, lon_str, sizeof(lon_str)) &&
                    get_field(sentence, 5, lon_dir, sizeof(lon_dir));
 
+#if SYN_NMEA_USE_FIXED_POINT
+    if (has_lat)
+        gga->lat_udeg = syn_nmea_parse_coord_udeg(lat_str, lat_dir[0]);
+    if (has_lon)
+        gga->lon_udeg = syn_nmea_parse_coord_udeg(lon_str, lon_dir[0]);
+#else
     if (has_lat)
         gga->latitude = syn_nmea_parse_coord(lat_str, lat_dir[0]);
     if (has_lon)
         gga->longitude = syn_nmea_parse_coord(lon_str, lon_dir[0]);
+#endif
 
     if (get_field(sentence, 6, f, sizeof(f)))
         gga->fix_quality = (SYN_NMEA_FixQuality)atoi(f);
@@ -335,10 +381,17 @@ bool syn_nmea_parse_rmc(const char *sentence, SYN_NMEA_RMC *rmc)
     bool has_lon = get_field(sentence, 5, lon_str, sizeof(lon_str)) &&
                    get_field(sentence, 6, lon_dir, sizeof(lon_dir));
 
+#if SYN_NMEA_USE_FIXED_POINT
+    if (has_lat)
+        rmc->lat_udeg = syn_nmea_parse_coord_udeg(lat_str, lat_dir[0]);
+    if (has_lon)
+        rmc->lon_udeg = syn_nmea_parse_coord_udeg(lon_str, lon_dir[0]);
+#else
     if (has_lat)
         rmc->latitude = syn_nmea_parse_coord(lat_str, lat_dir[0]);
     if (has_lon)
         rmc->longitude = syn_nmea_parse_coord(lon_str, lon_dir[0]);
+#endif
 
     if (get_field(sentence, 7, f, sizeof(f)))
         rmc->speed_knots = (float)syn_atof(f);

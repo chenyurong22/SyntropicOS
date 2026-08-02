@@ -182,6 +182,19 @@ double syn_geo_3d_distance_m(const SYN_ENU *p1, const SYN_ENU *p2)
     return sqrt(de * de + dn * dn + du * du);
 }
 
+uint32_t syn_geo_distance_fixed_mm(int32_t lat1_udeg, int32_t lon1_udeg,
+                                   int32_t lat2_udeg, int32_t lon2_udeg)
+{
+    int64_t dlat = (int64_t)lat2_udeg - (int64_t)lat1_udeg;
+    int64_t dlon = (int64_t)lon2_udeg - (int64_t)lon1_udeg;
+
+    int64_t dy_mm = (dlat * 111132LL) / 10000LL;
+    int64_t dx_mm = ((dlon * 111132LL) / 10000LL * 786LL) >> 10;
+
+    int64_t dist_sq_mm = (dx_mm * dx_mm) + (dy_mm * dy_mm);
+    return (uint32_t)sqrt((double)dist_sq_mm);
+}
+
 /* ── NMEA GGA Bridge ───────────────────────────────────────────────────── */
 
 SYN_Status syn_geo_pos_from_gga(const SYN_NMEA_GGA *gga, SYN_GeoPos *out_pos)
@@ -190,9 +203,15 @@ SYN_Status syn_geo_pos_from_gga(const SYN_NMEA_GGA *gga, SYN_GeoPos *out_pos)
         return SYN_INVALID_PARAM;
     }
 
+#if SYN_GEO_USE_FIXED_POINT
+    out_pos->lat_udeg = gga->lat_udeg;
+    out_pos->lon_udeg = gga->lon_udeg;
+    out_pos->altitude_mm = (int32_t)(gga->altitude_m * 1000.0f);
+#else
     out_pos->latitude = gga->latitude;
     out_pos->longitude = gga->longitude;
     out_pos->altitude_m = (double)gga->altitude_m;
+#endif
     out_pos->fix_type = gga->fix_quality;
     out_pos->valid = gga->valid;
 

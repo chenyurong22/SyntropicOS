@@ -99,12 +99,34 @@ static SYN_PT_Status app_10ms_task(SYN_PT *pt, SYN_Task *task)
     PT_END(pt);
 }
 
+/* Custom DTC Callback Handler for Service 0x19 Snapshot/Extended Data */
+static bool on_custom_dtc_handler(uint8_t subfunction, const uint8_t *in_data, uint16_t in_len,
+                                  uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len,
+                                  void *ctx)
+{
+    (void)ctx;
+    if (subfunction == SYN_UDS_DTC_REPORT_SNAPSHOT_RECORD_BY_DTC && in_len >= 4 && max_out_len >= 6) {
+        out_buf[0] = in_data[0]; /* DTC High */
+        out_buf[1] = in_data[1]; /* DTC Mid */
+        out_buf[2] = in_data[2]; /* DTC Low */
+        out_buf[3] = 0x24U;      /* Status */
+        out_buf[4] = in_data[3]; /* Record Number */
+        out_buf[5] = 0x01U;      /* Number of DIDs */
+        *out_len = 6U;
+        return true;
+    }
+    return false;
+}
+
 void stm32_uds_isotp_example_init(void)
 {
     (void)on_can_frame_received;
 
     /* Initialize UDS Server */
     syn_uds_init(&g_uds);
+
+    /* Register custom DTC callback handler */
+    syn_uds_register_dtc_handler(&g_uds, on_custom_dtc_handler, NULL);
 
     /* Register deferred post-TX ECU reset handler (50ms post-TX wait window) */
     syn_uds_set_reset_handler(&g_uds, on_ecu_reset, NULL);

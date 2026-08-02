@@ -443,4 +443,81 @@ SYN_WEAK int syn_port_serial_read(uint8_t *buf, size_t max_len)
     return (int)received;
 }
 
+/* ── Hardware Flash Port (STM32 HAL) ────────────────────────────────────── */
+
+#include "syntropic/port/syn_port_flash.h"
+
+SYN_Status syn_port_flash_read(uint32_t addr, void *buf, size_t len)
+{
+    if (buf == NULL)
+        return SYN_INVALID_PARAM;
+    memcpy(buf, (const void *)addr, len);
+    return SYN_OK;
+}
+
+SYN_Status syn_port_flash_erase(uint32_t addr)
+{
+    HAL_FLASH_Unlock();
+#if defined(FLASH_TYPEERASE_SECTORS)
+    FLASH_EraseInitTypeDef erase;
+    erase.TypeErase = FLASH_TYPEERASE_SECTORS;
+    erase.Sector = 0; /* User sector index can be customized via port override */
+    erase.NbSectors = 1;
+    erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+    uint32_t error = 0;
+    HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&erase, &error);
+#elif defined(FLASH_TYPEERASE_PAGES)
+    FLASH_EraseInitTypeDef erase;
+    erase.TypeErase = FLASH_TYPEERASE_PAGES;
+    erase.PageAddress = addr;
+    erase.NbPages = 1;
+    uint32_t error = 0;
+    HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&erase, &error);
+#else
+    HAL_StatusTypeDef status = HAL_ERROR;
+    (void)addr;
+#endif
+    HAL_FLASH_Lock();
+    return (status == HAL_OK) ? SYN_OK : SYN_ERROR;
+}
+
+SYN_Status syn_port_flash_write(uint32_t addr, const void *buf, size_t len)
+{
+    if (buf == NULL)
+        return SYN_INVALID_PARAM;
+    const uint8_t *src = (const uint8_t *)buf;
+    HAL_FLASH_Unlock();
+    HAL_StatusTypeDef status = HAL_OK;
+    for (size_t i = 0; i < len; i++) {
+#if defined(FLASH_TYPEPROGRAM_BYTE)
+        status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, addr + i, src[i]);
+#elif defined(FLASH_TYPEPROGRAM_DOUBLEWORD)
+        if (i + 8 <= len && ((addr + i) % 8 == 0)) {
+            uint64_t val = 0;
+            memcpy(&val, &src[i], 8);
+            status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr + i, val);
+            i += 7;
+        } else {
+            uint64_t val = 0xFFFFFFFFFFFFFFFFULL;
+            size_t rem = len - i;
+            memcpy(&val, &src[i], rem > 8 ? 8 : rem);
+            status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr + i, val);
+            i += 7;
+        }
+#else
+        status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr + i, src[i]);
+#endif
+        if (status != HAL_OK)
+            break;
+    }
+    HAL_FLASH_Lock();
+    return (status == HAL_OK) ? SYN_OK : SYN_ERROR;
+}
+
+uint32_t syn_port_flash_sector_size(uint32_t addr)
+{
+    (void)addr;
+    return 128u * 1024u;
+}
+
 #endif /* STM32 HAL */

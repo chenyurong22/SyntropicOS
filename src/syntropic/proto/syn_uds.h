@@ -23,6 +23,10 @@ extern "C" {
 #ifndef SYN_UDS_MAX_DIDS
 #define SYN_UDS_MAX_DIDS 16U /**< Maximum supported DIDs */
 #endif
+#ifndef SYN_UDS_MAX_SERVICE_OVERRIDES
+#define SYN_UDS_MAX_SERVICE_OVERRIDES \
+    8U /**< Maximum supported per-service policy overrides (default: 8) */
+#endif
 /**@}*/
 
 /** @name UDS Service Identifiers (ISO 14229-1 SID) */
@@ -416,12 +420,15 @@ typedef struct {
     uint32_t transfer_bytes_processed;            /**< Transferred byte count */
     uint8_t expected_block_seq;                   /**< Expected block sequence counter */
     uint8_t reset_type_requested;                 /**< Pending ECU reset type requested */
-    uint8_t custom_session_sids[8];               /**< Custom session mask SID overrides */
-    uint8_t custom_session_masks[8];              /**< Custom session mask values */
-    uint8_t custom_session_count;                 /**< Custom session override count */
-    uint8_t custom_security_sids[8];              /**< Custom security mask SID overrides */
-    uint16_t custom_security_masks[8];            /**< Custom security mask values */
-    uint8_t custom_security_count;                /**< Custom security override count */
+    uint8_t custom_session_sids[SYN_UDS_MAX_SERVICE_OVERRIDES];  /**< Custom session mask SID
+                                                                    overrides */
+    uint8_t custom_session_masks[SYN_UDS_MAX_SERVICE_OVERRIDES]; /**< Custom session mask values */
+    uint8_t custom_session_count; /**< Custom session override count */
+    uint8_t custom_security_sids[SYN_UDS_MAX_SERVICE_OVERRIDES]; /**< Custom security mask SID
+                                                                    overrides */
+    uint16_t
+        custom_security_masks[SYN_UDS_MAX_SERVICE_OVERRIDES]; /**< Custom security mask values */
+    uint8_t custom_security_count;                            /**< Custom security override count */
 } SYN_UDS_Server;
 
 /**

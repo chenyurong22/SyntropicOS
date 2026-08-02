@@ -3133,7 +3133,8 @@ static void test_uds_custom_service_policies(void)
     TEST_ASSERT_EQUAL_UINT16(3, resp_len);
     TEST_ASSERT_EQUAL_UINT8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
 
-    /* Fill capacity of overrides array (8 slots) - 0x22 is already 1 slot, so add 7 more */
+    /* Fill capacity of overrides array (SYN_UDS_MAX_SERVICE_OVERRIDES slots = 8) - 0x22 is 1 slot,
+     * so add 7 more */
     for (uint8_t sid = 0x40; sid < 0x47; sid++) {
         TEST_ASSERT_TRUE(
             syn_uds_set_service_session_mask(&g_uds, sid, SYN_UDS_SESSION_MASK_EXTENDED));

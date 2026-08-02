@@ -412,7 +412,7 @@ bool syn_uds_set_service_session_mask(SYN_UDS_Server *server, uint8_t sid, uint8
             /* LCOV_EXCL_STOP */
         }
     }
-    if (server->custom_session_count < 8U) {
+    if (server->custom_session_count < SYN_UDS_MAX_SERVICE_OVERRIDES) {
         uint8_t idx = server->custom_session_count++;
         server->custom_session_sids[idx] = sid;
         server->custom_session_masks[idx] = session_mask;
@@ -434,7 +434,7 @@ bool syn_uds_set_service_security_mask(SYN_UDS_Server *server, uint8_t sid, uint
             /* LCOV_EXCL_STOP */
         }
     }
-    if (server->custom_security_count < 8U) {
+    if (server->custom_security_count < SYN_UDS_MAX_SERVICE_OVERRIDES) {
         uint8_t idx = server->custom_security_count++;
         server->custom_security_sids[idx] = sid;
         server->custom_security_masks[idx] = security_mask;

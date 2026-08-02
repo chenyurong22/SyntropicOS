@@ -409,6 +409,9 @@ static void test_vfs_duplicate_mount_and_unmount_nonexistent(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_vfs_unmount("/nonexistent"));
 }
 
+static const SYN_VfsOps ops_open_fail = {.open = mock_open_fail};
+static const SYN_VfsOps ops_dir_fail = {.opendir = mock_opendir_fail};
+
 static void test_vfs_unmount_shift_and_null_checks(void)
 {
     syn_vfs_init();
@@ -424,18 +427,57 @@ static void test_vfs_unmount_shift_and_null_checks(void)
     TEST_ASSERT_EQUAL_INT(-1, syn_vfs_rename("/m2/file1", "/m2/file2"));
     TEST_ASSERT_EQUAL_INT(-1, syn_vfs_rename("/m2/file1", "/nonexistent/file2"));
 
-    /* Test ops without close callback */
+    /* Test ops without read, write, seek, tell callbacks */
     syn_vfs_init();
-    static const SYN_VfsOps mock_no_close_ops = {.open = mock_open};
-    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/noclose", &mock_no_close_ops, NULL));
-    int fd_noclose = syn_vfs_open("/noclose/file.txt", SYN_O_RDONLY);
-    TEST_ASSERT_TRUE(fd_noclose >= 0);
-    TEST_ASSERT_EQUAL_INT(0, syn_vfs_close(fd_noclose));
+    static const SYN_VfsOps mock_minimal_ops = {.open = mock_open};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/minimal", &mock_minimal_ops, NULL));
+    int fd_min = syn_vfs_open("/minimal/file.txt", SYN_O_RDWR);
+    TEST_ASSERT_TRUE(fd_min >= 0);
+    uint8_t dummy[4];
+    TEST_ASSERT_EQUAL_INT(-2, syn_vfs_read(fd_min, dummy, sizeof(dummy)));
+    TEST_ASSERT_EQUAL_INT(-2, syn_vfs_write(fd_min, dummy, sizeof(dummy)));
+    TEST_ASSERT_EQUAL_INT(-2, syn_vfs_seek(fd_min, 0, SYN_SEEK_SET));
+    TEST_ASSERT_EQUAL_INT(-2, syn_vfs_tell(fd_min));
+    TEST_ASSERT_EQUAL_INT(0, syn_vfs_close(fd_min));
 
     /* Test find_mount prefix character mismatch (line 105) */
     TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/sd", &mock_full_ops, NULL));
     int fd_mismatch = syn_vfs_open("/sp/file.txt", SYN_O_RDONLY);
     TEST_ASSERT_EQUAL_INT(-1, fd_mismatch);
+
+    /* Exact mount path match -> rel_path becomes "/" (lines 122-124) */
+    syn_vfs_init();
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/mount_exact", &mock_minimal_ops, NULL));
+    int fd_exact = syn_vfs_open("/mount_exact", SYN_O_RDONLY);
+    TEST_ASSERT_TRUE(fd_exact >= 0);
+    syn_vfs_close(fd_exact);
+
+    /* Open failure callback returning -5 (lines 184-187) */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/fail_open", &ops_open_fail, NULL));
+    TEST_ASSERT_EQUAL_INT(-5, syn_vfs_open("/fail_open/file", SYN_O_RDONLY));
+
+    /* Rename across different mounts (line 149) */
+    syn_vfs_init();
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/m_a", &mock_full_ops, NULL));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/m_b", &mock_full_ops, NULL));
+    TEST_ASSERT_EQUAL_INT(-1, syn_vfs_rename("/m_a/file1", "/m_b/file2"));
+
+    /* Opendir failure callback and opendir exhaustion (lines 291 & 300) */
+    syn_vfs_init();
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/fail_dir", &ops_dir_fail, NULL));
+    TEST_ASSERT_EQUAL_INT(-6, syn_vfs_opendir("/fail_dir"));
+
+    syn_vfs_init();
+    TEST_ASSERT_EQUAL(SYN_OK, syn_vfs_mount("/dir_ok", &mock_full_ops, NULL));
+    int dirs[SYN_VFS_MAX_OPEN_DIRS];
+    for (int i = 0; i < SYN_VFS_MAX_OPEN_DIRS; i++) {
+        dirs[i] = syn_vfs_opendir("/dir_ok");
+        TEST_ASSERT_TRUE(dirs[i] >= 0);
+    }
+    TEST_ASSERT_EQUAL_INT(-2, syn_vfs_opendir("/dir_ok"));
+    for (int i = 0; i < SYN_VFS_MAX_OPEN_DIRS; i++) {
+        syn_vfs_closedir(dirs[i]);
+    }
 
     syn_vfs_init();
 }

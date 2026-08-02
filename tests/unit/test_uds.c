@@ -328,6 +328,9 @@ static void test_uds_security_access_aes128(void)
     TEST_ASSERT_FALSE(syn_uds_set_security_seed_bytes(NULL, NULL));
     TEST_ASSERT_FALSE(syn_uds_set_security_seed_bytes(&g_uds, NULL));
 
+    /* Disable AES-128 security mode check */
+    TEST_ASSERT_TRUE(syn_uds_disable_aes128_security(&g_uds));
+
     /* Enable AES-128 security mode with secret key */
     const uint8_t aes_key[16] = {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
                                  0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c};
@@ -1904,6 +1907,15 @@ static void test_uds_negative_response_codes_extended(void)
     uint8_t resp[64] = {0};
     uint16_t resp_len = 0;
 
+    /* ReadDataByIdentifier response too long check */
+    static uint8_t did_data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    syn_uds_register_did(&server, 0x1234, did_data, 10, true);
+    uint8_t read_did_req[3] = {SYN_UDS_SID_READ_DATA_BY_IDENTIFIER, 0x12, 0x34};
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, read_did_req, 3, resp, 5, &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_RESPONSE_TOO_LONG, resp[2]);
+
     /* 1. AccessTimingParameter (0x83) subfunctions */
     req[0] = SYN_UDS_SID_ACCESS_TIMING_PARAMETER;
     req[1] = 0x01;
@@ -1943,6 +1955,24 @@ static void test_uds_negative_response_codes_extended(void)
 
     /* 2. ReadDTCInformation fallback default subfunction without registered callback */
     req[0] = SYN_UDS_SID_READ_DTC_INFORMATION;
+    req[1] = 0x07; /* REPORT_NUMBER_BY_SEVERITY_MASK short length */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[1] = 0x08; /* REPORT_BY_SEVERITY_MASK short length */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
+    req[1] = 0x09; /* REPORT_SEVERITY_INFO short length */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+
     req[1] = 0x7E;
     TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
                                              SYN_UDS_ADDR_PHYSICAL));

@@ -501,10 +501,134 @@ static void test_sd_spi_init_fail(void)
     mock_spi_init_ok = true;
 }
 
+static void test_sd_init_v2_sdsc(void)
+{
+    SYN_SD sd;
+    static const uint8_t v2_sdsc_init_rx[] = {
+        /* CMD0 R1 poll        */ 0xFF,
+        0x01,
+        /* CMD8 R1             */ 0x01,
+        /* CMD8 R7             */ 0x00,
+        0x00,
+        0x01,
+        0xAA,
+        /* CMD55 R1            */ 0x01,
+        /* ACMD41 R1           */ 0x00,
+        /* CMD58 R1            */ 0x00,
+        /* CMD58 OCR (CCS=0)   */ 0x80,
+        0xFF,
+        0x80,
+        0x00,
+        /* CMD9 R1             */ 0x00,
+        /* CMD9 data token     */ 0xFE,
+        /* CSD v2 — 16 bytes   */
+        0x40,
+        0x0E,
+        0x00,
+        0x32,
+        0x5B,
+        0x59,
+        0x00,
+        0x00,
+        0x3B,
+        0x7F,
+        0x32,
+        0x5A,
+        0x83,
+        0xC8,
+        0x96,
+        0x40,
+        /* CSD CRC             */ 0xFF,
+        0xFF,
+    };
+
+    mock_spi_set_response(v2_sdsc_init_rx, sizeof(v2_sdsc_init_rx));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_sd_init(&sd, 0, (SYN_GPIO_Pin)0));
+    TEST_ASSERT_EQUAL(SYN_SD_SDSC, sd.type);
+    TEST_ASSERT_TRUE(sd.initialized);
+}
+
+static void test_sd_init_v1_sdsc(void)
+{
+    SYN_SD sd;
+    static const uint8_t v1_sdsc_init_rx[] = {
+        /* CMD0 R1             */ 0x01,
+        /* CMD8 R1 (ILLCMD)    */ 0x05,
+        /* CMD55 R1            */ 0x01,
+        /* ACMD41 R1           */ 0x00,
+        /* CMD16 R1            */ 0x00,
+        /* CMD9 R1             */ 0x00,
+        /* CMD9 data token     */ 0xFE,
+        /* CSD v1 — 16 bytes   */
+        0x00,
+        0x0E,
+        0x00,
+        0x32,
+        0x5B,
+        0x59,
+        0x00,
+        0x00,
+        0x3B,
+        0x7F,
+        0x32,
+        0x5A,
+        0x83,
+        0xC8,
+        0x96,
+        0x40,
+        /* CSD CRC             */ 0xFF,
+        0xFF,
+    };
+
+    mock_spi_set_response(v1_sdsc_init_rx, sizeof(v1_sdsc_init_rx));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_sd_init(&sd, 0, (SYN_GPIO_Pin)0));
+    TEST_ASSERT_EQUAL(SYN_SD_SDSC, sd.type);
+    TEST_ASSERT_TRUE(sd.initialized);
+
+    /* CSD v1 with read_bl_len < 9 (csd[5]=8, line 186) */
+    static uint8_t v1_small_bl_rx[26];
+    memcpy(v1_small_bl_rx, v1_sdsc_init_rx, sizeof(v1_sdsc_init_rx));
+    v1_small_bl_rx[12] = 0x08; /* csd[5] = 8 */
+    mock_spi_set_response(v1_small_bl_rx, sizeof(v1_small_bl_rx));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_sd_init(&sd, 0, (SYN_GPIO_Pin)0));
+}
+
+static void test_sd_sdsc_read_write(void)
+{
+    mock_port_reset();
+    SYN_SD sd;
+    sd.spi_bus = 0;
+    sd.cs_pin = (SYN_GPIO_Pin)0;
+    sd.type = SYN_SD_SDSC;
+    sd.sector_count = 2048;
+    sd.initialized = true;
+
+    /* Read and Write SDSC (byte address sector * 512, lines 316 & 356) */
+    uint8_t sdsc_read_rx[516];
+    sdsc_read_rx[0] = 0x00u;
+    sdsc_read_rx[1] = 0xFEu;
+    memset(&sdsc_read_rx[2], 0x55, 512);
+    sdsc_read_rx[514] = 0xFF;
+    sdsc_read_rx[515] = 0xFF;
+    mock_spi_set_response(sdsc_read_rx, sizeof(sdsc_read_rx));
+
+    uint8_t buf_sdsc[512];
+    TEST_ASSERT_EQUAL(SYN_OK, syn_sd_read(&sd, 2, buf_sdsc));
+    TEST_ASSERT_EQUAL_HEX8(0x55, buf_sdsc[0]);
+
+    uint8_t write_rx[6] = {0x00, 0xFF, 0xFF,
+                           0xFF, 0x05, 0xFF}; /* R1=0, dummies, Token=0x05, Ready=0xFF */
+    mock_spi_set_response(write_rx, sizeof(write_rx));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_sd_write(&sd, 2, buf_sdsc));
+}
+
 void run_sd_tests(void)
 {
     RUN_TEST(test_sd_init_sdhc);
     RUN_TEST(test_sd_init_sdsc);
+    RUN_TEST(test_sd_init_v2_sdsc);
+    RUN_TEST(test_sd_init_v1_sdsc);
+    RUN_TEST(test_sd_sdsc_read_write);
     RUN_TEST(test_sd_init_timeout);
     RUN_TEST(test_sd_read_sector);
     RUN_TEST(test_sd_write_sector);

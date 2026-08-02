@@ -722,6 +722,84 @@ static void test_dns_mdns_init_open_failure_and_truncated_records(void)
     mock_udp_set_response(txt_ans, sizeof(txt_ans), &from);
     PT_INIT(&pt);
     syn_dns_resolve_task(&pt, &task);
+
+    /* Runt UDP packet (len 5 < 12) in resolve loop (line 204) */
+    mock_port_reset();
+    uint8_t runt_udp[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
+    mock_udp_set_response(runt_udp, sizeof(runt_udp), &from);
+    PT_INIT(&pt);
+    syn_dns_resolve_task(&pt, &task);
+
+    /* DNS response with 0 answers */
+    mock_port_reset();
+    uint8_t zero_ans_resp[] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 1,    'a',  0,    0x00, 0x01, 0x00, 0x01};
+    mock_udp_set_response(zero_ans_resp, sizeof(zero_ans_resp), &from);
+    PT_INIT(&pt);
+    task.user_data = &r_sf;
+    syn_dns_resolve_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_ERROR, r_sf.status);
+
+    /* DNS response with truncated answer header */
+    mock_port_reset();
+    uint8_t trunc_ans_resp[] = {0x00, 0x00, 0x81, 0x80, 0x00, 0x00, 0x00, 0x01, 0x00,
+                                0x00, 0x00, 0x00, 1,    'a',  0,    0x00, 0x01};
+    mock_udp_set_response(trunc_ans_resp, sizeof(trunc_ans_resp), &from);
+    PT_INIT(&pt);
+    task.user_data = &r_sf;
+    syn_dns_resolve_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_ERROR, r_sf.status);
+
+    /* mDNS query with second label length 3 ("com") instead of 5 ("local") */
+    SYN_Mdns mdns_dev;
+    uint8_t dev_ip[] = {192, 168, 1, 10};
+    syn_mdns_init(&mdns_dev, "mydev", dev_ip);
+    uint8_t com_query[] = {0,   0,   0,   0,   0, 1,   0,   0,   0, 0, 0, 0, 5, 'm',
+                           'y', 'd', 'e', 'v', 3, 'c', 'o', 'm', 0, 0, 1, 0, 1};
+    mock_udp_set_response(com_query, sizeof(com_query), &from);
+    PT_INIT(&pt);
+    task.user_data = &mdns_dev;
+    syn_mdns_task(&pt, &task);
+
+    /* mDNS packet with Response flag QR bit set (0x8400) */
+    uint8_t resp_flag_pkt[] = {0, 0,   0x84, 0,   0,   1,   0, 0, 0, 0, 0, 0,
+                               5, 'm', 'y',  'd', 'e', 'v', 0, 0, 1, 0, 1};
+    mock_udp_set_response(resp_flag_pkt, sizeof(resp_flag_pkt), &from);
+    PT_INIT(&pt);
+    syn_mdns_task(&pt, &task);
+
+    /* mDNS packet with 0 questions */
+    uint8_t zero_q_pkt[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 'x'};
+    mock_udp_set_response(zero_q_pkt, sizeof(zero_q_pkt), &from);
+    PT_INIT(&pt);
+    syn_mdns_task(&pt, &task);
+
+    /* mDNS packet with 2 questions: Q1 malformed, Q2 valid match */
+    uint8_t multi_q_pkt[] = {0,   0,   0,   0,   0,   2,   0,   0,   0,
+                             0,   0,   0,   55,  'b', 'a', 'd', /* invalid label len 55 > buffer */
+                             5,   'm', 'y', 'd', 'e', 'v', 5,   'l', 'o',
+                             'c', 'a', 'l', 0,   0,   1,   0,   1};
+    mock_udp_set_response(multi_q_pkt, sizeof(multi_q_pkt), &from);
+    PT_INIT(&pt);
+    syn_mdns_task(&pt, &task);
+
+    /* DNS resolver with dns_server == NULL (lines 160-166) */
+    SYN_DnsResolver r_null_srv;
+    SYN_SockAddr addr_out;
+    memset(&r_null_srv, 0, sizeof(r_null_srv));
+    r_null_srv.hostname = "example.com";
+    r_null_srv.dns_server = NULL;
+    r_null_srv.addr_out = &addr_out;
+    r_null_srv.timeout_ms = 100;
+    PT_INIT(&pt);
+    task.user_data = &r_null_srv;
+    syn_dns_resolve_task(&pt, &task);
+
+    /* mDNS init failure when udp_open returns invalid (line 242) */
+    SYN_Mdns mdns_fail;
+    mock_udp_open_ok = false;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_mdns_init(&mdns_fail, "dev", dev_ip));
+    mock_udp_open_ok = true;
 }
 
 void run_dns_tests(void)

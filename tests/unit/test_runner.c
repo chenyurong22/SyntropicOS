@@ -762,6 +762,8 @@ int main(void)
     extern void run_comp_tests(void);
     extern void run_i2c_driver_tests(void);
     extern void run_spi_driver_tests(void);
+    extern void run_i2c_queue_tests(void);
+    extern void run_spi_queue_tests(void);
 
     run_tcp_tests();
     run_udp_tests();
@@ -778,6 +780,8 @@ int main(void)
     run_comp_tests();
     run_i2c_driver_tests();
     run_spi_driver_tests();
+    run_i2c_queue_tests();
+    run_spi_queue_tests();
 
     return UNITY_END();
 }

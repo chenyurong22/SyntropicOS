@@ -173,4 +173,8 @@ void test_igmp_non_igmp_packets(void)
     report_pkt[34] = SYN_IGMP_TYPE_V2_REPORT;
     TEST_ASSERT_EQUAL_INT(SYN_OK,
                           syn_igmp_process_packet(&rejoin_igmp, &eth, report_pkt, 60, NULL, NULL));
+
+    /* Build report with custom type (neither V2_REPORT nor V2_LEAVE) */
+    TEST_ASSERT_EQUAL_INT(SYN_OK,
+                          syn_igmp_build_report(&rejoin_igmp, &eth, 99, MDNS_GROUP, frame, &len));
 }

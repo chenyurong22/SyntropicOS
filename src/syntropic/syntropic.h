@@ -167,10 +167,12 @@ extern "C" {
 
 #if !defined(SYN_USE_I2C) || SYN_USE_I2C
 #include "drivers/syn_i2c.h"
+#include "drivers/syn_i2c_queue.h"
 #endif
 
 #if !defined(SYN_USE_SPI) || SYN_USE_SPI
 #include "drivers/syn_spi.h"
+#include "drivers/syn_spi_queue.h"
 #endif
 
 #if !defined(SYN_USE_ONEWIRE) || SYN_USE_ONEWIRE

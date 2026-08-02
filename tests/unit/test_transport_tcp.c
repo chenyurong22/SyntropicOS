@@ -211,6 +211,8 @@ static void test_transport_tcp_has_data(void)
     TEST_ASSERT_FALSE(syn_transport_has_data(&t_inv));
     TEST_ASSERT_FALSE(syn_transport_has_data(NULL));
     TEST_ASSERT_FALSE(syn_transport_send(NULL, NULL, 0));
+    SYN_Transport t_nosend = {0};
+    TEST_ASSERT_FALSE(syn_transport_send(&t_nosend, (const uint8_t *)"a", 1));
 
     /* Socket connected, no data ready -> false */
     TEST_ASSERT_FALSE(syn_transport_has_data(&t));

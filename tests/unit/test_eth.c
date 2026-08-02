@@ -179,12 +179,42 @@ void test_eth_coroutine_pt(void)
 
 void test_eth_null_checks(void)
 {
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_init(NULL, NULL, 0));
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_process_frame(NULL, NULL, 0, NULL, NULL));
+    SYN_ETH eth;
+    uint8_t mac[6];
+    uint8_t frame_out[128];
+    size_t len = 0;
+    uint8_t tx_buf[128];
+    size_t tx_len = 0;
+
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_generate_mac(NULL, 4, mac));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_generate_mac("uid", 0, mac));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_generate_mac("uid", 4, NULL));
+
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_init(NULL, MY_MAC, MY_IP));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_init(&eth, NULL, MY_IP));
+
+    syn_eth_init(&eth, MY_MAC, MY_IP);
+
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_arp_update(NULL, MY_IP, PEER_MAC));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_arp_update(&eth, MY_IP, NULL));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_arp_update(&eth, 0, PEER_MAC));
+
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_arp_lookup(NULL, MY_IP, mac));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_arp_lookup(&eth, MY_IP, NULL));
+
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
-                          syn_eth_build_frame(NULL, NULL, 0, NULL, 0, NULL, NULL));
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_arp_lookup(NULL, 0, NULL));
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_arp_update(NULL, 0, NULL));
+                          syn_eth_build_frame(NULL, PEER_MAC, 0x0800, NULL, 0, frame_out, &len));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_eth_build_frame(&eth, NULL, 0x0800, NULL, 0, frame_out, &len));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_eth_build_frame(&eth, PEER_MAC, 0x0800, NULL, 0, NULL, &len));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_eth_build_frame(&eth, PEER_MAC, 0x0800, NULL, 0, frame_out, NULL));
+
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_eth_process_frame(NULL, frame_out, 60, tx_buf, &tx_len));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_eth_process_frame(&eth, NULL, 60, tx_buf, &tx_len));
 }
 
 void test_eth_runt_and_oversized_frames(void)
@@ -198,6 +228,51 @@ void test_eth_runt_and_oversized_frames(void)
 
     /* Runt frame (< 14 bytes) must return SYN_INVALID_PARAM */
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_process_frame(&eth, runt, 13, tx, &tx_len));
+
+    /* ARP LRU Eviction when cache full (lines 98-109) */
+    for (uint32_t i = 1; i <= 9; i++) {
+        uint8_t mac_i[6] = {0x02, 0, 0, 0, 0, (uint8_t)i};
+        TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_arp_update(&eth, 0xC0A80100 + i, mac_i));
+    }
+    uint8_t evicted_mac[6];
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_eth_arp_lookup(&eth, 0xC0A80109, evicted_mac));
+
+    /* Frame build with NULL payload (lines 152-160) */
+    uint8_t f_out[128];
+    size_t f_len = 0;
+    TEST_ASSERT_EQUAL_INT(SYN_OK,
+                          syn_eth_build_frame(&eth, PEER_MAC, 0x0800, NULL, 0, f_out, &f_len));
+    TEST_ASSERT_EQUAL(60, f_len);
+
+    /* Frame build with oversized payload (line 143) */
+    /* Build frame with payload_len = 10 (triggers zero-padding up to 60 bytes, line 157) */
+    uint8_t short_payload[10] = "123456789";
+    uint8_t pad_frame[128];
+    size_t pad_frame_len = 0;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_eth_build_frame(&eth, PEER_MAC, SYN_ETHTYPE_IPV4, short_payload,
+                                                  10, pad_frame, &pad_frame_len));
+    TEST_ASSERT_EQUAL(60, pad_frame_len);
+
+    /* Process frame with non-matching MAC address (line 187) */
+    uint8_t other_mac[6] = {0x00, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE};
+    uint8_t other_frame[60];
+    memcpy(other_frame, pad_frame, 60);
+    memcpy(other_frame, other_mac, 6); /* dst_mac != our mac && != broadcast */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_eth_process_frame(&eth, other_frame, 60, tx, &tx_len));
+
+    /* Process runt ARP frame (len = 30 < 42, line 192) */
+    uint8_t runt_arp[30];
+    memset(runt_arp, 0, sizeof(runt_arp));
+    memcpy(runt_arp, MY_MAC, 6); /* dst = our mac */
+    runt_arp[12] = 0x08;
+    runt_arp[13] = 0x06; /* ARP */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_eth_process_frame(&eth, runt_arp, 30, tx, &tx_len));
+
+    uint8_t big_f_out[2000];
+    uint8_t big_payload[1600] = {0};
+    TEST_ASSERT_EQUAL_INT(
+        SYN_INVALID_PARAM,
+        syn_eth_build_frame(&eth, PEER_MAC, 0x0800, big_payload, 1600, big_f_out, &f_len));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_eth_process_frame(&eth, runt, 5, tx, &tx_len));
 
     /* Building frame exceeding 1514 bytes maximum length must fail */
@@ -244,6 +319,38 @@ void test_eth_runt_and_oversized_frames(void)
     TEST_ASSERT_EQUAL_INT(
         SYN_OK, syn_eth_process_frame(&eth, udp_eth_pkt, sizeof(udp_eth_pkt), tx, &tx_len));
     syn_transport_udp_set_instance(NULL);
+
+    /* Process IP packet with unknown protocol (ip_proto = 99) */
+    udp_eth_pkt[23] = 99;
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_eth_process_frame(&eth, udp_eth_pkt, sizeof(udp_eth_pkt), tx, &tx_len));
+
+    /* ARP request for different target IP (lines 208) */
+    uint8_t bcast_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    uint8_t arp_req_other[60] = {0};
+    memcpy(&arp_req_other[0], bcast_mac, 6);
+    memcpy(&arp_req_other[6], PEER_MAC, 6);
+    arp_req_other[12] = 0x08;
+    arp_req_other[13] = 0x06; /* ARP */
+    arp_req_other[14] = 0x00;
+    arp_req_other[15] = 0x01; /* htype = 1 */
+    arp_req_other[16] = 0x08;
+    arp_req_other[17] = 0x00; /* ptype = 0x0800 */
+    arp_req_other[18] = 6;
+    arp_req_other[19] = 4;
+    arp_req_other[20] = 0x00;
+    arp_req_other[21] = 0x01; /* ARP Request */
+    arp_req_other[38] = 192;
+    arp_req_other[39] = 168;
+    arp_req_other[40] = 1;
+    arp_req_other[41] = 99; /* Target IP = 192.168.1.99 != MY_IP */
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_eth_process_frame(&eth, arp_req_other, sizeof(arp_req_other), tx, &tx_len));
+    TEST_ASSERT_EQUAL_INT(0, tx_len);
+
+    /* Odd-length IP checksum (lines 279-281) */
+    uint8_t odd_data[5] = {0x12, 0x34, 0x56, 0x78, 0x90};
+    TEST_ASSERT_NOT_EQUAL(0, syn_ip_checksum(odd_data, 5));
 }
 
 void test_eth_mac_filtering(void)

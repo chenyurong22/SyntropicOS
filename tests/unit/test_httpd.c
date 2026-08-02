@@ -832,13 +832,107 @@ static void test_httpd_connection_listener_and_task_polling(void)
     mock_sock_set_response(req_wildcard_mismatch, strlen(req_wildcard_mismatch));
     syn_httpd_step(&srv);
 
-    /* Test space == 0 in READING_HEADERS state (413 Request Too Large) */
+    /* Test PUT, DELETE, and OPTIONS method parsing */
+    setup_server();
+    const char req_put[] =
+        "PUT /api/status HTTP/1.1\r\nHost: test\r\nContent-Type: text/html\r\n\r\n";
+    mock_sock_set_response(req_put, strlen(req_put));
+    syn_httpd_step(&srv);
+
+    setup_server();
+    const char req_delete[] = "DELETE /api/status HTTP/1.1\r\nHost: test\r\n\r\n";
+    mock_sock_set_response(req_delete, strlen(req_delete));
+    syn_httpd_step(&srv);
+
+    setup_server();
+    const char req_options[] = "OPTIONS /api/status HTTP/1.1\r\nHost: test\r\n\r\n";
+    mock_sock_set_response(req_options, strlen(req_options));
+    syn_httpd_step(&srv);
+
+    /* Request line missing first space (sp1 == NULL) */
+    setup_server();
+    srv.state = SYN_HTTPD_DISPATCHING;
+    const char req_no_space[] = "GETNOPATH\r\n\r\n";
+    memcpy(srv.work_buf, req_no_space, sizeof(req_no_space) - 1);
+    srv.rx_total = sizeof(req_no_space) - 1;
+    syn_httpd_step(&srv);
+
+    /* Test n == 0 (connection closed before headers complete) */
     setup_server();
     srv.state = SYN_HTTPD_READING_HEADERS;
     srv.client = 1;
-    srv.rx_total = srv.work_buf_size - 1; /* space = 0 */
+    srv.rx_total = 0;
+    mock_sock_connected = true;
+    mock_sock_rx_len = 0;
+    mock_sock_rx_pos = 0;
+    mock_sock_eof_on_empty = true;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_httpd_step(&srv));
     TEST_ASSERT_EQUAL(SYN_HTTPD_IDLE, srv.state);
+    mock_sock_eof_on_empty = false;
+
+    /* Test invalid state in syn_httpd_step */
+    setup_server();
+    srv.state = (SYN_HttpdState)99;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_httpd_step(&srv));
+    TEST_ASSERT_EQUAL(SYN_HTTPD_IDLE, srv.state);
+
+    /* Test POST method request */
+    setup_server();
+    const char req_post[] = "POST /api/status HTTP/1.1\r\nHost: test\r\n\r\n";
+    mock_sock_set_response(req_post, strlen(req_post));
+    syn_httpd_step(&srv);
+
+    /* Exact route path mismatch */
+    setup_server();
+    const char req_exact_mismatch[] = "GET /nonexistent HTTP/1.1\r\nHost: test\r\n\r\n";
+    mock_sock_set_response(req_exact_mismatch, strlen(req_exact_mismatch));
+    syn_httpd_step(&srv);
+
+    /* Test null/zero parameter branches for status, header, body */
+    uint8_t dummy_buf[64];
+    SYN_HttpdResponse resp = {.sock = 1,
+                              .buf = dummy_buf,
+                              .buf_size = sizeof(dummy_buf),
+                              .headers_sent = false,
+                              .upgraded = false};
+    syn_httpd_status(NULL, 200, "OK");
+    syn_httpd_status(&resp, 200, NULL);
+    syn_httpd_status(&resp, 200, "OK");
+
+    syn_httpd_header(NULL, "X-Key", "Val");
+    syn_httpd_header(&resp, NULL, "Val");
+    syn_httpd_header(&resp, "X-Key", NULL);
+    syn_httpd_header(&resp, "X-Key", "Val");
+
+    syn_httpd_body(NULL, "data", 4);
+    syn_httpd_body(&resp, NULL, 4);
+    syn_httpd_body(&resp, (const uint8_t *)"x", 0);
+
+    char str_buf[16];
+    SYN_HttpdRequest req_zero = {.content_length = 0, .body_consumed = 0};
+
+    /* Read body when remaining == 0 */
+    int bytes = syn_httpd_read_body(&req_zero, &resp, str_buf, 10);
+    TEST_ASSERT_EQUAL(0, bytes);
+
+    /* Read buffered body in partial chunks (lines 520-528) */
+    uint8_t body_storage[64];
+    memcpy(body_storage, "0123456789", 10);
+    SYN_HttpdResponse resp_buffered = {
+        .sock = 1, .buf = body_storage, .buf_size = sizeof(body_storage)};
+    SYN_HttpdRequest req_buffered = {.content_length = 10,
+                                     .body_consumed = 0,
+                                     .body_buffered_len = 10,
+                                     .body_buffered_offset = 0};
+    char chunk1[5];
+    int n1 = syn_httpd_read_body(&req_buffered, &resp_buffered, chunk1, 5);
+    TEST_ASSERT_EQUAL(5, n1);
+    TEST_ASSERT_EQUAL_MEMORY("01234", chunk1, 5);
+
+    char chunk2[5];
+    int n2 = syn_httpd_read_body(&req_buffered, &resp_buffered, chunk2, 5);
+    TEST_ASSERT_EQUAL(5, n2);
+    TEST_ASSERT_EQUAL_MEMORY("56789", chunk2, 5);
 }
 
 void run_httpd_tests(void)
@@ -879,4 +973,13 @@ void run_httpd_tests(void)
     RUN_TEST(test_httpd_bad_request_malformed_headers);
     RUN_TEST(test_httpd_header_length_limits_and_malformed_lines);
     RUN_TEST(test_httpd_connection_listener_and_task_polling);
+
+    /* Test NULL parameter guards for response helpers */
+    SYN_HttpdResponse resp_dummy = {0};
+    syn_httpd_status(NULL, 200, "OK");
+    syn_httpd_status(&resp_dummy, 200, NULL);
+    syn_httpd_header(NULL, "Key", "Val");
+    syn_httpd_header(&resp_dummy, NULL, "Val");
+    syn_httpd_header(&resp_dummy, "Key", NULL);
+    syn_httpd_body(NULL, "data", 4);
 }

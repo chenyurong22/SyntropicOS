@@ -288,6 +288,10 @@ void test_dhcp_null_checks(void)
     uint8_t small_buf[100];
     size_t len = 0;
 
+    /* Default XID branch (xid == 0) */
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_dhcp_init(&dhcp, 0));
+    TEST_ASSERT_EQUAL_UINT32(0x12345678UL, dhcp.xid);
+
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_init(NULL, 0));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_build_discover(NULL, NULL, NULL, 0, NULL));
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_build_request(NULL, NULL, NULL, 0, NULL));
@@ -297,4 +301,83 @@ void test_dhcp_null_checks(void)
     SYN_Status req_err_st = syn_dhcp_build_request(&dhcp, mac, small_buf, sizeof(small_buf), &len);
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, req_err_st);
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_dhcp_process_packet(NULL, NULL, NULL, 0));
+
+    /* Option 0 padding byte in process packet */
+    uint8_t pad_pkt[300] = {0};
+    pad_pkt[4] = (uint8_t)(0x12345678UL >> 24);
+    pad_pkt[5] = (uint8_t)(0x12345678UL >> 16);
+    pad_pkt[6] = (uint8_t)(0x12345678UL >> 8);
+    pad_pkt[7] = (uint8_t)(0x12345678UL);
+    pad_pkt[236] = 0x63;
+    pad_pkt[237] = 0x82;
+    pad_pkt[238] = 0x53;
+    pad_pkt[239] = 0x63;
+    pad_pkt[240] = 0; /* Pad byte */
+    pad_pkt[241] = 53;
+    pad_pkt[242] = 1;
+    pad_pkt[243] = 2; /* OFFER */
+    pad_pkt[244] = 255;
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, pad_pkt, 245));
+
+    /* Option header truncated inside options loop (i >= len) */
+    uint8_t trunc_pkt[300] = {0};
+    memcpy(trunc_pkt, pad_pkt, 245);
+    trunc_pkt[243] = 53; /* Option at offset 243, but len = 244 so after i++, i = 244 >= len */
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, trunc_pkt, 244));
+
+    /* Option payload truncated inside options loop (i + opt_len > len) */
+    trunc_pkt[244] = 10; /* opt_len = 10 at offset 244, total len = 248 -> i + 10 = 255 > 248 */
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, trunc_pkt, 248));
+
+    /* Unknown msg_type (e.g. DHCPNAK = 6) */
+    pad_pkt[243] = 6;
+    TEST_ASSERT_EQUAL_INT(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, pad_pkt, 245));
+
+    /* Build request with server_ip == 0 */
+    SYN_DHCP dhcp_no_srv;
+    syn_dhcp_init(&dhcp_no_srv, 0x11223344);
+    dhcp_no_srv.offered_ip = 0xC0A80164;
+    dhcp_no_srv.server_ip = 0;
+    uint8_t req_buf[300];
+    size_t req_len = 0;
+    uint8_t mac_req[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+    TEST_ASSERT_EQUAL_INT(
+        SYN_OK, syn_dhcp_build_request(&dhcp_no_srv, mac_req, req_buf, sizeof(req_buf), &req_len));
+
+    /* DHCP init with xid = 0 (line 17) */
+    SYN_DHCP dhcp_zero_xid;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_dhcp_init(&dhcp_zero_xid, 0));
+    TEST_ASSERT_EQUAL_HEX32(0x12345678UL, dhcp_zero_xid.xid);
+
+    /* DHCP packet with Pad option (opt 0, line 155), NAK (line 201), unknown msg (line 203) */
+    uint8_t nak_pkt[260];
+    memcpy(nak_pkt, pad_pkt, 245);
+    nak_pkt[240] = 0; /* Pad */
+    nak_pkt[241] = SYN_DHCP_OPT_MSG_TYPE;
+    nak_pkt[242] = 1;
+    nak_pkt[243] = 6; /* DHCPNAK (msg_type = 6) */
+    nak_pkt[244] = SYN_DHCP_OPT_END;
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_dhcp_process_packet(&dhcp, NULL, nak_pkt, sizeof(nak_pkt)));
+
+    /* Truncated option header (line 157) */
+    uint8_t trunc_hdr_pkt[242];
+    memcpy(trunc_hdr_pkt, pad_pkt, 240);
+    trunc_hdr_pkt[240] = SYN_DHCP_OPT_MSG_TYPE; /* opt without len */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_dhcp_process_packet(&dhcp, NULL, trunc_hdr_pkt, 241));
+
+    /* Truncated option payload (line 160) */
+    uint8_t trunc_payload_pkt[245];
+    memcpy(trunc_payload_pkt, pad_pkt, 240);
+    trunc_payload_pkt[240] = SYN_DHCP_OPT_MSG_TYPE;
+    trunc_payload_pkt[241] = 10; /* len 10 > packet remaining */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_dhcp_process_packet(&dhcp, NULL, trunc_payload_pkt, 243));
+}
+
+void run_dhcp_tests(void)
+{
+    RUN_TEST(test_dhcp_init);
+    RUN_TEST(test_dhcp_build_discover);
+    RUN_TEST(test_dhcp_process_offer_and_ack);
+    RUN_TEST(test_dhcp_null_checks);
 }

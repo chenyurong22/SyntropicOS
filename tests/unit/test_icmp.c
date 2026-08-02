@@ -94,10 +94,37 @@ void test_icmp_process_echo_request(void)
 
 void test_icmp_null_checks(void)
 {
+    SYN_ICMP icmp;
+    SYN_ETH eth;
+    uint8_t frame[128];
+    size_t frame_len = 0;
+    uint8_t payload[8] = {0};
+
+    syn_icmp_init(&icmp);
+    syn_eth_init(&eth, MY_MAC, MY_IP);
+
     TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_icmp_init(NULL));
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_icmp_process_packet(NULL, NULL, 0, NULL, NULL));
-    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM, syn_icmp_build_echo_request(NULL, NULL, 0, NULL, 0, 0,
-                                                                         NULL, 0, NULL, NULL));
+
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_icmp_process_packet(NULL, frame, 60, frame, &frame_len));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_icmp_process_packet(&icmp, NULL, 60, frame, &frame_len));
+
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_icmp_build_echo_request(NULL, &eth, PEER_IP, PEER_MAC, 1, 1, payload,
+                                                      8, frame, &frame_len));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_icmp_build_echo_request(&icmp, NULL, PEER_IP, PEER_MAC, 1, 1, payload,
+                                                      8, frame, &frame_len));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_icmp_build_echo_request(&icmp, &eth, PEER_IP, NULL, 1, 1, payload, 8,
+                                                      frame, &frame_len));
+    TEST_ASSERT_EQUAL_INT(SYN_INVALID_PARAM,
+                          syn_icmp_build_echo_request(&icmp, &eth, PEER_IP, PEER_MAC, 1, 1, payload,
+                                                      8, NULL, &frame_len));
+    TEST_ASSERT_EQUAL_INT(
+        SYN_INVALID_PARAM,
+        syn_icmp_build_echo_request(&icmp, &eth, PEER_IP, PEER_MAC, 1, 1, payload, 8, frame, NULL));
 }
 
 void test_icmp_process_packet_invalid_headers(void)

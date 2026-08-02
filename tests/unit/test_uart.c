@@ -71,8 +71,10 @@ static void test_uart_write_zero_len(void)
 {
     syn_uart_init(&uart, 0, 115200);
     mock_uart_tx_len = 0;
+    uint8_t dummy[4] = {1, 2, 3, 4};
     SYN_Status st = syn_uart_write(&uart, NULL, 0, 1000);
     TEST_ASSERT_EQUAL(SYN_OK, st);
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_write(&uart, dummy, 0, 1000));
     TEST_ASSERT_EQUAL(0, mock_uart_tx_len);
 }
 
@@ -100,6 +102,7 @@ static void test_uart_read_empty(void)
     uint8_t buf[8];
     size_t n = syn_uart_read(&uart, buf, sizeof(buf));
     TEST_ASSERT_EQUAL(0, n);
+    TEST_ASSERT_EQUAL(0, syn_uart_read(&uart, NULL, 0));
 }
 
 /** rx_isr_feed: feed and verify */
@@ -130,9 +133,6 @@ static void test_uart_init_fail(void)
 /** Init config: DMA and non-DMA paths */
 static void test_uart_init_config(void)
 {
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_uart_init_config(NULL, NULL));
-    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_uart_init_config(&uart, NULL));
-
     static const uint8_t dummy_reg = 0;
     SYN_UART_Config cfg = {.instance = 1,
                            .baudrate = 115200,
@@ -142,6 +142,10 @@ static void test_uart_init_config(void)
                            .periph_rx_reg = &dummy_reg
 #endif
     };
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_uart_init_config(NULL, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_uart_init_config(&uart, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_uart_init_config(NULL, &cfg));
 
     TEST_ASSERT_EQUAL(SYN_OK, syn_uart_init_config(&uart, &cfg));
     TEST_ASSERT_TRUE(uart.initialized);
@@ -166,6 +170,12 @@ static void test_uart_init_config(void)
     cfg.periph_rx_reg = NULL;
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_uart_init_config(&uart, &cfg));
     TEST_ASSERT_FALSE(uart.initialized);
+
+    /* Deinit when not initialized (line 73) */
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_deinit(&uart));
+
+    /* Read when max_len = 0 (line 122) */
+    TEST_ASSERT_EQUAL(0, syn_uart_read(&uart, NULL, 0));
 #endif
 }
 

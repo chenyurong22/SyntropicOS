@@ -450,6 +450,7 @@ static void test_websocket_frame_masking_and_runt_payloads(void)
     ws.state = SYN_WS_STATE_CONNECTED;
     ws.sock = 11;
     TEST_ASSERT_EQUAL(SYN_OK, syn_websocket_send(&ws, 0x01, NULL, 0));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_websocket_send(&ws, 0x01, NULL, 70000));
 
     /* Recv text frame with on_message == NULL */
     SYN_WebsocketSession ws_null_cb;
@@ -471,6 +472,7 @@ static void test_websocket_frame_masking_and_runt_payloads(void)
     SYN_PT null_pt;
     PT_INIT(&null_pt);
     TEST_ASSERT_EQUAL(PT_EXITED, syn_websocket_task(&null_pt, &null_task));
+    TEST_ASSERT_EQUAL(PT_EXITED, syn_websocket_task(&null_pt, NULL));
 }
 
 void run_websocket_tests(void)

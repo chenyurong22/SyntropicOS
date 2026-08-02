@@ -378,6 +378,89 @@ void test_nmea_branch_coverage(void)
              syn_nmea_checksum(payload_plus));
     TEST_ASSERT_TRUE(syn_nmea_parse_gga(gga_plus_str, &gga_plus));
     TEST_ASSERT_FLOAT_WITHIN(0.01, 545.4, gga_plus.altitude_m);
+
+    /* 6. Checksum NULL and invalid star length */
+    TEST_ASSERT_EQUAL_UINT8(0, syn_nmea_checksum(NULL));
+    TEST_ASSERT_FALSE(syn_nmea_validate(NULL));
+    TEST_ASSERT_FALSE(syn_nmea_validate("GPGGA,123519*47"));
+    TEST_ASSERT_FALSE(syn_nmea_validate("$GPGGA,123519"));
+    TEST_ASSERT_FALSE(syn_nmea_validate("$GPGGA,123519*4"));
+
+    /* 7. RMC 1900s year parsing (year >= 70) */
+    SYN_NMEA_RMC rmc_1995;
+    const char *payload_1995 = "GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230395,003.1,W";
+    char rmc_1995_str[128];
+    snprintf(rmc_1995_str, sizeof(rmc_1995_str), "$%s*%02X", payload_1995,
+             syn_nmea_checksum(payload_1995));
+    TEST_ASSERT_TRUE(syn_nmea_parse_rmc(rmc_1995_str, &rmc_1995));
+    TEST_ASSERT_EQUAL_UINT16(1995, rmc_1995.year);
+
+    /* 8. Sentence parser type mismatch checks */
+    SYN_NMEA_VTG vtg_dummy;
+    SYN_NMEA_GSA gsa_dummy;
+    SYN_NMEA_ZDA zda_dummy;
+    TEST_ASSERT_FALSE(syn_nmea_parse_vtg(gga_plus_str, &vtg_dummy));
+    TEST_ASSERT_FALSE(syn_nmea_parse_gsa(gga_plus_str, &gsa_dummy));
+    TEST_ASSERT_FALSE(syn_nmea_parse_zda(gga_plus_str, &zda_dummy));
+
+    /* 9. Coordinate parsing 'S' and 'W' direction and short string */
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, 0.0, syn_nmea_parse_coord("12", 'N'));
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, -48.1173, syn_nmea_parse_coord("4807.038", 'W'));
+
+    /* 11. Empty field sentence tests for VTG, GSA, ZDA, GGA, RMC */
+    SYN_NMEA_GGA gga_empty;
+    SYN_NMEA_RMC rmc_empty;
+    SYN_NMEA_VTG vtg_empty;
+    SYN_NMEA_GSA gsa_empty;
+    SYN_NMEA_ZDA zda_empty;
+
+    const char *p_gga_e = "GPGGA,,,,,,,,,,";
+    char str_gga_e[64];
+    snprintf(str_gga_e, sizeof(str_gga_e), "$%s*%02X", p_gga_e, syn_nmea_checksum(p_gga_e));
+    TEST_ASSERT_TRUE(syn_nmea_parse_gga(str_gga_e, &gga_empty));
+
+    const char *p_rmc_e = "GPRMC,,,,,,,,,,";
+    char str_rmc_e[64];
+    snprintf(str_rmc_e, sizeof(str_rmc_e), "$%s*%02X", p_rmc_e, syn_nmea_checksum(p_rmc_e));
+    TEST_ASSERT_TRUE(syn_nmea_parse_rmc(str_rmc_e, &rmc_empty));
+
+    const char *p_vtg_e = "GPVTG,,,,,,,,";
+    char str_vtg_e[64];
+    snprintf(str_vtg_e, sizeof(str_vtg_e), "$%s*%02X", p_vtg_e, syn_nmea_checksum(p_vtg_e));
+    TEST_ASSERT_TRUE(syn_nmea_parse_vtg(str_vtg_e, &vtg_empty));
+
+    const char *p_gsa_e = "GPGSA,,,,,,,,,,,,,,,,";
+    char str_gsa_e[64];
+    snprintf(str_gsa_e, sizeof(str_gsa_e), "$%s*%02X", p_gsa_e, syn_nmea_checksum(p_gsa_e));
+    TEST_ASSERT_TRUE(syn_nmea_parse_gsa(str_gsa_e, &gsa_empty));
+
+    const char *p_zda_e = "GPZDA,,,,,";
+    char str_zda_e[64];
+    snprintf(str_zda_e, sizeof(str_zda_e), "$%s*%02X", p_zda_e, syn_nmea_checksum(p_zda_e));
+    TEST_ASSERT_TRUE(syn_nmea_parse_zda(str_zda_e, &zda_empty));
+
+    /* 12. Short talker (len < 3) and coord_udeg short inputs */
+    const char *p_short = "AB,123";
+    char str_short[64];
+    snprintf(str_short, sizeof(str_short), "$%s*%02X", p_short, syn_nmea_checksum(p_short));
+    TEST_ASSERT_EQUAL(SYN_NMEA_SENTENCE_UNKNOWN, syn_nmea_get_type(str_short));
+
+    /* RMC date with year >= 70 (1998, line 413) */
+    SYN_NMEA_RMC rmc_1998;
+    const char *p_rmc_98 = "GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,150398,,,A";
+    char str_rmc_98[128];
+    snprintf(str_rmc_98, sizeof(str_rmc_98), "$%s*%02X", p_rmc_98, syn_nmea_checksum(p_rmc_98));
+    TEST_ASSERT_TRUE(syn_nmea_parse_rmc(str_rmc_98, &rmc_1998));
+    TEST_ASSERT_EQUAL_UINT16(1998, rmc_1998.year);
+
+#if SYN_NMEA_USE_FIXED_POINT
+    TEST_ASSERT_EQUAL_INT32(0, syn_nmea_parse_coord_udeg(NULL, 'N'));
+    TEST_ASSERT_EQUAL_INT32(0, syn_nmea_parse_coord_udeg("12", 'N'));
+    TEST_ASSERT_EQUAL_INT32(0, syn_nmea_parse_coord_udeg("12345", 'N'));
+    TEST_ASSERT_EQUAL_INT32(0, syn_nmea_parse_coord_udeg("12.3", 'N'));
+    TEST_ASSERT_EQUAL_INT32(-48117300, syn_nmea_parse_coord_udeg("04807.0380", 'S'));
+    TEST_ASSERT_EQUAL_INT32(-48117300, syn_nmea_parse_coord_udeg("04807.0380", 'W'));
+#endif
 }
 
 void run_nmea_tests(void)

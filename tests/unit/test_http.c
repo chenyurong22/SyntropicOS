@@ -1442,6 +1442,64 @@ static void test_http_redirect_no_trailing_newline(void)
     syn_http_client_task(&pt, &task);
     TEST_ASSERT_EQUAL(SYN_HTTP_STATE_DONE, client.state);
     TEST_ASSERT_EQUAL(SYN_OK, client.status);
+
+    /* Relative path redirect Location header "Location: relpath/sub" (lines 195-200) */
+    mock_port_reset();
+    mock_sock_connected = true;
+    const char *rel_redir_resp = "HTTP/1.1 302 Found\r\nLocation: relpath/sub\r\n\r\n";
+    mock_sock_set_response(rel_redir_resp, strlen(rel_redir_resp));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0, NULL, NULL,
+                         work_buf, sizeof(work_buf));
+    PT_INIT(&pt);
+    syn_http_client_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+
+    /* http:// redirect without trailing slash "Location: http://example.com" (lines 186-188) */
+    mock_port_reset();
+    mock_sock_connected = true;
+    const char *noslash_redir_resp = "HTTP/1.1 302 Found\r\nLocation: http://example.com\r\n\r\n";
+    mock_sock_set_response(noslash_redir_resp, strlen(noslash_redir_resp));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0, NULL, NULL,
+                         work_buf, sizeof(work_buf));
+    PT_INIT(&pt);
+    syn_http_client_task(&pt, &task);
+
+    /* http:// redirect with explicit port "Location: http://example.com:8080/api" (lines 168-174)
+     */
+    mock_port_reset();
+    mock_sock_connected = true;
+    const char *port_redir_resp =
+        "HTTP/1.1 302 Found\r\nLocation: http://example.com:8080/api\r\n\r\n";
+    mock_sock_set_response(port_redir_resp, strlen(port_redir_resp));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0, NULL, NULL,
+                         work_buf, sizeof(work_buf));
+    PT_INIT(&pt);
+    syn_http_client_task(&pt, &task);
+
+    /* Body callback returning false during buffered delivery (line 625) */
+    mock_port_reset();
+    mock_sock_connected = true;
+    const char *buffered_resp = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello";
+    mock_sock_set_response(buffered_resp, strlen(buffered_resp));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_cb_reject, NULL, work_buf, sizeof(work_buf));
+    PT_INIT(&pt);
+    syn_http_client_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+
+    /* Socket body timeout path when content-length not satisfied (lines 666-671) */
+    mock_port_reset();
+    mock_sock_connected = true;
+    const char *short_body_resp = "HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\nshort";
+    mock_sock_set_response(short_body_resp, strlen(short_body_resp));
+    syn_http_client_init(&client, "GET", "example.com", 80, "/", NULL, NULL, 0, NULL, 0,
+                         body_accumulate, NULL, work_buf, sizeof(work_buf));
+    PT_INIT(&pt);
+    syn_http_client_task(&pt, &task);
+    mock_tick_ms += 11000;
+    syn_http_client_task(&pt, &task);
+    TEST_ASSERT_EQUAL(SYN_HTTP_STATE_ERROR, client.state);
+    TEST_ASSERT_EQUAL(SYN_TIMEOUT, client.status);
 }
 
 void run_http_tests(void)

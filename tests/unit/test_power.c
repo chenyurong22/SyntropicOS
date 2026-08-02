@@ -142,12 +142,13 @@ static void test_power_null_callbacks(void)
         .on_restore = NULL,
     };
     syn_power_init(&pwr, &pcfg);
+    syn_power_update(&pwr); /* Healthy state */
 
     mock_adc_value = 3600; /* Trigger brownout without callback */
     syn_power_update(&pwr);
     TEST_ASSERT_TRUE(syn_power_is_brownout(&pwr));
 
-    mock_adc_value = 4095; /* Trigger restore without callback */
+    mock_adc_value = 4095; /* Trigger restore without callback (line 68) */
     syn_power_update(&pwr);
     TEST_ASSERT_FALSE(syn_power_is_brownout(&pwr));
 }

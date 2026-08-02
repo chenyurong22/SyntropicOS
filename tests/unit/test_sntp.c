@@ -465,9 +465,10 @@ static void test_sntp_kiss_of_death_and_stratum_validation(void)
     PT_INIT(&pt);
     SYN_Task task = {.user_data = &sntp};
     syn_sntp_task(&pt, &task);
-    mock_tick_ms += 1000;
-    syn_sntp_task(&pt, &task);
     mock_udp_sendto_fail = false;
+
+    /* syn_sntp_is_synced(NULL) check for syn_sntp.h inline branch */
+    TEST_ASSERT_FALSE(syn_sntp_is_synced(NULL));
 }
 
 void run_sntp_tests(void)

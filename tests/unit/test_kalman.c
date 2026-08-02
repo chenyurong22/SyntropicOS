@@ -76,37 +76,55 @@ static void test_kalman_init_bad_dims(void)
 
     /* 1. x mismatch */
     SYN_MAT_DECL(x_bad, 3, 1);
+    SYN_MAT_DECL(x_bad_cols, 2, 2);
     cfg.x = &x_bad;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
+    cfg.x = &x_bad_cols;
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
     cfg.x = &x;
 
     /* 2. P mismatch */
     SYN_MAT_DECL(P_bad, 3, 2);
+    SYN_MAT_DECL(P_bad_cols, 2, 1);
     cfg.P = &P_bad;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
+    cfg.P = &P_bad_cols;
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
     cfg.P = &P;
 
     /* 3. F mismatch */
     SYN_MAT_DECL(F_bad, 3, 2);
+    SYN_MAT_DECL(F_bad_cols, 2, 1);
     cfg.F = &F_bad;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
+    cfg.F = &F_bad_cols;
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
     cfg.F = &F;
 
     /* 4. Q mismatch */
     SYN_MAT_DECL(Q_bad, 3, 2);
+    SYN_MAT_DECL(Q_bad_cols, 2, 1);
     cfg.Q = &Q_bad;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
+    cfg.Q = &Q_bad_cols;
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
     cfg.Q = &Q;
 
     /* 5. H mismatch */
     SYN_MAT_DECL(H_bad, 3, 2);
+    SYN_MAT_DECL(H_bad_cols, 1, 1);
     cfg.H = &H_bad;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
+    cfg.H = &H_bad_cols;
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
     cfg.H = &H;
 
     /* 6. R mismatch */
     SYN_MAT_DECL(R_bad, 3, 1);
+    SYN_MAT_DECL(R_bad_cols, 1, 2);
     cfg.R = &R_bad;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
+    cfg.R = &R_bad_cols;
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kalman_init(&kf, &cfg));
 }
 
@@ -264,6 +282,47 @@ static void test_kalman_singular_S_matrix_update_fail(void)
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_kalman_update(&kf, &z));
 }
 
+static void test_kalman_2state_update(void)
+{
+    SYN_Kalman kf;
+    SYN_Kalman_Config cfg;
+
+    SYN_MAT_DECL(x, 2, 1);
+    SYN_MAT_DECL(P, 2, 2);
+    SYN_MAT_DECL(F, 2, 2);
+    SYN_MAT_DECL(Qn, 2, 2);
+    SYN_MAT_DECL(H, 1, 2);
+    SYN_MAT_DECL(R, 1, 1);
+    SYN_MAT_DECL(z, 1, 1);
+
+    SYN_KALMAN_SCRATCH_DECL(s, 2, 1);
+
+    syn_matrix_identity(&F);
+    syn_matrix_identity(&P);
+    syn_matrix_identity(&Qn);
+    syn_matrix_identity(&R);
+    syn_matrix_zero(&x);
+
+    H.data[0] = Q16_ONE;
+    H.data[1] = Q16_ONE;
+
+    cfg.x = &x;
+    cfg.P = &P;
+    cfg.F = &F;
+    cfg.Q = &Qn;
+    cfg.H = &H;
+    cfg.R = &R;
+    cfg.n_state = 2;
+    cfg.n_meas = 1;
+
+    syn_kalman_init(&kf, &cfg);
+    SYN_KALMAN_SCRATCH_ASSIGN(&kf, s);
+
+    syn_kalman_predict(&kf);
+    z.data[0] = Q16_FROM_INT(5);
+    TEST_ASSERT_EQUAL(SYN_OK, syn_kalman_update(&kf, &z));
+}
+
 void run_kalman_tests(void)
 {
     RUN_TEST(test_kalman_init_valid);
@@ -271,4 +330,5 @@ void run_kalman_tests(void)
     RUN_TEST(test_kalman_constant_converge);
     RUN_TEST(test_kalman_predict_grows_P);
     RUN_TEST(test_kalman_singular_S_matrix_update_fail);
+    RUN_TEST(test_kalman_2state_update);
 }

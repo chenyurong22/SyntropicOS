@@ -240,6 +240,46 @@ void host_task(void) {
 }
 ```
 
+---
+
+## 11. Asynchronous I2C & SPI Transaction Queues (`drivers/syn_i2c_queue.h`, `drivers/syn_spi_queue.h`)
+
+Provides non-blocking transaction queue managers for I2C and SPI peripherals supporting multi-client request queuing, automatic Chip Select (CS) GPIO toggling, target device parameter switching (clock rate and SPI mode), and non-blocking completion callbacks.
+
+```c
+#include <syntropic/drivers/syn_i2c_queue.h>
+#include <syntropic/drivers/syn_spi_queue.h>
+
+static SYN_SPI_Queue spi_q;
+
+static void on_spi_done(uint8_t bus, SYN_Status result, void *user_data) {
+    // Process transfer result
+}
+
+void spi_queue_demo(void) {
+    syn_spi_queue_init(&spi_q, 0);
+
+    uint8_t tx[4] = {0x9F, 0x00, 0x00, 0x00};
+    uint8_t rx[4] = {0};
+
+    SYN_SPI_Transaction xfer = {
+        .bus = 0,
+        .cs_pin = 10,
+        .mode = SYN_SPI_MODE_0,
+        .baudrate_hz = 1000000,
+        .keep_cs_active = false,
+        .tx_data = tx,
+        .rx_data = rx,
+        .len = 4,
+        .callback = on_spi_done,
+        .user_data = NULL
+    };
+
+    syn_spi_queue_enqueue(&spi_q, &xfer);
+}
+```
+
+
 
 
 

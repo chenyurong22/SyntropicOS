@@ -1032,13 +1032,25 @@ static void test_wg_handshake_rekey_timer_expiry(void)
     /* wg_has_work(NULL) -> line 691 */
     TEST_ASSERT_FALSE(wg_has_work(NULL));
 
-    /* SYN_WG_HANDSHAKE_INIT rekey timeout -> line 700 */
+    /* SYN_WG_HANDSHAKE_INIT no timeout -> false (line 700) */
     SYN_WG wg_hs;
     memset(&wg_hs, 0, sizeof(wg_hs));
     wg_hs.state = SYN_WG_HANDSHAKE_INIT;
     wg_hs.last_handshake_ms = 1000;
     mock_tick_ms = 1000 + (SYN_WG_REKEY_TIMEOUT + 1) * 1000;
     TEST_ASSERT_TRUE(wg_has_work(&wg_hs));
+    mock_tick_ms = 1000 + 1000;
+    TEST_ASSERT_FALSE(wg_has_work(&wg_hs));
+
+    /* SYN_WG_ESTABLISHED no timeout, keepalive 0 -> false (lines 704 & 708) */
+    SYN_WG wg_est_no_work;
+    memset(&wg_est_no_work, 0, sizeof(wg_est_no_work));
+    wg_est_no_work.state = SYN_WG_ESTABLISHED;
+    wg_est_no_work.session.established_ms = 1000;
+    wg_est_no_work.last_sent_ms = 1000;
+    wg_est_no_work.config.keepalive_interval_s = 0;
+    mock_tick_ms = 1000 + 2000;
+    TEST_ASSERT_FALSE(wg_has_work(&wg_est_no_work));
 
     /* Test get_stats NULL parameters */
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_wg_get_stats(NULL, NULL));
@@ -1046,13 +1058,109 @@ static void test_wg_handshake_rekey_timer_expiry(void)
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_wg_get_stats(NULL, &stats_out));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_wg_get_stats(&wg_hs, NULL));
 
-    /* Test replay check small counter jump (diff < 32, line 564) */
+    /* Test replay check out-of-order and duplicate checks */
     SYN_WgSession replay_sess = {0};
-    TEST_ASSERT_TRUE(wg_replay_check(&replay_sess, 10));
-    TEST_ASSERT_TRUE(wg_replay_check(&replay_sess, 15)); /* diff = 5 < 32 */
+    TEST_ASSERT_TRUE(wg_replay_check(&replay_sess, 20));
+    TEST_ASSERT_TRUE(wg_replay_check(&replay_sess, 15));  /* diff = 5 < 32, unseen -> true */
+    TEST_ASSERT_FALSE(wg_replay_check(&replay_sess, 15)); /* diff = 5 < 32, seen -> false */
 
-    /* Test disconnect NULL check */
+    /* Test syn_wg_send error branches */
+    SYN_WG wg_snd;
+    memset(&wg_snd, 0, sizeof(wg_snd));
+    uint8_t dummy_pkt[16] = {0};
+    wg_snd.state = SYN_WG_DISCONNECTED;
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_wg_send(&wg_snd, dummy_pkt, sizeof(dummy_pkt)));
+
+    wg_snd.state = SYN_WG_ESTABLISHED;
+    wg_snd.tx_buf_size = 20; /* total (16+16+16=48) > 20 */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_wg_send(&wg_snd, dummy_pkt, sizeof(dummy_pkt)));
+
+    uint8_t big_tx[128];
+    wg_snd.tx_buf = big_tx;
+    wg_snd.tx_buf_size = sizeof(big_tx);
+    wg_snd.udp_sock = 1;
+    mock_udp_sendto_fail = true; /* sendto will return -1 */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_wg_send(&wg_snd, dummy_pkt, sizeof(dummy_pkt)));
+    mock_udp_sendto_fail = false;
+
+    /* Test wg_handle_transport length and receiver mismatch */
+    uint8_t short_msg[10] = {0};
+    TEST_ASSERT_FALSE(wg_handle_transport(&wg_snd, short_msg, sizeof(short_msg)));
+
+    uint8_t rcv_mismatch_msg[32] = {0};
+    wg_snd.session.sender_index = 0x12345678;
+    TEST_ASSERT_FALSE(wg_handle_transport(&wg_snd, rcv_mismatch_msg, sizeof(rcv_mismatch_msg)));
+
+    /* Test disconnect and stats NULL checks */
     syn_wg_disconnect(NULL);
+    SYN_WgStats stats;
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_wg_get_stats(NULL, &stats));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_wg_get_stats((const SYN_WG *)1, NULL));
+
+    /* Test get_stats in established state */
+    SYN_WG wg_est;
+    memset(&wg_est, 0, sizeof(wg_est));
+    wg_est.state = SYN_WG_ESTABLISHED;
+    wg_est.session.established_ms = 1000;
+    wg_est.session.send_counter = 5;
+    wg_est.session.recv_counter = 10;
+    mock_tick_ms = 5000;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_wg_get_stats(&wg_est, &stats));
+    TEST_ASSERT_TRUE(stats.is_established);
+    TEST_ASSERT_EQUAL_UINT32(4, stats.handshake_age_sec);
+
+    /* Task NULL parameter checks */
+    SYN_PT pt_null;
+    PT_INIT(&pt_null);
+    TEST_ASSERT_EQUAL(PT_EXITED, syn_wg_task(&pt_null, NULL));
+    SYN_Task null_user_task = {.user_data = NULL};
+    TEST_ASSERT_EQUAL(PT_EXITED, syn_wg_task(&pt_null, &null_user_task));
+
+    /* Established state keepalive and rekey task loop branches */
+    SYN_SNTP sntp_mock = {.synced = true};
+    SYN_WG wg_loop;
+    memset(&wg_loop, 0, sizeof(wg_loop));
+    wg_loop.state = SYN_WG_ESTABLISHED;
+    wg_loop.sntp = &sntp_mock;
+    wg_loop.config.keepalive_interval_s = 5;
+    wg_loop.last_sent_ms = 1000;
+    wg_loop.session.established_ms = 1000;
+    wg_loop.udp_sock = 1;
+    mock_tick_ms = 10000; /* > 1000 + 5000ms -> keepalive triggered */
+    mock_sock_connected = true;
+
+    SYN_Task loop_task = {.user_data = &wg_loop};
+    PT_INIT(&pt_null);
+    wg_loop.last_sent_ms = mock_tick_ms;
+    syn_wg_task(&pt_null, &loop_task);
+
+    /* Test syn_wg_task receiving n < 4 (n = 3) packet and msg_type = MSG_COOKIE (type = 4) */
+    uint8_t short_pkt[3] = {1, 2, 3};
+    SYN_SockAddr from = {0};
+    mock_udp_set_response(short_pkt, sizeof(short_pkt), &from);
+    PT_INIT(&pt_null);
+    syn_wg_task(&pt_null, &loop_task);
+
+    uint8_t cookie_pkt[32];
+    memset(cookie_pkt, 0, sizeof(cookie_pkt));
+    store32_le(cookie_pkt, 4); /* SYN_WG_MSG_COOKIE = 4 */
+    mock_udp_set_response(cookie_pkt, sizeof(cookie_pkt), &from);
+    PT_INIT(&pt_null);
+    syn_wg_task(&pt_null, &loop_task);
+
+    /* Test replay check large counter jump (diff >= 32, line 567) */
+    SYN_WgSession s_jump = {.recv_counter = 10, .recv_bitmap = 0x01};
+    TEST_ASSERT_TRUE(wg_replay_check(&s_jump, 50));
+    TEST_ASSERT_EQUAL_UINT64(50, s_jump.recv_counter);
+    TEST_ASSERT_EQUAL_UINT64(1, s_jump.recv_bitmap);
+
+    /* Test session reject after time (180s, line 773) */
+    wg_loop.state = SYN_WG_ESTABLISHED;
+    wg_loop.session.established_ms = 1000;
+    mock_tick_ms = 1000 + 185 * 1000;
+    PT_INIT(&pt_null);
+    syn_wg_task(&pt_null, &loop_task);
+    TEST_ASSERT_EQUAL(SYN_WG_DISCONNECTED, wg_loop.state);
 }
 
 void run_wg_tests(void)

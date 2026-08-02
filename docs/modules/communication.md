@@ -263,7 +263,7 @@ syn_uds_register_did_ext(&g_uds, 0xF190, engine_speed, sizeof(engine_speed), tru
 ISO 14229-1 mandates differentiation between **Physical** (1:1 point-to-point) and **Functional** (1:N broadcast) CAN addressing modes:
 
 - `SYN_UDS_ADDR_PHYSICAL`: Point-to-point requests. Positively or negatively responded to as per protocol rules.
-- `SYN_UDS_ADDR_FUNCTIONAL`: Broadcast requests. Physical-only services (`0x34`, `0x35`, `0x36`, `0x37`, `0x38`, `0x3D`) are silently ignored (`resp_len = 0`). Standard negative responses (`0x11`, `0x12`, `0x7E`) on functional requests are suppressed to prevent bus flooding.
+- `SYN_UDS_ADDR_FUNCTIONAL`: Broadcast requests. Functional-supported services (`0x10`, `0x11`, `0x14`, `0x19`, `0x22`, `0x28`, `0x29`, `0x31`, `0x3E`, `0x83`, `0x85`, `0x87`) are processed; physical-only services (`0x23`, `0x24`, `0x27`, `0x2A`, `0x2C`, `0x2E`, `0x2F`, `0x34`, `0x35`, `0x36`, `0x37`, `0x38`, `0x3D`, `0x84`, `0x86`) are silently dropped (`resp_len = 0`). Standard negative responses (`0x11`, `0x12`, `0x7E`) on functional requests are suppressed to prevent bus flooding.
 
 ```c
 /* Processing a physical UDS request */

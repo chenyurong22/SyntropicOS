@@ -32,6 +32,21 @@
 extern "C" {
 #endif
 
+#ifndef SYN_GNSS_USE_FIXED_POINT
+#define SYN_GNSS_USE_FIXED_POINT 0
+#endif
+
+#ifndef SYN_NMEA_USE_FIXED_POINT
+#define SYN_NMEA_USE_FIXED_POINT SYN_GNSS_USE_FIXED_POINT
+#endif
+
+#if (SYN_GNSS_USE_FIXED_POINT != SYN_NMEA_USE_FIXED_POINT)
+#error "SyntropicOS Config Error: Mismatched GNSS numeric mode! SYN_NMEA_USE_FIXED_POINT must match SYN_GNSS_USE_FIXED_POINT."
+#endif
+
+static inline double syn_udeg_to_deg(int32_t udeg) { return (double)udeg / 10000000.0; }
+static inline int32_t syn_deg_to_udeg(double deg)  { return (int32_t)(deg * 10000000.0 + (deg >= 0.0 ? 0.5 : -0.5)); }
+
 #define SYN_NMEA_MAX_SENTENCE_LEN 82 /**< Max NMEA 0183 sentence length */
 
 /** @brief NMEA Sentence Type Enum */
@@ -61,8 +76,13 @@ typedef struct {
     uint8_t minutes;                 /**< UTC minutes (0..59) */
     uint8_t seconds;                 /**< UTC seconds (0..59) */
     uint16_t milliseconds;           /**< UTC milliseconds (0..999) */
+#if SYN_NMEA_USE_FIXED_POINT
+    int32_t lat_udeg;                /**< Micro-degrees (+N, -S, 1e-7 deg LSB) */
+    int32_t lon_udeg;                /**< Micro-degrees (+E, -W, 1e-7 deg LSB) */
+#else
     double latitude;                 /**< Decimal degrees (+N, -S) */
     double longitude;                /**< Decimal degrees (+E, -W) */
+#endif
     SYN_NMEA_FixQuality fix_quality; /**< Fix quality indicator */
     uint8_t num_satellites;          /**< Number of satellites in view/use */
     float hdop;                      /**< Horizontal Dilution of Precision */
@@ -77,8 +97,13 @@ typedef struct {
     uint8_t seconds;       /**< UTC seconds (0..59) */
     uint16_t milliseconds; /**< UTC milliseconds (0..999) */
     bool status_valid;     /**< 'A' = valid, 'V' = receiver warning */
+#if SYN_NMEA_USE_FIXED_POINT
+    int32_t lat_udeg;      /**< Micro-degrees (+N, -S, 1e-7 deg LSB) */
+    int32_t lon_udeg;      /**< Micro-degrees (+E, -W, 1e-7 deg LSB) */
+#else
     double latitude;       /**< Decimal degrees (+N, -S) */
     double longitude;      /**< Decimal degrees (+E, -W) */
+#endif
     float speed_knots;     /**< Speed over ground in knots */
     float course_deg;      /**< Course over ground in true degrees */
     uint8_t day;           /**< Day of month (1..31) */

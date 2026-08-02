@@ -110,16 +110,12 @@ void setup()
         syn_filter_ema_init(&ema[i], 64); /* alpha = 64/256 = 0.25 */
 
         SYN_ADC_Config cfg = {
-            .channel         = (uint8_t)i,
-            .oversample      = 4,
-            .filter          = &ema[i],
-            .filter_type     = SYN_ADC_FILTER_EMA,
-            .cal_offset      = 0,
-            .cal_scale       = 1,
-            .cal_scale_shift = 0
+            .adc_id = 0,
+            .channel_mask = (1u << i),
+            .vref_mv = 3300,
+            .use_dma = false
         };
         syn_adc_init(&adc[i], &cfg);
-        syn_adc_set_stats(&adc[i], &signal_stats[i]);
     }
 
     syn_log_init(SYN_LOG_INFO);

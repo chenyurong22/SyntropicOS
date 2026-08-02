@@ -27,7 +27,7 @@ static void pwr_re_cb(SYN_Power *p, void *c)
 static void test_power(void)
 {
     static SYN_ADC pwr_adc;
-    SYN_ADC_Config pwr_adc_cfg = {.channel = 0, .oversample = 1, .cal_scale = 1};
+    SYN_ADC_Config pwr_adc_cfg = {.adc_id = 0, .channel_mask = 1, .vref_mv = 3300, .use_dma = false};
     mock_adc_value = 4095; /* ~3300mV */
     syn_adc_init(&pwr_adc, &pwr_adc_cfg);
     power_bo_count = 0;
@@ -67,7 +67,7 @@ static void test_power(void)
 static void test_power_errlog(void)
 {
     static SYN_ADC pwr_adc;
-    SYN_ADC_Config pwr_adc_cfg = {.channel = 0, .oversample = 1, .cal_scale = 1};
+    SYN_ADC_Config pwr_adc_cfg = {.adc_id = 0, .channel_mask = 1, .vref_mv = 3300, .use_dma = false};
     power_bo_count = 0;
     power_re_count = 0;
 
@@ -107,7 +107,7 @@ static void test_power_errlog(void)
 static void test_power_inverted_thresholds(void)
 {
     static SYN_ADC pwr_adc;
-    SYN_ADC_Config pwr_adc_cfg = {.channel = 0, .oversample = 1, .cal_scale = 1};
+    SYN_ADC_Config pwr_adc_cfg = {.adc_id = 0, .channel_mask = 1, .vref_mv = 3300, .use_dma = false};
     syn_adc_init(&pwr_adc, &pwr_adc_cfg);
 
     SYN_Power pwr;
@@ -125,7 +125,7 @@ static void test_power_inverted_thresholds(void)
 static void test_power_null_callbacks(void)
 {
     static SYN_ADC pwr_adc;
-    SYN_ADC_Config pwr_adc_cfg = {.channel = 0, .oversample = 1, .cal_scale = 1};
+    SYN_ADC_Config pwr_adc_cfg = {.adc_id = 0, .channel_mask = 1, .vref_mv = 3300, .use_dma = false};
     mock_adc_value = 4095;
     syn_adc_init(&pwr_adc, &pwr_adc_cfg);
 

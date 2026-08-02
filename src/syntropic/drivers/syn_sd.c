@@ -25,6 +25,7 @@
  */
 
 #include "../util/syn_assert.h"
+#include "../port/syn_port_gpio.h"
 #include "syn_sd.h"
 
 #include <string.h>
@@ -69,6 +70,18 @@
 #define SD_TOKEN_RETRIES 2000u  /**< Max token wait retries               */
 #define SD_BUSY_RETRIES 2000u   /**< Max busy wait retries                */
 /** @} */
+
+static inline void syn_port_spi_cs_assert(uint8_t spi_bus, SYN_GPIO_Pin cs)
+{
+    (void)spi_bus;
+    syn_port_gpio_write(cs, SYN_GPIO_LOW);
+}
+
+static inline void syn_port_spi_cs_deassert(uint8_t spi_bus, SYN_GPIO_Pin cs)
+{
+    (void)spi_bus;
+    syn_port_gpio_write(cs, SYN_GPIO_HIGH);
+}
 
 /**
  * @brief Transfer one byte over SPI and return the received byte.
@@ -194,13 +207,7 @@ SYN_Status syn_sd_init(SYN_SD *sd, uint8_t spi_bus, SYN_GPIO_Pin cs)
     sd->initialized = false;
 
     /* Configure SPI at 400 kHz (SD spec: <= 400 kHz during init) */
-    SYN_SPI_Config cfg;
-    memset(&cfg, 0, sizeof(cfg));
-    cfg.bus = spi_bus;
-    cfg.clock_hz = 400000u;
-    cfg.mode = SYN_SPI_MODE_0;
-    cfg.bit_order = 0u; /* MSB first */
-    if (syn_port_spi_init(&cfg) != SYN_OK) {
+    if (syn_port_spi_init(spi_bus, 400000u, 0u, 0u) != SYN_OK) {
         return SYN_ERROR;
     }
 

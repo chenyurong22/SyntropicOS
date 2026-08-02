@@ -22,6 +22,7 @@ void syn_power_init(SYN_Power *pwr, const SYN_Power_Config *cfg)
 
     memset(pwr, 0, sizeof(*pwr));
     pwr->adc = cfg->adc;
+    pwr->channel = cfg->channel;
     pwr->on_brownout = cfg->on_brownout;
     pwr->on_restore = cfg->on_restore;
     pwr->ctx = cfg->ctx;
@@ -40,7 +41,7 @@ void syn_power_update(SYN_Power *pwr)
 {
     SYN_ASSERT(pwr != NULL);
 
-    pwr->voltage_mv = syn_adc_read_mv(pwr->adc);
+    pwr->voltage_mv = (int32_t)syn_adc_read_mv(pwr->adc, pwr->channel);
 
     /* Push to stats window */
     if (pwr->stats != NULL) {

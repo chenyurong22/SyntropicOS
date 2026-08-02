@@ -61,16 +61,16 @@ static SYN_PT_Status adc_task(SYN_PT *pt, SYN_Task *task)
     PT_BEGIN(pt);
     for (;;) {
         /* Sample Channel 0 */
-        syn_adc_read(&adc[0]);
-        raw_val[0]  = (int16_t)syn_adc_raw(&adc[0]);
-        filt_val[0] = (int16_t)syn_adc_filtered(&adc[0]);
+        raw_val[0]  = (int16_t)syn_adc_read_raw(&adc[0], 0);
+        filt_val[0] = (int16_t)syn_filter_ema_update(&ema[0], raw_val[0]);
+        syn_signal_push(&signal_stats[0], (int32_t)filt_val[0]);
 
         PT_YIELD(pt); /* Yield to give other tasks CPU time between channels */
 
         /* Sample Channel 1 */
-        syn_adc_read(&adc[1]);
-        raw_val[1]  = (int16_t)syn_adc_raw(&adc[1]);
-        filt_val[1] = (int16_t)syn_adc_filtered(&adc[1]);
+        raw_val[1]  = (int16_t)syn_adc_read_raw(&adc[1], 1);
+        filt_val[1] = (int16_t)syn_filter_ema_update(&ema[1], raw_val[1]);
+        syn_signal_push(&signal_stats[1], (int32_t)filt_val[1]);
 
         log_timer += 200;
         if (log_timer >= 1000) {

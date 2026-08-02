@@ -39,16 +39,12 @@ int main_bare(void)
         syn_filter_ema_init(&ema[i], 64);
 
         SYN_ADC_Config cfg = {
-            .channel         = (uint8_t)i,
-            .oversample      = 4,
-            .filter          = &ema[i],
-            .filter_type     = SYN_ADC_FILTER_EMA,
-            .cal_offset      = 0,
-            .cal_scale       = 1,
-            .cal_scale_shift = 0
+            .adc_id = 0,
+            .channel_mask = (1u << i),
+            .vref_mv = 3300,
+            .use_dma = false
         };
         syn_adc_init(&adc[i], &cfg);
-        syn_adc_set_stats(&adc[i], &signal_stats[i]);
     }
 
     uint32_t last_led_ms = syn_port_get_tick_ms();
@@ -67,9 +63,9 @@ int main_bare(void)
         if (now - last_adc_ms >= 200) {
             last_adc_ms = now;
             for (int i = 0; i < 2; i++) {
-                syn_adc_read(&adc[i]);
-                raw_val[i]  = (int16_t)syn_adc_raw(&adc[i]);
-                filt_val[i] = (int16_t)syn_adc_filtered(&adc[i]);
+                raw_val[i]  = (int16_t)syn_adc_read_raw(&adc[i], (uint8_t)i);
+                filt_val[i] = (int16_t)syn_filter_ema_update(&ema[i], raw_val[i]);
+                syn_signal_push(&signal_stats[i], (int32_t)filt_val[i]);
             }
         }
 

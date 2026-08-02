@@ -58,6 +58,7 @@ typedef void (*SYN_PowerCallback)(struct SYN_Power *pwr, void *ctx);
 /** @brief Power monitor configuration. */
 typedef struct {
     SYN_ADC *adc;                  /**< ADC channel for voltage       */
+    uint8_t channel;               /**< ADC channel index             */
     int32_t brownout_mv;           /**< Low-voltage threshold (mV)    */
     int32_t restore_mv;            /**< Voltage restore threshold (mV)*/
     SYN_PowerCallback on_brownout; /**< Called on low-voltage event   */
@@ -70,6 +71,7 @@ typedef struct {
 /** @brief Power monitor instance — ADC + hysteresis + brownout state. */
 typedef struct SYN_Power {
     SYN_ADC *adc;                  /**< ADC channel                   */
+    uint8_t channel;               /**< ADC channel index             */
     SYN_Hysteresis hyst;           /**< Brownout hysteresis state     */
     int32_t voltage_mv;            /**< Last reading in millivolts   */
     bool brownout;                 /**< Currently in brownout?       */

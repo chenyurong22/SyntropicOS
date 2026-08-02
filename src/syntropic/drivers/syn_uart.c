@@ -50,9 +50,10 @@ SYN_Status syn_uart_init_config(SYN_UART *uart, const SYN_UART_Config *cfg)
             .channel_id = cfg->dma_channel_rx,
             .dir = SYN_DMA_DIR_PERIPH_TO_MEM,
             .data_size = SYN_DMA_SIZE_8BIT,
-            .circular = true,
             .src_inc = false,
-            .dst_inc = true
+            .dst_inc = true,
+            .callback = NULL,
+            .user_ctx = NULL
         };
         status = syn_dma_init(&uart->dma_rx, &dma_cfg);
         if (status != SYN_OK) {

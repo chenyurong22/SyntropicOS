@@ -216,9 +216,21 @@ static bool on_dynamic_did(uint8_t subfunction, uint16_t dyn_did, const uint8_t 
                            uint16_t in_len, uint8_t *out_buf, uint16_t max_out_len,
                            uint16_t *out_len, void *ctx)
 {
-    (void)subfunction; (void)dyn_did; (void)in_data; (void)in_len; (void)out_buf; (void)max_out_len; (void)ctx;
-    *out_len = 0;
-    return true;
+    (void)in_data; (void)in_len; (void)ctx;
+    if (max_out_len < 3) return false;
+    out_buf[0] = subfunction;
+    out_buf[1] = (uint8_t)(dyn_did >> 8);
+    out_buf[2] = (uint8_t)(dyn_did & 0xFF);
+    *out_len = 3;
+
+    if (subfunction == 0x01) { /* defineByIdentifier: DIDs 0x010A, 0x050B, 0x1234, 0x5678, 0x9ABC -> DDDDI 0xF301 */
+        return (dyn_did == 0xF301 || dyn_did == 0xF302);
+    } else if (subfunction == 0x02) { /* defineByMemoryAddress -> DDDDI 0xF302 */
+        return (dyn_did == 0xF302);
+    } else if (subfunction == 0x03) { /* clearDynamicallyDefinedDataIdentifier -> DDDDI 0xF303 */
+        return (dyn_did == 0xF303 || dyn_did == 0xF301 || dyn_did == 0xF302);
+    }
+    return false;
 }
 
 void stm32_uds_services_demo_init(void)

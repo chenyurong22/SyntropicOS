@@ -149,15 +149,27 @@ static bool on_scaling_data(uint16_t did, uint8_t *out_buf, uint16_t max_out_len
                             uint16_t *out_len, void *ctx)
 {
     (void)ctx;
-    if (did == 0xF190 && max_out_len >= 2) { /* VIN: 17 ASCII bytes */
-        out_buf[0] = 0x01; /* Scaling byte: ASCII string */
-        out_buf[1] = 0x11; /* Length 17 bytes */
+    if (did == 0xF190 && max_out_len >= 2) { /* Example #1: VIN (0xF190) ASCII scaling */
+        out_buf[0] = 0x6F; /* ASCII, 15 data bytes */
+        out_buf[1] = 0x62; /* ASCII, 2 data bytes */
         *out_len = 2;
         return true;
-    } else if (did == 0x0105 && max_out_len >= 3) { /* Vehicle Speed */
-        out_buf[0] = 0x95; /* Formula: y = a * x + b */
-        out_buf[1] = 0x01; /* Multiplier a = 1 */
-        out_buf[2] = 0x00; /* Offset b = 0 */
+    } else if (did == 0x0105 && max_out_len >= 9) { /* Example #2: Vehicle Speed (0x0105) Formula */
+        out_buf[0] = 0x01; /* Unsigned numeric, 1 data byte */
+        out_buf[1] = 0x95; /* Formula, 5 data bytes */
+        out_buf[2] = 0x00; /* FormulaIdentifier: C0 * x + C1 */
+        out_buf[3] = 0xE0; /* C0 high byte (75 * 10^-2) */
+        out_buf[4] = 0x4B; /* C0 low byte */
+        out_buf[5] = 0x00; /* C1 high byte (30 * 10^0) */
+        out_buf[6] = 0x1E; /* C1 low byte */
+        out_buf[7] = 0xA1; /* Unit/Format, 1 data byte */
+        out_buf[8] = 0x30; /* Unit ID: km/h */
+        *out_len = 9;
+        return true;
+    } else if (did == 0x0967 && max_out_len >= 3) { /* Example #3: Bit-mapped record (0x0967) */
+        out_buf[0] = 0x22; /* BitMappedReportedWithoutMask, 2 data bytes */
+        out_buf[1] = 0x03; /* DataRecord#1 validity mask */
+        out_buf[2] = 0x43; /* DataRecord#2 validity mask */
         *out_len = 3;
         return true;
     }

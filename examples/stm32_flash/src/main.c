@@ -146,6 +146,102 @@ static bool stm32_flash_write_word(uint32_t address, uint32_t data)
     return (*(volatile uint32_t *)address == data);
 }
 
+/* ── STM32 HAL Flash Programming Size Modes (BYTE, HALFWORD, WORD, DOUBLEWORD) ─ */
+
+/**
+ * @brief Write Flash using 8-bit Byte Mode (FLASH_TYPEPROGRAM_BYTE).
+ */
+SYN_Status syn_stm32_flash_write_byte(uint32_t addr, const void *buf, size_t len)
+{
+    if (buf == NULL) return SYN_INVALID_PARAM;
+    const uint8_t *data = (const uint8_t *)buf;
+
+    for (size_t i = 0U; i < len; i++) {
+        if (!stm32_flash_write_word(addr + i, (uint32_t)data[i])) {
+            return SYN_ERROR;
+        }
+    }
+    return SYN_OK;
+}
+
+/**
+ * @brief Write Flash using 16-bit Halfword Mode (FLASH_TYPEPROGRAM_HALFWORD).
+ */
+SYN_Status syn_stm32_flash_write_halfword(uint32_t addr, const void *buf, size_t len)
+{
+    if (buf == NULL) return SYN_INVALID_PARAM;
+    const uint8_t *data = (const uint8_t *)buf;
+    size_t i = 0U;
+
+    while (i + 2U <= len) {
+        uint16_t hw;
+        memcpy(&hw, &data[i], 2U);
+        if (!stm32_flash_write_word(addr + i, (uint32_t)hw)) {
+            return SYN_ERROR;
+        }
+        i += 2U;
+    }
+    if (i < len) {
+        uint16_t hw = 0xFF00U | data[i];
+        if (!stm32_flash_write_word(addr + i, (uint32_t)hw)) {
+            return SYN_ERROR;
+        }
+    }
+    return SYN_OK;
+}
+
+/**
+ * @brief Write Flash using 32-bit Word Mode (FLASH_TYPEPROGRAM_WORD).
+ */
+SYN_Status syn_stm32_flash_write_word(uint32_t addr, const void *buf, size_t len)
+{
+    if (buf == NULL) return SYN_INVALID_PARAM;
+    const uint8_t *data = (const uint8_t *)buf;
+    size_t i = 0U;
+
+    while (i + 4U <= len) {
+        uint32_t w;
+        memcpy(&w, &data[i], 4U);
+        if (!stm32_flash_write_word(addr + i, w)) {
+            return SYN_ERROR;
+        }
+        i += 4U;
+    }
+    if (i < len) {
+        uint32_t w = 0xFFFFFFFFU;
+        memcpy(&w, &data[i], len - i);
+        if (!stm32_flash_write_word(addr + i, w)) {
+            return SYN_ERROR;
+        }
+    }
+    return SYN_OK;
+}
+
+/**
+ * @brief Write Flash using 64-bit Doubleword Mode (FLASH_TYPEPROGRAM_DOUBLEWORD).
+ */
+SYN_Status syn_stm32_flash_write_doubleword(uint32_t addr, const void *buf, size_t len)
+{
+    if (buf == NULL) return SYN_INVALID_PARAM;
+    const uint8_t *data = (const uint8_t *)buf;
+    size_t i = 0U;
+
+    while (i + 8U <= len) {
+        uint32_t w_low, w_high;
+        memcpy(&w_low, &data[i], 4U);
+        memcpy(&w_high, &data[i + 4U], 4U);
+        if (!stm32_flash_write_word(addr + i, w_low) ||
+            !stm32_flash_write_word(addr + i + 4U, w_high)) {
+            return SYN_ERROR;
+        }
+        i += 8U;
+    }
+    if (i < len) {
+        return syn_stm32_flash_write_word(addr + i, &data[i], len - i);
+    }
+    return SYN_OK;
+}
+
 /* ── SyntropicOS Hardware Flash Port Implementation ──────────────────────── */
 
 #include <stdio.h>
@@ -169,20 +265,8 @@ SYN_Status syn_port_flash_read(uint32_t addr, void *buf, size_t len)
 
 SYN_Status syn_port_flash_write(uint32_t addr, const void *buf, size_t len)
 {
-    if (buf == NULL || (addr % 4U) != 0 || (len % 4U) != 0) {
-        return SYN_INVALID_PARAM;
-    }
-
-    const uint32_t *src = (const uint32_t *)buf;
-    size_t words = len / 4;
-
-    for (size_t i = 0; i < words; i++) {
-        if (!stm32_flash_write_word(addr + (uint32_t)(i * 4), src[i])) {
-            return SYN_ERROR;
-        }
-    }
-
-    return SYN_OK;
+    /* Uses 32-bit Word programming mode by default */
+    return syn_stm32_flash_write_word(addr, buf, len);
 }
 
 uint32_t syn_port_flash_sector_size(uint32_t addr)

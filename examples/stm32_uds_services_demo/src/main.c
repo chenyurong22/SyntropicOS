@@ -73,22 +73,29 @@ static bool on_routine_control(uint8_t subfunction, uint16_t routine_id, const u
                                uint16_t *out_len, void *ctx)
 {
     (void)in_data; (void)in_len; (void)ctx;
-    if (routine_id == 0x0201) { /* Self-Test / Memory Erase Routine */
+    if (routine_id == 0x0201) { /* Example #1-3: Wiring Harness Intermittent Test */
         if (subfunction == 0x01) { /* startRoutine */
             if (max_out_len < 1) return false;
-            out_buf[0] = 0x00; /* Routine status: Started OK */
+            out_buf[0] = 0x32; /* routineStatusRecord: Started OK */
             *out_len = 1;
             return true;
         } else if (subfunction == 0x02) { /* stopRoutine */
             if (max_out_len < 1) return false;
-            out_buf[0] = 0x00; /* Routine status: Stopped */
+            out_buf[0] = 0x30; /* routineStatusRecord: Stopped OK */
             *out_len = 1;
             return true;
         } else if (subfunction == 0x03) { /* requestRoutineResults */
             if (max_out_len < 2) return false;
-            out_buf[0] = 0x00; /* Routine status: Finished */
-            out_buf[1] = 0x30; /* Result code: Test Passed */
+            out_buf[0] = 0x30; /* routineStatusRecord: Test Finished */
+            out_buf[1] = 0x33; /* Result code: All harness signals OK */
             *out_len = 2;
+            return true;
+        }
+    } else if (routine_id == 0x0202) { /* Example #4: Transmission Gear Calibration */
+        if (subfunction == 0x01) { /* startRoutine with routineControlOption */
+            if (max_out_len < 1) return false;
+            out_buf[0] = 0x00; /* Calibration started */
+            *out_len = 1;
             return true;
         }
     }

@@ -101,14 +101,42 @@ static bool on_io_control(uint16_t did, uint8_t control_opt, const uint8_t *in_d
                           uint16_t *out_len, void *ctx)
 {
     (void)ctx;
-    if (did == 0x9B00) { /* Air Inlet Door Position */
-        if (control_opt == 0x03 && in_len >= 1 && max_out_len >= 1) { /* shortTermAdjustment */
-            out_buf[0] = in_data[0]; /* Apply requested door position % */
-            *out_len = 1;
+    if (did == 0x9B00) { /* Example #1: Air Inlet Door Position */
+        if (control_opt == 0x03 && in_len >= 1 && max_out_len >= 2) { /* shortTermAdjustment */
+            out_buf[0] = control_opt;
+            out_buf[1] = in_data[0]; /* Apply requested door position % (e.g. 0x0A = 10%) */
+            *out_len = 2;
             return true;
-        } else if (control_opt == 0x00 && max_out_len >= 1) { /* returnControlToECU */
-            out_buf[0] = 0x50; /* Normal ECU automatic position 50% */
-            *out_len = 1;
+        } else if (control_opt == 0x00 && max_out_len >= 2) { /* returnControlToECU */
+            out_buf[0] = control_opt;
+            out_buf[1] = 0x50; /* ECU normal automatic mode (50%) */
+            *out_len = 2;
+            return true;
+        } else if (control_opt == 0x01 && max_out_len >= 2) { /* resetToDefault */
+            out_buf[0] = control_opt;
+            out_buf[1] = 0x00; /* Default position 0% */
+            *out_len = 2;
+            return true;
+        } else if (control_opt == 0x02 && max_out_len >= 2) { /* freezeCurrentState */
+            out_buf[0] = control_opt;
+            out_buf[1] = 0x1E; /* Frozen state 30% */
+            *out_len = 2;
+            return true;
+        }
+    } else if (did == 0x0155) { /* Example #2: EGR & IAC Composite Actuator Control */
+        if (control_opt == 0x03 && in_len >= 5 && max_out_len >= 6) { /* shortTermAdjustment */
+            out_buf[0] = control_opt;
+            memcpy(&out_buf[1], in_data, 5); /* IAC Pintle, RPM, Pedal A/B, EGR Duty Cycle */
+            *out_len = 6;
+            return true;
+        } else if (control_opt == 0x00 && max_out_len >= 6) { /* returnControlToECU */
+            out_buf[0] = control_opt;
+            out_buf[1] = 0x0A;
+            out_buf[2] = 0x07;
+            out_buf[3] = 0xD0;
+            out_buf[4] = 0x11;
+            out_buf[5] = 0x20;
+            *out_len = 6;
             return true;
         }
     }

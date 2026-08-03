@@ -181,7 +181,32 @@ static bool on_periodic_data(uint8_t mode, const uint8_t *in_data, uint16_t in_l
                              uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len,
                              void *ctx)
 {
-    (void)mode; (void)in_data; (void)in_len; (void)out_buf; (void)max_out_len; (void)ctx;
+    (void)ctx;
+    if (mode == 0x04) { /* stopSending */
+        *out_len = 0;
+        return true;
+    }
+    /* Periodic transmission modes: 0x01 = Slow, 0x02 = Medium, 0x03 = Fast */
+    if (mode >= 0x01 && mode <= 0x03 && in_len >= 1) {
+        uint8_t pdid = in_data[0];
+        if (pdid == 0xE3 && max_out_len >= 5) { /* Example #1: Periodic DID 0xE3 (Engine parameters) */
+            out_buf[0] = 0xA6; /* Engine Coolant Temp (ECT) */
+            out_buf[1] = 0x66; /* Throttle Position (TP) */
+            out_buf[2] = 0x07; /* Engine Speed RPM high */
+            out_buf[3] = 0x50; /* Engine Speed RPM low */
+            out_buf[4] = 0x00; /* Vehicle Speed Sensor (VSS) */
+            *out_len = 5;
+            return true;
+        } else if (pdid == 0x24 && max_out_len >= 5) { /* Example #2: Periodic DID 0x24 (Electrical/Pressure) */
+            out_buf[0] = 0x78; /* Battery Positive Voltage */
+            out_buf[1] = 0x64; /* Manifold Absolute Pressure (MAP) */
+            out_buf[2] = 0x12; /* Mass Air Flow (MAF) */
+            out_buf[3] = 0x60; /* Barometric Pressure */
+            out_buf[4] = 0x32; /* Calculated Load */
+            *out_len = 5;
+            return true;
+        }
+    }
     *out_len = 0;
     return true;
 }

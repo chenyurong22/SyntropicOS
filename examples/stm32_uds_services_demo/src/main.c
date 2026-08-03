@@ -147,12 +147,16 @@ static bool on_io_control(uint16_t did, uint8_t control_opt, const uint8_t *in_d
 static bool on_link_control(uint8_t subfunction, const uint8_t *in_data, uint16_t in_len,
                             uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len, void *ctx)
 {
-    (void)in_data; (void)in_len; (void)out_buf; (void)max_out_len; (void)ctx;
-    *out_len = 0;
-    if (subfunction == 0x01 || subfunction == 0x02) { /* verifyModeTransition */
+    (void)in_data; (void)in_len; (void)ctx;
+    if (max_out_len < 1) return false;
+    out_buf[0] = subfunction;
+    *out_len = 1;
+
+    if (subfunction == 0x01) { /* verifyModeTransitionWithFixedParameter (e.g. 0x05 = 115200 Baud) */
         return true;
-    } else if (subfunction == 0x03) { /* transitionMode */
-        /* Application queues CAN/UART hardware baud rate transition */
+    } else if (subfunction == 0x02) { /* verifyModeTransitionWithSpecificParameter (3-byte custom baud rate) */
+        return true;
+    } else if (subfunction == 0x03) { /* transitionMode: apply baud rate switch to hardware */
         return true;
     }
     return false;

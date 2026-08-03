@@ -73,6 +73,18 @@ void syn_port_exit_critical(void)
     mock_critical_depth--;
 }
 
+void syn_port_nvic_set_priority(uint8_t irq_num, uint8_t preempt_prio, uint8_t sub_prio)
+{
+    (void)irq_num;
+    (void)preempt_prio;
+    (void)sub_prio;
+}
+
+void syn_port_nvic_enable_irq(uint8_t irq_num)
+{
+    (void)irq_num;
+}
+
 /* ── Random Port ────────────────────────────────────────────────────────── */
 
 bool mock_random_skip = false;

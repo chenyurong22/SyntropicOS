@@ -15,11 +15,20 @@ c_files = glob.glob('${ROOT_DIR}/examples/**/*.c', recursive=True)
 print(f'Checking {len(c_files)} example C files across ${JOBS} parallel workers...')
 
 def check_file(c):
-    cmd = f'arm-none-eabi-gcc -std=c99 -Wall -Wextra -Werror -I${ROOT_DIR} -I${ROOT_DIR}/src -I${ROOT_DIR}/src/port/stm32f4 -I${ROOT_DIR}/tests/unit/mocks/stm32 -I${ROOT_DIR}/tests/unit/mocks/esp32 -I${ROOT_DIR}/tests/unit/mocks/pico -mcpu=cortex-m4 -mthumb -c {c} -o /dev/null'
+    if 'ch32v307' in c:
+        riscv_gcc = 'riscv-none-embed-gcc' if subprocess.run('command -v riscv-none-embed-gcc', shell=True).returncode == 0 else \
+                    ('riscv64-unknown-elf-gcc' if subprocess.run('command -v riscv64-unknown-elf-gcc', shell=True).returncode == 0 else None)
+        if riscv_gcc:
+            cmd = f'{riscv_gcc} -std=c99 -Wall -Wextra -Werror -I${ROOT_DIR} -I${ROOT_DIR}/src -I${ROOT_DIR}/examples/ch32v307_demo -march=rv32imafc -mabi=ilp32f -c {c} -o /dev/null'
+        else:
+            cmd = f'gcc -std=c99 -Wall -Wextra -Werror -I${ROOT_DIR} -I${ROOT_DIR}/src -I${ROOT_DIR}/examples/ch32v307_demo -c {c} -o /dev/null'
+    else:
+        cmd = f'arm-none-eabi-gcc -std=c99 -Wall -Wextra -Werror -I${ROOT_DIR} -I${ROOT_DIR}/src -I${ROOT_DIR}/src/port/stm32f4 -I${ROOT_DIR}/tests/unit/mocks/stm32 -I${ROOT_DIR}/tests/unit/mocks/esp32 -I${ROOT_DIR}/tests/unit/mocks/pico -mcpu=cortex-m4 -mthumb -c {c} -o /dev/null'
     res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     if res.returncode != 0:
         return (c, res.stderr.strip())
     return None
+
 
 failed = []
 with concurrent.futures.ProcessPoolExecutor(max_workers=int('${JOBS}')) as executor:

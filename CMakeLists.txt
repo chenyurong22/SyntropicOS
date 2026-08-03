@@ -95,6 +95,13 @@ set(SYN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/vm/syn_wasm.c
 )
 
+option(CH32V307 "Build CH32V307 RISC-V port" OFF)
+if(CH32V307)
+    list(APPEND SYN_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/port/ch32v307/port_ch32v307.c)
+    add_compile_definitions(CH32V307xx=1)
+endif()
+
+
 # Optional: weak stubs (link these so unimplemented port functions assert
 # at runtime instead of giving a linker error)
 set(SYN_STUB_SOURCES

@@ -3,7 +3,7 @@
  * @brief System-level port interface — functions the user must implement.
  *
  * Provides critical-section management, a millisecond tick source, delay,
- * and system reset. These are required by several SyntropicOS modules.
+ * interrupt priority management, and system reset.
  * @ingroup syn_system
  */
 
@@ -19,80 +19,58 @@ extern "C" {
 
 /**
  * @brief Enter a critical section (disable interrupts).
- *
- * Calls may be nested; the implementation must track nesting depth and
- * only re-enable interrupts when the outermost critical section exits.
  */
 void syn_port_enter_critical(void);
 
 /**
  * @brief Exit a critical section (re-enable interrupts).
- *
- * Must be called once for each corresponding syn_port_enter_critical().
  */
 void syn_port_exit_critical(void);
 
 /**
  * @brief Return the current system tick in milliseconds.
- *
- * This value must be monotonically increasing and should wrap
- * naturally at UINT32_MAX. Typical sources: SysTick, a hardware
- * timer, or an RTOS tick.
- *
- * @return Milliseconds since system start (or last wrap).
+ * @return Current system tick count in milliseconds.
  */
 uint32_t syn_port_get_tick_ms(void);
 
 /**
  * @brief Return the current system tick in microseconds.
- *
- * Microseconds since system start (or last wrap). Monotonically
- * increasing 32-bit counter. Has weak fallback to ms * 1000U if no
- * hardware microsecond timer is configured.
- *
- * @return Microseconds since start.
+ * @return Current system tick count in microseconds.
  */
 uint32_t syn_port_get_tick_us(void);
 
 /**
  * @brief Blocking delay for the specified number of milliseconds.
- *
- * The implementation may busy-wait or yield to an RTOS. The delay
- * must be at least @p ms milliseconds.
- *
- * @param ms  Number of milliseconds to delay.
+ * @param ms Delay duration in milliseconds.
  */
 void syn_port_delay_ms(uint32_t ms);
 
-#if defined(SYN_USE_TICKLESS) && SYN_USE_TICKLESS
+/**
+ * @brief Configure interrupt preemption and subpriority in hardware controller.
+ *
+ * @param irq_num      Interrupt vector number.
+ * @param preempt_prio Preemption priority (0 = highest).
+ * @param sub_prio     Subpriority level (0 = highest).
+ */
+void syn_port_nvic_set_priority(uint8_t irq_num, uint8_t preempt_prio, uint8_t sub_prio);
 
 /**
- * @brief Enter low-power sleep until the specified tick.
+ * @brief Enable a specific interrupt line in the hardware interrupt controller.
  *
- * Programs a hardware wake timer (e.g., RTC alarm or LPTIM) and enters
- * a low-power mode. Returns when the alarm fires or any interrupt wakes
- * the CPU.
- *
- * Used by the tickless scheduler to sleep between task deadlines.
- * The default weak stub falls back to syn_port_sleep(SYN_SLEEP_LIGHT).
- *
- * @note The tickless scheduler calls this inside a critical section
- *       (interrupts masked) to close the race between wakeup evaluation
- *       and sleep entry. The implementation must use a sleep instruction
- *       that wakes on pending-but-masked interrupts (WFI on Cortex-M)
- *       and must NOT re-enable interrupts itself.
- *
- * @param wake_tick_ms  Tick value at which the CPU should wake.
+ * @param irq_num Interrupt vector number to enable.
+ */
+void syn_port_nvic_enable_irq(uint8_t irq_num);
+
+#if defined(SYN_USE_TICKLESS) && SYN_USE_TICKLESS
+/**
+ * @brief Program low-power sleep mode until the designated target tick.
+ * @param wake_tick_ms Target tick time in milliseconds to wake up.
  */
 void syn_port_sleep_until(uint32_t wake_tick_ms);
-
-#endif /* SYN_USE_TICKLESS */
+#endif
 
 /**
  * @brief Perform a system reset.
- *
- * This function should not return. On Cortex-M, this is typically
- * NVIC_SystemReset().
  */
 SYN_NORETURN void syn_port_system_reset(void);
 

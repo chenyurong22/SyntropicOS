@@ -315,4 +315,42 @@ static bool on_access_timing(SYN_UDS_AccessTimingType timing_type, uint16_t *p2_
 syn_uds_register_access_timing(&g_uds, on_access_timing, NULL);
 ```
 
+---
+
+## 8. DoIP Protocol Stack (`syn_doip`)
+
+SyntropicOS provides a zero-malloc ISO 13400-2 **Diagnostic over IP (DoIP)** transport layer for automotive Ethernet diagnostics.
+
+### DoIP Features & Characteristics
+- **8-Byte Header Serialization**: Big-endian packing for `Protocol Version` (`0x02`), `Inverse Protocol Version` (`0xFD`), 2-byte Payload Type, and 4-byte Payload Length.
+- **Vehicle Discovery & Identification**: Supports UDP Vehicle Identification Requests (`0x0001`/`0x0002`/`0x0003`) and responds with Vehicle Announcement Messages (`0x0004`) containing VIN, EID (MAC), GID, and logical address.
+- **Routing Activation**: Handles TCP Routing Activation Requests (`0x0005`) and returns Routing Activation Responses (`0x0006`).
+- **UDS Message Dispatch**: Unpacks TCP Diagnostic Messages (`0x8001`), validates target logical address, passes UDS payload directly to `syn_uds_process_request()`, and frames positive response / NACK frames (`0x8002`/`0x8003`).
+
+### Example Integration
+
+```c
+#include <syntropic/proto/syn_doip.h>
+#include <syntropic/proto/syn_uds.h>
+
+static SYN_DoIP_Server g_doip;
+static SYN_UDS_Server g_uds;
+
+void doip_setup(void)
+{
+    syn_uds_init(&g_uds);
+    syn_doip_init(&g_doip, 0x1001); /* Logical Address 0x1001 */
+    
+    uint8_t vin[17] = "SYNTROPICOS123456";
+    uint8_t eid[6]  = {0x00, 0x80, 0xE1, 0x01, 0x02, 0x03};
+    uint8_t gid[6]  = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    syn_doip_set_identifiers(&g_doip, vin, eid, gid);
+}
+
+void on_socket_rx(const uint8_t *rx_buf, uint16_t rx_len, uint8_t *tx_buf, uint16_t max_tx, uint16_t *tx_len)
+{
+    syn_doip_process_msg(&g_doip, &g_uds, rx_buf, rx_len, tx_buf, max_tx, tx_len);
+}
+```
+
 

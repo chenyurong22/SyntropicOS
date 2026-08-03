@@ -32,7 +32,7 @@ static bool memory_handler_cb(bool is_write, uint32_t address, uint32_t size, ui
     return true;
 }
 
-static bool comm_control_cb(uint8_t ctrl_type, uint8_t comm_type, void *user_data)
+static bool comm_control_cb(SYN_UDS_CommControlType ctrl_type, uint8_t comm_type, void *user_data)
 {
     (void)ctrl_type;
     (void)comm_type;
@@ -40,22 +40,25 @@ static bool comm_control_cb(uint8_t ctrl_type, uint8_t comm_type, void *user_dat
     return true;
 }
 
-static bool access_timing_cb(uint8_t sub_func, uint8_t *param_data, uint16_t param_len,
-                             void *user_data)
+static bool access_timing_cb(SYN_UDS_AccessTimingType timing_type, uint16_t *p2_max_ms,
+                             uint16_t *p2_star_max_10ms, void *user_data)
 {
-    (void)sub_func;
-    (void)param_data;
-    (void)param_len;
+    (void)timing_type;
+    if (p2_max_ms != NULL)
+        *p2_max_ms = 50U;
+    if (p2_star_max_10ms != NULL)
+        *p2_star_max_10ms = 500U;
     (void)user_data;
     return true;
 }
 
 static bool auth_cb(uint8_t sub_func, const uint8_t *req, uint16_t req_len, uint8_t *resp,
-                    uint16_t *resp_len, void *user_data)
+                    uint16_t max_resp_len, uint16_t *resp_len, void *user_data)
 {
     (void)sub_func;
     (void)req;
     (void)req_len;
+    (void)max_resp_len;
     (void)user_data;
     resp[0] = 0x69;
     resp[1] = 0x00;
@@ -81,7 +84,7 @@ int main(void)
 
     /* Register DID 0x0300 with Programming Session mask only (Issue #87) */
     syn_uds_register_did_ext(&server, 0x0300U, g_prog_did, sizeof(g_prog_did), true,
-                             SYN_UDS_SESSION_MASK_PROGRAMMING);
+                             SYN_UDS_SESSION_MASK_PROGRAMMING, SYN_UDS_SECURITY_MASK_ALL);
 
     /* Register DTC 0x123456 */
     syn_uds_register_dtc(&server, 0x123456U, 0x24U, 0x40U);
@@ -143,7 +146,7 @@ int main(void)
 
             uint16_t resp_len = 0;
             bool ok = syn_uds_process_request(&server, rx_buf, (uint16_t)n, tx_buf, sizeof(tx_buf),
-                                              &resp_len);
+                                              &resp_len, SYN_UDS_ADDR_PHYSICAL);
             if (ok && resp_len > 0) {
                 send(conn_fd, tx_buf, resp_len, 0);
             }

@@ -50,6 +50,7 @@ SYN_SRCS := \
 	src/syntropic/proto/syn_xcp.c \
 	src/syntropic/proto/syn_uds.c \
 	src/syntropic/proto/syn_uds_util.c \
+	src/syntropic/proto/syn_doip.c \
 	src/syntropic/proto/syn_devicenet.c \
 	src/syntropic/proto/syn_isotp.c \
 	src/syntropic/proto/syn_dali.c \

@@ -11,24 +11,29 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-static bool recv_exact_nonblock(int fd, uint8_t *buf, size_t len)
+static int recv_frame_nonblock(int fd, uint8_t *buf, size_t len)
 {
     size_t total = 0;
     while (total < len) {
         ssize_t n = recv(fd, buf + total, len - total, MSG_DONTWAIT);
         if (n > 0) {
             total += (size_t)n;
+        } else if (n == 0) {
+            return -1;
         } else {
             if (total == 0) {
-                return false;
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    return 0;
+                }
+                return -1;
             }
-            if (n == 0 || (errno != EAGAIN && errno != EWOULDBLOCK)) {
-                return false;
+            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                return -1;
             }
             usleep(100);
         }
     }
-    return true;
+    return 1;
 }
 
 int main(void)
@@ -74,7 +79,6 @@ int main(void)
         socklen_t addr_len = sizeof(client_addr);
         int conn_fd = accept(listen_fd, (struct sockaddr *)&client_addr, &addr_len);
         if (conn_fd < 0) {
-            perror("accept");
             continue;
         }
 
@@ -86,7 +90,11 @@ int main(void)
         uint8_t rx_frame_buf[13];
 
         while (1) {
-            if (recv_exact_nonblock(conn_fd, rx_frame_buf, 13)) {
+            int ret = recv_frame_nonblock(conn_fd, rx_frame_buf, 13);
+            if (ret < 0) {
+                break;
+            }
+            if (ret > 0) {
                 SYN_CAN_Frame syn_frame;
                 syn_frame.id = ((uint32_t)rx_frame_buf[0] << 24) |
                                ((uint32_t)rx_frame_buf[1] << 16) |

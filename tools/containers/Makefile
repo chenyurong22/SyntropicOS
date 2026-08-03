@@ -186,8 +186,12 @@ else
 endif
 
 container-integration: container-build
-	@$(COMPOSE_CMD) -f $(ROOT_DIR)/tests/integration/docker-compose.yml up --build --exit-code-from test-runner --abort-on-container-exit
-	@$(COMPOSE_CMD) -f $(ROOT_DIR)/tests/integration/docker-compose.yml down
+	@$(COMPOSE_CMD) -f $(ROOT_DIR)/tests/integration/docker-compose.yml down -v -t 1 --remove-orphans >/dev/null 2>&1 || true
+	@$(COMPOSE_CMD) -f $(ROOT_DIR)/tests/integration/docker-compose.yml up -d --build
+	@$(CONTAINER_RUN) --net=host -v $(ROOT_DIR):/workspace syntropicos-test bash /workspace/tests/integration/run_integration.sh; \
+	EXIT_CODE=$$?; \
+	$(COMPOSE_CMD) -f $(ROOT_DIR)/tests/integration/docker-compose.yml down -v -t 1 --remove-orphans || true; \
+	exit $$EXIT_CODE
 
 examples:
 	@bash $(ROOT_DIR)/tools/examples/run_examples_check.sh

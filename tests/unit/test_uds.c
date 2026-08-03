@@ -1103,6 +1103,10 @@ static void test_uds_complete_27_sids(void)
     TEST_ASSERT_EQUAL_HEX8(0x63, resp[0]);
     TEST_ASSERT_EQUAL_HEX8(0xBB, resp[1]);
 
+    /* Register DID 0xF190 for Scaling (0x24) & IOControl (0x2F) tests */
+    static uint8_t f190_val[4] = {0x11, 0x22, 0x33, 0x44};
+    syn_uds_register_did(&g_uds, 0xF190, f190_val, 4, true);
+
     /* 3. ReadScalingDataByIdentifier (0x24) */
     req[0] = SYN_UDS_SID_READ_SCALING_DATA_BY_IDENTIFIER;
     req[1] = 0xF1;
@@ -1844,8 +1848,8 @@ static void test_uds_negative_response_codes(void)
     syn_poke_u16(0x0201, req, 2);
     TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 4, resp, sizeof(resp), &resp_len,
                                              SYN_UDS_ADDR_PHYSICAL));
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SID_ROUTINE_CONTROL + 0x40, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(0x19, resp[1]); /* 0x99 & 0x7F = 0x19 */
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
 
     req[0] = SYN_UDS_SID_LINK_CONTROL;
     req[1] = 0x99;
@@ -1976,8 +1980,8 @@ static void test_uds_negative_response_codes_extended(void)
     req[1] = 0x7E;
     TEST_ASSERT_TRUE(syn_uds_process_request(&server, req, 2, resp, sizeof(resp), &resp_len,
                                              SYN_UDS_ADDR_PHYSICAL));
-    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_SID_READ_DTC_INFORMATION + 0x40, resp[0]);
-    TEST_ASSERT_EQUAL_HEX8(0x7E, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp[2]);
 
     /* 3. RequestDownload (0x34) when security is locked -> NRC 0x33 */
     server.security_state = SYN_UDS_SECURITY_LOCKED;
@@ -3363,8 +3367,254 @@ static void test_uds_custom_service_policies(void)
         syn_uds_set_service_session_mask(&g_uds, 0x50, SYN_UDS_SESSION_MASK_EXTENDED));
     TEST_ASSERT_FALSE(
         syn_uds_set_service_security_mask(&g_uds, 0x50, SYN_UDS_SECURITY_MASK_LEVEL_1));
-    TEST_ASSERT_FALSE(
-        syn_uds_set_service_security_mask(&g_uds, 0x50, SYN_UDS_SECURITY_MASK_LEVEL_1));
+}
+
+static bool test_routine_cb(uint8_t sub, uint16_t id, const uint8_t *in, uint16_t in_len,
+                            uint8_t *out, uint16_t max_out, uint16_t *out_len, void *ctx)
+{
+    (void)in;
+    (void)in_len;
+    (void)max_out;
+    (void)ctx;
+    if (sub == 0x01 && id == 0x0201) {
+        out[0] = 0xAA;
+        *out_len = 1;
+        return true;
+    }
+    return false;
+}
+
+static bool test_io_cb(uint16_t did, uint8_t opt, const uint8_t *in, uint16_t in_len, uint8_t *out,
+                       uint16_t max_out, uint16_t *out_len, void *ctx)
+{
+    (void)in;
+    (void)in_len;
+    (void)max_out;
+    (void)ctx;
+    if (did == 0x9B00 && opt == 0x03) {
+        out[0] = 0x55;
+        *out_len = 1;
+        return true;
+    }
+    return false;
+}
+
+static bool test_link_cb(uint8_t sub, const uint8_t *in, uint16_t in_len, uint8_t *out,
+                         uint16_t max_out, uint16_t *out_len, void *ctx)
+{
+    (void)in;
+    (void)in_len;
+    (void)out;
+    (void)max_out;
+    (void)ctx;
+    if (sub == 0x01) {
+        *out_len = 0;
+        return true;
+    }
+    return false;
+}
+
+static bool test_roe_cb(uint8_t sub, const uint8_t *in, uint16_t in_len, uint8_t *out,
+                        uint16_t max_out, uint16_t *out_len, void *ctx)
+{
+    (void)in;
+    (void)in_len;
+    (void)ctx;
+    if (sub == 0x01 && max_out >= 2) {
+        out[0] = 0x01;
+        out[1] = 0x00;
+        *out_len = 2;
+        return true;
+    }
+    return false;
+}
+
+static bool test_scaling_cb(uint16_t did, uint8_t *out, uint16_t max_out, uint16_t *out_len,
+                            void *ctx)
+{
+    (void)ctx;
+    if (did == 0xF190 && max_out >= 2) {
+        out[0] = 0x01;
+        out[1] = 0x11;
+        *out_len = 2;
+        return true;
+    }
+    return false;
+}
+
+static bool test_periodic_cb(uint8_t mode, const uint8_t *in, uint16_t in_len, uint8_t *out,
+                             uint16_t max_out, uint16_t *out_len, void *ctx)
+{
+    (void)in;
+    (void)in_len;
+    (void)out;
+    (void)max_out;
+    (void)ctx;
+    if (mode == 0x01) {
+        *out_len = 0;
+        return true;
+    }
+    return false;
+}
+
+static bool test_dynamic_did_cb(uint8_t sub, uint16_t dyn_did, const uint8_t *in, uint16_t in_len,
+                                uint8_t *out, uint16_t max_out, uint16_t *out_len, void *ctx)
+{
+    (void)in;
+    (void)in_len;
+    (void)out;
+    (void)max_out;
+    (void)ctx;
+    if (sub == 0x01 && dyn_did == 0xF200) {
+        *out_len = 0;
+        return true;
+    }
+    return false;
+}
+
+static void test_uds_iso14229_service_callbacks(void)
+{
+    syn_uds_init(&g_uds);
+    uint8_t req[16] = {0};
+    uint8_t resp[16] = {0};
+    uint16_t resp_len = 0;
+
+    /* Test null registration */
+    TEST_ASSERT_FALSE(syn_uds_register_routine_control(NULL, test_routine_cb, NULL));
+    TEST_ASSERT_FALSE(syn_uds_register_io_control(NULL, test_io_cb, NULL));
+    TEST_ASSERT_FALSE(syn_uds_register_link_control(NULL, test_link_cb, NULL));
+    TEST_ASSERT_FALSE(syn_uds_register_roe_handler(NULL, test_roe_cb, NULL));
+    TEST_ASSERT_FALSE(syn_uds_register_scaling_data_handler(NULL, test_scaling_cb, NULL));
+    TEST_ASSERT_FALSE(syn_uds_register_periodic_data_handler(NULL, test_periodic_cb, NULL));
+    TEST_ASSERT_FALSE(syn_uds_register_dynamic_did_handler(NULL, test_dynamic_did_cb, NULL));
+
+    /* Register all callbacks */
+    TEST_ASSERT_TRUE(syn_uds_register_routine_control(&g_uds, test_routine_cb, NULL));
+    TEST_ASSERT_TRUE(syn_uds_register_io_control(&g_uds, test_io_cb, NULL));
+    TEST_ASSERT_TRUE(syn_uds_register_link_control(&g_uds, test_link_cb, NULL));
+    TEST_ASSERT_TRUE(syn_uds_register_roe_handler(&g_uds, test_roe_cb, NULL));
+    TEST_ASSERT_TRUE(syn_uds_register_scaling_data_handler(&g_uds, test_scaling_cb, NULL));
+    TEST_ASSERT_TRUE(syn_uds_register_periodic_data_handler(&g_uds, test_periodic_cb, NULL));
+    TEST_ASSERT_TRUE(syn_uds_register_dynamic_did_handler(&g_uds, test_dynamic_did_cb, NULL));
+
+    /* Service 0x31 RoutineControl dispatch success & failure */
+    req[0] = SYN_UDS_SID_ROUTINE_CONTROL;
+    req[1] = 0x01;
+    syn_poke_u16(0x0201, req, 2);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x71, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, resp[1]);
+    TEST_ASSERT_EQUAL_HEX8(0xAA, resp[4]);
+
+    syn_poke_u16(0x9999, req, 2);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    /* Test 0x31 RoutineControl positive response suppression (bit 7 set) */
+    req[0] = SYN_UDS_SID_ROUTINE_CONTROL;
+    req[1] = 0x81; /* 0x01 | 0x80 suppressPosRspMsgIndicationBit */
+    syn_poke_u16(0x0201, req, 2);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_UINT16(0, resp_len);
+
+    /* Service 0x2F IOControl dispatch success & failure */
+    req[0] = SYN_UDS_SID_INPUT_OUTPUT_CONTROL_BY_IDENTIFIER;
+    syn_poke_u16(0x9B00, req, 1);
+    req[3] = 0x03;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x6F, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x03, resp[3]);
+    TEST_ASSERT_EQUAL_HEX8(0x55, resp[4]);
+
+    syn_poke_u16(0x1111, req, 1);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp[2]);
+
+    /* Test 0x2F IOControl invalid control_opt (> 0x03) */
+    req[3] = 0x04;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
+
+    /* Test 0x2F IOControl unregistered DID without callback */
+    SYN_UDS_Server fresh_uds;
+    syn_uds_init(&fresh_uds);
+    req[3] = 0x03;
+    syn_poke_u16(0x9999, req, 1);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&fresh_uds, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp[2]);
+
+    /* Service 0x87 LinkControl dispatch success & failure */
+    req[0] = SYN_UDS_SID_LINK_CONTROL;
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0xC7, resp[0]);
+
+    req[1] = 0x02;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+
+    /* Service 0x86 ResponseOnEvent dispatch success & failure */
+    req[0] = SYN_UDS_SID_RESPONSE_ON_EVENT;
+    req[1] = 0x01;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0xC6, resp[0]);
+
+    req[1] = 0x02;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 2, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+
+    /* Service 0x24 ReadScalingData dispatch success & failure */
+    req[0] = SYN_UDS_SID_READ_SCALING_DATA_BY_IDENTIFIER;
+    syn_poke_u16(0xF190, req, 1);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x64, resp[0]);
+
+    syn_poke_u16(0x4444, req, 1);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+
+    /* Service 0x2A ReadDataByPeriodic dispatch success & failure */
+    req[0] = SYN_UDS_SID_READ_DATA_BY_PERIODIC_IDENTIFIER;
+    req[1] = 0x01;
+    req[2] = 0xE0;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x6A, resp[0]);
+
+    req[1] = 0x02;
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 3, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+
+    /* Service 0x2C DynamicallyDefineDID dispatch success & failure */
+    req[0] = SYN_UDS_SID_DYNAMICALLY_DEFINE_DATA_IDENTIFIER;
+    req[1] = 0x01;
+    syn_poke_u16(0xF200, req, 2);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x6C, resp[0]);
+
+    syn_poke_u16(0x9999, req, 2);
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
 }
 
 void run_uds_tests(void)
@@ -3402,4 +3652,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_security_mask_filtering);
     RUN_TEST(test_uds_addressing_modes);
     RUN_TEST(test_uds_custom_service_policies);
+    RUN_TEST(test_uds_iso14229_service_callbacks);
 }

@@ -274,6 +274,55 @@ typedef bool (*SYN_UDS_FileTransferHandler)(uint8_t mode, const char *file_path,
                                             uint8_t *out_buf, uint16_t max_out_len,
                                             uint16_t *out_len, void *ctx);
 
+/**
+ * @brief RoutineControl (0x31) callback function signature.
+ */
+typedef bool (*SYN_UDS_RoutineControlHandler)(uint8_t subfunction, uint16_t routine_id,
+                                              const uint8_t *in_data, uint16_t in_len,
+                                              uint8_t *out_buf, uint16_t max_out_len,
+                                              uint16_t *out_len, void *ctx);
+
+/**
+ * @brief InputOutputControlByIdentifier (0x2F) callback function signature.
+ */
+typedef bool (*SYN_UDS_IOControlHandler)(uint16_t did, uint8_t control_opt, const uint8_t *in_data,
+                                         uint16_t in_len, uint8_t *out_buf, uint16_t max_out_len,
+                                         uint16_t *out_len, void *ctx);
+
+/**
+ * @brief LinkControl (0x87) callback function signature.
+ */
+typedef bool (*SYN_UDS_LinkControlHandler)(uint8_t subfunction, const uint8_t *in_data,
+                                           uint16_t in_len, uint8_t *out_buf, uint16_t max_out_len,
+                                           uint16_t *out_len, void *ctx);
+
+/**
+ * @brief ResponseOnEvent (0x86) callback function signature.
+ */
+typedef bool (*SYN_UDS_ResponseOnEventHandler)(uint8_t subfunction, const uint8_t *in_data,
+                                               uint16_t in_len, uint8_t *out_buf,
+                                               uint16_t max_out_len, uint16_t *out_len, void *ctx);
+
+/**
+ * @brief ReadScalingDataByIdentifier (0x24) callback function signature.
+ */
+typedef bool (*SYN_UDS_ScalingDataHandler)(uint16_t did, uint8_t *out_buf, uint16_t max_out_len,
+                                           uint16_t *out_len, void *ctx);
+
+/**
+ * @brief ReadDataByPeriodicIdentifier (0x2A) callback function signature.
+ */
+typedef bool (*SYN_UDS_PeriodicDataHandler)(uint8_t mode, const uint8_t *in_data, uint16_t in_len,
+                                            uint8_t *out_buf, uint16_t max_out_len,
+                                            uint16_t *out_len, void *ctx);
+
+/**
+ * @brief DynamicallyDefineDataIdentifier (0x2C) callback function signature.
+ */
+typedef bool (*SYN_UDS_DynamicDIDHandler)(uint8_t subfunction, uint16_t dyn_did,
+                                          const uint8_t *in_data, uint16_t in_len, uint8_t *out_buf,
+                                          uint16_t max_out_len, uint16_t *out_len, void *ctx);
+
 /** @name UDS Timing & Security Constants */
 /**@{*/
 #ifndef SYN_UDS_MAX_DTCS
@@ -400,13 +449,27 @@ typedef struct {
     SYN_UDS_AuthHandler auth_cb;                  /**< Authentication (0x29) callback. */
     void *auth_ctx;                               /**< Context pointer for auth callback. */
     SYN_UDS_FileTransferHandler file_transfer_cb; /**< File transfer (0x38) callback. */
-    void *file_transfer_ctx;        /**< Context pointer for file transfer callback. */
-    SYN_UDS_DTCHandler dtc_cb;      /**< ReadDTCInformation (0x19) callback. */
-    void *dtc_ctx;                  /**< Context pointer for DTC callback. */
-    SYN_UDS_ResetHandler reset_cb;  /**< ECUReset (0x11) deferred callback. */
-    void *reset_ctx;                /**< Context pointer for reset callback. */
-    uint16_t reset_tx_wait_ms;      /**< Post-TX ECU reset delay window in ms. */
-    uint32_t reset_wait_elapsed_ms; /**< Internal reset delay accumulator in ms. */
+    void *file_transfer_ctx;                    /**< Context pointer for file transfer callback. */
+    SYN_UDS_RoutineControlHandler routine_cb;   /**< RoutineControl (0x31) callback. */
+    void *routine_ctx;                          /**< Context pointer for routine callback. */
+    SYN_UDS_IOControlHandler io_control_cb;     /**< IOControl (0x2F) callback. */
+    void *io_control_ctx;                       /**< Context pointer for IO control callback. */
+    SYN_UDS_LinkControlHandler link_control_cb; /**< LinkControl (0x87) callback. */
+    void *link_control_ctx;                     /**< Context pointer for link control callback. */
+    SYN_UDS_ResponseOnEventHandler roe_cb;      /**< ResponseOnEvent (0x86) callback. */
+    void *roe_ctx;                              /**< Context pointer for ROE callback. */
+    SYN_UDS_ScalingDataHandler scaling_cb;      /**< ScalingData (0x24) callback. */
+    void *scaling_ctx;                          /**< Context pointer for scaling callback. */
+    SYN_UDS_PeriodicDataHandler periodic_cb;    /**< PeriodicData (0x2A) callback. */
+    void *periodic_ctx;                         /**< Context pointer for periodic callback. */
+    SYN_UDS_DynamicDIDHandler dynamic_did_cb;   /**< DynamicDID (0x2C) callback. */
+    void *dynamic_did_ctx;                      /**< Context pointer for dynamic DID callback. */
+    SYN_UDS_DTCHandler dtc_cb;                  /**< ReadDTCInformation (0x19) callback. */
+    void *dtc_ctx;                              /**< Context pointer for DTC callback. */
+    SYN_UDS_ResetHandler reset_cb;              /**< ECUReset (0x11) deferred callback. */
+    void *reset_ctx;                            /**< Context pointer for reset callback. */
+    uint16_t reset_tx_wait_ms;                  /**< Post-TX ECU reset delay window in ms. */
+    uint32_t reset_wait_elapsed_ms;             /**< Internal reset delay accumulator in ms. */
     SYN_UDS_SessionTransitionHandler
         session_transition_cb;                    /**< Session transition policy callback. */
     void *session_transition_ctx;                 /**< Session transition context pointer. */
@@ -637,6 +700,83 @@ bool syn_uds_register_auth_handler(SYN_UDS_Server *server, SYN_UDS_AuthHandler h
  */
 bool syn_uds_register_file_transfer(SYN_UDS_Server *server, SYN_UDS_FileTransferHandler handler,
                                     void *ctx);
+
+/**
+ * @brief Register RoutineControl (0x31) callback handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when Service 0x31 is processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_routine_control(SYN_UDS_Server *server, SYN_UDS_RoutineControlHandler handler,
+                                      void *ctx);
+
+/**
+ * @brief Register InputOutputControlByIdentifier (0x2F) callback handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when Service 0x2F is processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_io_control(SYN_UDS_Server *server, SYN_UDS_IOControlHandler handler,
+                                 void *ctx);
+
+/**
+ * @brief Register LinkControl (0x87) callback handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when Service 0x87 is processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_link_control(SYN_UDS_Server *server, SYN_UDS_LinkControlHandler handler,
+                                   void *ctx);
+
+/**
+ * @brief Register ResponseOnEvent (0x86) callback handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when Service 0x86 is processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_roe_handler(SYN_UDS_Server *server, SYN_UDS_ResponseOnEventHandler handler,
+                                  void *ctx);
+
+/**
+ * @brief Register ReadScalingDataByIdentifier (0x24) callback handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when Service 0x24 is processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_scaling_data_handler(SYN_UDS_Server *server,
+                                           SYN_UDS_ScalingDataHandler handler, void *ctx);
+
+/**
+ * @brief Register ReadDataByPeriodicIdentifier (0x2A) callback handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when Service 0x2A is processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_periodic_data_handler(SYN_UDS_Server *server,
+                                            SYN_UDS_PeriodicDataHandler handler, void *ctx);
+
+/**
+ * @brief Register DynamicallyDefineDataIdentifier (0x2C) callback handler.
+ *
+ * @param server  Pointer to UDS server instance.
+ * @param handler Callback function invoked when Service 0x2C is processed.
+ * @param ctx     User context passed to handler.
+ * @return true on success, false if server is NULL.
+ */
+bool syn_uds_register_dynamic_did_handler(SYN_UDS_Server *server, SYN_UDS_DynamicDIDHandler handler,
+                                          void *ctx);
 
 /**
  * @brief Configure allowed diagnostic session mask for a specific Service Identifier.

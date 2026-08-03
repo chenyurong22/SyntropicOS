@@ -149,13 +149,28 @@ services:
       context: ../..
       dockerfile: tests/integration/services/isotp/Containerfile
     container_name: syntropicos-isotp
+    ports:
+      - "10887:10887"
     cap_add:
       - NET_ADMIN
     networks:
       syn_net:
         ipv4_address: 172.28.0.103
 
-  # 13. SyntropicOS Integration Test Runner Container
+  # 13. SyntropicOS DoIP C Server Daemon
+  doip:
+    build:
+      context: ../..
+      dockerfile: tests/integration/services/doip/Containerfile
+    container_name: syntropicos-doip
+    ports:
+      - "13400:13400"
+      - "13400:13400/udp"
+    networks:
+      syn_net:
+        ipv4_address: 172.28.0.104
+
+  # 14. SyntropicOS Integration Test Runner Container
   test-runner:
     build:
       context: ../..
@@ -174,6 +189,7 @@ services:
       - ethercat-soes
       - uds
       - isotp
+      - doip
     environment:
       - MQTT_HOST=mosquitto
       - SNTP_HOST=sntp
@@ -185,6 +201,7 @@ services:
       - ETHERCAT_SOES_HOST=ethercat-soes
       - UDS_HOST=uds
       - ISOTP_HOST=isotp
+      - DOIP_HOST=doip
     volumes:
       - ../..:/workspace:z
     command: ["/bin/bash", "-c", "tr -d '\\r' < /workspace/tests/integration/run_integration.sh > /tmp/run.sh && bash /tmp/run.sh"]

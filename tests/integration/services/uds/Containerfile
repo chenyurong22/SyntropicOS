@@ -1,4 +1,4 @@
-FROM gcc:13
+FROM docker.io/library/gcc:13
 
 WORKDIR /app
 

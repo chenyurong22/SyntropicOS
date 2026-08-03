@@ -119,6 +119,7 @@ void run_dmx512_tests(void);
 void run_ccp_tests(void);
 void run_xcp_tests(void);
 void run_uds_tests(void);
+void run_doip_tests(void);
 void run_devicenet_tests(void);
 void run_isotp_tests(void);
 void run_lin_tests(void);
@@ -261,6 +262,7 @@ int main(void)
     run_ccp_tests();
     run_xcp_tests();
     run_uds_tests();
+    run_doip_tests();
     run_devicenet_tests();
     run_isotp_tests();
     run_wasm_tests();

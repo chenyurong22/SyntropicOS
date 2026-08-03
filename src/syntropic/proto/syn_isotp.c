@@ -78,7 +78,7 @@ void syn_isotp_init(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id, uint8_
     link->tx_buf_size = tx_buf_size;
     link->tx_state = SYN_ISOTP_TX_IDLE;
     link->rx_state = SYN_ISOTP_RX_IDLE;
-    link->rx_fc_bs = 8;
+    link->rx_fc_bs = 0;
     link->rx_fc_stmin = 0;
     link->n_bs_timeout_us = SYN_ISOTP_DEFAULT_N_BS_MS * 1000U;
     link->n_cr_timeout_us = SYN_ISOTP_DEFAULT_N_CR_MS * 1000U;
@@ -109,7 +109,7 @@ void syn_isotp_init_fd(SYN_ISOTP_Link *link, uint32_t rx_id, uint32_t tx_id, uin
     link->tx_buf_size = tx_buf_size;
     link->tx_state = SYN_ISOTP_TX_IDLE;
     link->rx_state = SYN_ISOTP_RX_IDLE;
-    link->rx_fc_bs = 8;
+    link->rx_fc_bs = 0;
     link->rx_fc_stmin = 0;
     link->n_bs_timeout_us = SYN_ISOTP_DEFAULT_N_BS_MS * 1000U;
     link->n_cr_timeout_us = SYN_ISOTP_DEFAULT_N_CR_MS * 1000U;

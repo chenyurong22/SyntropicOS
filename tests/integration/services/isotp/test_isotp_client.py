@@ -6,6 +6,7 @@ Tests Single Frame (SF), Multi-Frame (FF+CF), Large Multi-Frame (512B), and Flow
 """
 
 import os
+import select
 import socket
 import struct
 import sys
@@ -19,16 +20,31 @@ class TcpCanBus(can.bus.BusABC):
         super().__init__(channel=channel, **kwargs)
         self.sock = sock
         self.sock.setblocking(False)
+        self.rx_buf = bytearray()
 
     def _recv_internal(self, timeout):
-        try:
-            data = self.sock.recv(13)
-            if len(data) == 13:
-                can_id, dlc = struct.unpack(">IB", data[:5])
-                msg = can.Message(arbitration_id=can_id, dlc=dlc, data=data[5:5+dlc])
-                return msg, False
-        except Exception:
-            pass
+        t_end = time.time() + (timeout if timeout is not None and timeout > 0 else 0.001)
+        while len(self.rx_buf) < 13:
+            rem = t_end - time.time()
+            if rem <= 0:
+                break
+            r, _, _ = select.select([self.sock], [], [], min(rem, 0.05))
+            if r:
+                try:
+                    chunk = self.sock.recv(1024)
+                    if chunk:
+                        self.rx_buf.extend(chunk)
+                    else:
+                        break
+                except Exception:
+                    break
+
+        if len(self.rx_buf) >= 13:
+            raw_frame = self.rx_buf[:13]
+            self.rx_buf = self.rx_buf[13:]
+            can_id, dlc = struct.unpack(">IB", raw_frame[:5])
+            msg = can.Message(arbitration_id=can_id, dlc=dlc, data=raw_frame[5:5+dlc], is_extended_id=False, is_rx=True, timestamp=time.time())
+            return msg, False
         return None, False
 
     def send(self, msg, timeout=None):
@@ -74,12 +90,18 @@ def main():
     # Python client transmits on 0x7E0, receives on 0x7E8
     addr = isotp.Address(isotp.AddressingMode.Normal_11bits, txid=0x7E0, rxid=0x7E8)
     params = {
-        'blocksize': 8,
-        'stmin': 5,
-        'tx_data_length': 8
+        'blocksize': 0,
+        'stmin': 0,
+        'tx_data_length': 8,
+        'tx_padding': 0x00,
+        'rx_flowcontrol_timeout': 2000,
+        'rx_consecutive_frame_timeout': 2000
     }
 
-    stack = isotp.CanStack(bus=bus, address=addr, params=params)
+    def on_error(error):
+        print(f"[isotp stack error] {error}")
+
+    stack = isotp.CanStack(bus=bus, address=addr, params=params, error_handler=on_error)
 
     failures = 0
 
@@ -95,7 +117,7 @@ def main():
         if stack.available():
             rx_payload = stack.recv()
             break
-        time.sleep(0.005)
+        time.sleep(0.001)
 
     if rx_payload == payload1:
         print(f"[isotp] SF Echo Received OK: {rx_payload.decode('ascii')}")
@@ -115,7 +137,7 @@ def main():
         if stack.available():
             rx_payload = stack.recv()
             break
-        time.sleep(0.005)
+        time.sleep(0.001)
 
     if rx_payload == payload2:
         print(f"[isotp] Multi-Frame (64B) Echo Received OK! Length={len(rx_payload)}")

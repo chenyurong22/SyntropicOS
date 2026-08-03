@@ -65,6 +65,27 @@ bool syn_uds_init(SYN_UDS_Server *server)
     return true;
 }
 
+/**
+ * @brief Search for DID index in UDS server table.
+ * @param server UDS server instance.
+ * @param did 16-bit DID value to find.
+ * @return Index in table, or -1 if not found.
+ */
+static int find_did_index(const SYN_UDS_Server *server, uint16_t did)
+{
+    /* LCOV_EXCL_START: Defensive null check */
+    if (server == NULL) {
+        return -1;
+    }
+    /* LCOV_EXCL_STOP */
+    for (uint8_t i = 0U; i < server->did_count; i++) {
+        if (server->did_table[i].did == did) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
 bool syn_uds_enable_aes128_security(SYN_UDS_Server *server, const uint8_t key[16])
 {
     if (server == NULL || key == NULL) {
@@ -276,6 +297,83 @@ bool syn_uds_register_file_transfer(SYN_UDS_Server *server, SYN_UDS_FileTransfer
     }
     server->file_transfer_cb = handler;
     server->file_transfer_ctx = ctx;
+    return true;
+}
+
+bool syn_uds_register_routine_control(SYN_UDS_Server *server, SYN_UDS_RoutineControlHandler handler,
+                                      void *ctx)
+{
+    if (server == NULL) {
+        return false;
+    }
+    server->routine_cb = handler;
+    server->routine_ctx = ctx;
+    return true;
+}
+
+bool syn_uds_register_io_control(SYN_UDS_Server *server, SYN_UDS_IOControlHandler handler,
+                                 void *ctx)
+{
+    if (server == NULL) {
+        return false;
+    }
+    server->io_control_cb = handler;
+    server->io_control_ctx = ctx;
+    return true;
+}
+
+bool syn_uds_register_link_control(SYN_UDS_Server *server, SYN_UDS_LinkControlHandler handler,
+                                   void *ctx)
+{
+    if (server == NULL) {
+        return false;
+    }
+    server->link_control_cb = handler;
+    server->link_control_ctx = ctx;
+    return true;
+}
+
+bool syn_uds_register_roe_handler(SYN_UDS_Server *server, SYN_UDS_ResponseOnEventHandler handler,
+                                  void *ctx)
+{
+    if (server == NULL) {
+        return false;
+    }
+    server->roe_cb = handler;
+    server->roe_ctx = ctx;
+    return true;
+}
+
+bool syn_uds_register_scaling_data_handler(SYN_UDS_Server *server,
+                                           SYN_UDS_ScalingDataHandler handler, void *ctx)
+{
+    if (server == NULL) {
+        return false;
+    }
+    server->scaling_cb = handler;
+    server->scaling_ctx = ctx;
+    return true;
+}
+
+bool syn_uds_register_periodic_data_handler(SYN_UDS_Server *server,
+                                            SYN_UDS_PeriodicDataHandler handler, void *ctx)
+{
+    if (server == NULL) {
+        return false;
+    }
+    server->periodic_cb = handler;
+    server->periodic_ctx = ctx;
+    return true;
+}
+
+bool syn_uds_register_dynamic_did_handler(SYN_UDS_Server *server, SYN_UDS_DynamicDIDHandler handler,
+                                          void *ctx)
+{
+    if (server == NULL) {
+        return false;
+    }
+    server->dynamic_did_cb = handler;
+    server->dynamic_did_ctx = ctx;
     return true;
 }
 
@@ -792,12 +890,28 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                           resp_len, addr_mode);
         }
         uint8_t sub = req[1] & 0x7FU;
+        if (sub < 0x01U || sub > 0x03U) {
+            return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
+                                          resp_len, addr_mode);
+        }
         uint16_t routine_id = syn_peek_u16(req, 2);
-
-        resp_buf[0] = sid + 0x40U;
-        resp_buf[1] = sub;
-        syn_poke_u16(routine_id, resp_buf, 2);
-        *resp_len = 4U;
+        if (server->routine_cb != NULL) {
+            uint16_t out_payload_len = 0U;
+            if (!server->routine_cb(sub, routine_id, &req[4], req_len - 4U, &resp_buf[4],
+                                    max_resp_len - 4U, &out_payload_len, server->routine_ctx)) {
+                return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                              resp_len, addr_mode);
+            }
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            syn_poke_u16(routine_id, resp_buf, 2);
+            *resp_len = 4U + out_payload_len;
+        } else {
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            syn_poke_u16(routine_id, resp_buf, 2);
+            *resp_len = 4U;
+        }
         success = true;
         break;
     }
@@ -1638,11 +1752,8 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                 *resp_len = 2U + cb_out_len;
                 success = true;
             } else {
-                resp_buf[0] = sid + 0x40U;
-                resp_buf[1] = sub;
-                resp_buf[2] = SYN_UDS_DTC_STATUS_AVAILABILITY_MASK;
-                *resp_len = 3U;
-                success = true;
+                return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
+                                              resp_len, addr_mode);
             }
             break;
         }
@@ -1677,20 +1788,32 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
                                           resp_len, addr_mode);
         }
-        if (max_resp_len < 4U) {
-            /* clang-format off */
-            return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len, addr_mode);
-            /* clang-format on */
-        }
-        resp_buf[0] = sid + 0x40U;
-        resp_buf[1] = sub;
-        if (sub == 0x04U) {
-            resp_buf[2] = 0x00U;
-            *resp_len = 3U;
+        if (server->roe_cb != NULL) {
+            uint16_t out_payload_len = 0U;
+            if (!server->roe_cb(sub, &req[2], req_len - 2U, &resp_buf[2], max_resp_len - 2U,
+                                &out_payload_len, server->roe_ctx)) {
+                return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                              resp_len, addr_mode);
+            }
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            *resp_len = 2U + out_payload_len;
         } else {
-            resp_buf[2] = 0x00U;
-            resp_buf[3] = 0x02U;
-            *resp_len = 4U;
+            if (max_resp_len < 4U) {
+                /* clang-format off */
+                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len, addr_mode);
+                /* clang-format on */
+            }
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            if (sub == 0x04U) {
+                resp_buf[2] = 0x00U;
+                *resp_len = 3U;
+            } else {
+                resp_buf[2] = 0x00U;
+                resp_buf[3] = 0x02U;
+                *resp_len = 4U;
+            }
         }
         success = true;
         break;
@@ -1882,14 +2005,25 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                           resp_len, addr_mode);
         }
         uint16_t target_did = syn_peek_u16(req, 1);
-        if (max_resp_len < 4U) {
-            return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len,
+        int did_idx = find_did_index(server, target_did);
+        if (did_idx < 0 && server->scaling_cb == NULL) {
+            return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf, resp_len,
                                           addr_mode);
         }
         resp_buf[0] = sid + 0x40U;
         syn_poke_u16(target_did, resp_buf, 1);
-        resp_buf[3] = 0x01U;
-        *resp_len = 4U;
+        if (server->scaling_cb != NULL) {
+            uint16_t out_payload_len = 0U;
+            if (!server->scaling_cb(target_did, &resp_buf[3], max_resp_len - 3U, &out_payload_len,
+                                    server->scaling_ctx)) {
+                return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                              resp_len, addr_mode);
+            }
+            *resp_len = 3U + out_payload_len;
+        } else {
+            resp_buf[3] = 0x01U;
+            *resp_len = 4U;
+        }
         success = true;
         break;
     }
@@ -1929,9 +2063,21 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf, resp_len,
                                           addr_mode);
         }
-        resp_buf[0] = sid + 0x40U;
-        resp_buf[1] = req[2];
-        *resp_len = 2U;
+        if (server->periodic_cb != NULL) {
+            uint16_t out_payload_len = 0U;
+            if (!server->periodic_cb(mode, &req[2], req_len - 2U, &resp_buf[2], max_resp_len - 2U,
+                                     &out_payload_len, server->periodic_ctx)) {
+                return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                              resp_len, addr_mode);
+            }
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = req[2];
+            *resp_len = 2U + out_payload_len;
+        } else {
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = req[2];
+            *resp_len = 2U;
+        }
         success = true;
         break;
     }
@@ -1947,10 +2093,24 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
                                           resp_len, addr_mode);
         }
         uint16_t dyn_did = syn_peek_u16(req, 2);
-        resp_buf[0] = sid + 0x40U;
-        resp_buf[1] = sub;
-        syn_poke_u16(dyn_did, resp_buf, 2);
-        *resp_len = 4U;
+        if (server->dynamic_did_cb != NULL) {
+            uint16_t out_payload_len = 0U;
+            if (!server->dynamic_did_cb(sub, dyn_did, &req[4], req_len - 4U, &resp_buf[4],
+                                        max_resp_len - 4U, &out_payload_len,
+                                        server->dynamic_did_ctx)) {
+                return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                              resp_len, addr_mode);
+            }
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            syn_poke_u16(dyn_did, resp_buf, 2);
+            *resp_len = 4U + out_payload_len;
+        } else {
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            syn_poke_u16(dyn_did, resp_buf, 2);
+            *resp_len = 4U;
+        }
         success = true;
         break;
     }
@@ -1962,10 +2122,33 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
         }
         uint16_t target_did = syn_peek_u16(req, 1);
         uint8_t control_opt = req[3];
-        resp_buf[0] = sid + 0x40U;
-        syn_poke_u16(target_did, resp_buf, 1);
-        resp_buf[3] = control_opt;
-        *resp_len = 4U;
+        if (control_opt > 0x03U) {
+            return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf, resp_len,
+                                          addr_mode);
+        }
+        int did_idx = find_did_index(server, target_did);
+        if (did_idx < 0 && server->io_control_cb == NULL) {
+            return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf, resp_len,
+                                          addr_mode);
+        }
+        if (server->io_control_cb != NULL) {
+            uint16_t out_payload_len = 0U;
+            if (!server->io_control_cb(target_did, control_opt, &req[4], req_len - 4U, &resp_buf[4],
+                                       max_resp_len - 4U, &out_payload_len,
+                                       server->io_control_ctx)) {
+                return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                              resp_len, addr_mode);
+            }
+            resp_buf[0] = sid + 0x40U;
+            syn_poke_u16(target_did, resp_buf, 1);
+            resp_buf[3] = control_opt;
+            *resp_len = 4U + out_payload_len;
+        } else {
+            resp_buf[0] = sid + 0x40U;
+            syn_poke_u16(target_did, resp_buf, 1);
+            resp_buf[3] = control_opt;
+            *resp_len = 4U;
+        }
         success = true;
         break;
     }
@@ -2056,9 +2239,22 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
             return make_negative_response(sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED, resp_buf,
                                           resp_len, addr_mode);
         }
-        resp_buf[0] = sid + 0x40U;
-        resp_buf[1] = sub;
-        *resp_len = 2U;
+        if (server->link_control_cb != NULL) {
+            uint16_t out_payload_len = 0U;
+            if (!server->link_control_cb(sub, &req[2], req_len - 2U, &resp_buf[2],
+                                         max_resp_len - 2U, &out_payload_len,
+                                         server->link_control_ctx)) {
+                return make_negative_response(sid, SYN_UDS_NRC_CONDITIONS_NOT_CORRECT, resp_buf,
+                                              resp_len, addr_mode);
+            }
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            *resp_len = 2U + out_payload_len;
+        } else {
+            resp_buf[0] = sid + 0x40U;
+            resp_buf[1] = sub;
+            *resp_len = 2U;
+        }
         success = true;
         break;
     }

@@ -163,11 +163,16 @@ static bool on_response_on_event(uint8_t subfunction, const uint8_t *in_data, ui
                                  uint8_t *out_buf, uint16_t max_out_len, uint16_t *out_len,
                                  void *ctx)
 {
-    (void)in_data; (void)in_len; (void)ctx;
-    if (max_out_len < 2) return false;
-    out_buf[0] = 0x01; /* 1 active event registered */
-    out_buf[1] = 0x00; /* Infinite event window */
-    *out_len = 2;
+    (void)ctx;
+    if (max_out_len < 2 + in_len) return false;
+    out_buf[0] = 0x01; /* numberOfIdentifiedEvents = 1 */
+    out_buf[1] = (in_len >= 1) ? in_data[0] : 0x02; /* eventWindowTime (e.g. 0x08 = 80s or 0x02 = infinite) */
+    if (in_len > 1) {
+        memcpy(&out_buf[2], &in_data[1], in_len - 1); /* Echo eventTypeRecord & serviceToRespondToRecord */
+        *out_len = 1 + in_len;
+    } else {
+        *out_len = 2;
+    }
     (void)subfunction;
     return true;
 }

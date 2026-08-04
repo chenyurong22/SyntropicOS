@@ -12,6 +12,10 @@
  *  - 0x24 ReadScalingDataByIdentifier (#97)
  *  - 0x2A ReadDataByPeriodicIdentifier (#99)
  *  - 0x2C DynamicallyDefineDataIdentifier (#98)
+ *  - 0x34 RequestDownload (#106)
+ *  - 0x35 RequestUpload (#107)
+ *  - 0x36 TransferData (#108)
+ *  - 0x37 RequestTransferExit (#109)
  */
 
 #include "syntropic/proto/syn_isotp.h"
@@ -277,6 +281,29 @@ static bool on_dynamic_did(uint8_t subfunction, uint16_t dyn_did, const uint8_t 
     return false;
 }
 
+/* 10. Services 0x34, 0x35, 0x36, 0x37, 0x23, 0x3D Memory Handler Callback (#106, #107, #108, #109) */
+#define VIRTUAL_FLASH_SIZE 4096U
+#define VIRTUAL_FLASH_BASE 0x08008000U
+static uint8_t g_virtual_flash[VIRTUAL_FLASH_SIZE];
+
+static bool on_memory_handler(bool is_write, uint32_t address, uint32_t size,
+                             uint8_t *data_buf, void *ctx)
+{
+    (void)ctx;
+    if (address < VIRTUAL_FLASH_BASE ||
+        (address + size) > (VIRTUAL_FLASH_BASE + VIRTUAL_FLASH_SIZE)) {
+        return false; /* Returns NRC 0x72 General Programming Failure */
+    }
+
+    uint32_t offset = address - VIRTUAL_FLASH_BASE;
+    if (is_write) {
+        memcpy(&g_virtual_flash[offset], data_buf, size);
+    } else {
+        memcpy(data_buf, &g_virtual_flash[offset], size);
+    }
+    return true;
+}
+
 void stm32_uds_services_demo_init(void)
 {
     /* Initialize UDS Server */
@@ -297,6 +324,7 @@ void stm32_uds_services_demo_init(void)
     syn_uds_register_scaling_data_handler(&g_uds_server, on_scaling_data, NULL);
     syn_uds_register_periodic_data_handler(&g_uds_server, on_periodic_data, NULL);
     syn_uds_register_dynamic_did_handler(&g_uds_server, on_dynamic_did, NULL);
+    syn_uds_register_memory_handler(&g_uds_server, on_memory_handler, NULL);
 }
 
 int main(void)

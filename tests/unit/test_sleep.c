@@ -67,7 +67,32 @@ static void test_sleep(void)
     TEST_ASSERT_TRUE(syn_sleep_enter(&sl));
 }
 
+/**
+ * Regression: syn_sleep_lock/unlock are documented as ISR-callable, so
+ * the lock_mask read-modify-write must run inside a critical section —
+ * a raw |= / &= could lose a preempting ISR's lock update and let the
+ * CPU sleep through an active transfer.
+ */
+static void test_sleep_lock_unlock_atomic(void)
+{
+    SYN_Sleep sl;
+    syn_sleep_init(&sl, SYN_SLEEP_LIGHT);
+
+    int enters_before = mock_critical_enter_count;
+
+    syn_sleep_lock(&sl, SYN_SLEEP_LOCK_DMA);
+    TEST_ASSERT_EQUAL_INT(enters_before + 1, mock_critical_enter_count);
+    TEST_ASSERT_EQUAL_INT(0, mock_critical_depth); /* balanced exit */
+    TEST_ASSERT_TRUE(syn_sleep_is_locked(&sl, SYN_SLEEP_LOCK_DMA));
+
+    syn_sleep_unlock(&sl, SYN_SLEEP_LOCK_DMA);
+    TEST_ASSERT_EQUAL_INT(enters_before + 2, mock_critical_enter_count);
+    TEST_ASSERT_EQUAL_INT(0, mock_critical_depth);
+    TEST_ASSERT_FALSE(syn_sleep_any_locked(&sl));
+}
+
 void run_sleep_tests(void)
 {
     RUN_TEST(test_sleep);
+    RUN_TEST(test_sleep_lock_unlock_atomic);
 }

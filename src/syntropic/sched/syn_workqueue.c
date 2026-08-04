@@ -9,6 +9,7 @@
  * @brief Deferred work queue implementation.
  */
 
+#include "../port/syn_port_system.h"
 #include "../util/syn_assert.h"
 #include "syn_workqueue.h"
 
@@ -35,14 +36,17 @@ bool syn_workqueue_post(SYN_WorkQueue *wq, SYN_WorkFunc func, void *ctx)
     if (!wq || !func)
         return false;
 
+    syn_port_enter_critical();
     SYN_WorkItem item = {.func = func, .ctx = ctx};
     SYN_Status status = syn_spsc_queue_push(&wq->queue, &item);
 
     if (status != SYN_OK) {
         wq->overflow++;
+        syn_port_exit_critical();
         return false;
     }
 
+    syn_port_exit_critical();
     return true;
 }
 

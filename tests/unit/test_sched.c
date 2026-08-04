@@ -1142,6 +1142,102 @@ static void test_block_event_auto_clear_is_atomic(void)
     TEST_ASSERT_TRUE(syn_event_check_any(&evt, SYN_BIT(5)));
 }
 
+/* ── PT_TASK_DELAY_MS deadline-lifecycle regressions ─────────────────────── */
+
+static int stale_runs;
+
+/* Task that delays once at startup, then yields forever (event-driven
+ * long-lived task shape) */
+static SYN_PT_Status delay_once_task(SYN_PT *pt, SYN_Task *task)
+{
+    PT_BEGIN(pt);
+    PT_TASK_DELAY_MS(pt, task, 10);
+    for (;;) {
+        stale_runs++;
+        PT_YIELD(pt);
+    }
+    PT_END(pt);
+}
+
+/**
+ * Regression: a consumed delay deadline must be cleared. A stale
+ * delay_until reads as "in the future" again once the tick advances
+ * 2^31 ms (~24.8 days) past it, and the scheduler then freezes the task
+ * for up to another 24.8 days.
+ */
+static void test_delay_deadline_consumed_no_wrap_freeze(void)
+{
+    mock_tick_ms = 1000;
+    stale_runs = 0;
+
+    SYN_Task tasks[1];
+    SYN_Sched sched;
+    syn_task_create(&tasks[0], "d", delay_once_task, 0, NULL);
+    syn_sched_init(&sched, tasks, 1);
+
+    /* Task starts its 10ms delay */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(0, stale_runs);
+
+    /* Delay expires — task runs and the deadline is consumed */
+    mock_tick_advance(20);
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(1, stale_runs);
+    TEST_ASSERT_EQUAL_UINT32(0, tasks[0].delay_until);
+
+    /* ~25 days later: pre-fix the stale deadline (1010) looked "future"
+     * and the task was silently skipped. It must still be scheduled. */
+    mock_tick_advance(0x80000000u);
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(2, stale_runs);
+}
+
+/* Task that runs, delays 5ms, runs again — logs each phase */
+static SYN_PT_Status wrap_delay_task(SYN_PT *pt, SYN_Task *task)
+{
+    PT_BEGIN(pt);
+    run_log[run_log_idx++] = 1;
+    PT_TASK_DELAY_MS(pt, task, 5);
+    run_log[run_log_idx++] = 2;
+    PT_END(pt);
+}
+
+/**
+ * Regression: a delay whose computed deadline lands exactly on tick 0
+ * (49.7-day counter wrap) must not alias the scheduler's "no deadline"
+ * sentinel. Pre-fix, delay_until == 0 meant the scheduler polled the
+ * task every pass instead of skipping it, and tickless mode saw it as
+ * "ready now" (no sleep) for the whole delay window.
+ */
+static void test_delay_deadline_wrap_zero_alias(void)
+{
+    mock_tick_ms = UINT32_MAX - 4; /* deadline: (UINT32_MAX - 4) + 5 == 0 */
+    log_reset();
+
+    SYN_Task tasks[1];
+    SYN_Sched sched;
+    syn_task_create(&tasks[0], "z", wrap_delay_task, 0, NULL);
+    syn_sched_init(&sched, tasks, 1);
+
+    /* Task starts a 5ms delay spanning the wrap — the deadline must be
+     * nudged off the sentinel (0 → 1), not disappear */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(1, run_log[0]);
+    TEST_ASSERT_EQUAL_UINT32(1, tasks[0].delay_until);
+
+    /* Mid-delay: task is skipped, and the tickless wakeup is the real
+     * deadline, not "ready now" */
+    mock_tick_advance(2);
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(1, run_log_idx);
+    TEST_ASSERT_EQUAL_UINT32(1, syn_sched_next_wakeup(&sched));
+
+    /* Past the deadline (tick wrapped to 1): completes */
+    mock_tick_advance(4);
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_INT(2, run_log[1]);
+}
+
 static void test_sched_next_wakeup_blocked_event_fired(void)
 {
     SYN_Task task;
@@ -1220,6 +1316,8 @@ void run_sched_tests(void)
     RUN_TEST(test_block_condition_and_primitives);
     RUN_TEST(test_block_condition_isr_wakeup_not_lost);
     RUN_TEST(test_block_event_auto_clear_is_atomic);
+    RUN_TEST(test_delay_deadline_consumed_no_wrap_freeze);
+    RUN_TEST(test_delay_deadline_wrap_zero_alias);
     RUN_TEST(test_sched_next_wakeup_blocked_event_fired);
     RUN_TEST(test_sched_next_wakeup_uint32_max_and_prio_bounds);
 }

@@ -32,6 +32,7 @@
 #define SYN_SLEEP_H
 
 #include "../common/syn_defs.h"
+#include "../port/syn_port_system.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -111,22 +112,35 @@ static inline void syn_sleep_init(SYN_Sleep *s, SYN_SleepMode max_depth)
 
 /**
  * @brief Acquire a wake lock (prevents sleep).
+ *
+ * Safe to call from ISR context. The |= on the volatile mask is a
+ * load-modify-store, so without a critical section a preempting ISR's
+ * lock update would be overwritten by the stale store (lost lock — the
+ * CPU could then sleep through an active transfer).
+ *
  * @param s        Sleep instance.
  * @param lock_id  Lock bitmask (e.g. SYN_SLEEP_LOCK_UART).
  */
 static inline void syn_sleep_lock(SYN_Sleep *s, uint32_t lock_id)
 {
+    syn_port_enter_critical();
     s->lock_mask |= lock_id;
+    syn_port_exit_critical();
 }
 
 /**
  * @brief Release a wake lock.
+ *
+ * Safe to call from ISR context — see syn_sleep_lock().
+ *
  * @param s        Sleep instance.
  * @param lock_id  Lock bitmask to release.
  */
 static inline void syn_sleep_unlock(SYN_Sleep *s, uint32_t lock_id)
 {
+    syn_port_enter_critical();
     s->lock_mask &= ~lock_id;
+    syn_port_exit_critical();
 }
 
 /**

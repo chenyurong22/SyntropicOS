@@ -245,6 +245,13 @@ typedef enum {
  * the scheduler, pass `&(task)->delay_until`. For standalone use, pass
  * any persistent `uint32_t *`.
  *
+ * @note The target is reset to 0 (the scheduler's "no deadline pending"
+ *       sentinel) once the delay completes. A deadline left in place
+ *       would read as "in the future" again after the tick counter
+ *       advances 2^31 ms (~24.8 days) past it, freezing the task. A
+ *       computed deadline of exactly 0 (tick wrap) is nudged to 1 so it
+ *       cannot alias the sentinel.
+ *
  * @param pt       Protothread.
  * @param target   Pointer to a uint32_t that will hold the deadline tick.
  * @param ms       Delay duration in milliseconds.
@@ -252,7 +259,11 @@ typedef enum {
 #define PT_DELAY_MS(pt, target, ms)                                            \
     do {                                                                       \
         *(target) = syn_port_get_tick_ms() + (uint32_t)(ms);                   \
+        if (*(target) == 0) {                                                  \
+            *(target) = 1; /* 0 is the "no deadline" sentinel */               \
+        }                                                                      \
         PT_WAIT_UNTIL(pt, (int32_t)(syn_port_get_tick_ms() - *(target)) >= 0); \
+        *(target) = 0; /* consume — stale deadlines wrap to "future" */        \
     } while (0)
 
 /**

@@ -349,18 +349,29 @@ void syn_port_delay_ms(uint32_t ms)
     }
 }
 
-static volatile uint32_t critical_nesting = 0;
+static uint32_t critical_status = 0;
+static uint32_t critical_nesting = 0;
 
 void syn_port_enter_critical(void)
 {
+    uint32_t primask;
+    __asm volatile("mrs %0, primask" : "=r"(primask));
     __asm volatile("cpsid i");
+    if (critical_nesting == 0) {
+        critical_status = primask;
+    }
     critical_nesting++;
 }
 
 void syn_port_exit_critical(void)
 {
-    if (--critical_nesting == 0) {
-        __asm volatile("cpsie i");
+    if (critical_nesting > 0) {
+        critical_nesting--;
+        if (critical_nesting == 0) {
+            if ((critical_status & 1U) == 0U) {
+                __asm volatile("cpsie i");
+            }
+        }
     }
 }
 

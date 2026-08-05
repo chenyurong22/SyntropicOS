@@ -96,15 +96,23 @@ static void test_clarke_inv_roundtrip(void)
 
 static void test_svpwm_duty_range(void)
 {
-    SYN_FOC_AB ab = {Q16_FROM_INT(5), Q16_FROM_INT(3)};
-    q16_t duty_a, duty_b, duty_c;
+    /* Test all 6 SVPWM sectors for complete branch coverage of MIN/MAX voltage ordering */
+    SYN_FOC_AB sectors[6] = {
+        {Q16_FROM_INT(10), 0},                /* Sector 1 (0°) */
+        {Q16_FROM_INT(5), Q16_FROM_INT(8)},   /* Sector 2 (60°) */
+        {-Q16_FROM_INT(5), Q16_FROM_INT(8)},  /* Sector 3 (120°) */
+        {-Q16_FROM_INT(10), 0},               /* Sector 4 (180°) */
+        {-Q16_FROM_INT(5), -Q16_FROM_INT(8)}, /* Sector 5 (240°) */
+        {Q16_FROM_INT(5), -Q16_FROM_INT(8)}   /* Sector 6 (300°) */
+    };
 
-    syn_foc_svpwm(&ab, Q16_FROM_INT(24), &duty_a, &duty_b, &duty_c);
-
-    /* All duties should be in [0, 1] */
-    TEST_ASSERT_TRUE(duty_a >= 0 && duty_a <= Q16_ONE);
-    TEST_ASSERT_TRUE(duty_b >= 0 && duty_b <= Q16_ONE);
-    TEST_ASSERT_TRUE(duty_c >= 0 && duty_c <= Q16_ONE);
+    for (int i = 0; i < 6; i++) {
+        q16_t duty_a = 0, duty_b = 0, duty_c = 0;
+        syn_foc_svpwm(&sectors[i], Q16_FROM_INT(24), &duty_a, &duty_b, &duty_c);
+        TEST_ASSERT_TRUE(duty_a >= 0 && duty_a <= Q16_ONE);
+        TEST_ASSERT_TRUE(duty_b >= 0 && duty_b <= Q16_ONE);
+        TEST_ASSERT_TRUE(duty_c >= 0 && duty_c <= Q16_ONE);
+    }
 }
 
 /* ── Runner ─────────────────────────────────────────────────────────────── */
@@ -180,6 +188,13 @@ static void test_foc_deadtime_compensation(void)
 
     /* Phase C at zero-crossing should remain 0.5 */
     TEST_ASSERT_EQUAL_INT32(Q16_HALF, duty_c);
+
+    /* Intermediate current in zero-crossing band (0.05A = half of 0.1A threshold) */
+    SYN_FOC_ABC i_half = {Q16_FROM_FRAC(5, 100), -Q16_FROM_FRAC(5, 100), 0};
+    q16_t da = Q16_HALF, db = Q16_HALF, dc = Q16_HALF;
+    syn_foc_deadtime_comp(&da, &db, &dc, &i_half, dt_offset);
+    TEST_ASSERT_TRUE(da > Q16_HALF && da < Q16_HALF + dt_offset);
+    TEST_ASSERT_TRUE(db < Q16_HALF && db > Q16_HALF - dt_offset);
 
     /* Test zero dt_offset guard */
     syn_foc_deadtime_comp(&duty_a, &duty_b, &duty_c, &i_abc, 0);

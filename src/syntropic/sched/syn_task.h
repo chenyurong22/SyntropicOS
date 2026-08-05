@@ -9,6 +9,13 @@
  * Tasks are caller-owned — you allocate them however you like (static
  * array, global, on the stack). The scheduler just takes a pointer to
  * your array.
+ *
+ * @par Task restart and static local state
+ * syn_task_restart() resets the protothread continuation (lc), delay
+ * deadlines, and event wait masks. It does NOT reset static local variables
+ * inside the task function. Place all state initialization after PT_BEGIN()
+ * or reset static state inside task-private user_data structs to ensure clean
+ * restarts.
  * @ingroup syn_sched
  */
 

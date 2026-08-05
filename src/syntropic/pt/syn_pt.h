@@ -172,6 +172,13 @@ typedef enum {
  *
  * Like PT_WAIT_WHILE, but returns PT_YIELDED instead of PT_WAITING,
  * signaling the scheduler that this thread actively wants to run.
+ *
+ * @warning Priority starvation hazard: A high-priority task using
+ * PT_YIELD_UNTIL to wait for a resource held by a lower-priority task
+ * will spin-yield every tick, starving the lower-priority task from
+ * ever releasing the resource. Use PT_WAIT_UNTIL(pt, cond) for inter-task
+ * resource contention, and reserve PT_YIELD_UNTIL for sub-tick hardware
+ * polling only.
  */
 #define PT_YIELD_UNTIL(pt, cond)                \
     do {                                        \
@@ -211,6 +218,11 @@ typedef enum {
  * @param child   Child protothread (SYN_PT struct).
  * @param func    Expression that calls the child's function, e.g.
  *                `child_func(&child_pt)`.
+ *
+ * @warning The @p func expression is evaluated on EVERY scheduler poll
+ * until the child exits. Never pass expressions with side-effects
+ * (e.g. counter++, function calls that modify state). Pre-evaluate
+ * arguments before calling PT_SPAWN.
  *
  * Usage:
  * @code
@@ -342,11 +354,15 @@ typedef enum {
     } while (0)
 
 /**
- * @brief Block task execution (SYN_TASK_BLOCKED) until @p cond becomes true.
+ * @brief Sleep task (SYN_TASK_BLOCKED) until explicitly resumed.
  *
- * Unlike PT_WAIT_UNTIL, this macro transitions the SYN_Task state to BLOCKED
- * so the scheduler skips executing the task function on subsequent passes
- * until an event or ISR wakes the task.
+ * @warning This macro does NOT poll @p cond on each scheduler tick.
+ * Once the task yields as BLOCKED, the scheduler skips it entirely.
+ * The condition is only re-evaluated when the task is explicitly
+ * woken by an ISR or driver calling syn_task_resume(task).
+ *
+ * For polled condition blocking, use PT_WAIT_UNTIL(pt, cond) instead.
+ * For event-flag-driven blocking, use PT_BLOCK_EVENT(pt, task, grp, mask).
  *
  * @param pt    Protothread.
  * @param task  Pointer to the SYN_Task struct.

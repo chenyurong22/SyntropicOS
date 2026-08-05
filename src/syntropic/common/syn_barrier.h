@@ -123,21 +123,24 @@ static inline size_t syn_load_acquire(const volatile size_t *ptr)
  */
 static inline void syn_store_release(volatile size_t *ptr, size_t val)
 {
+    SYN_COMPILER_BARRIER();
     *ptr = val;
 }
 
 /**
  * @brief Load with acquire semantics (single-core path).
  *
- * On single-core targets, volatile access is sufficient. This
- * compiles to a plain load — zero overhead.
+ * On single-core targets, volatile access is combined with a compiler
+ * barrier to prevent reads from being reordered before the index load.
  *
  * @param ptr  Pointer to volatile size_t.
  * @return The loaded value.
  */
 static inline size_t syn_load_acquire(const volatile size_t *ptr)
 {
-    return *ptr;
+    size_t val = *ptr;
+    SYN_COMPILER_BARRIER();
+    return val;
 }
 
 #endif /* SYN_USE_MULTICORE */

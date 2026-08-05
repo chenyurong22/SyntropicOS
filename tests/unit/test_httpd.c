@@ -935,6 +935,36 @@ static void test_httpd_connection_listener_and_task_polling(void)
     TEST_ASSERT_EQUAL_MEMORY("56789", chunk2, 5);
 }
 
+static void test_httpd_query_params(void)
+{
+    const char *q = "channel=2&mode=auto&gain=10&flag";
+    char val[16];
+
+    /* 1. Extract first param */
+    TEST_ASSERT_TRUE(syn_httpd_get_query_param(q, "channel", val, sizeof(val)));
+    TEST_ASSERT_EQUAL_STRING("2", val);
+
+    /* 2. Extract middle param */
+    TEST_ASSERT_TRUE(syn_httpd_get_query_param(q, "mode", val, sizeof(val)));
+    TEST_ASSERT_EQUAL_STRING("auto", val);
+
+    /* 3. Extract last param */
+    TEST_ASSERT_TRUE(syn_httpd_get_query_param(q, "gain", val, sizeof(val)));
+    TEST_ASSERT_EQUAL_STRING("10", val);
+
+    /* 4. Missing key */
+    TEST_ASSERT_FALSE(syn_httpd_get_query_param(q, "missing", val, sizeof(val)));
+
+    /* 5. Buffer too small */
+    TEST_ASSERT_FALSE(syn_httpd_get_query_param(q, "mode", val, 3)); /* "auto" needs 5 bytes */
+
+    /* 6. NULL guards */
+    TEST_ASSERT_FALSE(syn_httpd_get_query_param(NULL, "key", val, sizeof(val)));
+    TEST_ASSERT_FALSE(syn_httpd_get_query_param(q, NULL, val, sizeof(val)));
+    TEST_ASSERT_FALSE(syn_httpd_get_query_param(q, "key", NULL, sizeof(val)));
+    TEST_ASSERT_FALSE(syn_httpd_get_query_param(q, "key", val, 0));
+}
+
 void run_httpd_tests(void)
 {
     RUN_TEST(test_httpd_get_root);
@@ -973,6 +1003,7 @@ void run_httpd_tests(void)
     RUN_TEST(test_httpd_bad_request_malformed_headers);
     RUN_TEST(test_httpd_header_length_limits_and_malformed_lines);
     RUN_TEST(test_httpd_connection_listener_and_task_polling);
+    RUN_TEST(test_httpd_query_params);
 
     /* Test NULL parameter guards for response helpers */
     SYN_HttpdResponse resp_dummy = {0};

@@ -571,4 +571,40 @@ SYN_PT_Status syn_httpd_task(SYN_PT *pt, SYN_Task *task)
     PT_END(pt); /* LCOV_EXCL_LINE: Defensive bounds check / hardware port fallback */
 }
 
+bool syn_httpd_get_query_param(const char *query, const char *key, char *val_buf, size_t max_len)
+{
+    if (query == NULL || key == NULL || val_buf == NULL || max_len == 0) {
+        return false;
+    }
+
+    size_t key_len = strlen(key);
+    const char *p = query;
+
+    while (*p != '\0') {
+        /* Check if key matches at current position */
+        if (strncmp(p, key, key_len) == 0 && p[key_len] == '=') {
+            const char *val_start = p + key_len + 1;
+            const char *val_end = strchr(val_start, '&');
+            size_t val_len = val_end ? (size_t)(val_end - val_start) : strlen(val_start);
+
+            if (val_len >= max_len) {
+                return false; /* Buffer capacity exceeded */
+            }
+
+            memcpy(val_buf, val_start, val_len);
+            val_buf[val_len] = '\0';
+            return true;
+        }
+
+        /* Move to next param after '&' */
+        p = strchr(p, '&');
+        if (p == NULL) {
+            break;
+        }
+        p++; /* Skip '&' */
+    }
+
+    return false;
+}
+
 #endif /* SYN_USE_HTTPD */

@@ -159,6 +159,32 @@ static void test_foc_edge_cases(void)
     ASSERT_Q16_NEAR(ab.alpha, ab_out.alpha, Q16_TOL * 2);
 }
 
+static void test_foc_deadtime_compensation(void)
+{
+    q16_t duty_a = Q16_HALF; /* 0.5 */
+    q16_t duty_b = Q16_HALF;
+    q16_t duty_c = Q16_HALF;
+    q16_t dt_offset = Q16_FROM_FRAC(5, 100); /* 0.05 duty compensation */
+
+    /* Phase A positive current (+1.0A), Phase B negative current (-1.0A), Phase C zero-crossing
+     * (0.0A) */
+    SYN_FOC_ABC i_abc = {Q16_ONE, -Q16_ONE, 0};
+
+    syn_foc_deadtime_comp(&duty_a, &duty_b, &duty_c, &i_abc, dt_offset);
+
+    /* Phase A should increase duty cycle (+0.05) */
+    TEST_ASSERT_EQUAL_INT32(Q16_HALF + dt_offset, duty_a);
+
+    /* Phase B should decrease duty cycle (-0.05) */
+    TEST_ASSERT_EQUAL_INT32(Q16_HALF - dt_offset, duty_b);
+
+    /* Phase C at zero-crossing should remain 0.5 */
+    TEST_ASSERT_EQUAL_INT32(Q16_HALF, duty_c);
+
+    /* Test zero dt_offset guard */
+    syn_foc_deadtime_comp(&duty_a, &duty_b, &duty_c, &i_abc, 0);
+}
+
 void run_foc_tests(void)
 {
     RUN_TEST(test_clarke_balanced);
@@ -168,4 +194,5 @@ void run_foc_tests(void)
     RUN_TEST(test_svpwm_duty_range);
     RUN_TEST(test_foc_fast_and_field_weakening);
     RUN_TEST(test_foc_edge_cases);
+    RUN_TEST(test_foc_deadtime_compensation);
 }

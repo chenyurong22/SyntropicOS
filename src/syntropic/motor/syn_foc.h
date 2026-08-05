@@ -158,6 +158,21 @@ bool syn_foc_field_weakening(q16_t v_d, q16_t v_q, q16_t v_max, q16_t *id_cmd);
  */
 void syn_foc_svpwm(const SYN_FOC_AB *ab, q16_t v_bus, q16_t *duty_a, q16_t *duty_b, q16_t *duty_c);
 
+/**
+ * @brief 3-Phase Inverter Dead-Time Voltage Compensation.
+ *
+ * Adjusts phase duty cycles to compensate for MOSFET/IGBT bridge dead-time distortion
+ * based on measured phase current polarities.
+ *
+ * @param duty_a   [in/out] Phase A duty cycle [0, Q16_ONE].
+ * @param duty_b   [in/out] Phase B duty cycle [0, Q16_ONE].
+ * @param duty_c   [in/out] Phase C duty cycle [0, Q16_ONE].
+ * @param i_abc    Measured 3-phase currents (Q16.16).
+ * @param dt_comp  Dead-time compensation duty offset (Q16.16).
+ */
+void syn_foc_deadtime_comp(q16_t *duty_a, q16_t *duty_b, q16_t *duty_c, const SYN_FOC_ABC *i_abc,
+                           q16_t dt_comp);
+
 #ifdef __cplusplus
 }
 #endif

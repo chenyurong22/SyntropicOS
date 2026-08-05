@@ -251,6 +251,19 @@ void syn_httpd_body_str(SYN_HttpdResponse *resp, const char *str);
 int syn_httpd_read_body(const SYN_HttpdRequest *req, const SYN_HttpdResponse *resp, void *buf,
                         size_t max_len);
 
+/**
+ * @brief Find and extract a query parameter value by key.
+ *
+ * E.g., for query string "channel=1&mode=auto", searching "mode" returns "auto".
+ *
+ * @param query    Raw query string (from req->query).
+ * @param key      Key name to search (e.g. "channel").
+ * @param val_buf  [out] Destination buffer for value.
+ * @param max_len  Capacity of destination buffer.
+ * @return true if key was found and value copied, false if missing or buffer too small.
+ */
+bool syn_httpd_get_query_param(const char *query, const char *key, char *val_buf, size_t max_len);
+
 #ifdef __cplusplus
 }
 #endif

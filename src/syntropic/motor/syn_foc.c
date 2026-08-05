@@ -153,4 +153,36 @@ void syn_foc_svpwm(const SYN_FOC_AB *ab, q16_t v_bus, q16_t *duty_a, q16_t *duty
     *duty_c = q16_clamp(q16_mul(vc + v_offset, inv_v_bus) + Q16_HALF, 0, Q16_ONE);
 }
 
+/**
+ * @brief Compute sign-adjusted dead-time duty cycle offset with zero-crossing interpolation.
+ * @param current  Measured phase current (Q16.16).
+ * @param dt_comp  Base dead-time compensation offset (Q16.16).
+ * @return Scaled compensation offset (Q16.16).
+ */
+static inline q16_t dt_sign_scale(q16_t current, q16_t dt_comp)
+{
+    q16_t thresh = Q16_FROM_FRAC(1, 10); /* 0.1A zero-crossing threshold */
+    if (current >= thresh) {
+        return dt_comp;
+    }
+    if (current <= -thresh) {
+        return -dt_comp;
+    }
+    /* Smooth linear interpolation across zero-crossing band */
+    return q16_mul(q16_div(current, thresh), dt_comp);
+}
+
+void syn_foc_deadtime_comp(q16_t *duty_a, q16_t *duty_b, q16_t *duty_c, const SYN_FOC_ABC *i_abc,
+                           q16_t dt_comp)
+{
+    SYN_ASSERT(duty_a != NULL && duty_b != NULL && duty_c != NULL && i_abc != NULL);
+    if (duty_a == NULL || duty_b == NULL || duty_c == NULL || i_abc == NULL || dt_comp == 0) {
+        return;
+    }
+
+    *duty_a = q16_clamp(*duty_a + dt_sign_scale(i_abc->a, dt_comp), 0, Q16_ONE);
+    *duty_b = q16_clamp(*duty_b + dt_sign_scale(i_abc->b, dt_comp), 0, Q16_ONE);
+    *duty_c = q16_clamp(*duty_c + dt_sign_scale(i_abc->c, dt_comp), 0, Q16_ONE);
+}
+
 #endif /* SYN_USE_FOC */

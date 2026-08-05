@@ -1,0 +1,23 @@
+target_sources(syntropic INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_autoip.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_coap.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_dhcp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_dns.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_eth.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_heartbeat.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_http.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_httpd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_icmp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_igmp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_mqtt.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_netcfg.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_router.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_sntp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_tcp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_tls.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_transport_tcp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_transport_udp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_udp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_websocket.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_wg.c
+)

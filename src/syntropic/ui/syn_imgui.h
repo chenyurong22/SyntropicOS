@@ -750,6 +750,42 @@ void syn_imgui_text_clipped(SYN_IMGUI_Context *ctx, const char *text, int16_t x,
 void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text, int16_t *offset, int16_t x,
                             int16_t y, int16_t w, int16_t speed);
 
+/* ── Toast notification banner ─────────────────────────────────────────── */
+
+/**
+ * @brief Render a transient notification toast banner.
+ *
+ * Draws a floating notification overlay banner at the top of the display.
+ * Auto-dismisses when (current_tick_ms - start_tick_ms) >= duration_ms.
+ *
+ * @param ctx             Context.
+ * @param message         Notification text string.
+ * @param duration_ms     Display duration in milliseconds.
+ * @param current_tick_ms Current millisecond tick count.
+ * @param start_tick_ms   Millisecond tick when the toast was posted.
+ * @return true if the toast is currently visible, false if expired.
+ */
+bool syn_imgui_toast(SYN_IMGUI_Context *ctx, const char *message, uint32_t duration_ms,
+                     uint32_t current_tick_ms, uint32_t start_tick_ms);
+
+/* ── Virtual PIN / Numeric Keypad ────────────────────────────────────────── */
+
+/**
+ * @brief Render and handle a 4x3 virtual numeric PIN keypad widget.
+ *
+ * Displays a 4x3 keypad grid (digits 0-9, CLEAR 'C', OK). Touch taps or encoder
+ * navigation append digits to @p buffer up to @p max_len - 1.
+ *
+ * @param ctx        Context.
+ * @param buffer     Caller-owned char array for digits (null-terminated).
+ * @param max_len    Capacity of buffer (including null terminator).
+ * @param mask_input If true, display digits as '*' for security PIN entry.
+ * @param x,y,w,h    Position and size (0 = auto-layout).
+ * @return 1 if OK was pressed, -1 if CLEAR/Cancel was pressed, 0 if still editing.
+ */
+int syn_imgui_numpad(SYN_IMGUI_Context *ctx, char *buffer, size_t max_len, bool mask_input,
+                     int16_t x, int16_t y, int16_t w, int16_t h);
+
 #ifdef __cplusplus
 }
 #endif

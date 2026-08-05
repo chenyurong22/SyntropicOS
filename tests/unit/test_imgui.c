@@ -1983,6 +1983,106 @@ static void test_imgui_docking_tab_bar_overflow(void)
     syn_imgui_end(&ctx);
 }
 
+static void test_imgui_toast_test(void)
+{
+    SYN_IMGUI_Context ctx;
+    SYN_Canvas canvas;
+    uint8_t buf[128 * 64 / 8];
+    syn_canvas_init(&canvas, buf, 128, 64, 1, NULL, NULL);
+    syn_imgui_init(&ctx);
+
+    /* Null checks */
+    TEST_ASSERT_FALSE(syn_imgui_toast(NULL, "Hi", 1000, 500, 0));
+    TEST_ASSERT_FALSE(syn_imgui_toast(&ctx, NULL, 1000, 500, 0));
+
+    /* Toast active (current < start + duration) */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    TEST_ASSERT_TRUE(syn_imgui_toast(&ctx, "Saved!", 2000, 500, 0));
+    syn_imgui_end(&ctx);
+
+    /* Long toast text -> box_x < 2 clamp branch */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    TEST_ASSERT_TRUE(
+        syn_imgui_toast(&ctx, "Very Long Notification Message For Screen Width", 2000, 500, 0));
+    syn_imgui_end(&ctx);
+
+    /* Toast expired (current >= start + duration) */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    TEST_ASSERT_FALSE(syn_imgui_toast(&ctx, "Saved!", 2000, 2500, 0));
+    syn_imgui_end(&ctx);
+}
+
+static void test_imgui_numpad_test(void)
+{
+    SYN_IMGUI_Context ctx;
+    SYN_Canvas canvas;
+    uint8_t buf[128 * 64 / 8];
+    syn_canvas_init(&canvas, buf, 128, 64, 1, NULL, NULL);
+    syn_imgui_init(&ctx);
+
+    char pin[8] = "";
+
+    /* Null checks */
+    TEST_ASSERT_EQUAL(0, syn_imgui_numpad(NULL, pin, 8, false, 0, 0, 0, 0));
+    TEST_ASSERT_EQUAL(0, syn_imgui_numpad(&ctx, NULL, 8, false, 0, 0, 0, 0));
+    TEST_ASSERT_EQUAL(0, syn_imgui_numpad(&ctx, pin, 0, false, 0, 0, 0, 0));
+
+    /* Tap '1' button via touch (Button 1 is at x=0..38, y=18) */
+    int16_t key1_x = 10, key1_y = 18;
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, key1_x, key1_y);
+    int res = syn_imgui_numpad(&ctx, pin, 8, false, 0, 0, 120, 60);
+    syn_imgui_end(&ctx);
+
+    TEST_ASSERT_EQUAL(0, res);
+    TEST_ASSERT_EQUAL_STRING("1", pin);
+
+    /* Tap '0' button via touch (Button 0 is at x=41..79, y=52..62) */
+    int16_t key0_x = 50, key0_y = 55;
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, key0_x, key0_y);
+    res = syn_imgui_numpad(&ctx, pin, 8, true, 0, 0, 120, 60);
+    syn_imgui_end(&ctx);
+
+    TEST_ASSERT_EQUAL(0, res);
+    TEST_ASSERT_EQUAL_STRING("10", pin);
+
+    /* Tap 'C' (Clear) button -> removes '0' -> "1" */
+    int16_t keyC_x = 10, keyC_y = 55;
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, keyC_x, keyC_y);
+    res = syn_imgui_numpad(&ctx, pin, 8, false, 0, 0, 120, 60);
+    syn_imgui_end(&ctx);
+
+    TEST_ASSERT_EQUAL(0, res);
+    TEST_ASSERT_EQUAL_STRING("1", pin);
+
+    /* Tap 'C' (Clear) button again -> removes '1' -> "" */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, keyC_x, keyC_y);
+    res = syn_imgui_numpad(&ctx, pin, 8, false, 0, 0, 120, 60);
+    syn_imgui_end(&ctx);
+
+    TEST_ASSERT_EQUAL(0, res);
+    TEST_ASSERT_EQUAL_STRING("", pin);
+
+    /* Tap 'C' (Clear) on empty buffer -> returns -1 (cancel) */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, keyC_x, keyC_y);
+    res = syn_imgui_numpad(&ctx, pin, 8, false, 0, 0, 120, 60);
+    syn_imgui_end(&ctx);
+
+    TEST_ASSERT_EQUAL(-1, res);
+
+    /* Tap 'OK' button (Button OK is at x=82..120, y=52..62) -> returns 1 */
+    int16_t keyOK_x = 90, keyOK_y = 55;
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, true, keyOK_x, keyOK_y);
+    res = syn_imgui_numpad(&ctx, pin, 8, false, 0, 0, 120, 60);
+    syn_imgui_end(&ctx);
+
+    TEST_ASSERT_EQUAL(1, res);
+
+    /* Narrow numpad width (w=30) -> triggers key_w < 12 clamping branch */
+    syn_imgui_begin(&ctx, &canvas, false, false, 0, false, 0, 0);
+    syn_imgui_numpad(&ctx, pin, 8, false, 0, 0, 30, 60);
+    syn_imgui_end(&ctx);
+}
+
 void run_imgui_tests(void)
 {
     RUN_TEST(test_imgui_navigation);
@@ -2045,4 +2145,6 @@ void run_imgui_tests(void)
     RUN_TEST(test_imgui_widget_active_state_and_focus);
     RUN_TEST(test_imgui_viewport_scissor_stack_clamping);
     RUN_TEST(test_imgui_docking_tab_bar_overflow);
+    RUN_TEST(test_imgui_toast_test);
+    RUN_TEST(test_imgui_numpad_test);
 }

@@ -103,6 +103,43 @@ void render_gui(void) {
 }
 ```
 
+### Advanced UI Widgets
+
+#### Virtual PIN Keypad (`syn_imgui_numpad`)
+
+Renders a 4x3 keypad grid (`1-9`, `0`, `C` Clear, `OK` Confirm) supporting touch taps and rotary encoder navigation.
+
+```c
+static char pin_code[8] = "";
+
+void render_pin_screen(SYN_IMGUI_Context *ctx) {
+    // Render 4x3 PIN entry numpad with '*' digit masking
+    int status = syn_imgui_numpad(ctx, pin_code, sizeof(pin_code), true, 0, 0, 120, 60);
+
+    if (status == 1) {
+        // OK pressed: validate passcode
+        if (strcmp(pin_code, "1234") == 0) {
+            syn_imgui_toast(ctx, "Access Granted", 2000, current_ms, start_ms);
+        } else {
+            syn_imgui_toast(ctx, "Invalid PIN", 2000, current_ms, start_ms);
+            pin_code[0] = '\0'; // reset
+        }
+    } else if (status == -1) {
+        // Clear/Back pressed on empty buffer: exit screen
+        navigate_back();
+    }
+}
+```
+
+#### Transient Toast Banner (`syn_imgui_toast`)
+
+Renders a floating notification overlay banner at the top of the display that auto-dismisses after `duration_ms`.
+
+```c
+// Displays a 2-second status notification overlay
+syn_imgui_toast(ctx, "Settings Saved!", 2000, current_tick_ms, toast_start_ms);
+```
+
 ---
 
 ## 3. Character LCD & OLED Direct Drivers (`display/syn_charlcd.h` & `display/syn_oled.h`)

@@ -2117,4 +2117,114 @@ void syn_imgui_text_marquee(SYN_IMGUI_Context *ctx, const char *text, int16_t *o
     /* LCOV_EXCL_STOP */
 }
 
+bool syn_imgui_toast(SYN_IMGUI_Context *ctx, const char *message, uint32_t duration_ms,
+                     uint32_t current_tick_ms, uint32_t start_tick_ms)
+{
+    if (ctx == NULL || message == NULL) {
+        return false;
+    }
+
+    if ((current_tick_ms - start_tick_ms) >= duration_ms) {
+        return false;
+    }
+
+    uint16_t tw = syn_gfx_text_width(ctx->gfx, message);
+    uint16_t th = syn_gfx_text_height(ctx->gfx);
+    int16_t pad = ctx->style.padding + 4;
+    int16_t box_w = (int16_t)(tw + 2 * pad);
+    int16_t box_h = (int16_t)(th + 2 * pad);
+
+    SYN_Canvas *c = (SYN_Canvas *)ctx->gfx;
+    uint16_t screen_w = c ? c->width : 128;
+    int16_t box_x = (int16_t)((screen_w - box_w) / 2);
+    if (box_x < 2) {
+        box_x = 2;
+    }
+    int16_t box_y = 4;
+
+    /* Draw toast background box and text overlay */
+    syn_gfx_rect_fill(ctx->gfx, box_x, box_y, box_w, box_h, ctx->style.bg);
+    syn_gfx_rect(ctx->gfx, box_x, box_y, box_w, box_h, ctx->style.fg);
+    syn_gfx_text(ctx->gfx, (int16_t)(box_x + pad), (int16_t)(box_y + pad), message, ctx->style.fg);
+
+    return true;
+}
+
+int syn_imgui_numpad(SYN_IMGUI_Context *ctx, char *buffer, size_t max_len, bool mask_input,
+                     int16_t x, int16_t y, int16_t w, int16_t h)
+{
+    if (ctx == NULL || buffer == NULL || max_len == 0) {
+        return 0;
+    }
+
+    uint16_t fh = syn_gfx_text_height(ctx->gfx);
+    int16_t default_h = (int16_t)((fh * 5) + (ctx->style.padding * 8));
+    layout_resolve(ctx, &x, &y, &w, &h, default_h);
+
+    int16_t key_w = (int16_t)((w - 2 * ctx->style.spacing) / 3);
+    if (key_w < 12) {
+        key_w = 12;
+    }
+    int16_t key_h = (int16_t)((h - fh - ctx->style.spacing * 5) / 4);
+    if (key_h < 10) {
+        key_h = 10;
+    }
+
+    /* Draw text field display box at top of keypad */
+    int16_t disp_y = y;
+    syn_gfx_rect(ctx->gfx, x, disp_y, w, (int16_t)(fh + 4), ctx->style.fg);
+
+    size_t cur_len = strlen(buffer);
+    char disp_str[32];
+    memset(disp_str, 0, sizeof(disp_str));
+
+    if (mask_input) {
+        size_t mask_count = (cur_len < sizeof(disp_str) - 1) ? cur_len : sizeof(disp_str) - 1;
+        memset(disp_str, '*', mask_count);
+    } else {
+        size_t copy_len = (cur_len < sizeof(disp_str) - 1) ? cur_len : sizeof(disp_str) - 1;
+        memcpy(disp_str, buffer, copy_len);
+    }
+
+    syn_gfx_text(ctx->gfx, (int16_t)(x + 4), (int16_t)(disp_y + 2), disp_str, ctx->style.fg);
+
+    /* 4x3 Keypad Layout:
+     * [ 1 ] [ 2 ] [ 3 ]
+     * [ 4 ] [ 5 ] [ 6 ]
+     * [ 7 ] [ 8 ] [ 9 ]
+     * [ C ] [ 0 ] [OK ]
+     */
+    static const char *keys[12] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "OK"};
+
+    int result = 0;
+    int16_t grid_top = (int16_t)(disp_y + fh + 6);
+
+    for (int i = 0; i < 12; i++) {
+        int row = i / 3;
+        int col = i % 3;
+        int16_t kx = (int16_t)(x + col * (key_w + ctx->style.spacing));
+        int16_t ky = (int16_t)(grid_top + row * (key_h + ctx->style.spacing));
+
+        if (syn_imgui_button(ctx, keys[i], kx, ky, key_w, key_h)) {
+            if (i == 9) { /* 'C' / Clear */
+                if (cur_len > 0) {
+                    buffer[cur_len - 1] = '\0';
+                } else {
+                    result = -1; /* Cancel / Exit if buffer already empty */
+                }
+            } else if (i == 11) { /* 'OK' */
+                result = 1;
+            } else { /* Digit 0-9 */
+                if (cur_len < max_len - 1) {
+                    char digit = (i == 10) ? '0' : (char)('1' + i);
+                    buffer[cur_len] = digit;
+                    buffer[cur_len + 1] = '\0';
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
 #endif /* SYN_USE_IMGUI */

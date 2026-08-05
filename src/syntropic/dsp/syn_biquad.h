@@ -113,6 +113,25 @@ void syn_filter_biquad_bandpass(SYN_FilterBiquad *f, q16_t fc, q16_t fs, q16_t q
  */
 void syn_filter_biquad_notch(SYN_FilterBiquad *f, q16_t fc, q16_t fs, q16_t q);
 
+/**
+ * @brief Initialize a biquad allpass filter (modifies phase while preserving magnitude).
+ * @param f   Filter instance.
+ * @param fc  Corner frequency (Hz) in Q16.16.
+ * @param fs  Sample rate (Hz) in Q16.16.
+ * @param q   Quality factor in Q16.16.
+ */
+void syn_filter_biquad_allpass(SYN_FilterBiquad *f, q16_t fc, q16_t fs, q16_t q);
+
+/**
+ * @brief Initialize a biquad peaking equalizer filter (boost/cut centered at fc).
+ * @param f        Filter instance.
+ * @param fc       Center frequency (Hz) in Q16.16.
+ * @param fs       Sample rate (Hz) in Q16.16.
+ * @param gain_db  Gain in dB (Q16.16, e.g. +6.0 for boost, -6.0 for cut).
+ * @param q        Quality factor in Q16.16.
+ */
+void syn_filter_biquad_peaking_eq(SYN_FilterBiquad *f, q16_t fc, q16_t fs, q16_t gain_db, q16_t q);
+
 /* ── Cascaded Biquad Filter Bank ─────────────────────────────────────────── */
 
 #define SYN_BIQUAD_CASCADE_MAX_STAGES 8 /**< Maximum allowed biquad filter stages in cascade */

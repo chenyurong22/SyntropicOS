@@ -151,6 +151,26 @@ static void test_filter_biquad_highpass(void)
     TEST_ASSERT_NOT_EQUAL(0, out);
 }
 
+static void test_filter_biquad_allpass_and_peaking_eq(void)
+{
+    SYN_FilterBiquad ap, eq, eq_neg;
+    syn_filter_biquad_allpass(&ap, Q16_FROM_INT(100), Q16_FROM_INT(1000), Q16_FROM_FLOAT(0.707));
+    syn_filter_biquad_peaking_eq(&eq, Q16_FROM_INT(100), Q16_FROM_INT(1000), Q16_FROM_INT(6),
+                                 Q16_FROM_FLOAT(0.707));
+
+    /* Negative gain clamp test */
+    syn_filter_biquad_peaking_eq(&eq_neg, Q16_FROM_INT(100), Q16_FROM_INT(1000), -Q16_FROM_INT(100),
+                                 Q16_FROM_FLOAT(0.707));
+
+    q16_t ap_out = syn_filter_biquad_update(&ap, Q16_ONE);
+    q16_t eq_out = syn_filter_biquad_update(&eq, Q16_ONE);
+    q16_t eq_neg_out = syn_filter_biquad_update(&eq_neg, Q16_ONE);
+
+    TEST_ASSERT_NOT_EQUAL(0, ap_out);
+    TEST_ASSERT_NOT_EQUAL(0, eq_out);
+    TEST_ASSERT_NOT_EQUAL(0, eq_neg_out);
+}
+
 void run_filter_tests(void)
 {
     RUN_TEST(test_filters);
@@ -159,4 +179,5 @@ void run_filter_tests(void)
     RUN_TEST(test_filter_fir);
     RUN_TEST(test_biquad_process_block);
     RUN_TEST(test_filter_biquad_highpass);
+    RUN_TEST(test_filter_biquad_allpass_and_peaking_eq);
 }

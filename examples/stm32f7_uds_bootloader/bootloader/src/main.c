@@ -6,7 +6,7 @@
  * Implements ISO 14229-1 / AUTOSAR FBL Programming Phase #2:
  *  1. 0x10 0x02 DiagnosticSessionControl (programmingSession)
  *  2. 0x27 0x01 / 0x27 0x02 SecurityAccess (Seed/Key Unlock)
- *  3. 0x31 0x01 0xFF 0x00 RoutineControl (EraseMemory)
+ *  3. 0x31 0x01 0xFF 0x00 RoutineControl (EraseMemory via get_stm32f767_sector)
  *  4. 0x34 RequestDownload (Module Flash Target Address & Size)
  *  5. 0x36 TransferData (Data Block Streaming)
  *  6. 0x37 RequestTransferExit (Module Transfer Verification)
@@ -46,6 +46,20 @@ static uint8_t g_flash_buffer[512];
 
 typedef void (*pFunction)(void);
 
+/**
+ * @brief STM32F767 Flash Sector Mapper.
+ */
+uint32_t get_stm32f767_sector(uint32_t addr) {
+    if (addr < 0x08008000U) return 0; /* Sector 0 (32 KB)  */
+    if (addr < 0x08010000U) return 1; /* Sector 1 (32 KB)  */
+    if (addr < 0x08018000U) return 2; /* Sector 2 (32 KB)  */
+    if (addr < 0x08020000U) return 3; /* Sector 3 (32 KB)  */
+    if (addr < 0x08040000U) return 4; /* Sector 4 (128 KB) */
+    if (addr < 0x08080000U) return 5; /* Sector 5 (256 KB) */
+    if (addr < 0x080C0000U) return 6; /* Sector 6 (256 KB) */
+    return 7;                         /* Sector 7 (256 KB) */
+}
+
 static void bootloader_jump_to_app(uint32_t app_address) {
     uint32_t msp_val = *(volatile uint32_t *)app_address;
     uint32_t reset_handler = *(volatile uint32_t *)(app_address + 4);
@@ -70,8 +84,10 @@ static bool on_fbl_routine_control(uint8_t subfunction, uint16_t routine_id,
     if (subfunction == 0x01U) { /* startRoutine */
         if (routine_id == 0xFF00U) { /* EraseMemory */
             g_fbl_state.memory_erased = true;
+            uint32_t sector = get_stm32f767_sector(BANK_B_BASE);
             if (max_out_len >= 1) { out_buf[0] = 0x00; if (out_len) *out_len = 1; }
-            printf("[FBL UDS 0x31] EraseMemory Routine 0xFF00 Successful.\n");
+            printf("[FBL UDS 0x31] EraseMemory Sector %u (0x%08X) Successful.\n",
+                   (unsigned int)sector, BANK_B_BASE);
             return true;
         } else if (routine_id == 0xFF01U) { /* Validate Application */
             g_fbl_state.app_validated = true;
@@ -86,8 +102,7 @@ static bool on_fbl_routine_control(uint8_t subfunction, uint16_t routine_id,
 /* Memory Read/Write Callback for Download & Transfer (0x34 / 0x36 / 0x3D) */
 static bool on_fbl_memory_access(bool is_write, uint32_t address, uint32_t size, uint8_t *data_buf,
                                   void *ctx) {
-    (void)address;
-    (void)ctx;
+    (void)address; (void)ctx;
     if (is_write) {
         if (!g_fbl_state.memory_erased) return false;
         memcpy(g_flash_buffer, data_buf, size > 512 ? 512 : size);

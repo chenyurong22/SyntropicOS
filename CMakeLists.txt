@@ -94,6 +94,7 @@ set(SYN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/drivers/syn_rfid.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/sensor/syn_biometric.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/vm/syn_wasm.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/syntropic/proto/syn_gbt27930.c
 )
 
 option(CH32V307 "Build CH32V307 RISC-V port" OFF)

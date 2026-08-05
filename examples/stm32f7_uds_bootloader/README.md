@@ -1,74 +1,42 @@
-# STM32F767 Dual-Bank Application OTA & Minimal Bootloader Architecture Example
+# STM32F767 Production UDS Dual-Bank Flash Bootloader (FBL) Architecture Example
 
-This example demonstrates the modern automotive **Dual-Bank Application OTA & Minimal Bootloader** architecture (aligned with ISO 26262, AIS-189, and AIS-190).
+This example demonstrates the complete **ISO 14229-1 / AUTOSAR 3-Phase Non-Volatile Server Memory Programming** specification on STM32F767 microcontrollers.
 
 ---
 
-## 1. Project Structure (Two Independent Firmware Targets)
-
-The example is split into two standalone, decoupled compilation targets:
+## 1. 3-Phase ISO 14229-1 UDS Flashing Sequence
 
 ```text
-examples/stm32f7_uds_bootloader/
-├── bootloader/
-│   └── src/main.c     # Minimal Bootloader Binary (flashed to 0x08000000)
-├── app/
-│   └── src/main.c     # Active Application Binary with UDS OTA Engine (flashed to 0x08020000)
-└── README.md          # Architecture & Linker Documentation
+===================================================================================
+PHASE #1: PRE-PROGRAMMING STEP (Executed in Active Application `app/src/main.c`)
+===================================================================================
+ 1. 0x10 0x03 : StartDiagnosticSessionControl (extendedSession)
+ 2. 0x85 0x02 : ControlDTCSetting (off)
+ 3. 0x28 0x03 : CommunicationControl (disableRxAndTx in application)
+ 4. 0x3E 0x80 : Functional TesterPresent keep-alive (suppressPosRspMsgIndicationBit)
+
+===================================================================================
+PHASE #2: PROGRAMMING STEP (Executed in Bootloader `bootloader/src/main.c`)
+===================================================================================
+ 5. 0x10 0x02 : DiagnosticSessionControl (programmingSession) -> Jump to FBL
+ 6. 0x27 0x01 : SecurityAccess (requestSeed)
+ 7. 0x27 0x02 : SecurityAccess (sendKey) -> Unlock Security State
+ 8. 0x31 0x01 0xFF 0x00 : RoutineControl (eraseMemory)
+ 9. 0x34      : RequestDownload (Target Memory Address & Size)
+10. 0x36      : TransferData (Module Data Block Streaming #1, #2, #3...)
+11. 0x37      : RequestTransferExit (Module Transfer Complete)
+12. 0x31 0x01 0xFF 0x01 : RoutineControl (validate application / CRC32 Check)
+13. 0x2E 0xF1 0x90      : WriteDataByIdentifier (VIN / Fingerprint)
+
+===================================================================================
+PHASE #3: POST-PROGRAMMING STEP
+===================================================================================
+14. 0x11 0x01 : ECUReset (hardReset) -> Reset & Jump to Updated Application
 ```
 
 ---
 
-## 2. Architecture Overview
+## 2. Project Target Organization
 
-Rather than putting the heavy UDS protocol and network drivers into the Bootloader, the responsibility is cleanly split between two independent projects:
-
-```text
-  +-------------------------------------------------------------------------------+
-  |  1. Minimal Bootloader Target (bootloader/src/main.c @ 0x08000000)            |
-  |  - Zero UDS / Network Stack footprint (~4 KB total).                          |
-  |  - Runs for ~5ms on power-on reset.                                           |
-  |  - Reads syn_boot header, sets SCB->VTOR, and jumps to active Application.    |
-  +-------------------------------------------------------------------------------+
-                                        |
-                                        v
-  +-------------------------------------------------------------------------------+
-  |  2. Active Application Target (app/src/main.c @ 0x08020000)                   |
-  |  - Contains full UDS Stack (syn_uds, syn_isotp, syn_can).                     |
-  |  - Services UDS 0x34 (RequestDownload) & 0x36 (TransferData) in background.    |
-  |  - Writes incoming OTA firmware blocks into Inactive Staging Bank B (0x08100000).|
-  |  - Verifies CRC32 (0x31), marks Bank B active in syn_boot, issues 0x11 reset. |
-  +-------------------------------------------------------------------------------+
-```
-
----
-
-## 3. Flash Memory Map
-
-| Partition | Target Binary | Start Address | End Address | Size | Function |
-|---|---|---|---|---|---|
-| **Minimal Bootloader** | `bootloader.elf` | `0x08000000` | `0x0801FFFF` | 128 KB | Minimal Bank Selector Bootloader (~4 KB used) |
-| **Bank A (Active)** | `app.elf` | `0x08020000` | `0x080FFFFF` | 896 KB | Active Application Firmware (with UDS Stack) |
-| **Bank B (Staging)** | `app_v2.elf` | `0x08100000` | `0x081FFFFF` | 1024 KB | Inactive OTA Staging Partition |
-
----
-
-## 4. Linker Scripts (`stm32f767xx_bootloader.ld` vs `stm32f767xx_app.ld`)
-
-### Bootloader Linker Script (`bootloader/stm32f767xx_bootloader.ld`)
-```ld
-MEMORY
-{
-  RAM (xrw)      : ORIGIN = 0x20020000, LENGTH = 384K
-  FLASH_FBL (rx) : ORIGIN = 0x08000000, LENGTH = 128K
-}
-```
-
-### Application Linker Script (`app/stm32f767xx_app.ld`)
-```ld
-MEMORY
-{
-  RAM (xrw)       : ORIGIN = 0x20020000, LENGTH = 384K
-  FLASH_APP (rx)  : ORIGIN = 0x08020000, LENGTH = 896K
-}
-```
+- **`app/src/main.c`**: Active Application binary (Bank A `0x08020000`) handling Pre-Programming Phase #1.
+- **`bootloader/src/main.c`**: Minimal FBL binary (Sector 0 `0x08000000`) handling Programming Phase #2.

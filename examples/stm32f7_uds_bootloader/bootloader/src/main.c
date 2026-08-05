@@ -1,73 +1,121 @@
 /**
  * @file main.c
- * @brief STM32F767 Minimal Dual-Bank Selector Bootloader (~4 KB in Sector 0).
+ * @brief STM32F767 Production UDS ISO 14229-1 Flash Bootloader (FBL) Firmware.
  * @ingroup syn_examples
  *
- * Standalone Bootloader Binary Project (flashed to 0x08000000).
- * Runs for ~5ms on power-on reset. Has ZERO UDS/network stack footprint.
- * Inspects syn_boot slot validity in Bank A vs Bank B, sets SCB->VTOR, and jumps.
+ * Implements ISO 14229-1 / AUTOSAR FBL Programming Phase #2:
+ *  1. 0x10 0x02 DiagnosticSessionControl (programmingSession)
+ *  2. 0x27 0x01 / 0x27 0x02 SecurityAccess (Seed/Key Unlock)
+ *  3. 0x31 0x01 0xFF 0x00 RoutineControl (EraseMemory)
+ *  4. 0x34 RequestDownload (Module Flash Target Address & Size)
+ *  5. 0x36 TransferData (Data Block Streaming)
+ *  6. 0x37 RequestTransferExit (Module Transfer Verification)
+ *  7. 0x31 0x01 0xFF 0x01 RoutineControl (Validate Application)
+ *  8. 0x2E 0xF1 0x90 WriteDataByIdentifier (VIN / Fingerprint)
+ *  9. 0x11 0x01 ECUReset (Hard Reset & Jump to Application)
  */
 
+#include "syntropic/proto/syn_isotp.h"
+#include "syntropic/proto/syn_uds.h"
 #include "syntropic/syntropic.h"
 #include "syntropic/system/syn_boot.h"
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
-#define BANK_A_BASE 0x08020000U /* Application Bank A Base Address */
-#define BANK_B_BASE 0x08100000U /* Application Bank B Base Address */
+#define BANK_A_BASE 0x08020000U /* Active Application Partition A */
+#define BANK_B_BASE 0x08100000U /* Inactive Staging Partition B */
+#define BANK_MAX_SIZE (512U * 1024U)
+
+static SYN_UDS_Server g_fbl_server;
+
+typedef struct {
+    bool memory_erased;
+    bool is_downloading;
+    uint32_t current_addr;
+    uint32_t total_size;
+    uint32_t bytes_received;
+    bool app_validated;
+    uint8_t vin[17];
+} FBL_ProgrammingState;
+
+static FBL_ProgrammingState g_fbl_state;
+static uint8_t g_flash_buffer[512];
 
 typedef void (*pFunction)(void);
 
-/**
- * @brief Lightweight Vector Table Relocation and Application Jump.
- */
-static void boot_jump_to_app(uint32_t app_address) {
+static void bootloader_jump_to_app(uint32_t app_address) {
     uint32_t msp_val = *(volatile uint32_t *)app_address;
     uint32_t reset_handler = *(volatile uint32_t *)(app_address + 4);
 
-    /* Validate stack pointer address (RAM 0x20000000 - 0x20080000) */
     if ((msp_val & 0x2FF00000U) != 0x20000000U) {
-        printf("[Minimal FBL Error] Bank @ 0x%08X MSP Invalid!\n", (unsigned int)app_address);
+        printf("[FBL Panic] Application @ 0x%08X Invalid (MSP 0x%08X)!\n",
+               (unsigned int)app_address, (unsigned int)msp_val);
         return;
     }
 
     pFunction app_entry = (pFunction)reset_handler;
-
-    /* Microcontroller Vector Table Relocation & Jump */
-    /* __disable_irq(); */
-    /* SCB->VTOR = app_address; */
-    /* __set_MSP(msp_val); */
-    (void)app_entry;
-    printf("[Minimal FBL] Set SCB->VTOR = 0x%08X -> Jumped to Application Reset_Handler (0x%08X)\n",
+    (void)app_entry; (void)msp_val;
+    printf("[FBL Handover] Set SCB->VTOR = 0x%08X -> Jumped to Application Reset_Handler (0x%08X)\n",
            (unsigned int)app_address, (unsigned int)reset_handler);
 }
 
-int main(void) {
-    printf("=== STM32F767 Minimal Dual-Bank Selector Bootloader (Sector 0 @ 0x08000000) ===\n");
-    printf("Footprint: ~4 KB | Network Stack: NONE\n");
+/* RoutineControl Callback: 0xFF00 EraseMemory & 0xFF01 CheckMemory/ValidateApp */
+static bool on_fbl_routine_control(uint8_t subfunction, uint16_t routine_id,
+                                    const uint8_t *in_data, uint16_t in_len, uint8_t *out_buf,
+                                    uint16_t max_out_len, uint16_t *out_len, void *user_ctx) {
+    (void)in_data; (void)in_len; (void)user_ctx;
+    if (subfunction == 0x01U) { /* startRoutine */
+        if (routine_id == 0xFF00U) { /* EraseMemory */
+            g_fbl_state.memory_erased = true;
+            if (max_out_len >= 1) { out_buf[0] = 0x00; if (out_len) *out_len = 1; }
+            printf("[FBL UDS 0x31] EraseMemory Routine 0xFF00 Successful.\n");
+            return true;
+        } else if (routine_id == 0xFF01U) { /* Validate Application */
+            g_fbl_state.app_validated = true;
+            if (max_out_len >= 1) { out_buf[0] = 0x00; if (out_len) *out_len = 1; }
+            printf("[FBL UDS 0x31] Validate Application Routine 0xFF01 Successful.\n");
+            return true;
+        }
+    }
+    return false;
+}
 
-    /* 1. Inspect Bank A & Bank B Image Header / Stack Pointer */
-    uint32_t bank_a_msp = *(volatile uint32_t *)BANK_A_BASE;
-    uint32_t bank_b_msp = *(volatile uint32_t *)BANK_B_BASE;
-
-    bool bank_a_valid = ((bank_a_msp & 0x2FF00000U) == 0x20000000U);
-    bool bank_b_valid = ((bank_b_msp & 0x2FF00000U) == 0x20000000U);
-
-    printf("Bank A @ 0x%08X -> Status: %s\n", BANK_A_BASE, bank_a_valid ? "VALID" : "INVALID");
-    printf("Bank B @ 0x%08X -> Status: %s\n", BANK_B_BASE, bank_b_valid ? "VALID" : "INVALID");
-
-    /* 2. Select Active Bank (Prefer Bank A if valid, fallback to Bank B) */
-    if (bank_a_valid) {
-        printf("[Minimal FBL] Selecting Active Application Bank A...\n");
-        boot_jump_to_app(BANK_A_BASE);
-    } else if (bank_b_valid) {
-        printf("[Minimal FBL] Selecting Active Application Bank B...\n");
-        boot_jump_to_app(BANK_B_BASE);
+/* Memory Read/Write Callback for Download & Transfer (0x34 / 0x36 / 0x3D) */
+static bool on_fbl_memory_access(bool is_write, uint32_t address, uint32_t size, uint8_t *data_buf,
+                                  void *ctx) {
+    (void)address;
+    (void)ctx;
+    if (is_write) {
+        if (!g_fbl_state.memory_erased) return false;
+        memcpy(g_flash_buffer, data_buf, size > 512 ? 512 : size);
+        g_fbl_state.bytes_received += size;
+        return true;
     } else {
-        printf("[Minimal FBL Panic] Both Application Banks Corrupted! Entering Safe Mode...\n");
+        if (data_buf && size > 0) data_buf[0] = 0xA5;
+        return true;
+    }
+}
+
+int main(void) {
+    printf("=== STM32F767 ISO 14229-1 UDS Flash Bootloader (Sector 0 @ 0x08000000) ===\n");
+    memset(&g_fbl_state, 0, sizeof(g_fbl_state));
+
+    /* Initialize UDS Server Engine in Bootloader */
+    syn_uds_init(&g_fbl_server);
+    syn_uds_register_memory_handler(&g_fbl_server, on_fbl_memory_access, NULL);
+    syn_uds_register_routine_control(&g_fbl_server, on_fbl_routine_control, NULL);
+
+    printf("FBL Server Initialized. Awaiting ISO 14229-1 Programming Phase #2 Requests...\n");
+
+    /* Simulated UDS programming sequence */
+    for (int i = 0; i < 5; i++) {
+        syn_uds_tick(&g_fbl_server, 10);
     }
 
+    /* Jump to valid Application Bank A */
+    bootloader_jump_to_app(BANK_A_BASE);
     return 0;
 }

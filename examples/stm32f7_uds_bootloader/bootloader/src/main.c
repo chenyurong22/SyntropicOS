@@ -3,16 +3,16 @@
  * @brief STM32F767 Production UDS ISO 14229-1 Flash Bootloader (FBL) Firmware.
  * @ingroup syn_examples
  *
- * Implements ISO 14229-1 / AUTOSAR FBL Programming Phase #2:
- *  1. 0x10 0x02 DiagnosticSessionControl (programmingSession)
- *  2. 0x27 0x01 / 0x27 0x02 SecurityAccess (Seed/Key Unlock)
- *  3. 0x31 0x01 0xFF 0x00 RoutineControl (EraseMemory via get_stm32f767_sector)
- *  4. 0x34 RequestDownload (Module Flash Target Address & Size)
- *  5. 0x36 TransferData (Data Block Streaming)
- *  6. 0x37 RequestTransferExit (Module Transfer Verification)
- *  7. 0x31 0x01 0xFF 0x01 RoutineControl (Validate Application)
- *  8. 0x2E 0xF1 0x90 WriteDataByIdentifier (VIN / Fingerprint)
- *  9. 0x11 0x01 ECUReset (Hard Reset & Jump to Application)
+ * Implements ISO 14229-1 / AUTOSAR FBL Programming Phase #2 with concrete STM32 HAL Flash operations:
+ *  - 0x10 0x02 DiagnosticSessionControl (programmingSession)
+ *  - 0x27 0x01 / 0x27 0x02 SecurityAccess (Seed/Key Unlock)
+ *  - 0x31 0x01 0xFF 0x00 RoutineControl (syn_port_flash_erase via HAL_FLASHEx_Erase)
+ *  - 0x34 RequestDownload (Module Flash Target Address & Size)
+ *  - 0x36 TransferData (syn_port_flash_write via HAL_FLASH_Program)
+ *  - 0x37 RequestTransferExit (Module Transfer Verification)
+ *  - 0x31 0x01 0xFF 0x01 RoutineControl (Validate Application)
+ *  - 0x2E 0xF1 0x90 WriteDataByIdentifier (VIN / Fingerprint)
+ *  - 0x11 0x01 ECUReset (Hard Reset & Jump to Application)
  */
 
 #include "syntropic/proto/syn_isotp.h"
@@ -46,18 +46,89 @@ static uint8_t g_flash_buffer[512];
 
 typedef void (*pFunction)(void);
 
-/**
- * @brief STM32F767 Flash Sector Mapper.
- */
+/* ── STM32F767 Hardware Flash Porting Driver ─────────────────────────── */
+
 uint32_t get_stm32f767_sector(uint32_t addr) {
-    if (addr < 0x08008000U) return 0; /* Sector 0 (32 KB)  */
-    if (addr < 0x08010000U) return 1; /* Sector 1 (32 KB)  */
-    if (addr < 0x08018000U) return 2; /* Sector 2 (32 KB)  */
-    if (addr < 0x08020000U) return 3; /* Sector 3 (32 KB)  */
-    if (addr < 0x08040000U) return 4; /* Sector 4 (128 KB) */
-    if (addr < 0x08080000U) return 5; /* Sector 5 (256 KB) */
-    if (addr < 0x080C0000U) return 6; /* Sector 6 (256 KB) */
-    return 7;                         /* Sector 7 (256 KB) */
+    /* Bank 1 (0x08000000 - 0x080FFFFF) */
+    if (addr < 0x08004000U) return 0;  /* 16 KB  */
+    if (addr < 0x08008000U) return 1;  /* 16 KB  */
+    if (addr < 0x0800C000U) return 2;  /* 16 KB  */
+    if (addr < 0x08010000U) return 3;  /* 16 KB  */
+    if (addr < 0x08020000U) return 4;  /* 64 KB  */
+    if (addr < 0x08040000U) return 5;  /* 128 KB */
+    if (addr < 0x08060000U) return 6;  /* 128 KB */
+    if (addr < 0x08080000U) return 7;  /* 128 KB */
+    if (addr < 0x080A0000U) return 8;  /* 128 KB */
+    if (addr < 0x080C0000U) return 9;  /* 128 KB */
+    if (addr < 0x080E0000U) return 10; /* 128 KB */
+    if (addr < 0x08100000U) return 11; /* 128 KB */
+
+    /* Bank 2 (0x08100000 - 0x081FFFFF) */
+    if (addr < 0x08104000U) return 12; /* 16 KB  */
+    if (addr < 0x08108000U) return 13; /* 16 KB  */
+    if (addr < 0x0810C000U) return 14; /* 16 KB  */
+    if (addr < 0x08110000U) return 15; /* 16 KB  */
+    if (addr < 0x08120000U) return 16; /* 64 KB  */
+    if (addr < 0x08140000U) return 17; /* 128 KB */
+    if (addr < 0x08160000U) return 18; /* 128 KB */
+    if (addr < 0x08180000U) return 19; /* 128 KB */
+    if (addr < 0x081A0000U) return 20; /* 128 KB */
+    if (addr < 0x081C0000U) return 21; /* 128 KB */
+    if (addr < 0x081E0000U) return 22; /* 128 KB */
+    return 23;                         /* 128 KB */
+}
+
+SYN_Status syn_port_flash_read(uint32_t addr, void *buf, size_t len) {
+    if (buf == NULL) return SYN_INVALID_PARAM;
+    memcpy(buf, (const void *)addr, len);
+    return SYN_OK;
+}
+
+SYN_Status syn_port_flash_write_word(uint32_t addr, const void *buf, size_t len) {
+    if (buf == NULL) return SYN_INVALID_PARAM;
+    const uint8_t *data = (const uint8_t *)buf;
+    size_t i = 0U;
+
+#if defined(HAL_FLASH_MODULE_ENABLED) || defined(STM32F767xx)
+    HAL_FLASH_Unlock();
+    while (i + 4U <= len) {
+        uint32_t word_val;
+        memcpy(&word_val, &data[i], 4U);
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr + i, (uint64_t)word_val) != HAL_OK) {
+            HAL_FLASH_Lock();
+            return SYN_ERROR;
+        }
+        i += 4U;
+    }
+    HAL_FLASH_Lock();
+#else
+    (void)addr; (void)data; (void)i; (void)len;
+#endif
+    return SYN_OK;
+}
+
+SYN_Status syn_port_flash_write(uint32_t addr, const void *buf, size_t len) {
+    return syn_port_flash_write_word(addr, buf, len);
+}
+
+SYN_Status syn_port_flash_erase(uint32_t addr) {
+    uint32_t sector = get_stm32f767_sector(addr);
+#if defined(HAL_FLASH_MODULE_ENABLED) || defined(STM32F767xx)
+    FLASH_EraseInitTypeDef erase_init = {
+        .TypeErase = FLASH_TYPEERASE_SECTORS,
+        .Sector = sector,
+        .NbSectors = 1,
+        .VoltageRange = FLASH_VOLTAGE_RANGE_3
+    };
+    uint32_t sector_error = 0;
+    HAL_FLASH_Unlock();
+    HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&erase_init, &sector_error);
+    HAL_FLASH_Lock();
+    return (status == HAL_OK) ? SYN_OK : SYN_ERROR;
+#else
+    (void)sector; (void)addr;
+    return SYN_OK;
+#endif
 }
 
 static void bootloader_jump_to_app(uint32_t app_address) {
@@ -83,12 +154,13 @@ static bool on_fbl_routine_control(uint8_t subfunction, uint16_t routine_id,
     (void)in_data; (void)in_len; (void)user_ctx;
     if (subfunction == 0x01U) { /* startRoutine */
         if (routine_id == 0xFF00U) { /* EraseMemory */
-            g_fbl_state.memory_erased = true;
-            uint32_t sector = get_stm32f767_sector(BANK_B_BASE);
-            if (max_out_len >= 1) { out_buf[0] = 0x00; if (out_len) *out_len = 1; }
-            printf("[FBL UDS 0x31] EraseMemory Sector %u (0x%08X) Successful.\n",
-                   (unsigned int)sector, BANK_B_BASE);
-            return true;
+            if (syn_port_flash_erase(BANK_B_BASE) == SYN_OK) {
+                g_fbl_state.memory_erased = true;
+                if (max_out_len >= 1) { out_buf[0] = 0x00; if (out_len) *out_len = 1; }
+                printf("[FBL UDS 0x31] EraseMemory Sector %u (0x%08X) Successful.\n",
+                       (unsigned int)get_stm32f767_sector(BANK_B_BASE), BANK_B_BASE);
+                return true;
+            }
         } else if (routine_id == 0xFF01U) { /* Validate Application */
             g_fbl_state.app_validated = true;
             if (max_out_len >= 1) { out_buf[0] = 0x00; if (out_len) *out_len = 1; }
@@ -102,15 +174,20 @@ static bool on_fbl_routine_control(uint8_t subfunction, uint16_t routine_id,
 /* Memory Read/Write Callback for Download & Transfer (0x34 / 0x36 / 0x3D) */
 static bool on_fbl_memory_access(bool is_write, uint32_t address, uint32_t size, uint8_t *data_buf,
                                   void *ctx) {
-    (void)address; (void)ctx;
+    (void)ctx;
     if (is_write) {
         if (!g_fbl_state.memory_erased) return false;
-        memcpy(g_flash_buffer, data_buf, size > 512 ? 512 : size);
-        g_fbl_state.bytes_received += size;
-        return true;
+        if (syn_port_flash_write(address, data_buf, size) == SYN_OK) {
+            memcpy(g_flash_buffer, data_buf, size > 512 ? 512 : size);
+            g_fbl_state.bytes_received += size;
+            return true;
+        }
+        return false;
     } else {
-        if (data_buf && size > 0) data_buf[0] = 0xA5;
-        return true;
+        if (syn_port_flash_read(address, data_buf, size) == SYN_OK) {
+            return true;
+        }
+        return false;
     }
 }
 

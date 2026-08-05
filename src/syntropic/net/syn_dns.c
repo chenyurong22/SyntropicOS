@@ -253,6 +253,22 @@ SYN_Status syn_mdns_init(SYN_Mdns *mdns, const char *hostname, const uint8_t ip[
 }
 
 /**
+ * @brief Get length of base hostname (excluding trailing ".local" if present).
+ * @param hostname Input hostname string.
+ * @return Length of base label in bytes.
+ */
+static size_t get_base_hostname_len(const char *hostname)
+{
+    if (hostname == NULL)
+        return 0; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
+    size_t len = strlen(hostname);
+    if (len > 6 && strcmp(hostname + len - 6, ".local") == 0) {
+        return len - 6;
+    }
+    return len;
+}
+
+/**
  * @brief Check if QNAME matches hostname.local.
  * @param buf       Packet buffer.
  * @param buf_len   Buffer length.
@@ -271,7 +287,7 @@ static bool match_qname_local(const uint8_t *buf, size_t buf_len, size_t *pos, c
 
     /* First label: hostname length + string */
     uint8_t h_len = buf[p++];
-    size_t host_len = strlen(hostname);
+    size_t host_len = get_base_hostname_len(hostname);
     if (h_len != host_len)
         return false;
     if (p + host_len > buf_len)
@@ -346,9 +362,10 @@ SYN_PT_Status syn_mdns_task(SYN_PT *pt, SYN_Task *task)
                         syn_poke_u16(0x0001, resp, 6); /* Answers = 1 */
 
                         size_t rpos = 12;
-                        rpos += encode_qname(resp + rpos, mdns->hostname);
-                        /* Replace trailing 0 in qname with pointer to ".local" */
-                        rpos--;
+                        size_t base_len = get_base_hostname_len(mdns->hostname);
+                        resp[rpos++] = (uint8_t)base_len;
+                        memcpy(resp + rpos, mdns->hostname, base_len);
+                        rpos += base_len;
                         resp[rpos++] = 5;
                         memcpy(resp + rpos, "local", 5);
                         rpos += 5;

@@ -802,6 +802,38 @@ static void test_dns_mdns_init_open_failure_and_truncated_records(void)
     mock_udp_open_ok = true;
 }
 
+static void test_mdns_fqdn_hostname(void)
+{
+    mock_port_reset();
+
+    SYN_Mdns mdns;
+    uint8_t ip[] = {192, 168, 1, 100};
+    /* Initialize with FQDN containing ".local" */
+    SYN_Status init_st = syn_mdns_init(&mdns, "mydevice.local", ip);
+    TEST_ASSERT_EQUAL(SYN_OK, init_st);
+
+    /* Simulate query for "mydevice.local" */
+    uint8_t query[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+                       0x00, 8,    'm',  'y',  'd',  'e',  'v',  'i',  'c',  'e',  5,
+                       'l',  'o',  'c',  'a',  'l',  0,    0x00, 0x01, 0x00, 0x01};
+
+    SYN_SockAddr from = {.ip = {192, 168, 1, 50}, .port = 5353};
+    mock_udp_set_response(query, sizeof(query), &from);
+
+    SYN_PT pt;
+    PT_INIT(&pt);
+    SYN_Task task = {.user_data = &mdns};
+
+    syn_mdns_task(&pt, &task);
+
+    /* Verify response sent to multicast group without duplicate .local.local */
+    TEST_ASSERT_TRUE(mock_udp_tx_len > 12);
+    TEST_ASSERT_EQUAL_UINT8(8, mock_udp_tx_buf[12]); /* Base label len = 8 ("mydevice") */
+    TEST_ASSERT_EQUAL_MEMORY("mydevice", &mock_udp_tx_buf[13], 8);
+    TEST_ASSERT_EQUAL_UINT8(5, mock_udp_tx_buf[21]); /* Second label len = 5 ("local") */
+    TEST_ASSERT_EQUAL_MEMORY("local", &mock_udp_tx_buf[22], 5);
+}
+
 void run_dns_tests(void)
 {
     RUN_TEST(test_dns_resolve);
@@ -824,4 +856,5 @@ void run_dns_tests(void)
     RUN_TEST(test_dns_resolve_null_params);
     RUN_TEST(test_dns_mdns_init_open_failure_and_truncated_records);
     RUN_TEST(test_dns_resolve_bad_packet_header);
+    RUN_TEST(test_mdns_fqdn_hostname);
 }

@@ -803,39 +803,48 @@ bool syn_uds_process_request(SYN_UDS_Server *server, const uint8_t *req, uint16_
     }
 
     case SYN_UDS_SID_READ_DATA_BY_IDENTIFIER: {
-        if (req_len < 3U) {
+        if (req_len < 3U || ((req_len - 1U) % 2U) != 0U) {
             return make_negative_response(sid, SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp_buf,
                                           resp_len, addr_mode);
         }
-        uint16_t target_did = syn_peek_u16(req, 1);
-        SYN_UDS_DIDEntry *matched_entry = NULL;
-        for (uint8_t i = 0U; i < server->did_count; i++) {
-            if (server->did_table[i].did == target_did) {
-                matched_entry = &server->did_table[i];
-                break;
-            }
-        }
-        if (matched_entry == NULL) {
-            return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf, resp_len,
-                                          addr_mode);
-        }
-        if ((matched_entry->session_mask & session_to_mask(server->session)) == 0U) {
-            return make_negative_response(sid,
-                                          SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION,
-                                          resp_buf, resp_len, addr_mode);
-        }
-        if ((get_active_security_mask(server) & matched_entry->security_mask) == 0U) {
-            return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
-                                          resp_len, addr_mode);
-        }
-        if (3U + matched_entry->len > max_resp_len) {
-            return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf, resp_len,
-                                          addr_mode);
-        }
+
         resp_buf[0] = sid + 0x40U;
-        syn_poke_u16(target_did, resp_buf, 1);
-        memcpy(&resp_buf[3], matched_entry->data, matched_entry->len);
-        *resp_len = 3U + matched_entry->len;
+        size_t out_pos = 1U;
+
+        for (size_t req_pos = 1U; req_pos < req_len; req_pos += 2U) {
+            uint16_t target_did = syn_peek_u16(req, req_pos);
+            SYN_UDS_DIDEntry *matched_entry = NULL;
+            for (uint8_t i = 0U; i < server->did_count; i++) {
+                if (server->did_table[i].did == target_did) {
+                    matched_entry = &server->did_table[i];
+                    break;
+                }
+            }
+            if (matched_entry == NULL) {
+                return make_negative_response(sid, SYN_UDS_NRC_REQUEST_OUT_OF_RANGE, resp_buf,
+                                              resp_len, addr_mode);
+            }
+            if ((matched_entry->session_mask & session_to_mask(server->session)) == 0U) {
+                return make_negative_response(
+                    sid, SYN_UDS_NRC_SUBFUNCTION_NOT_SUPPORTED_IN_ACTIVE_SESSION, resp_buf,
+                    resp_len, addr_mode);
+            }
+            if ((get_active_security_mask(server) & matched_entry->security_mask) == 0U) {
+                return make_negative_response(sid, SYN_UDS_NRC_SECURITY_ACCESS_DENIED, resp_buf,
+                                              resp_len, addr_mode);
+            }
+            if (out_pos + 2U + matched_entry->len > max_resp_len) {
+                return make_negative_response(sid, SYN_UDS_NRC_RESPONSE_TOO_LONG, resp_buf,
+                                              resp_len, addr_mode);
+            }
+
+            syn_poke_u16(target_did, resp_buf, out_pos);
+            out_pos += 2U;
+            memcpy(&resp_buf[out_pos], matched_entry->data, matched_entry->len);
+            out_pos += matched_entry->len;
+        }
+
+        *resp_len = out_pos;
         success = true;
         break;
     }

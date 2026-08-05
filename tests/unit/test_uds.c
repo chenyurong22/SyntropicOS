@@ -3617,6 +3617,49 @@ static void test_uds_iso14229_service_callbacks(void)
     TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
 }
 
+static void test_uds_multi_did_read(void)
+{
+    syn_uds_init(&g_uds);
+    uint8_t req[16];
+    uint8_t resp[64];
+    uint16_t resp_len = 0;
+
+    /* Register DID 0x1000 (2 bytes) and DID 0x1001 (4 bytes) */
+    static uint8_t did1_data[2] = {0xAA, 0xBB};
+    static uint8_t did2_data[4] = {0x11, 0x22, 0x33, 0x44};
+
+    syn_uds_register_did(&g_uds, 0x1000, did1_data, 2, true);
+    syn_uds_register_did(&g_uds, 0x1001, did2_data, 4, true);
+
+    /* 1. Request both DIDs in a single 0x22 request: 22 10 00 10 01 (5 bytes) */
+    req[0] = SYN_UDS_SID_READ_DATA_BY_IDENTIFIER;
+    syn_poke_u16(0x1000, req, 1);
+    syn_poke_u16(0x1001, req, 3);
+
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 5, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(0x62, resp[0]);
+    TEST_ASSERT_EQUAL(11U, resp_len); /* 1 + 2 + 2 + 2 + 4 */
+
+    /* Verify DID 0x1000 */
+    TEST_ASSERT_EQUAL_HEX16(0x1000, syn_peek_u16(resp, 1));
+    TEST_ASSERT_EQUAL_HEX8(0xAA, resp[3]);
+    TEST_ASSERT_EQUAL_HEX8(0xBB, resp[4]);
+
+    /* Verify DID 0x1001 */
+    TEST_ASSERT_EQUAL_HEX16(0x1001, syn_peek_u16(resp, 5));
+    TEST_ASSERT_EQUAL_HEX8(0x11, resp[7]);
+    TEST_ASSERT_EQUAL_HEX8(0x22, resp[8]);
+    TEST_ASSERT_EQUAL_HEX8(0x33, resp[9]);
+    TEST_ASSERT_EQUAL_HEX8(0x44, resp[10]);
+
+    /* 2. Malformed request length (4 bytes: 22 10 00 10) -> NRC 0x13 */
+    TEST_ASSERT_TRUE(syn_uds_process_request(&g_uds, req, 4, resp, sizeof(resp), &resp_len,
+                                             SYN_UDS_ADDR_PHYSICAL));
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_RESPONSE_NEGATIVE, resp[0]);
+    TEST_ASSERT_EQUAL_HEX8(SYN_UDS_NRC_INCORRECT_MESSAGE_LENGTH, resp[2]);
+}
+
 void run_uds_tests(void)
 {
     RUN_TEST(test_uds_init_and_sessions);
@@ -3653,4 +3696,5 @@ void run_uds_tests(void)
     RUN_TEST(test_uds_addressing_modes);
     RUN_TEST(test_uds_custom_service_policies);
     RUN_TEST(test_uds_iso14229_service_callbacks);
+    RUN_TEST(test_uds_multi_did_read);
 }

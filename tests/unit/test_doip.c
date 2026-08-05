@@ -24,7 +24,8 @@ void test_doip_init_and_identifiers(void)
     TEST_ASSERT_FALSE(syn_doip_init(NULL, 0x1001));
     TEST_ASSERT_FALSE(syn_doip_set_identifiers(NULL, NULL, NULL, NULL));
 
-    uint8_t vin[17] = "SYNTROPICOS123456";
+    uint8_t vin[17] = {'S', 'Y', 'N', 'T', 'R', 'O', 'P', 'I', 'C',
+                       'O', 'S', '1', '2', '3', '4', '5', '6'};
     uint8_t eid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
     uint8_t gid[6] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
 
@@ -63,7 +64,8 @@ void test_doip_header_parse_encode(void)
 void test_doip_vehicle_identification_request(void)
 {
     setup_doip_test();
-    uint8_t vin[17] = "SYNTROPICOS123456";
+    uint8_t vin[17] = {'S', 'Y', 'N', 'T', 'R', 'O', 'P', 'I', 'C',
+                       'O', 'S', '1', '2', '3', '4', '5', '6'};
     uint8_t eid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
     uint8_t gid[6] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
     syn_doip_set_identifiers(&g_doip, vin, eid, gid);

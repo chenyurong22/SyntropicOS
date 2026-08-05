@@ -3,7 +3,7 @@
 
 BUILD_DIR ?= build
 CC      := gcc
-CFLAGS   = -MMD -MP -std=c99 -fPIC -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests/unit -Itests/unit/mocks -I$(BUILD_DIR) -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_MBUS=1 -DSYN_USE_DLT645=1 -DSYN_USE_AT_PARSER=1 -DSYN_USE_BACNET=1 -DSYN_USE_DEVICENET=1
+CFLAGS   = -MMD -MP -std=c99 -fPIC -pedantic -Wall -Wextra -Werror -I. -Isrc -Itests/unit -Itests/unit/mocks -I$(BUILD_DIR) -DSYN_LOG_COLOR=1 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 -DUNITY_INCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_LINTP=1 -DSYN_USE_IR=1 -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_MBUS=1 -DSYN_USE_DLT645=1 -DSYN_USE_AT_PARSER=1 -DSYN_USE_BACNET=1 -DSYN_USE_DEVICENET=1
 
 
 # All SyntropicOS source files
@@ -53,6 +53,7 @@ SYN_SRCS := \
 	src/syntropic/proto/syn_doip.c \
 	src/syntropic/proto/syn_devicenet.c \
 	src/syntropic/proto/syn_isotp.c \
+	src/syntropic/proto/syn_lintp.c \
 	src/syntropic/proto/syn_dali.c \
 	src/syntropic/proto/syn_bacnet.c \
 	src/syntropic/proto/syn_lin.c \
@@ -232,7 +233,7 @@ ARM_CFLAGS  := -MMD -MP -mcpu=cortex-m4 -mthumb -mabi=aapcs -mfloat-abi=soft -mn
                -ffunction-sections -fdata-sections -I. -Isrc -Itests/unit -Itests/unit/mocks -I$(BUILD_DIR) \
                -DSYN_LOG_COLOR=0 -DSYN_LOG_USE_PRINTF=0 -DSYN_USE_COREDUMP=1 -DSYN_COREDUMP_FLASH_ADDR=0 -DSYN_USE_TICKLESS=1 \
                -DSYN_USE_DMA=1 -DSYN_USE_I2C_ASYNC=1 -DSYN_USE_SPI_ASYNC=1 -DSYN_FW_USE_HMAC=1 -DSYN_USE_MULTICORE=1 \
-               -DUNITY_OUTPUT_CHAR=semihosting_putc -DUNITY_FLUSH=qemu_flush_dummy -DUNITY_EXCLUDE_FLOAT_PRINT -DUNITY_EXCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_IR=1 \
+               -DUNITY_OUTPUT_CHAR=semihosting_putc -DUNITY_FLUSH=qemu_flush_dummy -DUNITY_EXCLUDE_FLOAT_PRINT -DUNITY_EXCLUDE_DOUBLE -DSYN_USE_METRICS=1 -DSYN_USE_ROUTER=1 -DSYN_USE_LIN=1 -DSYN_USE_LINTP=1 -DSYN_USE_IR=1 \
                -DSYN_USE_SMBUS=1 -DSYN_USE_PMBUS=1 -DSYN_USE_MBUS=1 -DSYN_USE_DLT645=1 -DSYN_USE_AT_PARSER=1 \
                -DSYN_USE_BACNET=1 -DSYN_USE_DEVICENET=1 \
                -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-format -Wno-stringop-truncation -Wno-type-limits

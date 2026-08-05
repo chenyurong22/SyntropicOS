@@ -203,12 +203,12 @@ static void test_param_save_write_errors(void)
     mock_flash_fail_at = 1024;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_save(&store, &p));
 
-    /* 3. Header write succeeds, data write error (line 244) */
+    /* 3. Data write error (line 240) */
     mock_port_reset();
     syn_param_init(&store, 0, 2, sizeof(p));
     syn_param_save(&store, &p); /* first write at slot 0 (addr 0) */
-    /* Second write goes to slot 1 (hdr at addr 24, data at addr 32). Set fail at 32 */
-    mock_flash_fail_at = 32;
+    /* Second write goes to slot 1 (data at addr 40, hdr at addr 24). Set fail at 40 */
+    mock_flash_fail_at = 40;
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_save(&store, &p));
 
     /* 4. Read slot data flash read failure (line 96) */
@@ -230,6 +230,36 @@ static void test_param_save_write_errors(void)
     mock_port_reset();
 }
 
+static void test_param_power_loss_recovery(void)
+{
+    mock_port_reset();
+    SYN_ParamStore store;
+    TestParams p1 = {.brightness = 50, .offset = 5, .mode = 1};
+    TestParams p2 = {.brightness = 99, .offset = 15, .mode = 2};
+
+    syn_param_init(&store, 0, 2, sizeof(p1));
+    syn_param_save(&store, &p1); /* Valid slot 0 */
+
+    /* Simulate power cut during p2 save: data write at addr 40 fails midway, leaving header at 24
+     * uncommitted (0xFF) */
+    mock_flash_fail_at = 40; /* Fail data write */
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_param_save(&store, &p2));
+
+    /* Reset flash fail trigger for normal power cycle recovery */
+    mock_flash_fail_at = -1;
+
+    /* Power cycle: re-init store and verify slot 0 (p1) is loaded cleanly without corruption */
+    SYN_ParamStore store_recovery;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_param_init(&store_recovery, 0, 2, sizeof(p1)));
+
+    TestParams loaded;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_param_load(&store_recovery, &loaded));
+    TEST_ASSERT_EQUAL_INT(50, loaded.brightness);
+    TEST_ASSERT_EQUAL_INT(5, loaded.offset);
+
+    mock_port_reset();
+}
+
 void run_param_tests(void)
 {
     RUN_TEST(test_param_store);
@@ -240,4 +270,5 @@ void run_param_tests(void)
     RUN_TEST(test_param_flash_erase_error_returns_failure);
     RUN_TEST(test_param_scan_crc_mismatch);
     RUN_TEST(test_param_save_write_errors);
+    RUN_TEST(test_param_power_loss_recovery);
 }

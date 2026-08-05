@@ -89,9 +89,24 @@ static void test_workqueue_null_context(void)
     TEST_ASSERT_EQUAL_INT(1, wq_sum);
 }
 
+static void test_workqueue_null_func_popped(void)
+{
+    SYN_WorkItem items[4];
+    SYN_WorkQueue wq;
+    syn_workqueue_init(&wq, items, 4);
+
+    /* Push raw item with func = NULL directly into SPSC queue */
+    SYN_WorkItem dummy = {.func = NULL, .ctx = NULL};
+    syn_spsc_queue_push(&wq.queue, &dummy);
+
+    /* Process queue: pops dummy item with NULL func, exercises false branch of item.func != NULL */
+    TEST_ASSERT_EQUAL_size_t(0, syn_workqueue_process(&wq));
+}
+
 void run_workqueue_tests(void)
 {
     RUN_TEST(test_workqueue);
     RUN_TEST(test_workqueue_null_params);
     RUN_TEST(test_workqueue_null_context);
+    RUN_TEST(test_workqueue_null_func_popped);
 }

@@ -100,14 +100,14 @@ static void test_bacnet_read_property(void)
     syn_bacnet_node_init(&node, 7, 700);
     syn_bacnet_add_object(&node, SYN_BACNET_OBJ_ANALOG_INPUT, 1, 42.0f, "TempSensor");
 
-    /* Object 0 present_value read */
-    node.objects[0].present_value = 42.0f;
-
+    /* Read Property Request (Confirmed Request 0x00, invoke_id 0x01, Service 12) */
     SYN_BACnet_MSTP_Frame req = {.frame_type = SYN_BACNET_MSTP_FRAME_DATA_EXPECTING_REPLY,
                                  .destination_mac = 7,
                                  .source_mac = 3,
-                                 .data_len = 2,
-                                 .payload = {0x00, SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY}};
+                                 .data_len = 9,
+                                 .payload = {0x00, 0x05, 0x01,
+                                             SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY, 0x0C, 0x00,
+                                             0x00, 0x00, 0x01}}; /* Object ID 1 */
 
     SYN_BACnet_MSTP_Frame tx_frame;
     bool has_tx = false;
@@ -120,6 +120,39 @@ static void test_bacnet_read_property(void)
     float val = 0.0f;
     memcpy(&val, &tx_frame.payload[4], sizeof(float));
     TEST_ASSERT_EQUAL_FLOAT(42.0f, val);
+}
+
+static void test_bacnet_write_property(void)
+{
+    SYN_BACnet_Node node;
+    syn_bacnet_node_init(&node, 7, 700);
+    syn_bacnet_add_object(&node, SYN_BACNET_OBJ_ANALOG_OUTPUT, 1, 10.0f, "SetPoint");
+
+    float new_val = 88.5f;
+    uint8_t payload[16] = {0x00, 0x05, 0x02, SYN_BACNET_SERVICE_CONFIRMED_WRITE_PROPERTY,
+                           0x0C, 0x00, 0x00, 0x00,
+                           0x01, 0x44, 0,    0,
+                           0,    0};
+    memcpy(&payload[10], &new_val, sizeof(float));
+
+    SYN_BACnet_MSTP_Frame req = {.frame_type = SYN_BACNET_MSTP_FRAME_DATA_EXPECTING_REPLY,
+                                 .destination_mac = 7,
+                                 .source_mac = 3,
+                                 .data_len = 14,
+                                 .payload = {0}};
+    memcpy(req.payload, payload, 14);
+
+    SYN_BACnet_MSTP_Frame tx_frame;
+    bool has_tx = false;
+
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_bacnet_node_process(&node, &req, &tx_frame, &has_tx));
+    TEST_ASSERT_TRUE(has_tx);
+    TEST_ASSERT_EQUAL_UINT8(3, tx_frame.destination_mac);
+    TEST_ASSERT_EQUAL_UINT8(0x20, tx_frame.payload[0]); /* Simple-ACK */
+    TEST_ASSERT_EQUAL_UINT8(0x02, tx_frame.payload[1]); /* Invoke ID */
+    TEST_ASSERT_EQUAL_UINT8(SYN_BACNET_SERVICE_CONFIRMED_WRITE_PROPERTY, tx_frame.payload[2]);
+
+    TEST_ASSERT_EQUAL_FLOAT(88.5f, node.objects[1].present_value);
 }
 
 static void test_bacnet_edge_cases_and_nulls(void)
@@ -228,8 +261,8 @@ static void test_bacnet_mstp_frame_header_checksum_errors(void)
         .frame_type = SYN_BACNET_MSTP_FRAME_DATA_EXPECTING_REPLY,
         .destination_mac = 10,
         .source_mac = 3,
-        .data_len = 2,
-        .payload = {0x00, SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY}};
+        .data_len = 4,
+        .payload = {0x00, 0x05, 0x01, SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY}};
     TEST_ASSERT_EQUAL_INT(SYN_OK,
                           syn_bacnet_node_process(&empty_node, &req_read, &tx_frame, &has_tx));
     TEST_ASSERT_FALSE(has_tx);
@@ -239,8 +272,8 @@ static void test_bacnet_mstp_frame_header_checksum_errors(void)
                                                  SYN_BACNET_MSTP_FRAME_DATA_EXPECTING_REPLY,
                                              .destination_mac = 10,
                                              .source_mac = 3,
-                                             .data_len = 2,
-                                             .payload = {0x00, 0xFF}};
+                                             .data_len = 4,
+                                             .payload = {0x00, 0x05, 0x01, 0xFF}};
     TEST_ASSERT_EQUAL_INT(SYN_OK,
                           syn_bacnet_node_process(&node, &req_unsupported, &tx_frame, &has_tx));
     TEST_ASSERT_FALSE(has_tx);
@@ -255,6 +288,7 @@ void run_bacnet_tests(void)
     RUN_TEST(test_bacnet_node_who_is_process);
     RUN_TEST(test_bacnet_poll_for_master);
     RUN_TEST(test_bacnet_read_property);
+    RUN_TEST(test_bacnet_write_property);
     RUN_TEST(test_bacnet_edge_cases_and_nulls);
     RUN_TEST(test_bacnet_add_object_max_capacity);
     RUN_TEST(test_bacnet_mstp_decode_error_cases);

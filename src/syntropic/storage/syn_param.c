@@ -235,16 +235,18 @@ SYN_Status syn_param_save(SYN_ParamStore *store, const void *data)
     hdr.data_size = store->data_size;
     hdr.crc = syn_crc16_ccitt(data, store->data_size);
 
-    /* Write header */
+    /* Write data payload first */
     uint32_t addr = slot_addr(store, sec, sl);
-    SYN_Status err = syn_port_flash_write(addr, &hdr, sizeof(hdr));
-    if (err != SYN_OK)
-        return err;
-
-    /* Write data */
-    err = syn_port_flash_write(addr + sizeof(hdr), data, store->data_size);
-    if (err != SYN_OK)
+    SYN_Status err = syn_port_flash_write(addr + sizeof(hdr), data, store->data_size);
+    if (err != SYN_OK) {
         return err; /* LCOV_EXCL_LINE: Defensive NULL check or invalid parameter fallback */
+    }
+
+    /* Write header commit signal last (with SYN_PARAM_MAGIC) */
+    err = syn_port_flash_write(addr, &hdr, sizeof(hdr));
+    if (err != SYN_OK) {
+        return err;
+    }
 
     /* Update state */
     store->active_sector = sec;

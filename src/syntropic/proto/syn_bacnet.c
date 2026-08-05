@@ -175,69 +175,127 @@ SYN_Status syn_bacnet_node_process(SYN_BACnet_Node *node, const SYN_BACnet_MSTP_
     }
 
     /* Process APDU Payload */
-    if (rx_frame->data_len < 2)
-        return SYN_OK;
-
-    uint8_t service_type = rx_frame->payload[0];
-    uint8_t service_choice = rx_frame->payload[1];
-
-    /* 1. Unconfirmed Request: Who-Is -> Respond with I-Am */
-    if (service_choice == SYN_BACNET_SERVICE_UNCONFIRMED_WHO_IS) {
-        uint8_t payload[16];
-        payload[0] = 0x10;                                /* Unconfirmed APDU */
-        payload[1] = SYN_BACNET_SERVICE_UNCONFIRMED_I_AM; /* Service Choice I-Am */
-
-        /* Device Object Identifier (4 bytes) */
-        payload[2] = 0xC4;
-        payload[3] = (uint8_t)((node->device_id >> 16) & 0xFFU);
-        payload[4] = (uint8_t)((node->device_id >> 8) & 0xFFU);
-        payload[5] = (uint8_t)(node->device_id & 0xFFU);
-
-        /* Vendor ID (2 bytes) */
-        payload[6] = 0x21;
-        payload[7] = 0x05;
-
-        tx_frame->frame_type = SYN_BACNET_MSTP_FRAME_DATA_NOT_EXPECTING_REPLY;
-        tx_frame->destination_mac = SYN_BACNET_BROADCAST_MAC;
-        tx_frame->source_mac = node->mac_address;
-        tx_frame->data_len = 8;
-        memcpy(tx_frame->payload, payload, 8);
-        *has_tx = true;
+    if (rx_frame->data_len < 2) {
         return SYN_OK;
     }
 
-    /* 2. Confirmed Request: ReadProperty -> Respond with ReadProperty-ACK */
-    if (service_choice == SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY) {
-        uint8_t invoke_id = rx_frame->payload[1];
-        (void)service_type;
+    uint8_t pdu_type = rx_frame->payload[0] & 0xF0U;
 
-        /* Look up requested object */
-        float val = 0.0f;
-        bool found = false;
+    /* 1. Unconfirmed Request (PDU Type 0x10): Who-Is -> Respond with I-Am */
+    if (pdu_type == 0x10U) {
+        uint8_t service_choice = rx_frame->payload[1];
+        if (service_choice == SYN_BACNET_SERVICE_UNCONFIRMED_WHO_IS) {
+            uint8_t payload[16];
+            payload[0] = 0x10;                                /* Unconfirmed APDU */
+            payload[1] = SYN_BACNET_SERVICE_UNCONFIRMED_I_AM; /* Service Choice I-Am */
 
-        if (node->object_count > 0) {
-            val = node->objects[0].present_value;
-            found = true;
-        }
+            /* Device Object Identifier (4 bytes) */
+            payload[2] = 0xC4;
+            payload[3] = (uint8_t)((node->device_id >> 16) & 0xFFU);
+            payload[4] = (uint8_t)((node->device_id >> 8) & 0xFFU);
+            payload[5] = (uint8_t)(node->device_id & 0xFFU);
 
-        if (found) {
-            uint8_t payload[32];
-            payload[0] = 0x30; /* Complex-ACK APDU */
-            payload[1] = invoke_id;
-            payload[2] = SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY;
-
-            /* Encoded Present Value Float */
-            payload[3] = 0x44; /* Real tag */
-            memcpy(&payload[4], &val, sizeof(float));
+            /* Vendor ID (2 bytes) */
+            payload[6] = 0x21;
+            payload[7] = 0x05;
 
             tx_frame->frame_type = SYN_BACNET_MSTP_FRAME_DATA_NOT_EXPECTING_REPLY;
-            tx_frame->destination_mac = rx_frame->source_mac;
+            tx_frame->destination_mac = SYN_BACNET_BROADCAST_MAC;
             tx_frame->source_mac = node->mac_address;
             tx_frame->data_len = 8;
             memcpy(tx_frame->payload, payload, 8);
             *has_tx = true;
+            return SYN_OK;
         }
-        return SYN_OK;
+    }
+
+    /* 2. Confirmed Request (PDU Type 0x00) */
+    if (pdu_type == 0x00U && rx_frame->data_len >= 4) {
+        uint8_t invoke_id = rx_frame->payload[2];
+        uint8_t service_choice = rx_frame->payload[3];
+
+        if (service_choice == SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY) {
+            /* Decode requested instance_id if payload contains Context Tag 0 */
+            uint32_t req_instance = 0;
+            if (rx_frame->data_len >= 9 && rx_frame->payload[4] == 0x0C) {
+                uint32_t obj_id = ((uint32_t)rx_frame->payload[5] << 24) |
+                                  ((uint32_t)rx_frame->payload[6] << 16) |
+                                  ((uint32_t)rx_frame->payload[7] << 8) |
+                                  (uint32_t)rx_frame->payload[8];
+                req_instance = obj_id & 0x003FFFFFU;
+            }
+
+            /* Look up requested object by instance_id */
+            float val = 0.0f;
+            bool found = false;
+
+            for (size_t i = 0; i < node->object_count; i++) {
+                if (node->objects[i].instance_id == req_instance || req_instance == 0) {
+                    val = node->objects[i].present_value;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found) {
+                uint8_t payload[32];
+                payload[0] = 0x30; /* Complex-ACK APDU */
+                payload[1] = invoke_id;
+                payload[2] = SYN_BACNET_SERVICE_CONFIRMED_READ_PROPERTY;
+
+                /* Encoded Present Value Float */
+                payload[3] = 0x44; /* Real tag */
+                memcpy(&payload[4], &val, sizeof(float));
+
+                tx_frame->frame_type = SYN_BACNET_MSTP_FRAME_DATA_NOT_EXPECTING_REPLY;
+                tx_frame->destination_mac = rx_frame->source_mac;
+                tx_frame->source_mac = node->mac_address;
+                tx_frame->data_len = 8;
+                memcpy(tx_frame->payload, payload, 8);
+                *has_tx = true;
+            }
+            return SYN_OK;
+        }
+
+        if (service_choice == SYN_BACNET_SERVICE_CONFIRMED_WRITE_PROPERTY) {
+            /* WriteProperty APDU: Object ID at payload[4..8], Property Value float at
+             * payload[10..13] */
+            uint32_t req_instance = 0;
+            if (rx_frame->data_len >= 9 && rx_frame->payload[4] == 0x0C) {
+                uint32_t obj_id = ((uint32_t)rx_frame->payload[5] << 24) |
+                                  ((uint32_t)rx_frame->payload[6] << 16) |
+                                  ((uint32_t)rx_frame->payload[7] << 8) |
+                                  (uint32_t)rx_frame->payload[8];
+                req_instance = obj_id & 0x003FFFFFU;
+            }
+
+            float new_val = 0.0f;
+            if (rx_frame->data_len >= 14 && rx_frame->payload[9] == 0x44) {
+                memcpy(&new_val, &rx_frame->payload[10], sizeof(float));
+            }
+
+            /* Update object value */
+            for (size_t i = 0; i < node->object_count; i++) {
+                if (node->objects[i].instance_id == req_instance || req_instance == 0) {
+                    node->objects[i].present_value = new_val;
+                    break;
+                }
+            }
+
+            /* Return WriteProperty Simple-ACK APDU (PDU Type 0x20) */
+            uint8_t payload[4];
+            payload[0] = 0x20; /* Simple-ACK APDU */
+            payload[1] = invoke_id;
+            payload[2] = SYN_BACNET_SERVICE_CONFIRMED_WRITE_PROPERTY;
+
+            tx_frame->frame_type = SYN_BACNET_MSTP_FRAME_DATA_NOT_EXPECTING_REPLY;
+            tx_frame->destination_mac = rx_frame->source_mac;
+            tx_frame->source_mac = node->mac_address;
+            tx_frame->data_len = 3;
+            memcpy(tx_frame->payload, payload, 3);
+            *has_tx = true;
+            return SYN_OK;
+        }
     }
 
     return SYN_OK;

@@ -64,7 +64,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
     case SYN_GBT27930_PGN_CHM: /* Charger Handshake */
         if (session->role == SYN_GBT27930_ROLE_BMS &&
             session->state == SYN_GBT27930_STATE_HANDSHAKE) {
-            /* Handshake recognized */
+            session->timeout_ms = 0;
         }
         break;
 
@@ -74,6 +74,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
             if (frame->dlc >= 2) {
                 session->bms_cfg.max_charge_volt_v =
                     (uint16_t)(frame->data[0] | ((uint16_t)frame->data[1] << 8));
+                session->timeout_ms = 0;
             }
         }
         break;
@@ -83,6 +84,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
             session->state == SYN_GBT27930_STATE_HANDSHAKE) {
             if (frame->dlc >= 1 && frame->data[0] == 0x00) {
                 session->state = SYN_GBT27930_STATE_PARAM_CONFIG;
+                session->timeout_ms = 0;
             }
         }
         break;
@@ -91,6 +93,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
         if (session->role == SYN_GBT27930_ROLE_CHARGER &&
             session->state == SYN_GBT27930_STATE_HANDSHAKE) {
             session->state = SYN_GBT27930_STATE_PARAM_CONFIG;
+            session->timeout_ms = 0;
         }
         break;
 
@@ -102,6 +105,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
                     (uint16_t)(frame->data[0] | ((uint16_t)frame->data[1] << 8));
                 session->bms_cfg.max_charge_curr_a =
                     (uint16_t)(frame->data[2] | ((uint16_t)frame->data[3] << 8));
+                session->timeout_ms = 0;
             }
         }
         break;
@@ -114,6 +118,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
                     (uint16_t)(frame->data[0] | ((uint16_t)frame->data[1] << 8));
                 session->charger_cfg.min_output_volt_v =
                     (uint16_t)(frame->data[2] | ((uint16_t)frame->data[3] << 8));
+                session->timeout_ms = 0;
             }
         }
         break;
@@ -122,6 +127,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
         if (session->role == SYN_GBT27930_ROLE_CHARGER) {
             if (frame->dlc >= 1 && frame->data[0] == 0xAA) {
                 session->peer_ready_for_charging = true;
+                session->timeout_ms = 0;
                 if (session->ready_for_charging && session->peer_ready_for_charging) {
                     session->state = SYN_GBT27930_STATE_CHARGING;
                 }
@@ -133,6 +139,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
         if (session->role == SYN_GBT27930_ROLE_BMS) {
             if (frame->dlc >= 1 && frame->data[0] == 0xAA) {
                 session->peer_ready_for_charging = true;
+                session->timeout_ms = 0;
                 if (session->ready_for_charging && session->peer_ready_for_charging) {
                     session->state = SYN_GBT27930_STATE_CHARGING;
                 }
@@ -149,6 +156,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
                 session->telemetry.curr_demand_a =
                     (uint16_t)(frame->data[2] | ((uint16_t)frame->data[3] << 8));
                 session->telemetry.charge_mode = frame->data[4];
+                session->timeout_ms = 0;
             }
         }
         break;
@@ -162,6 +170,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
                 session->telemetry.measured_curr_a =
                     (uint16_t)(frame->data[2] | ((uint16_t)frame->data[3] << 8));
                 session->telemetry.soc_percent = frame->data[6];
+                session->timeout_ms = 0;
             }
         }
         break;
@@ -174,6 +183,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
                     (uint16_t)(frame->data[0] | ((uint16_t)frame->data[1] << 8));
                 session->telemetry.measured_curr_a =
                     (uint16_t)(frame->data[2] | ((uint16_t)frame->data[3] << 8));
+                session->timeout_ms = 0;
             }
         }
         break;
@@ -181,6 +191,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
     case SYN_GBT27930_PGN_BST: /* BMS Stop Charging */
     case SYN_GBT27930_PGN_CST: /* Charger Stop Charging */
         session->state = SYN_GBT27930_STATE_STOPPING;
+        session->timeout_ms = 0;
         if (frame->dlc >= 1) {
             session->stop_reason = frame->data[0];
         }
@@ -189,6 +200,7 @@ SYN_Status syn_gbt27930_process_rx_frame(SYN_GBT27930_Session *session, const SY
     case SYN_GBT27930_PGN_BEM: /* BMS Error */
     case SYN_GBT27930_PGN_CEM: /* Charger Error */
         session->state = SYN_GBT27930_STATE_ERROR;
+        session->timeout_ms = 0;
         if (frame->dlc >= 1) {
             session->fault_code = frame->data[0];
         }
@@ -210,12 +222,22 @@ bool syn_gbt27930_step(SYN_GBT27930_Session *session, uint32_t dt_ms, SYN_CAN_Fr
     session->timer_ms += dt_ms;
     session->timeout_ms += dt_ms;
 
+    /* Specification-mandated message timeout monitoring */
+    uint32_t timeout_limit_ms = (session->state == SYN_GBT27930_STATE_CHARGING) ? 1000 : 5000;
+    if (session->state != SYN_GBT27930_STATE_ERROR &&
+        session->state != SYN_GBT27930_STATE_STOPPING && session->timeout_ms >= timeout_limit_ms) {
+        session->state = SYN_GBT27930_STATE_ERROR;
+        session->fault_code = 0x01; /* Communication Timeout Fault */
+    }
+
     /* Frame Transmission Intervals */
     uint32_t interval_ms = 250;
     if (session->state == SYN_GBT27930_STATE_CHARGING) {
         interval_ms = 50; /* Fast 50ms periodic demand/status loop */
     } else if (session->state == SYN_GBT27930_STATE_STOPPING) {
         interval_ms = 10; /* Fast 10ms stop notification loop */
+    } else if (session->state == SYN_GBT27930_STATE_ERROR) {
+        interval_ms = 100; /* Periodic 100ms error broadcast loop */
     }
 
     if (session->timer_ms < interval_ms) {

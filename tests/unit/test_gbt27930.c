@@ -267,6 +267,117 @@ static void test_gbt27930_edge_cases_and_nulls(void)
     TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_bms, &frame));
 }
 
+static void test_gbt27930_timeouts(void)
+{
+    gbt27930_test_setup();
+
+    /* 1. Handshake Phase Timeout (5,000ms limit) */
+    syn_gbt27930_start_handshake(&g_bms);
+    TEST_ASSERT_EQUAL_INT(SYN_GBT27930_STATE_HANDSHAKE, g_bms.state);
+
+    SYN_CAN_Frame tx;
+    /* Step 4,900ms -> still in handshake phase */
+    syn_gbt27930_step(&g_bms, 4900, &tx);
+    TEST_ASSERT_EQUAL_INT(SYN_GBT27930_STATE_HANDSHAKE, g_bms.state);
+
+    /* Step additional 200ms -> 5,100ms total -> timeout triggers ERROR state & BEM frame */
+    TEST_ASSERT_TRUE(syn_gbt27930_step(&g_bms, 200, &tx));
+    TEST_ASSERT_EQUAL_INT(SYN_GBT27930_STATE_ERROR, g_bms.state);
+    TEST_ASSERT_EQUAL_UINT8(0x01, g_bms.fault_code);
+
+    SYN_J1939_Header hdr;
+    syn_j1939_id_unpack(tx.id, &hdr);
+    TEST_ASSERT_EQUAL_HEX32(SYN_GBT27930_PGN_BEM, hdr.pgn);
+
+    /* 2. Charging Phase Timeout (1,000ms limit) */
+    g_charger.state = SYN_GBT27930_STATE_CHARGING;
+    syn_gbt27930_step(&g_charger, 900, &tx);
+    TEST_ASSERT_EQUAL_INT(SYN_GBT27930_STATE_CHARGING, g_charger.state);
+
+    /* Step additional 200ms -> 1,100ms total -> timeout triggers ERROR state & CEM frame */
+    TEST_ASSERT_TRUE(syn_gbt27930_step(&g_charger, 200, &tx));
+    TEST_ASSERT_EQUAL_INT(SYN_GBT27930_STATE_ERROR, g_charger.state);
+    TEST_ASSERT_EQUAL_UINT8(0x01, g_charger.fault_code);
+
+    syn_j1939_id_unpack(tx.id, &hdr);
+    TEST_ASSERT_EQUAL_HEX32(SYN_GBT27930_PGN_CEM, hdr.pgn);
+}
+
+static void test_gbt27930_short_dlc_branches(void)
+{
+    gbt27930_test_setup();
+    SYN_CAN_Frame f;
+    memset(&f, 0, sizeof(f));
+    f.extended = true;
+    f.dlc = 1; /* Short DLC < expected */
+
+    /* BHM dlc < 2 */
+    g_charger.state = SYN_GBT27930_STATE_HANDSHAKE;
+    f.id = syn_j1939_id_pack(6, SYN_GBT27930_PGN_BHM, SYN_GBT27930_ADDR_BMS,
+                             SYN_GBT27930_ADDR_CHARGER);
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_charger, &f));
+
+    /* CRM data != 0x00 */
+    g_bms.state = SYN_GBT27930_STATE_HANDSHAKE;
+    f.id = syn_j1939_id_pack(6, SYN_GBT27930_PGN_CRM, SYN_GBT27930_ADDR_CHARGER,
+                             SYN_GBT27930_ADDR_BMS);
+    f.data[0] = 0xAA;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_bms, &f));
+
+    /* BCP dlc < 6 */
+    g_charger.state = SYN_GBT27930_STATE_PARAM_CONFIG;
+    f.id = syn_j1939_id_pack(6, SYN_GBT27930_PGN_BCP, SYN_GBT27930_ADDR_BMS,
+                             SYN_GBT27930_ADDR_CHARGER);
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_charger, &f));
+
+    /* CML dlc < 8 */
+    g_bms.state = SYN_GBT27930_STATE_PARAM_CONFIG;
+    f.id = syn_j1939_id_pack(6, SYN_GBT27930_PGN_CML, SYN_GBT27930_ADDR_CHARGER,
+                             SYN_GBT27930_ADDR_BMS);
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_bms, &f));
+
+    /* BRO data != 0xAA */
+    g_charger.state = SYN_GBT27930_STATE_PARAM_CONFIG;
+    f.id = syn_j1939_id_pack(6, SYN_GBT27930_PGN_BRO, SYN_GBT27930_ADDR_BMS,
+                             SYN_GBT27930_ADDR_CHARGER);
+    f.data[0] = 0x00;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_charger, &f));
+
+    /* CRO data != 0xAA */
+    g_bms.state = SYN_GBT27930_STATE_PARAM_CONFIG;
+    f.id = syn_j1939_id_pack(6, SYN_GBT27930_PGN_CRO, SYN_GBT27930_ADDR_CHARGER,
+                             SYN_GBT27930_ADDR_BMS);
+    f.data[0] = 0x00;
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_bms, &f));
+
+    /* BCL dlc < 5 */
+    g_charger.state = SYN_GBT27930_STATE_CHARGING;
+    f.id = syn_j1939_id_pack(6, SYN_GBT27930_PGN_BCL, SYN_GBT27930_ADDR_BMS,
+                             SYN_GBT27930_ADDR_CHARGER);
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_charger, &f));
+
+    /* BCS dlc < 7 */
+    f.id = syn_j1939_id_pack(6, SYN_GBT27930_PGN_BCS, SYN_GBT27930_ADDR_BMS,
+                             SYN_GBT27930_ADDR_CHARGER);
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_charger, &f));
+
+    /* CCS dlc < 6 */
+    g_bms.state = SYN_GBT27930_STATE_CHARGING;
+    f.id = syn_j1939_id_pack(6, SYN_GBT27930_PGN_CCS, SYN_GBT27930_ADDR_CHARGER,
+                             SYN_GBT27930_ADDR_BMS);
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_bms, &f));
+
+    /* BST / BEM dlc = 0 */
+    f.dlc = 0;
+    f.id = syn_j1939_id_pack(4, SYN_GBT27930_PGN_BST, SYN_GBT27930_ADDR_BMS,
+                             SYN_GBT27930_ADDR_CHARGER);
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_charger, &f));
+
+    f.id = syn_j1939_id_pack(2, SYN_GBT27930_PGN_BEM, SYN_GBT27930_ADDR_BMS,
+                             SYN_GBT27930_ADDR_CHARGER);
+    TEST_ASSERT_EQUAL_INT(SYN_OK, syn_gbt27930_process_rx_frame(&g_charger, &f));
+}
+
 void run_gbt27930_tests(void)
 {
     RUN_TEST(test_gbt27930_init_and_idle);
@@ -275,6 +386,8 @@ void run_gbt27930_tests(void)
     RUN_TEST(test_gbt27930_stop_and_error);
     RUN_TEST(test_gbt27930_all_pgns_coverage);
     RUN_TEST(test_gbt27930_edge_cases_and_nulls);
+    RUN_TEST(test_gbt27930_timeouts);
+    RUN_TEST(test_gbt27930_short_dlc_branches);
 }
 
 #endif /* SYN_USE_GBT27930 */

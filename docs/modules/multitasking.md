@@ -28,6 +28,7 @@ Protothreads are stackless cooperative coroutines implemented via the Duff's dev
 | `PT_DEFER(pt, task)` | Defer to all ready tasks regardless of priority (one pass) |
 | `PT_BLOCK_CONDITION(pt, task, cond)` | Block task execution (`SYN_TASK_BLOCKED`) until condition expression becomes true |
 | `PT_BLOCK_EVENT(pt, task, grp, mask)` | Block task execution (`SYN_TASK_BLOCKED`) until event bit fires |
+| `PT_BLOCK_EVENT_WITH_TIMEOUT(pt, task, grp, mask, ms, out)` | Block task execution (`SYN_TASK_BLOCKED`) until event bit fires OR timeout elapses |
 
 ### Macro Expansion Under the Hood (Duff's Device)
 

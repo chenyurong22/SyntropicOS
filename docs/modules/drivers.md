@@ -65,7 +65,18 @@ void uart_setup(void) {
 void USART1_IRQHandler(void) {
     // ISR feed: safe to call from interrupt context
     uint8_t rx_byte = (uint8_t)USART1->DR;
-    syn_uart_isr_rx_byte(&uart, rx_byte);
+    syn_uart_rx_isr_feed(&uart, rx_byte);
+
+    // ISR flush: drain TX ring buffer asynchronously
+    syn_uart_tx_isr_flush(&uart);
+}
+
+void uart_send_nonblocking(const uint8_t *data, size_t len) {
+    // Non-blocking bulk write into TX ring buffer
+    if (syn_uart_write_async(&uart, data, len) == SYN_OK) {
+        // Wait until tx_rb is empty AND hardware shift register is clear (RS485 DE safety)
+        // syn_uart_tx_complete(&uart)
+    }
 }
 ```
 

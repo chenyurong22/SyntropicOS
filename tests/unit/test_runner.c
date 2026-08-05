@@ -48,6 +48,7 @@ void run_at_parser_tests(void);
 void run_lin_tests(void);
 void run_lintp_tests(void);
 void run_gbt27930_tests(void);
+void run_cannm_tests(void);
 void run_smbus_tests(void);
 void run_pmbus_tests(void);
 void run_mbus_tests(void);
@@ -290,6 +291,7 @@ int main(void)
     run_lin_tests();
     run_lintp_tests();
     run_gbt27930_tests();
+    run_cannm_tests();
     run_dali_tests();
     run_bacnet_tests();
 

@@ -508,6 +508,10 @@ extern "C" {
 #include "proto/syn_gbt27930.h"
 #endif
 
+#if !defined(SYN_USE_CANNM) || SYN_USE_CANNM
+#include "proto/syn_cannm.h"
+#endif
+
 #if !defined(SYN_USE_N2K) || SYN_USE_N2K
 #include "proto/syn_n2k.h"
 #endif

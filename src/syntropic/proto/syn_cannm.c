@@ -124,6 +124,11 @@ bool syn_cannm_process_rx_frame(SYN_CanNM_Session *session, const SYN_CAN_Frame 
     return true;
 }
 
+/**
+ * @brief Pack CAN NM PDU payload into tx_frame.
+ * @param session Pointer to CAN NM session instance.
+ * @param tx_frame Pointer to target CAN frame structure.
+ */
 static void pack_nm_tx_pdu(SYN_CanNM_Session *session, SYN_CAN_Frame *tx_frame)
 {
     tx_frame->id = session->config.can_id_base + session->config.node_id;

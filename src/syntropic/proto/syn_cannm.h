@@ -62,17 +62,17 @@ typedef struct {
  * @brief AUTOSAR CAN Network Management Session Context.
  */
 typedef struct {
-    SYN_CanNM_Config config;
-    SYN_CanNM_State state;
-    SYN_CanNM_State prev_state;
+    SYN_CanNM_Config config;    /**< Session timer & ID configuration */
+    SYN_CanNM_State state;      /**< Current CAN NM FSM state */
+    SYN_CanNM_State prev_state; /**< Previous CAN NM FSM state */
 
     bool node_comm_req;  /**< Local application network request */
     bool repeat_msg_req; /**< Repeat message request flag */
 
-    uint32_t msg_cycle_timer;
-    uint32_t timeout_timer;
-    uint32_t wait_bus_sleep_timer;
-    uint32_t repeat_msg_timer;
+    uint32_t msg_cycle_timer;      /**< Message transmission period timer in ms */
+    uint32_t timeout_timer;        /**< NM Timeout timer in ms */
+    uint32_t wait_bus_sleep_timer; /**< Wait Bus Sleep timer in ms */
+    uint32_t repeat_msg_timer;     /**< Repeat Message state duration timer in ms */
 
     uint8_t user_data[6];      /**< Local user data bytes */
     uint8_t rx_user_data[6];   /**< User data from last received NM message */

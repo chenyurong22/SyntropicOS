@@ -63,8 +63,35 @@ static void test_workqueue_null_params(void)
     TEST_ASSERT_EQUAL_size_t(0, syn_workqueue_process(NULL));
 }
 
+static void wq_null_ctx_handler(void *ctx)
+{
+    if (ctx != NULL) {
+        wq_sum += *(int *)ctx;
+    } else {
+        wq_sum += 1;
+    }
+}
+
+static void test_workqueue_null_context(void)
+{
+    SYN_WorkItem items[4];
+    SYN_WorkQueue wq;
+
+    syn_workqueue_init(&wq, items, 4);
+
+    /* Post with NULL context (allowed) */
+    wq_sum = 0;
+    TEST_ASSERT_TRUE(syn_workqueue_post(&wq, wq_null_ctx_handler, NULL));
+    TEST_ASSERT_EQUAL_INT(1, syn_workqueue_pending(&wq));
+
+    size_t processed = syn_workqueue_process(&wq);
+    TEST_ASSERT_EQUAL_INT(1, processed);
+    TEST_ASSERT_EQUAL_INT(1, wq_sum);
+}
+
 void run_workqueue_tests(void)
 {
     RUN_TEST(test_workqueue);
     RUN_TEST(test_workqueue_null_params);
+    RUN_TEST(test_workqueue_null_context);
 }

@@ -52,6 +52,9 @@ extern "C" {
 
 /* ── LIN TP Link State Machine Definitions ───────────────────────────────── */
 
+/**
+ * @brief LIN TP Link State Machine State Enumeration.
+ */
 typedef enum {
     SYN_LINTP_STATE_IDLE = 0,
     SYN_LINTP_STATE_TRANSMITTING_FF,

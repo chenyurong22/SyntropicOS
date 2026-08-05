@@ -60,3 +60,15 @@ uint32_t get_stm32f767_sector(uint32_t addr) {
 
 - **`app/src/main.c`**: Active Application binary (Bank A `0x08020000`) handling Pre-Programming Phase #1 & Post-Programming Phase #3.
 - **`bootloader/src/main.c`**: Minimal FBL binary (Sector 0 `0x08000000`) handling Programming Phase #2 and Flash sector erasing (`get_stm32f767_sector`).
+
+---
+
+## 4. UDS Service API Registration
+
+- **0x10 DiagnosticSessionControl**: `syn_uds_set_session_transition_handler(server, cb, ctx)`
+- **0x11 ECUReset**: `syn_uds_set_reset_handler(server, cb, ctx)`, `syn_uds_set_reset_wait_ms(server, wait_ms)`, `syn_uds_get_pending_reset(server)`, `syn_uds_clear_pending_reset(server)`
+- **0x28 CommunicationControl**: `syn_uds_register_comm_control(server, handler, ctx)`
+- **0x85 ControlDTCSetting**: `syn_uds_register_dtc(server, dtc, status, severity)`
+- **0x3E TesterPresent**: `syn_uds_tick(server, dt_ms)`
+- **0x2E WriteDataByIdentifier**: `syn_uds_register_did(server, did, data, len, writable)`
+

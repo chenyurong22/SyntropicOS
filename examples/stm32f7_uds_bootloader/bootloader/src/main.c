@@ -147,6 +147,36 @@ static void bootloader_jump_to_app(uint32_t app_address) {
            (unsigned int)app_address, (unsigned int)reset_handler);
 }
 
+/* ── UDS Service Callbacks ───────────────────────────────────────────── */
+
+/* 0x10 DiagnosticSessionControl Transition Callback */
+static bool on_fbl_session_transition(SYN_UDS_Session from_session,
+                                       SYN_UDS_Session to_session, void *ctx) {
+    (void)ctx;
+    printf("[FBL UDS 0x10] Session Transition Allowed: 0x%02X -> 0x%02X\n",
+           (unsigned int)from_session, (unsigned int)to_session);
+    return true;
+}
+
+/* 0x11 ECUReset Post-TX Callback */
+static void on_fbl_reset_cb(uint8_t reset_type, void *ctx) {
+    (void)ctx;
+    printf("[FBL UDS 0x11] Post-TX ECUReset Callback: Executing Reset Type 0x%02X\n",
+           (unsigned int)reset_type);
+}
+
+/* 0x28 CommunicationControl Callback */
+static bool on_fbl_comm_control(SYN_UDS_CommControlType control_type, uint8_t comm_type,
+                                void *ctx) {
+    (void)comm_type; (void)ctx;
+    if (control_type == SYN_UDS_COMM_DISABLE_RX_AND_TX) {
+        printf("[FBL UDS 0x28] CommunicationControl: RX and TX Disabled (Pre-Programming).\n");
+    } else if (control_type == SYN_UDS_COMM_ENABLE_RX_AND_TX) {
+        printf("[FBL UDS 0x28] CommunicationControl: RX and TX Enabled (Post-Programming).\n");
+    }
+    return true;
+}
+
 /* RoutineControl Callback: 0xFF00 EraseMemory & 0xFF01 CheckMemory/ValidateApp */
 static bool on_fbl_routine_control(uint8_t subfunction, uint16_t routine_id,
                                     const uint8_t *in_data, uint16_t in_len, uint8_t *out_buf,
@@ -194,20 +224,49 @@ static bool on_fbl_memory_access(bool is_write, uint32_t address, uint32_t size,
 int main(void) {
     printf("=== STM32F767 ISO 14229-1 UDS Flash Bootloader (Sector 0 @ 0x08000000) ===\n");
     memset(&g_fbl_state, 0, sizeof(g_fbl_state));
+    memcpy(g_fbl_state.vin, "SYN-STM32F767-VIN", 17);
 
     /* Initialize UDS Server Engine in Bootloader */
     syn_uds_init(&g_fbl_server);
+
+    /* 0x10 DiagnosticSessionControl: Session Transition Policy */
+    syn_uds_set_session_transition_handler(&g_fbl_server, on_fbl_session_transition, NULL);
+
+    /* 0x11 ECUReset: Deferred Post-TX Reset Handler & Delay Window */
+    syn_uds_set_reset_handler(&g_fbl_server, on_fbl_reset_cb, NULL);
+    syn_uds_set_reset_wait_ms(&g_fbl_server, 50U);
+
+    /* 0x28 CommunicationControl: Rx/Tx Enable/Disable Callback */
+    syn_uds_register_comm_control(&g_fbl_server, on_fbl_comm_control, NULL);
+
+    /* 0x85 ControlDTCSetting: Diagnostic Trouble Code Registration */
+    syn_uds_register_dtc(&g_fbl_server, 0x012345U, SYN_UDS_DTC_STATUS_TEST_FAILED,
+                         SYN_UDS_DTC_SEVERITY_MAINTENANCE_REQUIRED);
+
+    /* 0x2E WriteDataByIdentifier: VIN / Fingerprint DID 0xF190 */
+    syn_uds_register_did(&g_fbl_server, 0xF190U, g_fbl_state.vin, sizeof(g_fbl_state.vin), true);
+
+    /* 0x23 / 0x3D & 0x31: Memory & Routine Control Callbacks */
     syn_uds_register_memory_handler(&g_fbl_server, on_fbl_memory_access, NULL);
     syn_uds_register_routine_control(&g_fbl_server, on_fbl_routine_control, NULL);
 
     printf("FBL Server Initialized. Awaiting ISO 14229-1 Programming Phase #2 Requests...\n");
 
-    /* Simulated UDS programming sequence */
+    /* Simulated UDS programming sequence with 0x3E TesterPresent / S3 Timer Service */
     for (int i = 0; i < 5; i++) {
         syn_uds_tick(&g_fbl_server, 10);
+    }
+
+    /* Check and clear pending ECU reset state (0x11) */
+    uint8_t pending_reset = syn_uds_get_pending_reset(&g_fbl_server);
+    if (pending_reset != 0U) {
+        printf("[FBL UDS 0x11] Pending Reset Detected: Type 0x%02X. Clearing Reset State...\n",
+               (unsigned int)pending_reset);
+        syn_uds_clear_pending_reset(&g_fbl_server);
     }
 
     /* Jump to valid Application Bank A */
     bootloader_jump_to_app(BANK_A_BASE);
     return 0;
 }
+

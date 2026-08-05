@@ -144,12 +144,18 @@ bool syn_sched_run(SYN_Sched *sched)
                 continue;
             }
 
-            /* Blocked on event — check if the event has fired */
+            /* Blocked on event or timeout — check if event fired or deadline passed */
             if (task->state == (uint8_t)SYN_TASK_BLOCKED) {
-                if (task->wait_event != NULL &&
-                    (syn_event_flags_get(task->wait_event) & task->wait_mask)) {
-                    /* Event fired — transition to READY */
+                bool event_fired = (task->wait_event != NULL &&
+                                    (syn_event_flags_get(task->wait_event) & task->wait_mask));
+                bool timeout_elapsed =
+                    (task->delay_until != 0 && (int32_t)(now - task->delay_until) >= 0);
+
+                if (event_fired || timeout_elapsed) {
+                    /* Event fired or timeout elapsed — transition to READY */
                     task->wait_event = NULL;
+                    task->wait_mask = 0;
+                    task->delay_until = 0;
                     task->state = (uint8_t)SYN_TASK_READY;
                     /* Fall through to normal priority evaluation */
                 } else {
@@ -250,12 +256,25 @@ uint32_t syn_sched_next_wakeup(const SYN_Sched *sched)
             continue;
         }
 
-        /* Blocked on event — check if the event has fired since the
-         * last syn_sched_run() (e.g. from an ISR or timer service). */
+        /* Blocked on event or timeout — check if the event has fired or
+         * if a timeout deadline is pending for tickless sleep computation. */
         if (task->state == (uint8_t)SYN_TASK_BLOCKED) {
             if (task->wait_event != NULL &&
                 (syn_event_flags_get(task->wait_event) & task->wait_mask)) {
                 any_ready_now = true; /* Event fired — don't sleep */
+            }
+            if (task->delay_until != 0) {
+                if ((int32_t)(now - task->delay_until) >= 0) {
+                    any_ready_now = true; /* Timeout elapsed — don't sleep */
+                } else {
+                    uint32_t target = task->delay_until;
+                    if (target == UINT32_MAX) {
+                        target = UINT32_MAX - 1;
+                    }
+                    if ((int32_t)(target - earliest) < 0 || earliest == UINT32_MAX) {
+                        earliest = target;
+                    }
+                }
             }
             continue;
         }

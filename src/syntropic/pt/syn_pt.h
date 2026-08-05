@@ -354,6 +354,44 @@ typedef enum {
     } while (0)
 
 /**
+ * @brief Block task execution (SYN_TASK_BLOCKED) until ANY bit in @p mask is set
+ * OR @p timeout_ms milliseconds elapse.
+ *
+ * Combines event-flag blocking with millisecond deadline tracking. The task is
+ * skipped by the scheduler until either the event fires or the timeout deadline passes.
+ *
+ * Matched event flags are captured into @p out_flags (if non-NULL) and auto-cleared ONLY
+ * if the event actually fired before the timeout. Check `*out_flags != 0` to determine if
+ * the event fired vs timed out.
+ *
+ * @param pt          Protothread.
+ * @param task        Pointer to the SYN_Task struct.
+ * @param grp         Pointer to SYN_EventFlags.
+ * @param mask        Bitmask of event flags to wait for.
+ * @param timeout_ms  Timeout duration in milliseconds.
+ * @param out_flags   Pointer to uint32_t receiving matched flags (or 0 on timeout).
+ */
+#define PT_BLOCK_EVENT_WITH_TIMEOUT(pt, task, grp, mask, timeout_ms, out_flags)            \
+    do {                                                                                   \
+        (task)->wait_event = (SYN_EventFlags *)(grp);                                      \
+        (task)->wait_mask = (mask);                                                        \
+        (task)->delay_until = syn_port_get_tick_ms() + (uint32_t)(timeout_ms);             \
+        if ((task)->delay_until == 0) {                                                    \
+            (task)->delay_until = 1; /* 0 is the no-deadline sentinel */                   \
+        }                                                                                  \
+        (task)->state = (uint8_t)SYN_TASK_BLOCKED;                                         \
+        PT_YIELD(pt);                                                                      \
+        (task)->delay_until = 0;                                                           \
+        uint32_t _syn_evt_matched = syn_event_flags_get((SYN_EventFlags *)(grp)) & (mask); \
+        if ((out_flags) != NULL) {                                                         \
+            *(out_flags) = _syn_evt_matched;                                               \
+        }                                                                                  \
+        if (_syn_evt_matched != 0) {                                                       \
+            syn_event_flags_clear((SYN_EventFlags *)(grp), _syn_evt_matched);              \
+        }                                                                                  \
+    } while (0)
+
+/**
  * @brief Sleep task (SYN_TASK_BLOCKED) until explicitly resumed.
  *
  * @warning This macro does NOT poll @p cond on each scheduler tick.

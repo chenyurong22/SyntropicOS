@@ -277,6 +277,45 @@ SYN_Status syn_port_uart_receive_byte(SYN_UARTInstance i, uint8_t *b, uint32_t t
     return SYN_TIMEOUT;
 }
 
+bool mock_uart_txe_irq_enabled = false;
+bool mock_uart_tc_set = true;
+void (*mock_uart_tc_cb)(void *ctx) = NULL;
+void *mock_uart_tc_ctx = NULL;
+
+void syn_port_uart_enable_txe_irq(SYN_UARTInstance instance)
+{
+    (void)instance;
+    mock_uart_txe_irq_enabled = true;
+}
+
+void syn_port_uart_disable_txe_irq(SYN_UARTInstance instance)
+{
+    (void)instance;
+    mock_uart_txe_irq_enabled = false;
+}
+
+void syn_port_uart_write_dr(SYN_UARTInstance instance, uint8_t byte)
+{
+    (void)instance;
+    if (mock_uart_tx_len < MOCK_UART_BUF_SIZE) {
+        mock_uart_tx_buf[mock_uart_tx_len++] = byte;
+    }
+}
+
+bool syn_port_uart_is_tc_set(SYN_UARTInstance instance)
+{
+    (void)instance;
+    return mock_uart_tc_set;
+}
+
+void syn_port_uart_set_tc_callback(SYN_UARTInstance instance, void (*callback)(void *ctx),
+                                   void *ctx)
+{
+    (void)instance;
+    mock_uart_tc_cb = callback;
+    mock_uart_tc_ctx = ctx;
+}
+
 /* ── Console serial ────────────────────────────────────────────────────── */
 
 #include "syntropic/port/syn_port_serial.h"

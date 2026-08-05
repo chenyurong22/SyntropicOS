@@ -179,6 +179,90 @@ static void test_uart_init_config(void)
 #endif
 }
 
+extern bool mock_uart_txe_irq_enabled;
+extern bool mock_uart_tc_set;
+
+static void test_uart_write_async_basic(void)
+{
+    SYN_UART uart;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_init(&uart, 0, 115200));
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_write_async(&uart, NULL, 0));
+
+    const uint8_t data[] = "Hello Async";
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_write_async(&uart, data, 11));
+    TEST_ASSERT_TRUE(mock_uart_txe_irq_enabled);
+    TEST_ASSERT_EQUAL(11, syn_ringbuf_count(&uart.tx_rb));
+
+    syn_uart_deinit(&uart);
+}
+
+static void test_uart_write_async_busy(void)
+{
+    SYN_UART uart;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_init(&uart, 0, 115200));
+
+    uint8_t large_data[SYN_UART_TX_BUF_SIZE + 10];
+    memset(large_data, 'A', sizeof(large_data));
+
+    /* Attempt to write oversized buffer -> returns SYN_BUSY, 0 bytes committed */
+    TEST_ASSERT_EQUAL(SYN_BUSY, syn_uart_write_async(&uart, large_data, sizeof(large_data)));
+    TEST_ASSERT_EQUAL(0, syn_ringbuf_count(&uart.tx_rb));
+
+    syn_uart_deinit(&uart);
+}
+
+static void test_uart_tx_isr_flush_test(void)
+{
+    SYN_UART uart;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_init(&uart, 0, 115200));
+
+    const uint8_t data[] = "Hi";
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_write_async(&uart, data, 2));
+
+    /* Flush 1st byte */
+    TEST_ASSERT_TRUE(syn_uart_tx_isr_flush(&uart));
+    TEST_ASSERT_TRUE(mock_uart_txe_irq_enabled);
+
+    /* Flush 2nd byte */
+    TEST_ASSERT_TRUE(syn_uart_tx_isr_flush(&uart));
+
+    /* Flush 3rd time (empty) -> returns false and disables TXE IRQ */
+    TEST_ASSERT_FALSE(syn_uart_tx_isr_flush(&uart));
+    TEST_ASSERT_FALSE(mock_uart_txe_irq_enabled);
+
+    syn_uart_deinit(&uart);
+}
+
+static void test_uart_tx_complete_test(void)
+{
+    SYN_UART uart;
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_init(&uart, 0, 115200));
+
+    /* Case 1: tx_rb empty and mock_tc_set true -> complete */
+    mock_uart_tc_set = true;
+    TEST_ASSERT_TRUE(syn_uart_tx_complete(&uart));
+
+    /* Case 2: data in tx_rb -> incomplete */
+    const uint8_t data[] = "X";
+    TEST_ASSERT_EQUAL(SYN_OK, syn_uart_write_async(&uart, data, 1));
+    TEST_ASSERT_FALSE(syn_uart_tx_complete(&uart));
+
+    /* Drain tx_rb */
+    (void)syn_uart_tx_isr_flush(&uart);
+    (void)syn_uart_tx_isr_flush(&uart);
+
+    /* Case 3: tx_rb empty but mock_tc_set false (shift reg draining) -> incomplete */
+    mock_uart_tc_set = false;
+    TEST_ASSERT_FALSE(syn_uart_tx_complete(&uart));
+
+    /* Case 4: mock_tc_set true -> complete */
+    mock_uart_tc_set = true;
+    TEST_ASSERT_TRUE(syn_uart_tx_complete(&uart));
+
+    syn_uart_deinit(&uart);
+}
+
 void run_uart_tests(void)
 {
     RUN_TEST(test_uart_init);
@@ -193,4 +277,8 @@ void run_uart_tests(void)
     RUN_TEST(test_uart_read);
     RUN_TEST(test_uart_read_empty);
     RUN_TEST(test_uart_rx_isr_feed);
+    RUN_TEST(test_uart_write_async_basic);
+    RUN_TEST(test_uart_write_async_busy);
+    RUN_TEST(test_uart_tx_isr_flush_test);
+    RUN_TEST(test_uart_tx_complete_test);
 }

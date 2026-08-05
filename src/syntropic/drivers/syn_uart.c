@@ -144,4 +144,61 @@ bool syn_uart_rx_isr_feed(SYN_UART *uart, uint8_t byte)
     return syn_ringbuf_put(&uart->rx_rb, byte);
 }
 
+SYN_Status syn_uart_write_async(SYN_UART *uart, const uint8_t *data, size_t len)
+{
+    SYN_ASSERT(uart != NULL);
+    SYN_ASSERT(data != NULL || len == 0);
+
+    if (uart == NULL || (!uart->initialized)) { /* LCOV_EXCL_LINE: Defensive fallback */
+        return SYN_INVALID_PARAM;               /* LCOV_EXCL_LINE */
+    }
+
+    if (len == 0) {
+        return SYN_OK;
+    }
+
+    /* All-or-nothing atomic check: reject write if insufficient free buffer space */
+    if (syn_ringbuf_free(&uart->tx_rb) < len) {
+        return SYN_BUSY;
+    }
+
+    /* Bulk copy data into TX ring buffer */
+    (void)syn_ringbuf_write(&uart->tx_rb, data, len);
+
+    /* Kickstart hardware TX interrupt chain */
+    syn_port_uart_enable_txe_irq(uart->instance);
+    return SYN_OK;
+}
+
+bool syn_uart_tx_isr_flush(SYN_UART *uart)
+{
+    SYN_ASSERT(uart != NULL);
+
+    if (uart == NULL) { /* LCOV_EXCL_LINE: Defensive fallback */
+        return false;   /* LCOV_EXCL_LINE */
+    }
+
+    uint8_t byte;
+    if (syn_ringbuf_get(&uart->tx_rb, &byte)) {
+        syn_port_uart_write_dr(uart->instance, byte);
+        return true;
+    }
+
+    /* Ring buffer empty — disable TXE interrupt */
+    syn_port_uart_disable_txe_irq(uart->instance);
+    return false;
+}
+
+bool syn_uart_tx_complete(const SYN_UART *uart)
+{
+    SYN_ASSERT(uart != NULL);
+
+    if (uart == NULL) { /* LCOV_EXCL_LINE: Defensive fallback */
+        return true;    /* LCOV_EXCL_LINE */
+    }
+
+    /* Complete ONLY when software tx_rb is empty AND hardware shift register is clear */
+    return syn_ringbuf_empty(&uart->tx_rb) && syn_port_uart_is_tc_set(uart->instance);
+}
+
 #endif /* SYN_USE_UART */

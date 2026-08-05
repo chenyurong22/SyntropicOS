@@ -1283,6 +1283,95 @@ static void test_sched_next_wakeup_uint32_max_and_prio_bounds(void)
     syn_sched_run(&sched);
 }
 
+static SYN_EventFlags test_evt_flags;
+static uint32_t test_evt_matched_flags = 0;
+
+static SYN_PT_Status block_evt_timeout_task_func(SYN_PT *pt, SYN_Task *task)
+{
+    PT_BEGIN(pt);
+    PT_BLOCK_EVENT_WITH_TIMEOUT(pt, task, &test_evt_flags, 0x01, 100, &test_evt_matched_flags);
+    PT_END(pt);
+}
+
+static void test_block_event_with_timeout_event_fired(void)
+{
+    SYN_Task task;
+    SYN_Sched sched;
+    mock_tick_ms = 1000;
+    syn_event_flags_init(&test_evt_flags);
+    syn_task_create(&task, "evt_to_task", block_evt_timeout_task_func, 0, NULL);
+    syn_sched_init(&sched, &task, 1);
+
+    /* First pass: enters BLOCKED state with delay_until = 1100 */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_UINT8(SYN_TASK_BLOCKED, task.state);
+    TEST_ASSERT_EQUAL_UINT32(1100, task.delay_until);
+
+    /* Fire event at t = 1050 (before timeout 1100) */
+    mock_tick_ms = 1050;
+    syn_event_flags_set(&test_evt_flags, 0x01);
+
+    /* Second pass: unblocks on event */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_UINT32(0, task.delay_until);
+    TEST_ASSERT_NULL(task.wait_event);
+    TEST_ASSERT_EQUAL_UINT32(0x01, test_evt_matched_flags);
+    /* Matched flag auto-cleared */
+    TEST_ASSERT_EQUAL_UINT32(0, syn_event_flags_get(&test_evt_flags));
+}
+
+static void test_block_event_with_timeout_expired(void)
+{
+    SYN_Task task;
+    SYN_Sched sched;
+    mock_tick_ms = 1000;
+    syn_event_flags_init(&test_evt_flags);
+    syn_task_create(&task, "evt_to_task", block_evt_timeout_task_func, 0, NULL);
+    syn_sched_init(&sched, &task, 1);
+
+    /* First pass: enters BLOCKED state with delay_until = 1100 */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_UINT8(SYN_TASK_BLOCKED, task.state);
+
+    /* Advance time past timeout without firing event */
+    mock_tick_ms = 1105;
+
+    /* Second pass: unblocks on timeout */
+    syn_sched_run(&sched);
+    TEST_ASSERT_EQUAL_UINT32(0, task.delay_until);
+    TEST_ASSERT_NULL(task.wait_event);
+    TEST_ASSERT_EQUAL_UINT32(0, test_evt_matched_flags);
+}
+
+static void test_sched_next_wakeup_blocked_timeout(void)
+{
+    SYN_Task task;
+    SYN_Sched sched;
+    mock_tick_ms = 1000;
+    syn_event_flags_init(&test_evt_flags);
+    syn_task_create(&task, "evt_to_task", block_evt_timeout_task_func, 0, NULL);
+    syn_sched_init(&sched, &task, 1);
+
+    /* Enter BLOCKED state with delay_until = 1100 */
+    syn_sched_run(&sched);
+
+    /* next_wakeup returns earliest deadline = 1100 */
+    uint32_t wake = syn_sched_next_wakeup(&sched);
+    TEST_ASSERT_EQUAL_UINT32(1100, wake);
+
+    /* Test UINT32_MAX cap branch for BLOCKED task */
+    mock_tick_ms = UINT32_MAX - 500;
+    task.delay_until = UINT32_MAX;
+    TEST_ASSERT_EQUAL_UINT32(UINT32_MAX - 1, syn_sched_next_wakeup(&sched));
+
+    /* Advance time to 1100: next_wakeup returns current tick (now) */
+    task.delay_until = 1100;
+    mock_tick_ms = 1100;
+    wake = syn_sched_next_wakeup(&sched);
+    TEST_ASSERT_EQUAL_UINT32(1100, wake);
+    mock_tick_ms = 0;
+}
+
 void run_sched_tests(void)
 {
     RUN_TEST(test_scheduler);
@@ -1320,4 +1409,7 @@ void run_sched_tests(void)
     RUN_TEST(test_delay_deadline_wrap_zero_alias);
     RUN_TEST(test_sched_next_wakeup_blocked_event_fired);
     RUN_TEST(test_sched_next_wakeup_uint32_max_and_prio_bounds);
+    RUN_TEST(test_block_event_with_timeout_event_fired);
+    RUN_TEST(test_block_event_with_timeout_expired);
+    RUN_TEST(test_sched_next_wakeup_blocked_timeout);
 }

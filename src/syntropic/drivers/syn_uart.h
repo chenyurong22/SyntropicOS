@@ -154,6 +154,39 @@ size_t syn_uart_read(SYN_UART *uart, uint8_t *data, size_t max_len);
  */
 bool syn_uart_rx_isr_feed(SYN_UART *uart, uint8_t byte);
 
+/**
+ * @brief Non-blocking write to UART TX ring buffer (all-or-nothing atomic).
+ *
+ * Pushes data into the internal TX ring buffer if space is available for
+ * all @p len bytes, and enables the TX interrupt to drain asynchronously.
+ * Returns SYN_BUSY without modifying the buffer if space is insufficient.
+ *
+ * @param uart  UART handle.
+ * @param data  Data to transmit.
+ * @param len   Number of bytes.
+ * @return SYN_OK on success, SYN_BUSY if ring buffer free space < len.
+ */
+SYN_Status syn_uart_write_async(SYN_UART *uart, const uint8_t *data, size_t len);
+
+/**
+ * @brief TX ISR drain callback — call from UART TXE interrupt.
+ *
+ * Pops the next byte from tx_rb into the hardware data register.
+ * When the ring buffer empties, disables the TXE interrupt.
+ *
+ * @param uart  UART handle.
+ * @return true if a byte was transmitted, false if tx_rb is empty.
+ */
+bool syn_uart_tx_isr_flush(SYN_UART *uart);
+
+/**
+ * @brief Check if asynchronous TX is complete (tx_rb drained AND hardware shift register clear).
+ *
+ * @param uart  UART handle.
+ * @return true if no bytes remain in software tx_rb AND hardware TC flag is set.
+ */
+bool syn_uart_tx_complete(const SYN_UART *uart);
+
 #ifdef __cplusplus
 }
 #endif

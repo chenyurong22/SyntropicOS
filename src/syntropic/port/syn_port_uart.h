@@ -78,6 +78,41 @@ SYN_Status syn_port_uart_transmit_byte(SYN_UARTInstance instance, uint8_t byte);
 SYN_Status syn_port_uart_receive_byte(SYN_UARTInstance instance, uint8_t *byte,
                                       uint32_t timeout_ms);
 
+/**
+ * @brief Enable UART TXE (Transmit Data Register Empty) interrupt.
+ * @param instance UART instance.
+ */
+void syn_port_uart_enable_txe_irq(SYN_UARTInstance instance);
+
+/**
+ * @brief Disable UART TXE interrupt.
+ * @param instance UART instance.
+ */
+void syn_port_uart_disable_txe_irq(SYN_UARTInstance instance);
+
+/**
+ * @brief Write a single byte to the hardware UART Data Register without waiting.
+ * @param instance UART instance.
+ * @param byte     Byte to write.
+ */
+void syn_port_uart_write_dr(SYN_UARTInstance instance, uint8_t byte);
+
+/**
+ * @brief Check if UART Transfer Complete (TC / Shift Register empty) flag is set.
+ * @param instance UART instance.
+ * @return true if hardware shift register is clear.
+ */
+bool syn_port_uart_is_tc_set(SYN_UARTInstance instance);
+
+/**
+ * @brief Register a Transfer Complete (TC) callback for RS485 DE pin control.
+ * @param instance UART instance.
+ * @param callback Function to call on TC, or NULL to disable.
+ * @param ctx      User context passed to callback.
+ */
+void syn_port_uart_set_tc_callback(SYN_UARTInstance instance, void (*callback)(void *ctx),
+                                   void *ctx);
+
 #ifdef __cplusplus
 }
 #endif

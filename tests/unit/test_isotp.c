@@ -510,7 +510,7 @@ static void test_isotp_canfd_multi_frame(void)
         link.tx_len = 10;
         link.tx_offset = 2;
         TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&link, &frame));
-        TEST_ASSERT_EQUAL_UINT32(0, link.tx_st_timer_us);
+        TEST_ASSERT_EQUAL_UINT32(127000, link.tx_st_timer_us);
 
         /* 3. syn_isotp_set_fc_params coverage (lines 88-93) */
         syn_isotp_set_fc_params(NULL, 0, 0);
@@ -524,6 +524,60 @@ static void test_isotp_canfd_multi_frame(void)
         sf_over.dlc = 8;
         sf_over.data[0] = 0x0F; /* Single frame with sf_len = 15 > 7 max bytes */
         syn_isotp_process_rx_frame(&link, &sf_over);
+    }
+
+    static void test_isotp_block_size_flow_control(void)
+    {
+        SYN_ISOTP_Link sender, receiver;
+        syn_isotp_init(&sender, 0x7E8, 0x7E0, rx_buf_a, sizeof(rx_buf_a), tx_buf_a,
+                       sizeof(tx_buf_a));
+        syn_isotp_init(&receiver, 0x7E0, 0x7E8, rx_buf_b, sizeof(rx_buf_b), tx_buf_b,
+                       sizeof(tx_buf_b));
+
+        /* Configure receiver with BS = 2 */
+        syn_isotp_set_fc_params(&receiver, 2, 0);
+
+        uint8_t payload[25];
+        for (size_t i = 0; i < sizeof(payload); i++) {
+            payload[i] = (uint8_t)(i + 1);
+        }
+
+        TEST_ASSERT_EQUAL(SYN_OK, syn_isotp_send(&sender, payload, sizeof(payload)));
+
+        /* 1. First Frame (FF) from sender */
+        SYN_CAN_Frame ff;
+        TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&sender, &ff));
+        syn_isotp_process_rx_frame(&receiver, &ff);
+
+        /* 2. Initial Flow Control (FC) from receiver */
+        SYN_CAN_Frame fc1;
+        TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&receiver, &fc1));
+        TEST_ASSERT_EQUAL(2, fc1.data[1]); /* BS = 2 */
+        syn_isotp_process_rx_frame(&sender, &fc1);
+
+        /* 3. Sender transmits CF 1 and CF 2 (Block 1) */
+        SYN_CAN_Frame cf1, cf2;
+        TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&sender, &cf1));
+        syn_isotp_process_rx_frame(&receiver, &cf1);
+
+        TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&sender, &cf2));
+        syn_isotp_process_rx_frame(&receiver, &cf2);
+
+        /* 4. Receiver has reached BS=2 threshold -> triggers intermediate FC CTS frame */
+        SYN_CAN_Frame fc2;
+        TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&receiver, &fc2));
+        TEST_ASSERT_EQUAL(0x30, fc2.data[0]); /* FC CTS */
+        syn_isotp_process_rx_frame(&sender, &fc2);
+
+        /* 5. Sender transmits remaining CF 3 (Block 2) */
+        SYN_CAN_Frame cf3;
+        TEST_ASSERT_TRUE(syn_isotp_get_tx_frame(&sender, &cf3));
+        syn_isotp_process_rx_frame(&receiver, &cf3);
+
+        /* Assembly check */
+        uint8_t out[32];
+        TEST_ASSERT_EQUAL(25, syn_isotp_receive(&receiver, out, sizeof(out)));
+        TEST_ASSERT_EQUAL_MEMORY(payload, out, 25);
     }
 
     void run_isotp_tests(void)
@@ -541,6 +595,7 @@ static void test_isotp_canfd_multi_frame(void)
         RUN_TEST(test_isotp_32bit_extended_first_frame_parsing);
         RUN_TEST(test_isotp_is_tx_idle_helper);
         RUN_TEST(test_isotp_tx_consecutive_frame_flow_control);
+        RUN_TEST(test_isotp_block_size_flow_control);
 #if defined(SYN_USE_CAN_FD) && SYN_USE_CAN_FD
         RUN_TEST(test_isotp_canfd_single_frame);
         RUN_TEST(test_isotp_canfd_multi_frame);

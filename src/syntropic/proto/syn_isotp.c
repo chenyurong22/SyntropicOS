@@ -50,7 +50,7 @@ static uint32_t syn_isotp_decode_stmin_us(uint8_t st_min)
     if (st_min >= 0xF1 && st_min <= 0xF9) {
         return (uint32_t)(st_min - 0xF0) * 100U; /* 100..900 us */
     }
-    return 0;
+    return 127000U; /* Reserved values default to 127ms per ISO 15765-2:2016 Clause 9.6.6 */
 }
 
 void syn_isotp_set_timeouts(SYN_ISOTP_Link *link, uint32_t n_bs_ms, uint32_t n_cr_ms)
@@ -360,6 +360,7 @@ void syn_isotp_process_rx_frame(SYN_ISOTP_Link *link, const SYN_CAN_Frame *frame
                 link->rx_len = payload_in_ff;
                 link->rx_expected = ff_len;
                 link->rx_seq = 1;
+                link->rx_bs_count = 0;
                 link->rx_fc_pending = true;
                 link->rx_fc_status = SYN_ISOTP_FC_CTS;
                 link->rx_state = SYN_ISOTP_RX_WAIT_CF;
@@ -383,12 +384,18 @@ void syn_isotp_process_rx_frame(SYN_ISOTP_Link *link, const SYN_CAN_Frame *frame
 
                 link->rx_len += cf_payload;
                 link->rx_seq = (uint8_t)((link->rx_seq + 1) & 0x0F);
+                link->rx_bs_count++;
 
                 if (link->rx_len >= link->rx_expected) {
                     link->rx_state = SYN_ISOTP_RX_COMPLETE;
                     link->rx_timeout_timer_us = 0;
                 } else {
                     link->rx_timeout_timer_us = link->n_cr_timeout_us;
+                    if (link->rx_fc_bs > 0 && link->rx_bs_count >= link->rx_fc_bs) {
+                        link->rx_bs_count = 0;
+                        link->rx_fc_pending = true;
+                        link->rx_fc_status = SYN_ISOTP_FC_CTS;
+                    }
                 }
             } else {
                 /* Sequence mismatch error */

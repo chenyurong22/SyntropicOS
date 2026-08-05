@@ -157,6 +157,7 @@ typedef struct {
     uint8_t rx_fc_status;         /**< Flow Control status to tx  */
     uint8_t rx_fc_bs;             /**< Flow Control Block Size to transmit (default 8) */
     uint8_t rx_fc_stmin;          /**< Flow Control STmin to transmit (default 0)      */
+    uint8_t rx_bs_count;          /**< Received frame counter in current block         */
     uint32_t n_cr_timeout_us;     /**< N_Cr timeout (microseconds)*/
     uint32_t rx_timeout_timer_us; /**< Active N_Cr timer us  */
 } SYN_ISOTP_Link;

@@ -19,4 +19,7 @@ FILES=$(find src/syntropic -name "*.c" ! -path "*/port_stubs/*")
 echo "Running clang-tidy across ${FILES} with ${JOBS} parallel workers..."
 printf "%s\n" ${FILES} | xargs -n 1 -P "${JOBS}" -I {} clang-tidy {} -- ${CFLAGS} || true
 
+echo "=== Running Protothread Switch Linter ==="
+python3 tools/lint/check_pt_switch.py
+
 echo "=== Clang-Tidy Complete ==="

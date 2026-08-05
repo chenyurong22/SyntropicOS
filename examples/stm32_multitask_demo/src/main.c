@@ -191,25 +191,16 @@ static SYN_PT_Status task_ipc_func(SYN_PT *pt)
     while (1) {
         /* Check if any event has been posted to global resources */
         if (g_resources.pending_event != EVENT_NONE) {
-            switch (g_resources.pending_event) {
-                case EVENT_BUTTON_SHORT_PRESS:
-                    /* Cycle system mode on short button press */
-                    g_resources.current_mode = (App_SystemMode)((g_resources.current_mode + 1) % 4);
-                    syn_cli_printf(&cli_ctx, "[IPC Event] Button Short Press -> Mode: %d\r\n", g_resources.current_mode);
-                    break;
-
-                case EVENT_BUTTON_LONG_PRESS:
-                    /* Toggle Alert mode on long button press */
-                    g_resources.current_mode = SYSTEM_MODE_ALERT;
-                    syn_cli_printf(&cli_ctx, "[IPC Event] Button Long Press -> ALERT Mode\r\n");
-                    break;
-
-                case EVENT_CLI_MODE_CHANGE:
-                    syn_cli_printf(&cli_ctx, "[IPC Event] CLI Mode Change Processed\r\n");
-                    break;
-
-                default:
-                    break;
+            if (g_resources.pending_event == EVENT_BUTTON_SHORT_PRESS) {
+                /* Cycle system mode on short button press */
+                g_resources.current_mode = (App_SystemMode)((g_resources.current_mode + 1) % 4);
+                syn_cli_printf(&cli_ctx, "[IPC Event] Button Short Press -> Mode: %d\r\n", g_resources.current_mode);
+            } else if (g_resources.pending_event == EVENT_BUTTON_LONG_PRESS) {
+                /* Toggle Alert mode on long button press */
+                g_resources.current_mode = SYSTEM_MODE_ALERT;
+                syn_cli_printf(&cli_ctx, "[IPC Event] Button Long Press -> ALERT Mode\r\n");
+            } else if (g_resources.pending_event == EVENT_CLI_MODE_CHANGE) {
+                syn_cli_printf(&cli_ctx, "[IPC Event] CLI Mode Change Processed\r\n");
             }
 
             /* Clear processed event flag */

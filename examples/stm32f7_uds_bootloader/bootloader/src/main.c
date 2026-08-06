@@ -25,6 +25,12 @@
 #include <stdio.h>
 #include <string.h>
 
+/* ── Bootloader Partition Configuration (Single-Bank vs Dual-Bank) ───── */
+
+#define SYN_FBL_MODE_SINGLE_BANK 0 /* Set to 1 for Single-Bank direct flashing */
+
+#define SINGLE_BANK_APP_BASE 0x08040000U /* Single-Bank Application Base (Sectors 4-7) */
+
 #define BANK_A_BASE 0x08020000U /* Application Partition A (Bank 1) */
 #define BANK_B_BASE 0x08100000U /* Application Partition B (Bank 2) */
 #define BANK_MAX_SIZE (512U * 1024U)
@@ -64,7 +70,7 @@ static uint8_t g_flash_buffer[512];
 
 typedef void (*pFunction)(void);
 
-/* ── A/B Dual-Bank Partition Inspection & Swap Algorithm ────────────── */
+/* ── Partition Inspection & Staging Target Selection ─────────────────── */
 
 static bool fbl_read_header(uint32_t bank_addr, SYN_FBL_AppHeader *hdr) {
     if (hdr == NULL) return false;
@@ -73,6 +79,9 @@ static bool fbl_read_header(uint32_t bank_addr, SYN_FBL_AppHeader *hdr) {
 }
 
 static uint32_t fbl_get_active_partition(void) {
+#if SYN_FBL_MODE_SINGLE_BANK
+    return SINGLE_BANK_APP_BASE;
+#else
     SYN_FBL_AppHeader hdr_a, hdr_b;
     bool valid_a = fbl_read_header(BANK_A_BASE, &hdr_a) && (hdr_a.image_state == SYN_FBL_IMAGE_STATE_VALID);
     bool valid_b = fbl_read_header(BANK_B_BASE, &hdr_b) && (hdr_b.image_state == SYN_FBL_IMAGE_STATE_VALID);
@@ -85,10 +94,15 @@ static uint32_t fbl_get_active_partition(void) {
     }
     if (valid_b) return BANK_B_BASE;
     return BANK_A_BASE;
+#endif
 }
 
 static uint32_t fbl_get_staging_partition(void) {
+#if SYN_FBL_MODE_SINGLE_BANK
+    return SINGLE_BANK_APP_BASE; /* Direct flashing in Single-Bank mode */
+#else
     return (fbl_get_active_partition() == BANK_A_BASE) ? BANK_B_BASE : BANK_A_BASE;
+#endif
 }
 
 /* ── STM32F767 Hardware Flash Porting Driver ─────────────────────────── */

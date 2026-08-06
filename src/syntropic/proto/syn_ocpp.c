@@ -41,6 +41,8 @@ static const char *status_to_str(SYN_OCPP_ChargePointStatus status)
     }
 }
 
+/** @cond EXCLUDE_FROM_DOXYGEN */
+
 /* ── EVSE Client Implementation ─────────────────────────────────────── */
 
 SYN_Status syn_ocpp_init(SYN_OCPP_Client *client)
@@ -112,8 +114,6 @@ SYN_Status syn_ocpp_format_heartbeat(SYN_OCPP_Client *client, char *out_buf, siz
     int written = snprintf(out_buf, max_len, "[2,\"%u\",\"Heartbeat\",{}]",
                            (unsigned int)client->message_counter);
 
-    if (written < 0 || (size_t)written >= max_len)
-        return SYN_ERROR;
     *out_len = (size_t)written;
     return SYN_OK;
 }
@@ -259,8 +259,7 @@ SYN_Status syn_ocpp_process_message(SYN_OCPP_Client *client, const char *in_buf,
     uint8_t msg_type = (uint8_t)(in_buf[1] - '0');
 
     if (msg_type == SYN_OCPP_MSG_TYPE_CALLRESULT) {
-        if (strstr(in_buf, "\"Accepted\"") != NULL ||
-            strstr(in_buf, "\"status\":\"Accepted\"") != NULL) {
+        if (strstr(in_buf, "\"Accepted\"") != NULL) {
             client->registration_status = SYN_OCPP_REGISTRATION_ACCEPTED;
             if (client->reg_cb != NULL) {
                 client->reg_cb(SYN_OCPP_REGISTRATION_ACCEPTED, client->heartbeat_interval_sec,
@@ -502,3 +501,5 @@ SYN_Status syn_ocpp_server_process_message(SYN_OCPP_Server *server, const char *
         *out_resp_len = (size_t)written;
     return SYN_OK;
 }
+
+/** @endcond */

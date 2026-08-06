@@ -25,6 +25,13 @@ void test_kwp2000_init_and_null_checks(void)
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_kwp2000_register_lid(&g_kwp_server, 0x01, NULL, 2, false));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_kwp2000_register_cid(NULL, 0xF190, &g_dummy_rpm, 2, false));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kwp2000_set_session_handler(NULL, NULL, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kwp2000_set_reset_handler(NULL, NULL, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kwp2000_set_security_handler(NULL, NULL, NULL, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kwp2000_set_routine_handler(NULL, NULL, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_kwp2000_set_memory_handler(NULL, NULL, NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_kwp2000_process_request(NULL, req, 1, resp, sizeof(resp), &resp_len));
 }
 

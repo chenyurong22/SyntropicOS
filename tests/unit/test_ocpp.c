@@ -93,12 +93,16 @@ void test_ocpp_init_and_null_checks(void)
     SYN_OCPP_ChargePointInfo info = {"Vendor", "Model", "SN123", "v1.0"};
 
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_init(NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_ocpp_set_callbacks(NULL, NULL, NULL, NULL, NULL, NULL, NULL));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_server_init(NULL));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_ocpp_server_set_callbacks(NULL, NULL, NULL, NULL, NULL));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_ocpp_format_boot_notification(NULL, &info, buf, sizeof(buf), &len));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_format_heartbeat(NULL, buf, sizeof(buf), &len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_format_heartbeat(&g_ocpp_client, buf, 15, &len));
+    syn_ocpp_tick(NULL, 10, buf, sizeof(buf), &len);
 }
 
 void test_ocpp_boot_notification_formatting(void)
@@ -176,6 +180,10 @@ void test_ocpp_process_call_result(void)
                                                        NULL, 0, NULL));
     TEST_ASSERT_EQUAL(SYN_OCPP_REGISTRATION_ACCEPTED, g_ocpp_client.registration_status);
     TEST_ASSERT_TRUE(g_reg_cb_called);
+
+    const char *resp_status_json = "[3,\"2\",{\"status\":\"Accepted\"}]";
+    TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_process_message(&g_ocpp_client, resp_status_json,
+                                                       strlen(resp_status_json), NULL, 0, NULL));
 }
 
 void test_ocpp_process_remote_start_stop(void)
@@ -261,6 +269,36 @@ void test_ocpp_all_status_enums_and_small_buffers(void)
                                                                           "Reason", buf, 10, &len));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_ocpp_format_meter_values(&g_ocpp_client, 1, &mv, buf, 10, &len));
+
+    /* NULL info fields default check */
+    SYN_OCPP_ChargePointInfo null_info = {NULL, NULL, NULL, NULL};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_format_boot_notification(&g_ocpp_client, &null_info, buf,
+                                                                sizeof(buf), &len));
+    TEST_ASSERT_NOT_NULL(strstr(buf, "SyntropicOS"));
+
+    /* Buffer capacity truncation tests (SYN_ERROR) */
+    TEST_ASSERT_EQUAL(SYN_ERROR,
+                      syn_ocpp_format_boot_notification(&g_ocpp_client, &info, buf, 70, &len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_format_heartbeat(&g_ocpp_client, buf, 20, &len));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_ocpp_format_status_notification(&g_ocpp_client, 1,
+                                                                     SYN_OCPP_STATUS_CHARGING,
+                                                                     "NoError", buf, 70, &len));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_ocpp_format_authorize(
+                                     &g_ocpp_client, "TAG-VERY-LONG-STRING-12345", buf, 50, &len));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_ocpp_format_start_transaction(&g_ocpp_client, 1,
+                                                                   "TAG-VERY-LONG-STRING-12345",
+                                                                   100, buf, 100, &len));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_ocpp_format_stop_transaction(&g_ocpp_client, 1, 100, "Reason",
+                                                                  buf, 100, &len));
+    TEST_ASSERT_EQUAL(SYN_ERROR,
+                      syn_ocpp_format_meter_values(&g_ocpp_client, 1, &mv, buf, 130, &len));
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_ocpp_server_format_remote_start(&g_ocpp_server, 1,
+                                                                     "TAG-VERY-LONG-STRING-12345",
+                                                                     buf, 65, &len));
+    TEST_ASSERT_EQUAL(SYN_ERROR,
+                      syn_ocpp_server_format_remote_stop(&g_ocpp_server, 100, buf, 50, &len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_server_format_remote_start(
+                                             &g_ocpp_server, 1, NULL, buf, sizeof(buf), &len));
 }
 
 void test_ocpp_process_message_extended(void)
@@ -353,6 +391,9 @@ void test_ocpp_server_role(void)
                                              NULL, 1, cmd_buf, sizeof(cmd_buf), &cmd_len));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_ocpp_server_process_message(NULL, req_boot, strlen(req_boot), resp,
+                                                      sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL(SYN_ERROR,
+                      syn_ocpp_server_process_message(&g_ocpp_server, "INVALID_FRAME", 13, resp,
                                                       sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_server_process_message(&g_ocpp_server, "[3,\"1\",{}]", 10,
                                                               resp, sizeof(resp), &resp_len));

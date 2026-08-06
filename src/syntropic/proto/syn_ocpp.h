@@ -44,7 +44,35 @@ extern "C" {
 #define SYN_OCPP_ERROR_GENERIC_ERROR "GenericError" /**< Generic error */
 /**@}*/
 
-/** @brief OCPP Connector Status Enumeration (OCPP 1.6 / 2.0.1). */
+/** @name OCPP WebSocket Subprotocol Identifiers (OCPP 1.6 / 2.0.1 / 2.1) */
+/**@{*/
+#define SYN_OCPP_SUBPROTOCOL_2_1 "ocpp2.1"     /**< Official OCPP 2.1 WebSocket Subprotocol */
+#define SYN_OCPP_SUBPROTOCOL_2_0_1 "ocpp2.0.1" /**< Official OCPP 2.0.1 WebSocket Subprotocol */
+#define SYN_OCPP_SUBPROTOCOL_1_6 "ocpp1.6"     /**< Official OCPP 1.6-J WebSocket Subprotocol */
+/**@}*/
+
+/** @brief Supported OCPP Protocol Versions. */
+typedef enum {
+    SYN_OCPP_VERSION_1_6 = 0, /**< OCPP 1.6-J */
+    SYN_OCPP_VERSION_2_0_1,   /**< OCPP 2.0.1 */
+    SYN_OCPP_VERSION_2_1      /**< OCPP 2.1 Edition 1 */
+} SYN_OCPP_Version;
+
+/** @brief OCPP 2.1 ISO 15118-20 Bidirectional V2G Energy Transfer Control Mode. */
+typedef enum {
+    SYN_OCPP_V2G_SCHEDULED = 0, /**< ISO 15118-20 Scheduled Control Mode */
+    SYN_OCPP_V2G_DYNAMIC        /**< ISO 15118-20 Dynamic Control Mode */
+} SYN_OCPP_V2GMode;
+
+/** @brief OCPP 2.1 Customer Display Message Structure. */
+typedef struct {
+    uint32_t message_id;     /**< Unique display message ID */
+    const char *header;      /**< Optional header string */
+    const char *content;     /**< Display text content */
+    uint32_t display_time_s; /**< Display duration in seconds */
+} SYN_OCPP_DisplayMessage;
+
+/** @brief OCPP Connector Status Enumeration (OCPP 1.6 / 2.0.1 / 2.1). */
 typedef enum {
     SYN_OCPP_STATUS_AVAILABLE = 0,  /**< Connector available for charging */
     SYN_OCPP_STATUS_PREPARING,      /**< EV connected, preparing session */
@@ -112,6 +140,8 @@ typedef void (*SYN_OCPP_StartTxHandler)(int32_t transaction_id, SYN_OCPP_Authori
 
 /** @brief OCPP Client instance state (EVSE Role). */
 typedef struct {
+    SYN_OCPP_Version version;  /**< Negotiated OCPP version (1.6 / 2.0.1 / 2.1) */
+    SYN_OCPP_V2GMode v2g_mode; /**< ISO 15118-20 V2G mode (Scheduled / Dynamic) */
     SYN_OCPP_RegistrationStatus registration_status; /**< Central System registration state */
     uint32_t heartbeat_interval_sec;                 /**< Heartbeat interval in seconds */
     uint32_t heartbeat_timer_ms;                     /**< Heartbeat countdown timer ms */
@@ -278,6 +308,33 @@ SYN_Status syn_ocpp_format_stop_transaction(SYN_OCPP_Client *client, int32_t tra
 SYN_Status syn_ocpp_format_meter_values(SYN_OCPP_Client *client, uint32_t connector_id,
                                         const SYN_OCPP_MeterValues *values, char *out_buf,
                                         size_t max_len, size_t *out_len);
+
+/**
+ * @brief Format an OCPP 2.1 Customer DisplayMessage Call frame.
+ * @param client Pointer to client instance.
+ * @param msg Pointer to DisplayMessage structure.
+ * @param out_buf Output text buffer.
+ * @param max_len Buffer capacity.
+ * @param out_len Pointer to store length.
+ * @return SYN_OK on success, error code on failure.
+ */
+SYN_Status syn_ocpp_format_display_message(SYN_OCPP_Client *client,
+                                           const SYN_OCPP_DisplayMessage *msg, char *out_buf,
+                                           size_t max_len, size_t *out_len);
+
+/**
+ * @brief Format an OCPP 2.1 ISO 15118-20 V2G Energy Transfer Request Call frame.
+ * @param client Pointer to client instance.
+ * @param mode V2G control mode (Scheduled / Dynamic).
+ * @param power_limit_w Power limit in Watts (positive for charging, negative for discharging).
+ * @param out_buf Output text buffer.
+ * @param max_len Buffer capacity.
+ * @param out_len Pointer to store length.
+ * @return SYN_OK on success, error code on failure.
+ */
+SYN_Status syn_ocpp_format_v2g_energy_transfer(SYN_OCPP_Client *client, SYN_OCPP_V2GMode mode,
+                                               int32_t power_limit_w, char *out_buf, size_t max_len,
+                                               size_t *out_len);
 
 /**
  * @brief Process an incoming OCPP-J JSON frame.

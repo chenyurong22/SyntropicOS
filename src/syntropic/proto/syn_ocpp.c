@@ -502,6 +502,51 @@ SYN_Status syn_ocpp_server_process_message(SYN_OCPP_Server *server, const char *
     return SYN_OK;
 }
 
+SYN_Status syn_ocpp_format_display_message(SYN_OCPP_Client *client,
+                                           const SYN_OCPP_DisplayMessage *msg, char *out_buf,
+                                           size_t max_len, size_t *out_len)
+{
+    if (client == NULL || msg == NULL || out_buf == NULL || out_len == NULL || max_len < 32U)
+        return SYN_INVALID_PARAM;
+
+    uint32_t msg_id = ++client->message_counter;
+    int written = snprintf(out_buf, max_len,
+                           "[2,\"%u\",\"DisplayMessage\",{\"message\":{\"id\":%u,\"header\":\"%s\","
+                           "\"content\":\"%s\",\"displayTimeSec\":%u}}]",
+                           (unsigned int)msg_id, (unsigned int)msg->message_id,
+                           msg->header ? msg->header : "", msg->content ? msg->content : "",
+                           (unsigned int)msg->display_time_s);
+
+    if (written < 0 || (size_t)written >= max_len)
+        return SYN_ERROR;
+
+    *out_len = (size_t)written;
+    return SYN_OK;
+}
+
+SYN_Status syn_ocpp_format_v2g_energy_transfer(SYN_OCPP_Client *client, SYN_OCPP_V2GMode mode,
+                                               int32_t power_limit_w, char *out_buf, size_t max_len,
+                                               size_t *out_len)
+{
+    if (client == NULL || out_buf == NULL || out_len == NULL || max_len < 32U)
+        return SYN_INVALID_PARAM;
+
+    client->v2g_mode = mode;
+    uint32_t msg_id = ++client->message_counter;
+    const char *mode_str = (mode == SYN_OCPP_V2G_SCHEDULED) ? "Scheduled" : "Dynamic";
+
+    int written = snprintf(out_buf, max_len,
+                           "[2,\"%u\",\"V2GEnergyTransfer\",{\"v2gMode\":\"%s\","
+                           "\"powerLimitW\":%d}]",
+                           (unsigned int)msg_id, mode_str, (int)power_limit_w);
+
+    if (written < 0 || (size_t)written >= max_len)
+        return SYN_ERROR;
+
+    *out_len = (size_t)written;
+    return SYN_OK;
+}
+
 SYN_Status syn_ocpp_format_call_error(const char *msg_id, const char *error_code,
                                       const char *error_description, char *out_buf, size_t max_len,
                                       size_t *out_len)

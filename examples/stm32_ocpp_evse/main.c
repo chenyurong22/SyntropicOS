@@ -25,6 +25,7 @@ static SYN_OCPP_MeterValues g_meter_readings = {
 
 /* Client Callbacks */
 static void on_client_registered(SYN_OCPP_RegistrationStatus status, uint32_t interval, void *ctx) {
+    (void)status;
     (void)ctx;
     printf("[EVSE Client] Registered with CSMS! Heartbeat Interval: %u sec\n", (unsigned int)interval);
 }
@@ -41,7 +42,7 @@ static SYN_OCPP_RegistrationStatus on_server_boot(const SYN_OCPP_ChargePointInfo
 }
 
 int main(void) {
-    printf("=== STM32 OCPP-J (v1.6 / v2.0.1) Dual-Role EVSE / CSMS Example ===\n");
+    printf("=== STM32 OCPP-J (v1.6 / v2.0.1 / v2.1) Dual-Role EVSE / CSMS Example ===\n");
 
     /* 1. Initialize EVSE Client and CSMS Server */
     syn_ocpp_init(&g_evse_client);
@@ -79,10 +80,16 @@ int main(void) {
     /* 4. Client processes BootNotification.conf response */
     syn_ocpp_process_message(&g_evse_client, server_resp_buf, server_resp_len, NULL, 0U, NULL);
 
-    /* 5. CSMS Server formats RemoteStartTransaction command */
+    /* 5. EVSE Client formats MeterValues.req */
+    if (syn_ocpp_format_meter_values(&g_evse_client, 1U, &g_meter_readings, client_req_buf,
+                                     sizeof(client_req_buf), &client_req_len) == SYN_OK) {
+        printf("\n[3. EVSE -> CSMS] MeterValues.req:\n%s\n", client_req_buf);
+    }
+
+    /* 6. CSMS Server formats RemoteStartTransaction command */
     if (syn_ocpp_server_format_remote_start(&g_csms_server, 1U, "RFID-VIP-101", server_resp_buf,
                                             sizeof(server_resp_buf), &server_resp_len) == SYN_OK) {
-        printf("\n[3. CSMS -> EVSE] RemoteStartTransaction.req:\n%s\n", server_resp_buf);
+        printf("\n[4. CSMS -> EVSE] RemoteStartTransaction.req:\n%s\n", server_resp_buf);
     }
 
     return 0;

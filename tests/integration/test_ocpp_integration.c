@@ -178,6 +178,26 @@ void test_ocpp_client_against_python_csms(void)
     json = recv_ocpp_json(sock, rx_buf, sizeof(rx_buf));
     TEST_ASSERT_NOT_NULL(json);
 
+    /* 7. Send OCPP 2.1 DisplayMessage */
+    SYN_OCPP_DisplayMessage disp = {201, "Rate Alert", "Off-peak energy tariff active", 60};
+    TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_format_display_message(&g_client, &disp, tx_payload,
+                                                              sizeof(tx_payload), &payload_len));
+    frame_len = format_client_ws_frame(tx_payload, payload_len, ws_frame);
+    send(sock, ws_frame, frame_len, 0);
+
+    json = recv_ocpp_json(sock, rx_buf, sizeof(rx_buf));
+    TEST_ASSERT_NOT_NULL(json);
+
+    /* 8. Send OCPP 2.1 ISO 15118-20 V2G Energy Transfer */
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_ocpp_format_v2g_energy_transfer(&g_client, SYN_OCPP_V2G_DYNAMIC, -10000,
+                                                    tx_payload, sizeof(tx_payload), &payload_len));
+    frame_len = format_client_ws_frame(tx_payload, payload_len, ws_frame);
+    send(sock, ws_frame, frame_len, 0);
+
+    json = recv_ocpp_json(sock, rx_buf, sizeof(rx_buf));
+    TEST_ASSERT_NOT_NULL(json);
+
     close(sock);
 }
 

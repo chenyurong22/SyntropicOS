@@ -439,6 +439,56 @@ void test_ocpp_call_error_formatting(void)
                                      buf, 40, &len));
 }
 
+void test_ocpp_21_features(void)
+{
+    char buf[256];
+    size_t len = 0;
+
+    /* Verify subprotocol strings */
+    TEST_ASSERT_EQUAL_STRING("ocpp2.1", SYN_OCPP_SUBPROTOCOL_2_1);
+    TEST_ASSERT_EQUAL_STRING("ocpp2.0.1", SYN_OCPP_SUBPROTOCOL_2_0_1);
+    TEST_ASSERT_EQUAL_STRING("ocpp1.6", SYN_OCPP_SUBPROTOCOL_1_6);
+
+    /* Verify DisplayMessage formatting */
+    SYN_OCPP_DisplayMessage msg = {101, "Tariff Notice", "Off-peak rate active", 30};
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_ocpp_format_display_message(NULL, &msg, buf, sizeof(buf), &len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_format_display_message(&g_ocpp_client, NULL, buf,
+                                                                         sizeof(buf), &len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_ocpp_format_display_message(&g_ocpp_client, &msg, buf, 10, &len));
+    TEST_ASSERT_EQUAL(
+        SYN_OK, syn_ocpp_format_display_message(&g_ocpp_client, &msg, buf, sizeof(buf), &len));
+    TEST_ASSERT_NOT_NULL(strstr(buf, "DisplayMessage"));
+    TEST_ASSERT_NOT_NULL(strstr(buf, "Off-peak rate active"));
+    TEST_ASSERT_EQUAL(SYN_ERROR,
+                      syn_ocpp_format_display_message(&g_ocpp_client, &msg, buf, 35, &len));
+
+    /* Verify V2G Energy Transfer formatting */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_ocpp_format_v2g_energy_transfer(NULL, SYN_OCPP_V2G_SCHEDULED, 11000, buf,
+                                                          sizeof(buf), &len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_ocpp_format_v2g_energy_transfer(&g_ocpp_client, SYN_OCPP_V2G_SCHEDULED,
+                                                          11000, buf, 10, &len));
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_ocpp_format_v2g_energy_transfer(&g_ocpp_client, SYN_OCPP_V2G_SCHEDULED,
+                                                          11000, buf, sizeof(buf), &len));
+    TEST_ASSERT_EQUAL(SYN_OCPP_V2G_SCHEDULED, g_ocpp_client.v2g_mode);
+    TEST_ASSERT_NOT_NULL(strstr(buf, "V2GEnergyTransfer"));
+    TEST_ASSERT_NOT_NULL(strstr(buf, "Scheduled"));
+
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_ocpp_format_v2g_energy_transfer(&g_ocpp_client, SYN_OCPP_V2G_DYNAMIC,
+                                                          -5000, buf, sizeof(buf), &len));
+    TEST_ASSERT_EQUAL(SYN_OCPP_V2G_DYNAMIC, g_ocpp_client.v2g_mode);
+    TEST_ASSERT_NOT_NULL(strstr(buf, "Dynamic"));
+    TEST_ASSERT_NOT_NULL(strstr(buf, "-5000"));
+
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_ocpp_format_v2g_energy_transfer(
+                                     &g_ocpp_client, SYN_OCPP_V2G_DYNAMIC, -5000, buf, 35, &len));
+}
+
 void run_ocpp_tests(void)
 {
     RUN_TEST(test_ocpp_init_and_null_checks);
@@ -453,4 +503,5 @@ void run_ocpp_tests(void)
     RUN_TEST(test_ocpp_process_message_extended);
     RUN_TEST(test_ocpp_server_role);
     RUN_TEST(test_ocpp_call_error_formatting);
+    RUN_TEST(test_ocpp_21_features);
 }

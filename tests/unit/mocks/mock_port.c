@@ -940,7 +940,9 @@ int syn_port_udp_recvfrom(SYN_Socket sock, void *buf, size_t max_len, SYN_SockAd
 
     MockUdpPacket *p = &mock_udp_rx_queue[mock_udp_rx_pos++];
     size_t to_copy = p->len < max_len ? p->len : max_len;
-    memcpy(buf, p->data, to_copy);
+    if (to_copy > 0 && buf) {
+        memcpy(buf, p->data, to_copy);
+    }
     if (from)
         *from = p->from;
     return (int)to_copy;

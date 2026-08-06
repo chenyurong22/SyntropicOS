@@ -246,86 +246,103 @@ static void fe_tobytes(uint8_t *s, const fe h)
     t[1] += q;
     t[0] -= q * 67108864;
 
-    s[0] = (uint8_t)t[0];
-    s[1] = (uint8_t)(t[0] >> 8);
-    s[2] = (uint8_t)(t[0] >> 16);
-    s[3] = (uint8_t)((t[0] >> 24) | (t[1] << 2));
-    s[4] = (uint8_t)(t[1] >> 6);
-    s[5] = (uint8_t)(t[1] >> 14);
-    s[6] = (uint8_t)((t[1] >> 22) | (t[2] << 2));
-    s[7] = (uint8_t)(t[2] >> 6);
-    s[8] = (uint8_t)(t[2] >> 14);
-    s[9] = (uint8_t)((t[2] >> 22) | (t[3] << 4));
-    s[10] = (uint8_t)(t[3] >> 4);
-    s[11] = (uint8_t)(t[3] >> 12);
-    s[12] = (uint8_t)((t[3] >> 20) | (t[4] << 4));
-    s[13] = (uint8_t)(t[4] >> 4);
-    s[14] = (uint8_t)(t[4] >> 12);
-    s[15] = (uint8_t)((t[4] >> 20) | (t[5] << 6));
-    s[16] = (uint8_t)(t[5] >> 2);
-    s[17] = (uint8_t)(t[5] >> 10);
-    s[18] = (uint8_t)((t[5] >> 18) | (t[6] << 2));
-    s[19] = (uint8_t)(t[6] >> 6);
-    s[20] = (uint8_t)(t[6] >> 14);
-    s[21] = (uint8_t)((t[6] >> 22) | (t[7] << 1));
-    s[22] = (uint8_t)(t[7] >> 7);
-    s[23] = (uint8_t)(t[7] >> 15);
-    s[24] = (uint8_t)((t[7] >> 23) | (t[8] << 1));
-    s[25] = (uint8_t)(t[8] >> 7);
-    s[26] = (uint8_t)(t[8] >> 15);
-    s[27] = (uint8_t)((t[8] >> 23) | (t[9] << 3));
-    s[28] = (uint8_t)(t[9] >> 5);
-    s[29] = (uint8_t)(t[9] >> 13);
-    s[30] = (uint8_t)(t[9] >> 21);
-    s[31] = (uint8_t)(t[9] >> 29);
+    uint64_t u0 = (uint64_t)t[0];
+    uint64_t u1 = (uint64_t)t[1];
+    uint64_t u2 = (uint64_t)t[2];
+    uint64_t u3 = (uint64_t)t[3];
+    uint64_t u4 = (uint64_t)t[4];
+    uint64_t u5 = (uint64_t)t[5];
+    uint64_t u6 = (uint64_t)t[6];
+    uint64_t u7 = (uint64_t)t[7];
+    uint64_t u8 = (uint64_t)t[8];
+    uint64_t u9 = (uint64_t)t[9];
+
+    s[0] = (uint8_t)u0;
+    s[1] = (uint8_t)(u0 >> 8);
+    s[2] = (uint8_t)(u0 >> 16);
+    s[3] = (uint8_t)((u0 >> 24) | (u1 << 2));
+    s[4] = (uint8_t)(u1 >> 6);
+    s[5] = (uint8_t)(u1 >> 14);
+    s[6] = (uint8_t)((u1 >> 22) | (u2 << 2));
+    s[7] = (uint8_t)(u2 >> 6);
+    s[8] = (uint8_t)(u2 >> 14);
+    s[9] = (uint8_t)((u2 >> 22) | (u3 << 4));
+    s[10] = (uint8_t)(u3 >> 4);
+    s[11] = (uint8_t)(u3 >> 12);
+    s[12] = (uint8_t)((u3 >> 20) | (u4 << 4));
+    s[13] = (uint8_t)(u4 >> 4);
+    s[14] = (uint8_t)(u4 >> 12);
+    s[15] = (uint8_t)((u4 >> 20) | (u5 << 6));
+    s[16] = (uint8_t)(u5 >> 2);
+    s[17] = (uint8_t)(u5 >> 10);
+    s[18] = (uint8_t)((u5 >> 18) | (u6 << 2));
+    s[19] = (uint8_t)(u6 >> 6);
+    s[20] = (uint8_t)(u6 >> 14);
+    s[21] = (uint8_t)((u6 >> 22) | (u7 << 1));
+    s[22] = (uint8_t)(u7 >> 7);
+    s[23] = (uint8_t)(u7 >> 15);
+    s[24] = (uint8_t)((u7 >> 23) | (u8 << 1));
+    s[25] = (uint8_t)(u8 >> 7);
+    s[26] = (uint8_t)(u8 >> 15);
+    s[27] = (uint8_t)((u8 >> 23) | (u9 << 3));
+    s[28] = (uint8_t)(u9 >> 5);
+    s[29] = (uint8_t)(u9 >> 13);
+    s[30] = (uint8_t)(u9 >> 21);
+    s[31] = (uint8_t)(u9 >> 29);
 }
 
 static void fe_add(fe h, const fe f, const fe g)
 {
     for (int i = 0; i < 10; i++) {
-        h[i] = f[i] + g[i];
+        h[i] = (int64_t)((uint64_t)f[i] + (uint64_t)g[i]);
     }
 }
 
 static void fe_sub(fe h, const fe f, const fe g)
 {
     for (int i = 0; i < 10; i++) {
-        h[i] = f[i] - g[i];
+        h[i] = (int64_t)((uint64_t)f[i] - (uint64_t)g[i]);
     }
 }
 
 static void fe_mul(fe h, const fe f, const fe g)
 {
-    int64_t f0 = f[0], f1 = f[1], f2 = f[2], f3 = f[3], f4 = f[4];
-    int64_t f5 = f[5], f6 = f[6], f7 = f[7], f8 = f[8], f9 = f[9];
-    int64_t g0 = g[0], g1 = g[1], g2 = g[2], g3 = g[3], g4 = g[4];
-    int64_t g5 = g[5], g6 = g[6], g7 = g[7], g8 = g[8], g9 = g[9];
+#if defined(__SIZEOF_INT128__)
+    typedef __int128_t i128;
+#else
+    typedef int64_t i128;
+#endif
 
-    int64_t g1_19 = 19 * g1, g2_19 = 19 * g2, g3_19 = 19 * g3, g4_19 = 19 * g4;
-    int64_t g5_19 = 19 * g5, g6_19 = 19 * g6, g7_19 = 19 * g7, g8_19 = 19 * g8, g9_19 = 19 * g9;
+    i128 f0 = f[0], f1 = f[1], f2 = f[2], f3 = f[3], f4 = f[4];
+    i128 f5 = f[5], f6 = f[6], f7 = f[7], f8 = f[8], f9 = f[9];
+    i128 g0 = g[0], g1 = g[1], g2 = g[2], g3 = g[3], g4 = g[4];
+    i128 g5 = g[5], g6 = g[6], g7 = g[7], g8 = g[8], g9 = g[9];
 
-    int64_t h0 = f0 * g0 + f1 * g9_19 + f2 * g8_19 + f3 * g7_19 + f4 * g6_19 + f5 * g5_19 +
-                 f6 * g4_19 + f7 * g3_19 + f8 * g2_19 + f9 * g1_19;
-    int64_t h1 = f0 * g1 + f1 * g0 + f2 * g9_19 + f3 * g8_19 + f4 * g7_19 + f5 * g6_19 +
-                 f6 * g5_19 + f7 * g4_19 + f8 * g3_19 + f9 * g2_19;
-    int64_t h2 = f0 * g2 + f1 * g1 + f2 * g0 + f3 * g9_19 + f4 * g8_19 + f5 * g7_19 + f6 * g6_19 +
-                 f7 * g5_19 + f8 * g4_19 + f9 * g3_19;
-    int64_t h3 = f0 * g3 + f1 * g2 + f2 * g1 + f3 * g0 + f4 * g9_19 + f5 * g8_19 + f6 * g7_19 +
-                 f7 * g6_19 + f8 * g5_19 + f9 * g4_19;
-    int64_t h4 = f0 * g4 + f1 * g3 + f2 * g2 + f3 * g1 + f4 * g0 + f5 * g9_19 + f6 * g8_19 +
-                 f7 * g7_19 + f8 * g6_19 + f9 * g5_19;
-    int64_t h5 = f0 * g5 + f1 * g4 + f2 * g3 + f3 * g2 + f4 * g1 + f5 * g0 + f6 * g9_19 +
-                 f7 * g8_19 + f8 * g7_19 + f9 * g6_19;
-    int64_t h6 = f0 * g6 + f1 * g5 + f2 * g4 + f3 * g3 + f4 * g2 + f5 * g1 + f6 * g0 + f7 * g9_19 +
-                 f8 * g8_19 + f9 * g7_19;
-    int64_t h7 = f0 * g7 + f1 * g6 + f2 * g5 + f3 * g4 + f4 * g3 + f5 * g2 + f6 * g1 + f7 * g0 +
-                 f8 * g9_19 + f9 * g8_19;
-    int64_t h8 = f0 * g8 + f1 * g7 + f2 * g6 + f3 * g5 + f4 * g4 + f5 * g3 + f6 * g2 + f7 * g1 +
-                 f8 * g0 + f9 * g9_19;
-    int64_t h9 = f0 * g9 + f1 * g8 + f2 * g7 + f3 * g6 + f4 * g5 + f5 * g4 + f6 * g3 + f7 * g2 +
-                 f8 * g1 + f9 * g0;
+    i128 g1_19 = 19 * g1, g2_19 = 19 * g2, g3_19 = 19 * g3, g4_19 = 19 * g4;
+    i128 g5_19 = 19 * g5, g6_19 = 19 * g6, g7_19 = 19 * g7, g8_19 = 19 * g8, g9_19 = 19 * g9;
 
-    int64_t c;
+    i128 h0 = f0 * g0 + f1 * g9_19 + f2 * g8_19 + f3 * g7_19 + f4 * g6_19 + f5 * g5_19 +
+              f6 * g4_19 + f7 * g3_19 + f8 * g2_19 + f9 * g1_19;
+    i128 h1 = f0 * g1 + f1 * g0 + f2 * g9_19 + f3 * g8_19 + f4 * g7_19 + f5 * g6_19 + f6 * g5_19 +
+              f7 * g4_19 + f8 * g3_19 + f9 * g2_19;
+    i128 h2 = f0 * g2 + f1 * g1 + f2 * g0 + f3 * g9_19 + f4 * g8_19 + f5 * g7_19 + f6 * g6_19 +
+              f7 * g5_19 + f8 * g4_19 + f9 * g3_19;
+    i128 h3 = f0 * g3 + f1 * g2 + f2 * g1 + f3 * g0 + f4 * g9_19 + f5 * g8_19 + f6 * g7_19 +
+              f7 * g6_19 + f8 * g5_19 + f9 * g4_19;
+    i128 h4 = f0 * g4 + f1 * g3 + f2 * g2 + f3 * g1 + f4 * g0 + f5 * g9_19 + f6 * g8_19 +
+              f7 * g7_19 + f8 * g6_19 + f9 * g5_19;
+    i128 h5 = f0 * g5 + f1 * g4 + f2 * g3 + f3 * g2 + f4 * g1 + f5 * g0 + f6 * g9_19 + f7 * g8_19 +
+              f8 * g7_19 + f9 * g6_19;
+    i128 h6 = f0 * g6 + f1 * g5 + f2 * g4 + f3 * g3 + f4 * g2 + f5 * g1 + f6 * g0 + f7 * g9_19 +
+              f8 * g8_19 + f9 * g7_19;
+    i128 h7 = f0 * g7 + f1 * g6 + f2 * g5 + f3 * g4 + f4 * g3 + f5 * g2 + f6 * g1 + f7 * g0 +
+              f8 * g9_19 + f9 * g8_19;
+    i128 h8 = f0 * g8 + f1 * g7 + f2 * g6 + f3 * g5 + f4 * g4 + f5 * g3 + f6 * g2 + f7 * g1 +
+              f8 * g0 + f9 * g9_19;
+    i128 h9 = f0 * g9 + f1 * g8 + f2 * g7 + f3 * g6 + f4 * g5 + f5 * g4 + f6 * g3 + f7 * g2 +
+              f8 * g1 + f9 * g0;
+
+    i128 c;
     c = (h0 + (1 << 25)) >> 26;
     h1 += c;
     h0 -= c * 67108864;

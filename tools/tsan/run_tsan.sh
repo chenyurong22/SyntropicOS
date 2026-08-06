@@ -9,6 +9,7 @@ echo "=== SyntropicOS ThreadSanitizer (TSan) Multithread & Data Race Analysis ==
 
 BUILD_DIR="build/tests_tsan"
 mkdir -p "${BUILD_DIR}"
+make -f tests/Makefile.unity wasm-fixtures BUILD_DIR=build/tests
 
 # Find all C files
 SRC_FILES=$(find src/syntropic -name "*.c" ! -path "*/port_stubs/*" ! -name "syn_wg.c" ! -name "syn_hpclock.c" ! -name "syn_timesync.c" ! -name "syn_lfs.c")
@@ -17,7 +18,7 @@ PORT_FILES="src/port/posix/port_posix_socket.c"
 # Compile with ThreadSanitizer flags
 gcc -std=c99 -g -fsanitize=thread -pthread -O1 \
     -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE \
-    -I. -Isrc -Itests/unit -Itests/unit/mocks \
+    -I. -Isrc -Itests/unit -Itests/unit/mocks -Ibuild/tests \
     -DSYN_LOG_COLOR=1 -DSYN_USE_TICKLESS=1 -DSYN_USE_DMA=1 -DSYN_USE_MULTICORE=1 \
     ${SRC_FILES} ${PORT_FILES} \
     tests/unit/unity/unity.c \

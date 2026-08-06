@@ -169,6 +169,7 @@ void run_biquad_tests(void);
 void run_fft_tests(void);
 void run_filter_design_tests(void);
 void run_foc_tests(void);
+void run_foc_encoder_tests(void);
 void run_foc_observer_tests(void);
 void run_fault_tests(void);
 void run_autotune_tests(void);
@@ -389,6 +390,7 @@ int main(void)
 
     /* FOC transforms & Observer */
     run_foc_tests();
+    run_foc_encoder_tests();
     run_foc_observer_tests();
 
     /* IMU Sensor Fusion */

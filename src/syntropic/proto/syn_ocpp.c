@@ -1,6 +1,6 @@
 /**
  * @file syn_ocpp.c
- * @brief Open Charge Point Protocol over JSON (OCPP-J 1.6 / 2.0.1) Client Engine Implementation.
+ * @brief Open Charge Point Protocol over JSON (OCPP-J 1.6 / 2.0.1) Dual-Role Engine Implementation.
  * @ingroup syn_proto
  */
 
@@ -40,6 +40,8 @@ static const char *status_to_str(SYN_OCPP_ChargePointStatus status)
         return "Unavailable";
     }
 }
+
+/* ── EVSE Client Implementation ─────────────────────────────────────── */
 
 SYN_Status syn_ocpp_init(SYN_OCPP_Client *client)
 {
@@ -243,8 +245,6 @@ SYN_Status syn_ocpp_format_meter_values(SYN_OCPP_Client *client, uint32_t connec
     return SYN_OK;
 }
 
-/* ── Message Dispatch & Processing ──────────────────────────────────── */
-
 SYN_Status syn_ocpp_process_message(SYN_OCPP_Client *client, const char *in_buf, size_t in_len,
                                     char *out_resp, size_t max_resp_len, size_t *out_resp_len)
 {
@@ -253,14 +253,11 @@ SYN_Status syn_ocpp_process_message(SYN_OCPP_Client *client, const char *in_buf,
 
     if (out_resp_len != NULL)
         *out_resp_len = 0U;
-
-    /* Frame Type check: CallResult [3, ...], CallError [4, ...], Call [2, ...] */
     if (in_buf[0] != '[')
         return SYN_ERROR;
 
     uint8_t msg_type = (uint8_t)(in_buf[1] - '0');
 
-    /* 1. Response Handling: CallResult (3) */
     if (msg_type == SYN_OCPP_MSG_TYPE_CALLRESULT) {
         if (strstr(in_buf, "\"Accepted\"") != NULL ||
             strstr(in_buf, "\"status\":\"Accepted\"") != NULL) {
@@ -273,7 +270,6 @@ SYN_Status syn_ocpp_process_message(SYN_OCPP_Client *client, const char *in_buf,
                 client->auth_cb(client->active_id_tag, SYN_OCPP_AUTH_ACCEPTED, client->user_ctx);
             }
         }
-        /* Check transactionId in StartTransaction response */
         const char *tx_ptr = strstr(in_buf, "\"transactionId\":");
         if (tx_ptr != NULL) {
             int tx_id = atoi(tx_ptr + 16);
@@ -287,7 +283,6 @@ SYN_Status syn_ocpp_process_message(SYN_OCPP_Client *client, const char *in_buf,
         return SYN_OK;
     }
 
-    /* 2. Incoming Command Handling: Call (2) */
     if (msg_type == SYN_OCPP_MSG_TYPE_CALL && out_resp != NULL && out_resp_len != NULL &&
         max_resp_len >= 32U) {
         char msg_id[32] = {0};
@@ -326,7 +321,6 @@ SYN_Status syn_ocpp_process_message(SYN_OCPP_Client *client, const char *in_buf,
             return SYN_OK;
         }
 
-        /* Generic CallResult response */
         int written = snprintf(out_resp, max_resp_len, "[3,\"%s\",{}]", msg_id[0] ? msg_id : "1");
         if (written > 0 && (size_t)written < max_resp_len)
             *out_resp_len = (size_t)written;
@@ -355,4 +349,156 @@ void syn_ocpp_tick(SYN_OCPP_Client *client, uint32_t dt_ms, char *out_hb_buf, si
             (void)syn_ocpp_format_heartbeat(client, out_hb_buf, max_len, out_len);
         }
     }
+}
+
+/* ── CSMS Server Implementation ─────────────────────────────────────── */
+
+SYN_Status syn_ocpp_server_init(SYN_OCPP_Server *server)
+{
+    if (server == NULL)
+        return SYN_INVALID_PARAM;
+    memset(server, 0, sizeof(*server));
+    server->next_transaction_id = 1000;
+    return SYN_OK;
+}
+
+SYN_Status syn_ocpp_server_set_callbacks(SYN_OCPP_Server *server,
+                                         SYN_OCPP_ServerBootHandler boot_cb,
+                                         SYN_OCPP_ServerAuthorizeHandler auth_cb,
+                                         SYN_OCPP_ServerStartTxHandler start_tx_cb, void *user_ctx)
+{
+    if (server == NULL)
+        return SYN_INVALID_PARAM;
+    server->boot_cb = boot_cb;
+    server->auth_cb = auth_cb;
+    server->start_tx_cb = start_tx_cb;
+    server->user_ctx = user_ctx;
+    return SYN_OK;
+}
+
+SYN_Status syn_ocpp_server_format_remote_start(SYN_OCPP_Server *server, uint32_t connector_id,
+                                               const char *id_tag, char *out_buf, size_t max_len,
+                                               size_t *out_len)
+{
+    if (server == NULL || id_tag == NULL || out_buf == NULL || out_len == NULL || max_len < 64U) {
+        return SYN_INVALID_PARAM;
+    }
+
+    server->message_counter++;
+    int written =
+        snprintf(out_buf, max_len,
+                 "[2,\"%u\",\"RemoteStartTransaction\",{"
+                 "\"connectorId\":%u,"
+                 "\"idTag\":\"%s\"}]",
+                 (unsigned int)server->message_counter, (unsigned int)connector_id, id_tag);
+
+    if (written < 0 || (size_t)written >= max_len)
+        return SYN_ERROR;
+    *out_len = (size_t)written;
+    return SYN_OK;
+}
+
+SYN_Status syn_ocpp_server_format_remote_stop(SYN_OCPP_Server *server, int32_t transaction_id,
+                                              char *out_buf, size_t max_len, size_t *out_len)
+{
+    if (server == NULL || out_buf == NULL || out_len == NULL || max_len < 48U) {
+        return SYN_INVALID_PARAM;
+    }
+
+    server->message_counter++;
+    int written = snprintf(out_buf, max_len,
+                           "[2,\"%u\",\"RemoteStopTransaction\",{"
+                           "\"transactionId\":%d}]",
+                           (unsigned int)server->message_counter, (int)transaction_id);
+
+    if (written < 0 || (size_t)written >= max_len)
+        return SYN_ERROR;
+    *out_len = (size_t)written;
+    return SYN_OK;
+}
+
+SYN_Status syn_ocpp_server_process_message(SYN_OCPP_Server *server, const char *in_buf,
+                                           size_t in_len, char *out_resp, size_t max_resp_len,
+                                           size_t *out_resp_len)
+{
+    if (server == NULL || in_buf == NULL || out_resp == NULL || out_resp_len == NULL ||
+        in_len < 5U || max_resp_len < 64U) {
+        return SYN_INVALID_PARAM;
+    }
+
+    *out_resp_len = 0U;
+    if (in_buf[0] != '[')
+        return SYN_ERROR;
+
+    uint8_t msg_type = (uint8_t)(in_buf[1] - '0');
+    if (msg_type != SYN_OCPP_MSG_TYPE_CALL)
+        return SYN_OK;
+
+    char msg_id[32] = {0};
+    const char *id_start = strchr(in_buf, '"');
+    if (id_start != NULL) {
+        const char *id_end = strchr(id_start + 1, '"');
+        if (id_end != NULL && (size_t)(id_end - id_start - 1) < sizeof(msg_id)) {
+            memcpy(msg_id, id_start + 1, id_end - id_start - 1);
+        }
+    }
+
+    /* 1. BootNotification */
+    if (strstr(in_buf, "\"BootNotification\"") != NULL) {
+        SYN_OCPP_RegistrationStatus st = SYN_OCPP_REGISTRATION_ACCEPTED;
+        uint32_t interval = 60U;
+        if (server->boot_cb != NULL) {
+            SYN_OCPP_ChargePointInfo info = {"StationVendor", "StationModel", "SN-1", "v1.0"};
+            st = server->boot_cb(&info, &interval, server->user_ctx);
+        }
+        int written = snprintf(out_resp, max_resp_len,
+                               "[3,\"%s\",{"
+                               "\"status\":\"%s\","
+                               "\"currentTime\":\"2026-08-06T12:00:00Z\","
+                               "\"interval\":%u}]",
+                               msg_id[0] ? msg_id : "1",
+                               (st == SYN_OCPP_REGISTRATION_ACCEPTED) ? "Accepted" : "Rejected",
+                               (unsigned int)interval);
+        if (written > 0 && (size_t)written < max_resp_len)
+            *out_resp_len = (size_t)written;
+        return SYN_OK;
+    }
+
+    /* 2. Authorize */
+    if (strstr(in_buf, "\"Authorize\"") != NULL) {
+        SYN_OCPP_AuthorizationStatus auth_st = SYN_OCPP_AUTH_ACCEPTED;
+        if (server->auth_cb != NULL) {
+            auth_st = server->auth_cb("TAG-1", server->user_ctx);
+        }
+        int written = snprintf(
+            out_resp, max_resp_len, "[3,\"%s\",{\"idTagInfo\":{\"status\":\"%s\"}}]",
+            msg_id[0] ? msg_id : "1", (auth_st == SYN_OCPP_AUTH_ACCEPTED) ? "Accepted" : "Invalid");
+        if (written > 0 && (size_t)written < max_resp_len)
+            *out_resp_len = (size_t)written;
+        return SYN_OK;
+    }
+
+    /* 3. StartTransaction */
+    if (strstr(in_buf, "\"StartTransaction\"") != NULL) {
+        int32_t tx_id = server->next_transaction_id++;
+        if (server->start_tx_cb != NULL) {
+            int32_t user_tx = server->start_tx_cb(1, "TAG-1", 0, server->user_ctx);
+            if (user_tx > 0)
+                tx_id = user_tx;
+        }
+        int written = snprintf(out_resp, max_resp_len,
+                               "[3,\"%s\",{"
+                               "\"transactionId\":%d,"
+                               "\"idTagInfo\":{\"status\":\"Accepted\"}}]",
+                               msg_id[0] ? msg_id : "1", (int)tx_id);
+        if (written > 0 && (size_t)written < max_resp_len)
+            *out_resp_len = (size_t)written;
+        return SYN_OK;
+    }
+
+    /* Generic response for Heartbeat / StatusNotification / MeterValues / StopTransaction */
+    int written = snprintf(out_resp, max_resp_len, "[3,\"%s\",{}]", msg_id[0] ? msg_id : "1");
+    if (written > 0 && (size_t)written < max_resp_len)
+        *out_resp_len = (size_t)written;
+    return SYN_OK;
 }

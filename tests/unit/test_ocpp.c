@@ -1,6 +1,6 @@
 /**
  * @file test_ocpp.c
- * @brief Unit tests for Open Charge Point Protocol (OCPP-J 1.6 / 2.0.1) Client Engine.
+ * @brief Unit tests for Open Charge Point Protocol (OCPP-J 1.6 / 2.0.1) Dual-Role Engine.
  */
 
 #include "syntropic/proto/syn_ocpp.h"
@@ -9,11 +9,13 @@
 #include <string.h>
 
 static SYN_OCPP_Client g_ocpp_client;
+static SYN_OCPP_Server g_ocpp_server;
 static bool g_reg_cb_called = false;
 static bool g_auth_cb_called = false;
 static bool g_start_tx_cb_called = false;
 static bool g_remote_start_called = false;
 static bool g_remote_stop_called = false;
+static bool g_server_boot_called = false;
 
 static void on_ocpp_reg(SYN_OCPP_RegistrationStatus status, uint32_t interval, void *ctx)
 {
@@ -56,6 +58,34 @@ static bool on_ocpp_remote_stop(int32_t tx_id, void *ctx)
     return true;
 }
 
+static SYN_OCPP_RegistrationStatus on_server_boot(const SYN_OCPP_ChargePointInfo *info,
+                                                  uint32_t *hb_sec, void *ctx)
+{
+    (void)info;
+    (void)ctx;
+    g_server_boot_called = true;
+    if (hb_sec)
+        *hb_sec = 120U;
+    return SYN_OCPP_REGISTRATION_ACCEPTED;
+}
+
+static SYN_OCPP_AuthorizationStatus on_server_auth(const char *id_tag, void *ctx)
+{
+    (void)id_tag;
+    (void)ctx;
+    return SYN_OCPP_AUTH_ACCEPTED;
+}
+
+static int32_t on_server_start_tx(uint32_t conn_id, const char *id_tag, uint32_t meter_start,
+                                  void *ctx)
+{
+    (void)conn_id;
+    (void)id_tag;
+    (void)meter_start;
+    (void)ctx;
+    return 2026;
+}
+
 void test_ocpp_init_and_null_checks(void)
 {
     char buf[128];
@@ -63,6 +93,9 @@ void test_ocpp_init_and_null_checks(void)
     SYN_OCPP_ChargePointInfo info = {"Vendor", "Model", "SN123", "v1.0"};
 
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_init(NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_server_init(NULL));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_ocpp_server_set_callbacks(NULL, NULL, NULL, NULL, NULL));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
                       syn_ocpp_format_boot_notification(NULL, &info, buf, sizeof(buf), &len));
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_format_heartbeat(NULL, buf, sizeof(buf), &len));
@@ -168,7 +201,6 @@ void test_ocpp_process_remote_start_stop(void)
                                                        resp, sizeof(resp), &resp_len));
     TEST_ASSERT_TRUE(g_remote_stop_called);
 
-    /* Test without callbacks registered */
     syn_ocpp_init(&g_ocpp_client);
     TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_process_message(&g_ocpp_client, cmd_start, strlen(cmd_start),
                                                        resp, sizeof(resp), &resp_len));
@@ -212,7 +244,6 @@ void test_ocpp_all_status_enums_and_small_buffers(void)
                                                               "NoError", buf, sizeof(buf), &len));
     }
 
-    /* Small buffer errors */
     SYN_OCPP_ChargePointInfo info = {"Vendor", "Model", "SN", "v1"};
     SYN_OCPP_MeterValues mv = {100, 230, 16, 3600, 50};
 
@@ -239,7 +270,6 @@ void test_ocpp_process_message_extended(void)
     syn_ocpp_set_callbacks(&g_ocpp_client, on_ocpp_reg, on_ocpp_auth, on_ocpp_start_tx, NULL, NULL,
                            NULL);
 
-    /* StartTransaction response containing idTagInfo and transactionId */
     const char *resp_tx =
         "[3,\"100\",{\"idTagInfo\":{\"status\":\"Accepted\"},\"transactionId\":1001}]";
     TEST_ASSERT_EQUAL(
@@ -247,7 +277,6 @@ void test_ocpp_process_message_extended(void)
     TEST_ASSERT_EQUAL(1001, g_ocpp_client.active_transaction_id);
     TEST_ASSERT_TRUE(g_start_tx_cb_called);
 
-    /* Unknown Call Action fallback */
     const char *cmd_unknown = "[2,\"200\",\"DataTransfer\",{\"vendorId\":\"Vendor\"}]";
     char resp[128];
     size_t resp_len = 0;
@@ -256,16 +285,90 @@ void test_ocpp_process_message_extended(void)
                                                resp, sizeof(resp), &resp_len));
     TEST_ASSERT_NOT_NULL(strstr(resp, "[3,\"200\",{}]"));
 
-    /* CallError message (Type 4) */
     const char *err_msg = "[4,\"300\",\"NotSupported\",\"Action not supported\",{}]";
     TEST_ASSERT_EQUAL(
         SYN_OK, syn_ocpp_process_message(&g_ocpp_client, err_msg, strlen(err_msg), NULL, 0, NULL));
 
-    /* Invalid frames */
     TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_process_message(&g_ocpp_client, "123", 3, resp,
                                                                   sizeof(resp), &resp_len));
     TEST_ASSERT_EQUAL(SYN_ERROR, syn_ocpp_process_message(&g_ocpp_client, "INVALID_FRAME", 13, resp,
                                                           sizeof(resp), &resp_len));
+}
+
+void test_ocpp_server_role(void)
+{
+    syn_ocpp_server_init(&g_ocpp_server);
+    g_server_boot_called = false;
+    syn_ocpp_server_set_callbacks(&g_ocpp_server, on_server_boot, on_server_auth,
+                                  on_server_start_tx, NULL);
+
+    char resp[256];
+    size_t resp_len = 0;
+
+    /* 1. Server processes station BootNotification */
+    const char *req_boot = "[2,\"1\",\"BootNotification\",{\"chargePointVendor\":\"Vendor\"}]";
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_ocpp_server_process_message(&g_ocpp_server, req_boot, strlen(req_boot),
+                                                      resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_TRUE(g_server_boot_called);
+    TEST_ASSERT_NOT_NULL(strstr(resp, "Accepted"));
+    TEST_ASSERT_NOT_NULL(strstr(resp, "120"));
+
+    /* 2. Server processes station Authorize */
+    const char *req_auth = "[2,\"2\",\"Authorize\",{\"idTag\":\"RFID-1\"}]";
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_ocpp_server_process_message(&g_ocpp_server, req_auth, strlen(req_auth),
+                                                      resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_NOT_NULL(strstr(resp, "Accepted"));
+
+    /* 3. Server processes station StartTransaction */
+    const char *req_tx = "[2,\"3\",\"StartTransaction\",{\"connectorId\":1,\"idTag\":\"RFID-1\"}]";
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_ocpp_server_process_message(&g_ocpp_server, req_tx, strlen(req_tx), resp,
+                                                      sizeof(resp), &resp_len));
+    TEST_ASSERT_NOT_NULL(strstr(resp, "2026"));
+
+    /* 4. Server processes Heartbeat call */
+    const char *req_hb = "[2,\"4\",\"Heartbeat\",{}]";
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_ocpp_server_process_message(&g_ocpp_server, req_hb, strlen(req_hb), resp,
+                                                      sizeof(resp), &resp_len));
+
+    /* 5. Server formats RemoteStart / RemoteStop commands */
+    char cmd_buf[128];
+    size_t cmd_len = 0;
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_ocpp_server_format_remote_start(&g_ocpp_server, 1, "REMOTE-TAG", cmd_buf,
+                                                          sizeof(cmd_buf), &cmd_len));
+    TEST_ASSERT_NOT_NULL(strstr(cmd_buf, "RemoteStartTransaction"));
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_server_format_remote_stop(&g_ocpp_server, 2026, cmd_buf,
+                                                                 sizeof(cmd_buf), &cmd_len));
+    TEST_ASSERT_NOT_NULL(strstr(cmd_buf, "RemoteStopTransaction"));
+
+    /* Null & error checks */
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_server_format_remote_start(
+                                             NULL, 1, "TAG", cmd_buf, sizeof(cmd_buf), &cmd_len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM, syn_ocpp_server_format_remote_stop(
+                                             NULL, 1, cmd_buf, sizeof(cmd_buf), &cmd_len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_ocpp_server_process_message(NULL, req_boot, strlen(req_boot), resp,
+                                                      sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_server_process_message(&g_ocpp_server, "[3,\"1\",{}]", 10,
+                                                              resp, sizeof(resp), &resp_len));
+
+    /* Server process message without callbacks */
+    syn_ocpp_server_init(&g_ocpp_server);
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_ocpp_server_process_message(&g_ocpp_server, req_boot, strlen(req_boot),
+                                                      resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_NOT_NULL(strstr(resp, "Accepted"));
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_ocpp_server_process_message(&g_ocpp_server, req_auth, strlen(req_auth),
+                                                      resp, sizeof(resp), &resp_len));
+    TEST_ASSERT_EQUAL(SYN_OK,
+                      syn_ocpp_server_process_message(&g_ocpp_server, req_tx, strlen(req_tx), resp,
+                                                      sizeof(resp), &resp_len));
 }
 
 void run_ocpp_tests(void)
@@ -280,4 +383,5 @@ void run_ocpp_tests(void)
     RUN_TEST(test_ocpp_tick);
     RUN_TEST(test_ocpp_all_status_enums_and_small_buffers);
     RUN_TEST(test_ocpp_process_message_extended);
+    RUN_TEST(test_ocpp_server_role);
 }

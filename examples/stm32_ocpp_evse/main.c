@@ -1,6 +1,6 @@
 /**
  * @file main.c
- * @brief STM32 OCPP-J (Open Charge Point Protocol 1.6 / 2.0.1) EVSE Example.
+ * @brief STM32 OCPP-J (Open Charge Point Protocol 1.6 / 2.0.1) Dual-Role Example.
  * @ingroup syn_examples
  */
 
@@ -13,6 +13,8 @@
 #include <string.h>
 
 static SYN_OCPP_Client g_evse_client;
+static SYN_OCPP_Server g_csms_server;
+
 static SYN_OCPP_MeterValues g_meter_readings = {
     .energy_wh = 14200U,
     .voltage_v = 230U,
@@ -21,44 +23,32 @@ static SYN_OCPP_MeterValues g_meter_readings = {
     .soc_percent = 65U
 };
 
-static void on_ocpp_registered(SYN_OCPP_RegistrationStatus status, uint32_t interval, void *ctx) {
+/* Client Callbacks */
+static void on_client_registered(SYN_OCPP_RegistrationStatus status, uint32_t interval, void *ctx) {
     (void)ctx;
-    printf("[OCPP Client] Registration Status: %s, Heartbeat Interval: %u sec\n",
-           (status == SYN_OCPP_REGISTRATION_ACCEPTED) ? "ACCEPTED" : "PENDING/REJECTED",
-           (unsigned int)interval);
+    printf("[EVSE Client] Registered with CSMS! Heartbeat Interval: %u sec\n", (unsigned int)interval);
 }
 
-static void on_ocpp_authorized(const char *id_tag, SYN_OCPP_AuthorizationStatus status, void *ctx) {
+/* Server Callbacks */
+static SYN_OCPP_RegistrationStatus on_server_boot(const SYN_OCPP_ChargePointInfo *info,
+                                                   uint32_t *hb_sec, void *ctx) {
     (void)ctx;
-    printf("[OCPP Client] IdTag '%s' Authorization: %s\n", id_tag ? id_tag : "UNKNOWN",
-           (status == SYN_OCPP_AUTH_ACCEPTED) ? "ACCEPTED" : "DENIED");
-}
-
-static void on_ocpp_start_tx_resp(int32_t tx_id, SYN_OCPP_AuthorizationStatus status, void *ctx) {
-    (void)status; (void)ctx;
-    printf("[OCPP Client] StartTransaction Confirmed: Transaction ID #%d\n", (int)tx_id);
-}
-
-static bool on_ocpp_remote_start_cmd(uint32_t connector_id, const char *id_tag, void *ctx) {
-    (void)ctx;
-    printf("[OCPP CSMS Command] RemoteStartTransaction received on Connector #%u (IdTag: %s)\n",
-           (unsigned int)connector_id, id_tag ? id_tag : "REMOTE");
-    return true;
-}
-
-static bool on_ocpp_remote_stop_cmd(int32_t transaction_id, void *ctx) {
-    (void)ctx;
-    printf("[OCPP CSMS Command] RemoteStopTransaction received for Transaction ID #%d\n", (int)transaction_id);
-    return true;
+    printf("[CSMS Server] Received BootNotification from Model: '%s' (Vendor: '%s')\n",
+           info ? info->charge_point_model : "Unknown",
+           info ? info->charge_point_vendor : "Unknown");
+    if (hb_sec) *hb_sec = 120U;
+    return SYN_OCPP_REGISTRATION_ACCEPTED;
 }
 
 int main(void) {
-    printf("=== STM32 OCPP-J (v1.6 / v2.0.1) EVSE Charging Station Example ===\n");
+    printf("=== STM32 OCPP-J (v1.6 / v2.0.1) Dual-Role EVSE / CSMS Example ===\n");
 
+    /* 1. Initialize EVSE Client and CSMS Server */
     syn_ocpp_init(&g_evse_client);
-    syn_ocpp_set_callbacks(&g_evse_client, on_ocpp_registered, on_ocpp_authorized,
-                           on_ocpp_start_tx_resp, on_ocpp_remote_start_cmd,
-                           on_ocpp_remote_stop_cmd, NULL);
+    syn_ocpp_set_callbacks(&g_evse_client, on_client_registered, NULL, NULL, NULL, NULL, NULL);
+
+    syn_ocpp_server_init(&g_csms_server);
+    syn_ocpp_server_set_callbacks(&g_csms_server, on_server_boot, NULL, NULL, NULL);
 
     SYN_OCPP_ChargePointInfo cp_info = {
         .charge_point_vendor = "SyntropicPower",
@@ -67,45 +57,33 @@ int main(void) {
         .firmware_version = "v2.1.0"
     };
 
-    char payload_buf[512];
-    size_t payload_len = 0U;
+    char client_req_buf[512];
+    size_t client_req_len = 0U;
 
-    /* 1. Format BootNotification */
-    if (syn_ocpp_format_boot_notification(&g_evse_client, &cp_info, payload_buf,
-                                          sizeof(payload_buf), &payload_len) == SYN_OK) {
-        printf("[OCPP TX] BootNotification.req:\n%s\n", payload_buf);
+    char server_resp_buf[512];
+    size_t server_resp_len = 0U;
+
+    /* 2. Client formats BootNotification.req */
+    if (syn_ocpp_format_boot_notification(&g_evse_client, &cp_info, client_req_buf,
+                                          sizeof(client_req_buf), &client_req_len) == SYN_OK) {
+        printf("\n[1. EVSE -> CSMS] BootNotification.req:\n%s\n", client_req_buf);
     }
 
-    /* 2. Format StatusNotification (Preparing) */
-    if (syn_ocpp_format_status_notification(&g_evse_client, 1U, SYN_OCPP_STATUS_PREPARING,
-                                             "NoError", payload_buf, sizeof(payload_buf),
-                                             &payload_len) == SYN_OK) {
-        printf("[OCPP TX] StatusNotification.req:\n%s\n", payload_buf);
+    /* 3. Server processes BootNotification.req and generates BootNotification.conf */
+    if (syn_ocpp_server_process_message(&g_csms_server, client_req_buf, client_req_len,
+                                         server_resp_buf, sizeof(server_resp_buf),
+                                         &server_resp_len) == SYN_OK) {
+        printf("\n[2. CSMS -> EVSE] BootNotification.conf:\n%s\n", server_resp_buf);
     }
 
-    /* 3. Format Authorize (RFID Scan) */
-    if (syn_ocpp_format_authorize(&g_evse_client, "RFID-USER-9876", payload_buf,
-                                  sizeof(payload_buf), &payload_len) == SYN_OK) {
-        printf("[OCPP TX] Authorize.req:\n%s\n", payload_buf);
-    }
+    /* 4. Client processes BootNotification.conf response */
+    syn_ocpp_process_message(&g_evse_client, server_resp_buf, server_resp_len, NULL, 0U, NULL);
 
-    /* 4. Format StartTransaction */
-    if (syn_ocpp_format_start_transaction(&g_evse_client, 1U, "RFID-USER-9876",
-                                           g_meter_readings.energy_wh, payload_buf,
-                                           sizeof(payload_buf), &payload_len) == SYN_OK) {
-        printf("[OCPP TX] StartTransaction.req:\n%s\n", payload_buf);
+    /* 5. CSMS Server formats RemoteStartTransaction command */
+    if (syn_ocpp_server_format_remote_start(&g_csms_server, 1U, "RFID-VIP-101", server_resp_buf,
+                                            sizeof(server_resp_buf), &server_resp_len) == SYN_OK) {
+        printf("\n[3. CSMS -> EVSE] RemoteStartTransaction.req:\n%s\n", server_resp_buf);
     }
-
-    /* 5. Format MeterValues */
-    if (syn_ocpp_format_meter_values(&g_evse_client, 1U, &g_meter_readings, payload_buf,
-                                     sizeof(payload_buf), &payload_len) == SYN_OK) {
-        printf("[OCPP TX] MeterValues.req:\n%s\n", payload_buf);
-    }
-
-    /* 6. Simulate incoming Central System Response */
-    const char *cs_response = "[3,\"1\",{\"status\":\"Accepted\",\"interval\":60}]";
-    printf("[OCPP RX] Central System BootNotification.conf:\n%s\n", cs_response);
-    syn_ocpp_process_message(&g_evse_client, cs_response, strlen(cs_response), NULL, 0U, NULL);
 
     return 0;
 }

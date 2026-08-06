@@ -1,12 +1,10 @@
 /**
  * @file syn_ocpp.h
- * @brief Open Charge Point Protocol over JSON (OCPP-J 1.6 / 2.0.1) Client Engine.
+ * @brief Open Charge Point Protocol over JSON (OCPP-J 1.6 / 2.0.1) Dual-Role Engine.
  * @ingroup syn_proto
  *
- * Implements a lightweight, zero-allocation OCPP-J client protocol engine for EVSE
- * charging stations. Supports OCPP-J frame types (Call, CallResult, CallError) and
- * core charging station operations: BootNotification, Heartbeat, StatusNotification,
- * Authorize, StartTransaction, StopTransaction, MeterValues, and RemoteStart/Stop.
+ * Implements a lightweight, zero-allocation OCPP-J protocol engine supporting both
+ * Charge Point (EVSE Client) and Central Management System (CSMS Server) roles.
  */
 
 #ifndef SYN_OCPP_H
@@ -74,26 +72,19 @@ typedef struct {
     uint8_t soc_percent; /**< State of Charge (0..100%) */
 } SYN_OCPP_MeterValues;
 
-/** @brief Remote Start Transaction handler callback. */
+/* ── Client Callbacks ── */
+
 typedef bool (*SYN_OCPP_RemoteStartHandler)(uint32_t connector_id, const char *id_tag,
                                             void *user_ctx);
-
-/** @brief Remote Stop Transaction handler callback. */
 typedef bool (*SYN_OCPP_RemoteStopHandler)(int32_t transaction_id, void *user_ctx);
-
-/** @brief Registration response callback. */
 typedef void (*SYN_OCPP_RegistrationHandler)(SYN_OCPP_RegistrationStatus status,
                                              uint32_t heartbeat_interval_sec, void *user_ctx);
-
-/** @brief Authorization response callback. */
 typedef void (*SYN_OCPP_AuthorizationHandler)(const char *id_tag,
                                               SYN_OCPP_AuthorizationStatus status, void *user_ctx);
-
-/** @brief Start Transaction response callback. */
 typedef void (*SYN_OCPP_StartTxHandler)(int32_t transaction_id, SYN_OCPP_AuthorizationStatus status,
                                         void *user_ctx);
 
-/** @brief OCPP Client instance state. */
+/** @brief OCPP Client instance state (EVSE Role). */
 typedef struct {
     SYN_OCPP_RegistrationStatus registration_status; /**< Central System registration state */
     uint32_t heartbeat_interval_sec;                 /**< Heartbeat interval in seconds */
@@ -108,160 +99,129 @@ typedef struct {
 
     uint32_t message_counter; /**< Monotonic message ID counter */
 
-    SYN_OCPP_RegistrationHandler reg_cb;   /**< Registration response callback */
-    SYN_OCPP_AuthorizationHandler auth_cb; /**< Authorization response callback */
-    SYN_OCPP_StartTxHandler start_tx_cb;   /**< StartTx response callback */
-
+    SYN_OCPP_RegistrationHandler reg_cb;         /**< Registration response callback */
+    SYN_OCPP_AuthorizationHandler auth_cb;       /**< Authorization response callback */
+    SYN_OCPP_StartTxHandler start_tx_cb;         /**< StartTx response callback */
     SYN_OCPP_RemoteStartHandler remote_start_cb; /**< RemoteStart command callback */
     SYN_OCPP_RemoteStopHandler remote_stop_cb;   /**< RemoteStop command callback */
     void *user_ctx;                              /**< User context pointer */
 } SYN_OCPP_Client;
 
-/* ── API Declarations ────────────────────────────────────────────────── */
+/* ── Server Callbacks ── */
 
-/**
- * @brief Initialize an OCPP-J client instance.
- * @param client Pointer to client instance.
- * @return SYN_OK on success, SYN_INVALID_PARAM if client is NULL.
- */
+typedef SYN_OCPP_RegistrationStatus (*SYN_OCPP_ServerBootHandler)(
+    const SYN_OCPP_ChargePointInfo *info, uint32_t *heartbeat_sec, void *user_ctx);
+typedef SYN_OCPP_AuthorizationStatus (*SYN_OCPP_ServerAuthorizeHandler)(const char *id_tag,
+                                                                        void *user_ctx);
+typedef int32_t (*SYN_OCPP_ServerStartTxHandler)(uint32_t connector_id, const char *id_tag,
+                                                 uint32_t meter_start_wh, void *user_ctx);
+
+/** @brief OCPP Server instance state (CSMS Central System Role). */
+typedef struct {
+    uint32_t message_counter;                  /**< Monotonic server message counter */
+    int32_t next_transaction_id;               /**< Auto-incrementing transaction ID */
+    SYN_OCPP_ServerBootHandler boot_cb;        /**< Station boot registration callback */
+    SYN_OCPP_ServerAuthorizeHandler auth_cb;   /**< Station RFID authorization callback */
+    SYN_OCPP_ServerStartTxHandler start_tx_cb; /**< Station start transaction callback */
+    void *user_ctx;                            /**< User context pointer */
+} SYN_OCPP_Server;
+
+/* ── Client API Declarations ─────────────────────────────────────────── */
+
 SYN_Status syn_ocpp_init(SYN_OCPP_Client *client);
-
-/**
- * @brief Set event and remote command callbacks for OCPP client.
- * @param client Pointer to client instance.
- * @param reg_cb Registration response callback.
- * @param auth_cb Authorization response callback.
- * @param start_tx_cb StartTransaction response callback.
- * @param remote_start_cb RemoteStart command callback.
- * @param remote_stop_cb RemoteStop command callback.
- * @param user_ctx User context pointer.
- * @return SYN_OK on success, SYN_INVALID_PARAM if client is NULL.
- */
 SYN_Status syn_ocpp_set_callbacks(SYN_OCPP_Client *client, SYN_OCPP_RegistrationHandler reg_cb,
                                   SYN_OCPP_AuthorizationHandler auth_cb,
                                   SYN_OCPP_StartTxHandler start_tx_cb,
                                   SYN_OCPP_RemoteStartHandler remote_start_cb,
                                   SYN_OCPP_RemoteStopHandler remote_stop_cb, void *user_ctx);
 
-/**
- * @brief Format an OCPP-J BootNotification.req Call frame.
- * @param client Pointer to client instance.
- * @param info Pointer to charge point vendor/model info.
- * @param out_buf Output text buffer for JSON payload.
- * @param max_len Capacity of output buffer.
- * @param out_len Pointer to store output byte count.
- * @return SYN_OK on success, SYN_INVALID_PARAM or SYN_ERROR on failure.
- */
 SYN_Status syn_ocpp_format_boot_notification(SYN_OCPP_Client *client,
                                              const SYN_OCPP_ChargePointInfo *info, char *out_buf,
                                              size_t max_len, size_t *out_len);
-
-/**
- * @brief Format an OCPP-J Heartbeat.req Call frame.
- * @param client Pointer to client instance.
- * @param out_buf Output text buffer for JSON payload.
- * @param max_len Capacity of output buffer.
- * @param out_len Pointer to store output byte count.
- * @return SYN_OK on success, SYN_INVALID_PARAM or SYN_ERROR on failure.
- */
 SYN_Status syn_ocpp_format_heartbeat(SYN_OCPP_Client *client, char *out_buf, size_t max_len,
                                      size_t *out_len);
-
-/**
- * @brief Format an OCPP-J StatusNotification.req Call frame.
- * @param client Pointer to client instance.
- * @param connector_id Connector ID (1..N).
- * @param status Connector status enumeration.
- * @param error_code Error code string (e.g. "NoError").
- * @param out_buf Output text buffer for JSON payload.
- * @param max_len Capacity of output buffer.
- * @param out_len Pointer to store output byte count.
- * @return SYN_OK on success, SYN_INVALID_PARAM or SYN_ERROR on failure.
- */
 SYN_Status syn_ocpp_format_status_notification(SYN_OCPP_Client *client, uint32_t connector_id,
                                                SYN_OCPP_ChargePointStatus status,
                                                const char *error_code, char *out_buf,
                                                size_t max_len, size_t *out_len);
-
-/**
- * @brief Format an OCPP-J Authorize.req Call frame.
- * @param client Pointer to client instance.
- * @param id_tag RFID tag string.
- * @param out_buf Output text buffer for JSON payload.
- * @param max_len Capacity of output buffer.
- * @param out_len Pointer to store output byte count.
- * @return SYN_OK on success, SYN_INVALID_PARAM or SYN_ERROR on failure.
- */
 SYN_Status syn_ocpp_format_authorize(SYN_OCPP_Client *client, const char *id_tag, char *out_buf,
                                      size_t max_len, size_t *out_len);
-
-/**
- * @brief Format an OCPP-J StartTransaction.req Call frame.
- * @param client Pointer to client instance.
- * @param connector_id Connector ID.
- * @param id_tag Authorized RFID tag string.
- * @param meter_start_wh Current meter reading in Wh.
- * @param out_buf Output text buffer for JSON payload.
- * @param max_len Capacity of output buffer.
- * @param out_len Pointer to store output byte count.
- * @return SYN_OK on success, SYN_INVALID_PARAM or SYN_ERROR on failure.
- */
 SYN_Status syn_ocpp_format_start_transaction(SYN_OCPP_Client *client, uint32_t connector_id,
                                              const char *id_tag, uint32_t meter_start_wh,
                                              char *out_buf, size_t max_len, size_t *out_len);
-
-/**
- * @brief Format an OCPP-J StopTransaction.req Call frame.
- * @param client Pointer to client instance.
- * @param transaction_id Active transaction ID.
- * @param meter_stop_wh Meter reading in Wh at transaction stop.
- * @param reason Reason string (e.g. "EVDisconnected", "Local", "Remote").
- * @param out_buf Output text buffer for JSON payload.
- * @param max_len Capacity of output buffer.
- * @param out_len Pointer to store output byte count.
- * @return SYN_OK on success, SYN_INVALID_PARAM or SYN_ERROR on failure.
- */
 SYN_Status syn_ocpp_format_stop_transaction(SYN_OCPP_Client *client, int32_t transaction_id,
                                             uint32_t meter_stop_wh, const char *reason,
                                             char *out_buf, size_t max_len, size_t *out_len);
+SYN_Status syn_ocpp_format_meter_values(SYN_OCPP_Client *client, uint32_t connector_id,
+                                        const SYN_OCPP_MeterValues *values, char *out_buf,
+                                        size_t max_len, size_t *out_len);
+SYN_Status syn_ocpp_process_message(SYN_OCPP_Client *client, const char *in_buf, size_t in_len,
+                                    char *out_resp, size_t max_resp_len, size_t *out_resp_len);
+void syn_ocpp_tick(SYN_OCPP_Client *client, uint32_t dt_ms, char *out_hb_buf, size_t max_len,
+                   size_t *out_len);
+
+/* ── Server API Declarations (CSMS Role) ─────────────────────────────── */
 
 /**
- * @brief Format an OCPP-J MeterValues.req Call frame.
- * @param client Pointer to client instance.
- * @param connector_id Connector ID.
- * @param values Pointer to current meter readings.
+ * @brief Initialize an OCPP CSMS Server instance.
+ * @param server Pointer to server instance.
+ * @return SYN_OK on success, SYN_INVALID_PARAM if server is NULL.
+ */
+SYN_Status syn_ocpp_server_init(SYN_OCPP_Server *server);
+
+/**
+ * @brief Set event callbacks for OCPP CSMS Server.
+ * @param server Pointer to server instance.
+ * @param boot_cb Station registration callback.
+ * @param auth_cb RFID authorization callback.
+ * @param start_tx_cb StartTransaction callback.
+ * @param user_ctx User context pointer.
+ * @return SYN_OK on success, SYN_INVALID_PARAM if server is NULL.
+ */
+SYN_Status syn_ocpp_server_set_callbacks(SYN_OCPP_Server *server,
+                                         SYN_OCPP_ServerBootHandler boot_cb,
+                                         SYN_OCPP_ServerAuthorizeHandler auth_cb,
+                                         SYN_OCPP_ServerStartTxHandler start_tx_cb, void *user_ctx);
+
+/**
+ * @brief Format a RemoteStartTransaction.req Call frame from CSMS server to station.
+ * @param server Pointer to server instance.
+ * @param connector_id Target connector ID.
+ * @param id_tag Target RFID tag string.
  * @param out_buf Output text buffer for JSON payload.
  * @param max_len Capacity of output buffer.
  * @param out_len Pointer to store output byte count.
  * @return SYN_OK on success, SYN_INVALID_PARAM or SYN_ERROR on failure.
  */
-SYN_Status syn_ocpp_format_meter_values(SYN_OCPP_Client *client, uint32_t connector_id,
-                                        const SYN_OCPP_MeterValues *values, char *out_buf,
-                                        size_t max_len, size_t *out_len);
+SYN_Status syn_ocpp_server_format_remote_start(SYN_OCPP_Server *server, uint32_t connector_id,
+                                               const char *id_tag, char *out_buf, size_t max_len,
+                                               size_t *out_len);
 
 /**
- * @brief Process an incoming OCPP-J JSON frame (Call, CallResult, CallError).
- * @param client Pointer to client instance.
- * @param in_buf Incoming JSON text frame.
- * @param in_len Length of JSON text frame in bytes.
- * @param out_resp Optional output buffer for immediate response CallResult/CallError.
- * @param max_resp_len Capacity of output response buffer.
- * @param out_resp_len Pointer to store output response byte count.
+ * @brief Format a RemoteStopTransaction.req Call frame from CSMS server to station.
+ * @param server Pointer to server instance.
+ * @param transaction_id Active transaction ID to stop.
+ * @param out_buf Output text buffer for JSON payload.
+ * @param max_len Capacity of output buffer.
+ * @param out_len Pointer to store output byte count.
  * @return SYN_OK on success, SYN_INVALID_PARAM or SYN_ERROR on failure.
  */
-SYN_Status syn_ocpp_process_message(SYN_OCPP_Client *client, const char *in_buf, size_t in_len,
-                                    char *out_resp, size_t max_resp_len, size_t *out_resp_len);
+SYN_Status syn_ocpp_server_format_remote_stop(SYN_OCPP_Server *server, int32_t transaction_id,
+                                              char *out_buf, size_t max_len, size_t *out_len);
 
 /**
- * @brief Tick periodic Heartbeat timer for OCPP client.
- * @param client Pointer to client instance.
- * @param dt_ms Elapsed time step in milliseconds.
- * @param out_hb_buf Optional output buffer to format Heartbeat.req if timer expires.
- * @param max_len Capacity of output heartbeat buffer.
- * @param out_len Pointer to store formatted heartbeat byte count (0 if no heartbeat needed).
+ * @brief Process incoming station request frame on CSMS server and generate response CallResult.
+ * @param server Pointer to server instance.
+ * @param in_buf Incoming JSON frame from station.
+ * @param in_len Length of incoming JSON frame.
+ * @param out_resp Output buffer for CallResult response frame.
+ * @param max_resp_len Capacity of output response buffer.
+ * @param out_resp_len Pointer to store response byte count.
+ * @return SYN_OK on success, SYN_INVALID_PARAM or SYN_ERROR on failure.
  */
-void syn_ocpp_tick(SYN_OCPP_Client *client, uint32_t dt_ms, char *out_hb_buf, size_t max_len,
-                   size_t *out_len);
+SYN_Status syn_ocpp_server_process_message(SYN_OCPP_Server *server, const char *in_buf,
+                                           size_t in_len, char *out_resp, size_t max_resp_len,
+                                           size_t *out_resp_len);
 
 #ifdef __cplusplus
 }

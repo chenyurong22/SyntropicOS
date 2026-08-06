@@ -8,7 +8,7 @@
 
 #include "syntropic/net/syn_websocket.h"
 #include "syntropic/proto/syn_ocpp.h"
-#include "unity.h"
+#include "unity/unity.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -51,6 +51,48 @@ static int connect_tcp(const char *host, uint16_t port)
     return sock;
 }
 
+static const char *recv_ocpp_json(int sock, char *buf, size_t buf_size)
+{
+    size_t total = 0;
+    while (total < buf_size - 1) {
+        ssize_t n = recv(sock, buf + total, buf_size - 1 - total, 0);
+        if (n <= 0) {
+            printf("[Integration C] recv returned n=%zd\n", n);
+            break;
+        }
+        total += n;
+        buf[total] = '\0';
+        const char *json = strchr(buf, '[');
+        if (json != NULL) {
+            return json;
+        }
+    }
+    printf("[Integration C] recv_ocpp_json failed, total=%zu, buf='%.100s'\n", total, buf);
+    return NULL;
+}
+
+static size_t format_client_ws_frame(const char *payload, size_t payload_len, char *out_frame)
+{
+    uint8_t mask_key[4] = {0x12, 0x34, 0x56, 0x78};
+    size_t header_len = 0;
+    out_frame[0] = (char)0x81; /* FIN + Text Frame */
+    if (payload_len < 126) {
+        out_frame[1] = (char)(0x80 | payload_len);
+        memcpy(out_frame + 2, mask_key, 4);
+        header_len = 6;
+    } else {
+        out_frame[1] = (char)(0x80 | 126);
+        out_frame[2] = (char)((payload_len >> 8) & 0xFF);
+        out_frame[3] = (char)(payload_len & 0xFF);
+        memcpy(out_frame + 4, mask_key, 4);
+        header_len = 8;
+    }
+    for (size_t i = 0; i < payload_len; i++) {
+        out_frame[header_len + i] = payload[i] ^ mask_key[i % 4];
+    }
+    return payload_len + header_len;
+}
+
 void test_ocpp_client_against_python_csms(void)
 {
     int sock = connect_tcp("127.0.0.1", 9001);
@@ -76,7 +118,6 @@ void test_ocpp_client_against_python_csms(void)
     rx_buf[n] = '\0';
     TEST_ASSERT_NOT_NULL(strstr(rx_buf, "101 Switching Protocols"));
 
-    /* Helper lambda to format WS text frame */
     char tx_payload[512];
     char ws_frame[1024];
     size_t payload_len = 0;
@@ -86,71 +127,56 @@ void test_ocpp_client_against_python_csms(void)
     TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_format_boot_notification(&g_client, &info, tx_payload,
                                                                 sizeof(tx_payload), &payload_len));
 
-    /* Simple WebSocket Unmasked Frame header for Client-to-Server test payload */
-    ws_frame[0] = (char)0x81;                 /* FIN + Text Frame */
-    ws_frame[1] = (char)(0x80 | payload_len); /* Mask bit set */
-    ws_frame[2] = 0x00;                       /* Mask Key */
-    ws_frame[3] = 0x00;
-    ws_frame[4] = 0x00;
-    ws_frame[5] = 0x00;
-    memcpy(ws_frame + 6, tx_payload, payload_len);
+    size_t frame_len = format_client_ws_frame(tx_payload, payload_len, ws_frame);
+    send(sock, ws_frame, frame_len, 0);
 
-    send(sock, ws_frame, payload_len + 6, 0);
-
-    n = recv(sock, rx_buf, sizeof(rx_buf) - 1, 0);
-    TEST_ASSERT_TRUE(n > 0);
-    rx_buf[n] = '\0';
-
+    const char *json = recv_ocpp_json(sock, rx_buf, sizeof(rx_buf));
+    TEST_ASSERT_NOT_NULL(json);
     TEST_ASSERT_EQUAL(SYN_OK,
-                      syn_ocpp_process_message(&g_client, rx_buf + 2, n - 2, NULL, 0, NULL));
+                      syn_ocpp_process_message(&g_client, json, strlen(json), NULL, 0, NULL));
     TEST_ASSERT_EQUAL(SYN_OCPP_REGISTRATION_ACCEPTED, g_client.registration_status);
 
     /* 3. Send StatusNotification */
     TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_format_status_notification(
                                   &g_client, 1, SYN_OCPP_STATUS_CHARGING, "NoError", tx_payload,
                                   sizeof(tx_payload), &payload_len));
-    ws_frame[1] = (char)(0x80 | payload_len);
-    memcpy(ws_frame + 6, tx_payload, payload_len);
-    send(sock, ws_frame, payload_len + 6, 0);
+    frame_len = format_client_ws_frame(tx_payload, payload_len, ws_frame);
+    send(sock, ws_frame, frame_len, 0);
 
-    n = recv(sock, rx_buf, sizeof(rx_buf) - 1, 0);
-    TEST_ASSERT_TRUE(n > 0);
+    json = recv_ocpp_json(sock, rx_buf, sizeof(rx_buf));
+    TEST_ASSERT_NOT_NULL(json);
 
     /* 4. Send Authorize */
     TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_format_authorize(&g_client, "RFID-TAG-123", tx_payload,
                                                         sizeof(tx_payload), &payload_len));
-    ws_frame[1] = (char)(0x80 | payload_len);
-    memcpy(ws_frame + 6, tx_payload, payload_len);
-    send(sock, ws_frame, payload_len + 6, 0);
+    frame_len = format_client_ws_frame(tx_payload, payload_len, ws_frame);
+    send(sock, ws_frame, frame_len, 0);
 
-    n = recv(sock, rx_buf, sizeof(rx_buf) - 1, 0);
-    TEST_ASSERT_TRUE(n > 0);
+    json = recv_ocpp_json(sock, rx_buf, sizeof(rx_buf));
+    TEST_ASSERT_NOT_NULL(json);
 
     /* 5. Send StartTransaction */
     TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_format_start_transaction(&g_client, 1, "RFID-TAG-123", 1000,
                                                                 tx_payload, sizeof(tx_payload),
                                                                 &payload_len));
-    ws_frame[1] = (char)(0x80 | payload_len);
-    memcpy(ws_frame + 6, tx_payload, payload_len);
-    send(sock, ws_frame, payload_len + 6, 0);
+    frame_len = format_client_ws_frame(tx_payload, payload_len, ws_frame);
+    send(sock, ws_frame, frame_len, 0);
 
-    n = recv(sock, rx_buf, sizeof(rx_buf) - 1, 0);
-    TEST_ASSERT_TRUE(n > 0);
-    rx_buf[n] = '\0';
+    json = recv_ocpp_json(sock, rx_buf, sizeof(rx_buf));
+    TEST_ASSERT_NOT_NULL(json);
     TEST_ASSERT_EQUAL(SYN_OK,
-                      syn_ocpp_process_message(&g_client, rx_buf + 2, n - 2, NULL, 0, NULL));
+                      syn_ocpp_process_message(&g_client, json, strlen(json), NULL, 0, NULL));
     TEST_ASSERT_EQUAL(1001, g_client.active_transaction_id);
 
     /* 6. Send StopTransaction */
     TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_format_stop_transaction(&g_client, 1001, 15000,
                                                                "EVDisconnected", tx_payload,
                                                                sizeof(tx_payload), &payload_len));
-    ws_frame[1] = (char)(0x80 | payload_len);
-    memcpy(ws_frame + 6, tx_payload, payload_len);
-    send(sock, ws_frame, payload_len + 6, 0);
+    frame_len = format_client_ws_frame(tx_payload, payload_len, ws_frame);
+    send(sock, ws_frame, frame_len, 0);
 
-    n = recv(sock, rx_buf, sizeof(rx_buf) - 1, 0);
-    TEST_ASSERT_TRUE(n > 0);
+    json = recv_ocpp_json(sock, rx_buf, sizeof(rx_buf));
+    TEST_ASSERT_NOT_NULL(json);
 
     close(sock);
 }

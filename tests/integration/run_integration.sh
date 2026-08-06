@@ -27,6 +27,7 @@ gcc ${CFLAGS} src/syntropic/proto/syn_cia402.c src/syntropic/proto/syn_canopen.c
 gcc ${CFLAGS} src/syntropic/net/syn_wg.c src/syntropic/crypto/*.c src/syntropic/util/syn_sha256.c src/syntropic/net/syn_sntp.c src/syntropic/util/syn_backoff.c src/syntropic/dsp/syn_filter.c src/syntropic/util/syn_random.c src/syntropic/util/syn_metrics.c src/syntropic/net/syn_router.c ${CORE_PORT} tests/integration/test_wg_integration.c -o build/tests/test_wg_integration -lm &
 gcc ${CFLAGS} src/syntropic/proto/syn_modbus.c src/syntropic/util/syn_crc.c ${CORE_PORT} tests/integration/test_modbus_integration.c -o build/tests/test_modbus_integration -lm &
 gcc ${CFLAGS} src/syntropic/proto/syn_ethercat.c ${CORE_PORT} tests/integration/test_ecat_integration.c -o build/tests/test_ecat_integration -lm &
+gcc ${CFLAGS} src/syntropic/proto/syn_ethercat.c ${CORE_PORT} tests/integration/test_soes_integration.c -o build/tests/test_soes_integration -lm &
 gcc ${CFLAGS} src/syntropic/proto/syn_ocpp.c src/syntropic/net/syn_websocket.c ${CORE_PORT} tests/integration/test_ocpp_integration.c -o build/tests/test_ocpp_integration -lm &
 wait
 

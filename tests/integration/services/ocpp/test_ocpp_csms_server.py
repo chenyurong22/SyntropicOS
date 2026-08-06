@@ -27,7 +27,7 @@ class RefCSMSServer(cp):
         self.received_stop_tx = False
         self.active_transaction_id = 1001
 
-    @on(Action.BootNotification)
+    @on(Action.boot_notification)
     def on_boot_notification(self, charge_point_vendor, charge_point_model, **kwargs):
         logging.info(f"[Python CSMS] BootNotification from Vendor={charge_point_vendor}, Model={charge_point_model}")
         self.received_boot = True
@@ -37,13 +37,13 @@ class RefCSMSServer(cp):
             status=RegistrationStatus.accepted
         )
 
-    @on(Action.StatusNotification)
+    @on(Action.status_notification)
     def on_status_notification(self, connector_id, error_code, status, **kwargs):
         logging.info(f"[Python CSMS] StatusNotification Connector={connector_id}, Status={status}")
         self.received_status_count += 1
         return call_result.StatusNotification()
 
-    @on(Action.Authorize)
+    @on(Action.authorize)
     def on_authorize(self, id_tag, **kwargs):
         logging.info(f"[Python CSMS] Authorize id_tag={id_tag}")
         self.received_auth = True
@@ -51,7 +51,7 @@ class RefCSMSServer(cp):
             return call_result.Authorize(id_tag_info={"status": AuthorizationStatus.invalid})
         return call_result.Authorize(id_tag_info={"status": AuthorizationStatus.accepted})
 
-    @on(Action.StartTransaction)
+    @on(Action.start_transaction)
     def on_start_transaction(self, connector_id, id_tag, meter_start, timestamp, **kwargs):
         logging.info(f"[Python CSMS] StartTransaction Connector={connector_id}, Tag={id_tag}, MeterStart={meter_start}")
         self.received_start_tx = True
@@ -60,19 +60,19 @@ class RefCSMSServer(cp):
             id_tag_info={"status": AuthorizationStatus.accepted}
         )
 
-    @on(Action.MeterValues)
+    @on(Action.meter_values)
     def on_meter_values(self, connector_id, meter_value, **kwargs):
         logging.info(f"[Python CSMS] MeterValues Connector={connector_id}, Values={meter_value}")
         self.received_meter_values = True
         return call_result.MeterValues()
 
-    @on(Action.StopTransaction)
+    @on(Action.stop_transaction)
     def on_stop_transaction(self, meter_stop, timestamp, transaction_id, reason=None, **kwargs):
         logging.info(f"[Python CSMS] StopTransaction TxID={transaction_id}, MeterStop={meter_stop}, Reason={reason}")
         self.received_stop_tx = True
         return call_result.StopTransaction(id_tag_info={"status": AuthorizationStatus.accepted})
 
-    @on(Action.Heartbeat)
+    @on(Action.heartbeat)
     def on_heartbeat(self, **kwargs):
         logging.info("[Python CSMS] Heartbeat received")
         return call_result.Heartbeat(current_time="2026-08-06T12:00:00Z")

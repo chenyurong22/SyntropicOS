@@ -25,7 +25,33 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
+#define SYN_FBL_HEADER_MAGIC 0x53594E31U /* "SYN1" */
+#define SYN_FBL_IMAGE_STATE_VALID 0x01U
+
+typedef struct __attribute__((packed)) {
+    uint32_t magic;         /* 0x53594E31 ("SYN1") */
+    uint16_t version_major; /* Major version (e.g. 1) */
+    uint16_t version_minor; /* Minor version (e.g. 1) */
+    uint16_t version_patch; /* Patch version (e.g. 0) */
+    uint16_t reserved;
+    uint32_t image_size;  /* Image size in bytes */
+    uint32_t crc32;       /* Firmware image CRC32 checksum */
+    uint8_t image_state;  /* 0x01: Valid, 0x02: Pending, 0xFF: Invalid */
+    uint8_t padding[3];
+} SYN_FBL_AppHeader;
+
+__attribute__((section(".app_header")))
+const SYN_FBL_AppHeader g_app_header = {
+    .magic = SYN_FBL_HEADER_MAGIC,
+    .version_major = 1,
+    .version_minor = 1,
+    .version_patch = 0,
+    .reserved = 0,
+    .image_size = 65536,
+    .crc32 = 0x12345678U,
+    .image_state = SYN_FBL_IMAGE_STATE_VALID,
+    .padding = {0, 0, 0}
+};
 
 static SYN_UDS_Server g_app_uds_server;
 
@@ -71,6 +97,15 @@ static bool on_app_comm_control(SYN_UDS_CommControlType control_type, uint8_t co
 }
 
 int main(void) {
+    /* Relocate ARM Cortex-M7 Vector Table (SCB->VTOR) to current Application Partition Base */
+    #if defined(__ARM_ARCH_7EM__) || defined(STM32F767xx)
+    #ifndef BANK_A_BASE
+    #define BANK_A_BASE 0x08020000U
+    #endif
+    volatile uint32_t *vtor = (volatile uint32_t *)0xE000ED08U; /* SCB->VTOR */
+    *vtor = BANK_A_BASE;
+    #endif
+
     printf("=== STM32F767 Active Application Firmware (Running in Bank A @ 0x08020000) ===\n");
     memset(&g_app_prog_state, 0, sizeof(g_app_prog_state));
     memcpy(g_app_vin, "SYN-STM32F767-APP", 17);

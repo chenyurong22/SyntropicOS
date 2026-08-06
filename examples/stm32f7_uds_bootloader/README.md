@@ -58,12 +58,30 @@ uint32_t get_stm32f767_sector(uint32_t addr) {
 
 ## 3. Project Target Organization
 
-- **`app/src/main.c`**: Active Application binary (Bank A `0x08020000`) handling Pre-Programming Phase #1 & Post-Programming Phase #3.
-- **`bootloader/src/main.c`**: Minimal FBL binary (Sector 0 `0x08000000`) handling Programming Phase #2 and Flash sector erasing (`get_stm32f767_sector`).
+- **`app/src/main.c`**: Active Application binary (Bank A `0x08020000` / Bank B `0x08100000`) embedding `SYN_FBL_AppHeader` and handling Pre-Programming Phase #1 & Post-Programming Phase #3.
+- **`bootloader/src/main.c`**: FBL binary (Sector 0 `0x08000000`) implementing dynamic Bank A vs Bank B partition inspection, version comparison, staging bank targeted erase/write, and boot handover.
 
 ---
 
-## 4. UDS Service API Registration
+## 4. A/B Dual-Bank Partition Swap & Version Header (`SYN_FBL_AppHeader`)
+
+```c
+typedef struct __attribute__((packed)) {
+    uint32_t magic;         /* 0x53594E31 ("SYN1") */
+    uint16_t version_major; /* Major version (e.g. 1) */
+    uint16_t version_minor; /* Minor version (e.g. 1) */
+    uint16_t version_patch; /* Patch version (e.g. 0) */
+    uint16_t reserved;
+    uint32_t image_size;    /* Image size in bytes */
+    uint32_t crc32;         /* Firmware image CRC32 checksum */
+    uint8_t image_state;    /* 0x01: Valid, 0x02: Pending, 0xFF: Invalid */
+    uint8_t padding[3];
+} SYN_FBL_AppHeader;
+```
+
+---
+
+## 5. UDS Service API Registration
 
 - **0x10 DiagnosticSessionControl**: `syn_uds_set_session_transition_handler(server, cb, ctx)`
 - **0x11 ECUReset**: `syn_uds_set_reset_handler(server, cb, ctx)`, `syn_uds_set_reset_wait_ms(server, wait_ms)`, `syn_uds_get_pending_reset(server)`, `syn_uds_clear_pending_reset(server)`
@@ -71,4 +89,55 @@ uint32_t get_stm32f767_sector(uint32_t addr) {
 - **0x85 ControlDTCSetting**: `syn_uds_register_dtc(server, dtc, status, severity)`
 - **0x3E TesterPresent**: `syn_uds_tick(server, dt_ms)`
 - **0x2E WriteDataByIdentifier**: `syn_uds_register_did(server, did, data, len, writable)`
+
+---
+
+## 6. Post-Build Tooling Step & Header Patching (`tools/patch_header.py`)
+
+In production CI/CD pipelines, calculating payload size and CRC32/ECDSA signatures occurs after compilation.
+
+Run the provided post-build tool to patch `SYN_FBL_AppHeader` into `app.bin`:
+
+```bash
+python3 tools/patch_header.py app.bin 1 2 0
+```
+
+### Script Execution Flow
+1. Reads `app.bin` binary file.
+2. Calculates CRC32 checksum and payload byte count for bytes past `sizeof(SYN_FBL_AppHeader)`.
+3. Packs magic `0x53594E31` ("SYN1"), target version numbers (`V1.2.0`), `crc32`, and `image_state` (`0x01` Valid).
+4. Overwrites the 24-byte header block at offset 0 of `app.bin`.
+
+---
+
+## 7. Vector Table Relocation, Linker Script & CMake Build Integration
+
+### Vector Table Relocation (`SCB->VTOR`)
+When the bootloader hands over execution to Bank A (`0x08020000`) or Bank B (`0x08100000`), the application relocates `SCB->VTOR` at startup to prevent interrupt traps:
+
+```c
+volatile uint32_t *vtor = (volatile uint32_t *)0xE000ED08U;
+*vtor = 0x08020000U; /* Bank A Base */
+```
+
+### Linker Script (`linker/stm32f767.ld`)
+The linker script maps `.app_header` to the origin of the active application partition:
+
+```ld
+MEMORY {
+    FLASH_FBL (rx)   : ORIGIN = 0x08000000, LENGTH = 128K
+    FLASH_BANK_A (rx): ORIGIN = 0x08020000, LENGTH = 512K
+    FLASH_BANK_B (rx): ORIGIN = 0x08100000, LENGTH = 512K
+}
+```
+
+### CMake Automatic Post-Build Command (`CMakeLists.txt`)
+Building the project automatically generates `app.bin` and patches `SYN_FBL_AppHeader` at offset 0:
+
+```cmake
+add_custom_command(TARGET stm32f7_app POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:stm32f7_app> app.bin
+    COMMAND ${Python3_EXECUTABLE} tools/patch_header.py app.bin 1 1 0
+)
+```
 

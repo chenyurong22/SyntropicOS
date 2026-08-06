@@ -25,9 +25,26 @@
 #include <stdio.h>
 #include <string.h>
 
-#define BANK_A_BASE 0x08020000U /* Active Application Partition A */
-#define BANK_B_BASE 0x08100000U /* Inactive Staging Partition B */
+#define BANK_A_BASE 0x08020000U /* Application Partition A (Bank 1) */
+#define BANK_B_BASE 0x08100000U /* Application Partition B (Bank 2) */
 #define BANK_MAX_SIZE (512U * 1024U)
+
+#define SYN_FBL_HEADER_MAGIC 0x53594E31U /* "SYN1" */
+#define SYN_FBL_IMAGE_STATE_VALID 0x01U
+#define SYN_FBL_IMAGE_STATE_PENDING 0x02U
+#define SYN_FBL_IMAGE_STATE_INVALID 0xFFU
+
+typedef struct __attribute__((packed)) {
+    uint32_t magic;         /* 0x53594E31 ("SYN1") */
+    uint16_t version_major; /* Major version (e.g. 1) */
+    uint16_t version_minor; /* Minor version (e.g. 1) */
+    uint16_t version_patch; /* Patch version (e.g. 0) */
+    uint16_t reserved;
+    uint32_t image_size;  /* Image size in bytes */
+    uint32_t crc32;       /* Firmware image CRC32 checksum */
+    uint8_t image_state;  /* 0x01: Valid, 0x02: Pending, 0xFF: Invalid */
+    uint8_t padding[3];
+} SYN_FBL_AppHeader;
 
 static SYN_UDS_Server g_fbl_server;
 
@@ -38,6 +55,7 @@ typedef struct {
     uint32_t total_size;
     uint32_t bytes_received;
     bool app_validated;
+    uint32_t staging_bank_addr;
     uint8_t vin[17];
 } FBL_ProgrammingState;
 
@@ -46,6 +64,33 @@ static uint8_t g_flash_buffer[512];
 
 typedef void (*pFunction)(void);
 
+/* ── A/B Dual-Bank Partition Inspection & Swap Algorithm ────────────── */
+
+static bool fbl_read_header(uint32_t bank_addr, SYN_FBL_AppHeader *hdr) {
+    if (hdr == NULL) return false;
+    memcpy(hdr, (const void *)bank_addr, sizeof(SYN_FBL_AppHeader));
+    return (hdr->magic == SYN_FBL_HEADER_MAGIC);
+}
+
+static uint32_t fbl_get_active_partition(void) {
+    SYN_FBL_AppHeader hdr_a, hdr_b;
+    bool valid_a = fbl_read_header(BANK_A_BASE, &hdr_a) && (hdr_a.image_state == SYN_FBL_IMAGE_STATE_VALID);
+    bool valid_b = fbl_read_header(BANK_B_BASE, &hdr_b) && (hdr_b.image_state == SYN_FBL_IMAGE_STATE_VALID);
+
+    if (valid_a && valid_b) {
+        /* Compare version numbers (Major.Minor.Patch) */
+        uint32_t ver_a = ((uint32_t)hdr_a.version_major << 16) | ((uint32_t)hdr_a.version_minor << 8) | hdr_a.version_patch;
+        uint32_t ver_b = ((uint32_t)hdr_b.version_major << 16) | ((uint32_t)hdr_b.version_minor << 8) | hdr_b.version_patch;
+        return (ver_b > ver_a) ? BANK_B_BASE : BANK_A_BASE;
+    }
+    if (valid_b) return BANK_B_BASE;
+    return BANK_A_BASE;
+}
+
+static uint32_t fbl_get_staging_partition(void) {
+    return (fbl_get_active_partition() == BANK_A_BASE) ? BANK_B_BASE : BANK_A_BASE;
+}
+
 /* ── STM32F767 Hardware Flash Porting Driver ─────────────────────────── */
 
 uint32_t get_stm32f767_sector(uint32_t addr) {
@@ -53,7 +98,7 @@ uint32_t get_stm32f767_sector(uint32_t addr) {
     if (addr < 0x08004000U) return 0;  /* 16 KB  */
     if (addr < 0x08008000U) return 1;  /* 16 KB  */
     if (addr < 0x0800C000U) return 2;  /* 16 KB  */
-    if (addr < 0x08010000U) return 3;  /* 16 KB  */
+    if (addr < 0x08008000U) return 3;  /* 16 KB  */
     if (addr < 0x08020000U) return 4;  /* 64 KB  */
     if (addr < 0x08040000U) return 5;  /* 128 KB */
     if (addr < 0x08060000U) return 6;  /* 128 KB */
@@ -183,18 +228,29 @@ static bool on_fbl_routine_control(uint8_t subfunction, uint16_t routine_id,
                                     uint16_t max_out_len, uint16_t *out_len, void *user_ctx) {
     (void)in_data; (void)in_len; (void)user_ctx;
     if (subfunction == 0x01U) { /* startRoutine */
-        if (routine_id == 0xFF00U) { /* EraseMemory */
-            if (syn_port_flash_erase(BANK_B_BASE) == SYN_OK) {
+        if (routine_id == 0xFF00U) { /* EraseMemory on Staging Bank */
+            uint32_t target_bank = g_fbl_state.staging_bank_addr;
+            if (syn_port_flash_erase(target_bank) == SYN_OK) {
                 g_fbl_state.memory_erased = true;
                 if (max_out_len >= 1) { out_buf[0] = 0x00; if (out_len) *out_len = 1; }
-                printf("[FBL UDS 0x31] EraseMemory Sector %u (0x%08X) Successful.\n",
-                       (unsigned int)get_stm32f767_sector(BANK_B_BASE), BANK_B_BASE);
+                printf("[FBL UDS 0x31] EraseMemory Staging Bank 0x%08X (Sector %u) Successful.\n",
+                       (unsigned int)target_bank, (unsigned int)get_stm32f767_sector(target_bank));
                 return true;
             }
-        } else if (routine_id == 0xFF01U) { /* Validate Application */
+        } else if (routine_id == 0xFF01U) { /* Validate Application & Mark Header Valid */
             g_fbl_state.app_validated = true;
+            uint32_t target_bank = g_fbl_state.staging_bank_addr;
+
+            /* Write valid state byte into partition header */
+            SYN_FBL_AppHeader hdr;
+            if (syn_port_flash_read(target_bank, &hdr, sizeof(hdr)) == SYN_OK) {
+                hdr.image_state = SYN_FBL_IMAGE_STATE_VALID;
+                syn_port_flash_write(target_bank, &hdr, sizeof(hdr));
+            }
+
             if (max_out_len >= 1) { out_buf[0] = 0x00; if (out_len) *out_len = 1; }
-            printf("[FBL UDS 0x31] Validate Application Routine 0xFF01 Successful.\n");
+            printf("[FBL UDS 0x31] Validate Application Routine 0xFF01 Successful on Bank 0x%08X.\n",
+                   (unsigned int)target_bank);
             return true;
         }
     }
@@ -225,6 +281,14 @@ int main(void) {
     printf("=== STM32F767 ISO 14229-1 UDS Flash Bootloader (Sector 0 @ 0x08000000) ===\n");
     memset(&g_fbl_state, 0, sizeof(g_fbl_state));
     memcpy(g_fbl_state.vin, "SYN-STM32F767-VIN", 17);
+
+    /* Determine Active Bank & Staging Target Bank */
+    uint32_t active_bank = fbl_get_active_partition();
+    uint32_t staging_bank = fbl_get_staging_partition();
+    g_fbl_state.staging_bank_addr = staging_bank;
+
+    printf("[FBL Partition Status] Active Bank = 0x%08X, Target Staging Bank = 0x%08X\n",
+           (unsigned int)active_bank, (unsigned int)staging_bank);
 
     /* Initialize UDS Server Engine in Bootloader */
     syn_uds_init(&g_fbl_server);
@@ -265,8 +329,9 @@ int main(void) {
         syn_uds_clear_pending_reset(&g_fbl_server);
     }
 
-    /* Jump to valid Application Bank A */
-    bootloader_jump_to_app(BANK_A_BASE);
+    /* Re-evaluate Active Partition after programming validation and jump */
+    active_bank = fbl_get_active_partition();
+    bootloader_jump_to_app(active_bank);
     return 0;
 }
 

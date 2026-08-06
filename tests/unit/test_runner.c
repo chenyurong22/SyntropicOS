@@ -749,6 +749,9 @@ int main(void)
     extern void run_bacnet_tests(void);
     extern void run_modbus_master_tests(void);
     extern void run_lut_tests(void);
+    extern void run_uds_tests(void);
+    extern void run_kwp2000_tests(void);
+    extern void run_uds_util_tests(void);
     extern void run_tcp_tests(void);
     extern void run_udp_tests(void);
     extern void run_net_transport_udp_tests(void);
@@ -780,6 +783,7 @@ int main(void)
     run_modbus_master_tests();
     run_lut_tests();
     run_uds_tests();
+    run_kwp2000_tests();
     run_uds_util_tests();
     run_hkdf_tests();
     run_asn1_x509_tests();

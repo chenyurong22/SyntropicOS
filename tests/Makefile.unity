@@ -59,6 +59,7 @@ SYN_SRCS := \
 	src/syntropic/proto/syn_cannm.c \
 	src/syntropic/proto/syn_dali.c \
 	src/syntropic/proto/syn_bacnet.c \
+	src/syntropic/proto/syn_ocpp.c \
 	src/syntropic/proto/syn_lin.c \
 	src/syntropic/proto/syn_ir.c \
 	src/syntropic/proto/syn_smbus.c \

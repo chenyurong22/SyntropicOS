@@ -747,6 +747,7 @@ int main(void)
     extern void test_igmp_group_overflow_and_leaving_unjoined(void);
     extern void test_igmp_non_igmp_packets(void);
     extern void run_bacnet_tests(void);
+    extern void run_ocpp_tests(void);
     extern void run_modbus_master_tests(void);
     extern void run_lut_tests(void);
     extern void run_uds_tests(void);
@@ -780,6 +781,7 @@ int main(void)
     run_udp_tests();
     run_net_transport_udp_tests();
     run_bacnet_tests();
+    run_ocpp_tests();
     run_modbus_master_tests();
     run_lut_tests();
     run_uds_tests();

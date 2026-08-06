@@ -26,7 +26,7 @@ typedef enum {
 
 /** @brief Sensored Encoder Configuration */
 typedef struct {
-    SYN_FOCEncoderType type;
+    SYN_FOCEncoderType type; /**< Sensored feedback type selection */
     uint8_t pole_pairs;      /**< Motor pole pair count (P) */
     uint32_t cpr;            /**< Counts Per Revolution (4 * pulses for QEI) */
     q16_t zero_offset_rad;   /**< Electrical zero position offset (Q16 rad) */
@@ -35,12 +35,12 @@ typedef struct {
 
 /** @brief Sensored Encoder State */
 typedef struct {
-    SYN_FOCEncoderConfig config;
-    int32_t count;          /**< Current raw pulse count */
-    int32_t prev_count;     /**< Previous raw pulse count */
-    q16_t elec_angle_rad;   /**< Calculated electrical angle (0 to 2*PI in Q16) */
-    q16_t elec_speed_rad_s; /**< Calculated electrical speed in Q16 rad/s */
-    uint8_t hall_state;     /**< Hall sensor 3-bit state (1 to 6) */
+    SYN_FOCEncoderConfig config; /**< Encoder configuration parameters */
+    int32_t count;               /**< Current raw pulse count */
+    int32_t prev_count;          /**< Previous raw pulse count */
+    q16_t elec_angle_rad;        /**< Calculated electrical angle (0 to 2*PI in Q16) */
+    q16_t elec_speed_rad_s;      /**< Calculated electrical speed in Q16 rad/s */
+    uint8_t hall_state;          /**< Hall sensor 3-bit state (1 to 6) */
 } SYN_FOCEncoder;
 
 /**
@@ -76,11 +76,15 @@ void syn_foc_encoder_update_absolute(SYN_FOCEncoder *enc, uint16_t raw_angle_14b
 
 /**
  * @brief Get current electrical angle in Q16 radians [0, 2*PI).
+ * @param enc Pointer to encoder instance.
+ * @return Current electrical angle in Q16 radians.
  */
 q16_t syn_foc_encoder_get_elec_angle(const SYN_FOCEncoder *enc);
 
 /**
  * @brief Get current electrical speed in Q16 rad/s.
+ * @param enc Pointer to encoder instance.
+ * @return Current electrical speed in Q16 rad/s.
  */
 q16_t syn_foc_encoder_get_elec_speed(const SYN_FOCEncoder *enc);
 

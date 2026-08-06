@@ -7,8 +7,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
 echo "=== Preparing Coverage Environment ==="
+rm -rf build/cov
 mkdir -p build/cov
-find build/cov -name "*.gcda" -delete 2>/dev/null || true
 rm -f *.gcov
 
 echo "=== Running Test Suite with Coverage Instrumentation ==="

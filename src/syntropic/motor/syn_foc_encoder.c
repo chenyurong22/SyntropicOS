@@ -8,7 +8,7 @@
 
 #include <string.h>
 
-/* Standard 120-degree 6-step Hall state to electrical angle lookup table (rad in Q16) */
+/** @brief Standard 120-degree 6-step Hall state to electrical angle lookup table (rad in Q16). */
 static const q16_t g_hall_angle_lut[8] = {
     0,                                 /* 000 Invalid */
     (q16_t)Q16_FROM_FLOAT(5.2359877f), /* 001: 300 deg */

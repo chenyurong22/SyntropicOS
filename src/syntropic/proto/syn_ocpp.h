@@ -27,6 +27,23 @@ extern "C" {
 #define SYN_OCPP_MSG_TYPE_CALLERROR 4U  /**< Error Response */
 /**@}*/
 
+/** @name OCPP-J Standard RPC Error Codes (Specification Section 4.2.3 Table 7) */
+/**@{*/
+#define SYN_OCPP_ERROR_NOT_IMPLEMENTED "NotImplemented"         /**< Action not implemented */
+#define SYN_OCPP_ERROR_NOT_SUPPORTED "NotSupported"             /**< Action not supported */
+#define SYN_OCPP_ERROR_INTERNAL_ERROR "InternalError"           /**< Internal error */
+#define SYN_OCPP_ERROR_PROTOCOL_ERROR "ProtocolError"           /**< Protocol error */
+#define SYN_OCPP_ERROR_SECURITY_ERROR "SecurityError"           /**< Security error */
+#define SYN_OCPP_ERROR_FORMATION_VIOLATION "FormationViolation" /**< Syntax formation violation */
+#define SYN_OCPP_ERROR_PROPERTY_CONSTRAINT_VIOLATION \
+    "PropertyConstraintViolation" /**< Field property constraint violation */
+#define SYN_OCPP_ERROR_OCCURRENCE_CONSTRAINT_VIOLATION \
+    "OccurenceConstraintViolation" /**< Field occurrence violation */
+#define SYN_OCPP_ERROR_TYPE_CONSTRAINT_VIOLATION \
+    "TypeConstraintViolation"                       /**< Data type constraint violation */
+#define SYN_OCPP_ERROR_GENERIC_ERROR "GenericError" /**< Generic error */
+/**@}*/
+
 /** @brief OCPP Connector Status Enumeration (OCPP 1.6 / 2.0.1). */
 typedef enum {
     SYN_OCPP_STATUS_AVAILABLE = 0,  /**< Connector available for charging */
@@ -348,6 +365,20 @@ SYN_Status syn_ocpp_server_format_remote_stop(SYN_OCPP_Server *server, int32_t t
 SYN_Status syn_ocpp_server_process_message(SYN_OCPP_Server *server, const char *in_buf,
                                            size_t in_len, char *out_resp, size_t max_resp_len,
                                            size_t *out_resp_len);
+
+/**
+ * @brief Format an OCPP-J CallError (MessageTypeId 4) response frame.
+ * @param msg_id Unique message identifier string to match Call request.
+ * @param error_code Error code string (e.g. SYN_OCPP_ERROR_NOT_IMPLEMENTED).
+ * @param error_description Optional human-readable error description string.
+ * @param out_buf Output text buffer.
+ * @param max_len Buffer capacity.
+ * @param out_len Pointer to store length.
+ * @return SYN_OK on success, SYN_INVALID_PARAM or SYN_ERROR on failure.
+ */
+SYN_Status syn_ocpp_format_call_error(const char *msg_id, const char *error_code,
+                                      const char *error_description, char *out_buf, size_t max_len,
+                                      size_t *out_len);
 
 #ifdef __cplusplus
 }

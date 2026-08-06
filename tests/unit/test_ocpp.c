@@ -412,6 +412,33 @@ void test_ocpp_server_role(void)
                                                       sizeof(resp), &resp_len));
 }
 
+void test_ocpp_call_error_formatting(void)
+{
+    char buf[128];
+    size_t len = 0;
+
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_ocpp_format_call_error(NULL, SYN_OCPP_ERROR_NOT_IMPLEMENTED, "Desc", buf,
+                                                 sizeof(buf), &len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_ocpp_format_call_error("123", NULL, "Desc", buf, sizeof(buf), &len));
+    TEST_ASSERT_EQUAL(SYN_INVALID_PARAM,
+                      syn_ocpp_format_call_error("123", SYN_OCPP_ERROR_NOT_IMPLEMENTED, "Desc",
+                                                 NULL, sizeof(buf), &len));
+    TEST_ASSERT_EQUAL(
+        SYN_INVALID_PARAM,
+        syn_ocpp_format_call_error("123", SYN_OCPP_ERROR_NOT_IMPLEMENTED, "Desc", buf, 10, &len));
+
+    TEST_ASSERT_EQUAL(SYN_OK, syn_ocpp_format_call_error("1001", SYN_OCPP_ERROR_NOT_IMPLEMENTED,
+                                                         "Action unknown", buf, sizeof(buf), &len));
+    TEST_ASSERT_NOT_NULL(strstr(buf, "[4,\"1001\",\"NotImplemented\",\"Action unknown\",{}]"));
+
+    TEST_ASSERT_EQUAL(SYN_ERROR, syn_ocpp_format_call_error(
+                                     "1001", SYN_OCPP_ERROR_NOT_IMPLEMENTED,
+                                     "Very long error description string that exceeds capacity",
+                                     buf, 40, &len));
+}
+
 void run_ocpp_tests(void)
 {
     RUN_TEST(test_ocpp_init_and_null_checks);
@@ -425,4 +452,5 @@ void run_ocpp_tests(void)
     RUN_TEST(test_ocpp_all_status_enums_and_small_buffers);
     RUN_TEST(test_ocpp_process_message_extended);
     RUN_TEST(test_ocpp_server_role);
+    RUN_TEST(test_ocpp_call_error_formatting);
 }

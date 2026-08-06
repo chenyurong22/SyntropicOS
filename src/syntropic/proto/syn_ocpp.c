@@ -502,4 +502,23 @@ SYN_Status syn_ocpp_server_process_message(SYN_OCPP_Server *server, const char *
     return SYN_OK;
 }
 
+SYN_Status syn_ocpp_format_call_error(const char *msg_id, const char *error_code,
+                                      const char *error_description, char *out_buf, size_t max_len,
+                                      size_t *out_len)
+{
+    if (msg_id == NULL || error_code == NULL || out_buf == NULL || out_len == NULL ||
+        max_len < 32U) {
+        return SYN_INVALID_PARAM;
+    }
+
+    int written = snprintf(out_buf, max_len, "[4,\"%s\",\"%s\",\"%s\",{}]", msg_id, error_code,
+                           error_description ? error_description : "");
+
+    if (written < 0 || (size_t)written >= max_len)
+        return SYN_ERROR;
+
+    *out_len = (size_t)written;
+    return SYN_OK;
+}
+
 /** @endcond */

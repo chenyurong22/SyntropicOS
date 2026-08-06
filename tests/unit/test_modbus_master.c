@@ -27,7 +27,7 @@ static void loopback_transaction(SYN_ModbusMaster *m, SYN_Modbus *slave)
     TEST_ASSERT_TRUE(syn_modbus_process(slave));
 
     /* Feed Slave response TX buffer (from mock UART) back into Master RX */
-    for (uint16_t i = 0; i < mock_uart_tx_len; i++) {
+    for (size_t i = 0; i < mock_uart_tx_len; i++) {
         syn_modbus_master_feed(m, mock_uart_tx_buf[i]);
     }
 

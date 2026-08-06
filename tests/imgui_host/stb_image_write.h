@@ -808,7 +808,7 @@ static int stbi_write_hdr_core(stbi__write_context *s, int x, int y, int comp, f
         return 0;
     else {
         // Each component is stored separately. Allocate scratch space for full output scanline.
-        unsigned char *scratch = (unsigned char *)STBIW_MALLOC(x * 4);
+        unsigned char *scratch = (unsigned char *)STBIW_MALLOC((size_t)x * 4);
         int i, len;
         char buffer[128];
         char header[] = "#?RADIANCE\n# Written by stb_image_write.h\nFORMAT=32-bit_rle_rgbe\n";
@@ -874,8 +874,8 @@ static void *stbiw__sbgrowf(void **arr, int increment, int itemsize)
 {
     int m = *arr ? 2 * stbiw__sbm(*arr) + increment : increment + 1;
     void *p = STBIW_REALLOC_SIZED(*arr ? stbiw__sbraw(*arr) : 0,
-                                  *arr ? (stbiw__sbm(*arr) * itemsize + sizeof(int) * 2) : 0,
-                                  itemsize * m + sizeof(int) * 2);
+                                  *arr ? ((size_t)stbiw__sbm(*arr) * (size_t)itemsize + sizeof(int) * 2) : 0,
+                                  (size_t)itemsize * (size_t)m + sizeof(int) * 2);
     STBIW_ASSERT(p);
     if (p) {
         if (!*arr)
@@ -1189,7 +1189,7 @@ static void stbiw__encode_png_line(unsigned char *pixels, int stride_bytes, int 
     int signed_stride = stbi__flip_vertically_on_write ? -stride_bytes : stride_bytes;
 
     if (type == 0) {
-        memcpy(line_buffer, z, width * n);
+        memcpy(line_buffer, z, (size_t)width * (size_t)n);
         return;
     }
 
@@ -1262,10 +1262,10 @@ STBIWDEF unsigned char *stbi_write_png_to_mem(const unsigned char *pixels, int s
         force_filter = -1;
     }
 
-    filt = (unsigned char *)STBIW_MALLOC((x * n + 1) * y);
+    filt = (unsigned char *)STBIW_MALLOC(((size_t)x * (size_t)n + 1) * (size_t)y);
     if (!filt)
         return 0;
-    line_buffer = (signed char *)STBIW_MALLOC(x * n);
+    line_buffer = (signed char *)STBIW_MALLOC((size_t)x * (size_t)n);
     if (!line_buffer) {
         STBIW_FREE(filt);
         return 0;
@@ -1300,8 +1300,8 @@ STBIWDEF unsigned char *stbi_write_png_to_mem(const unsigned char *pixels, int s
             }
         }
         // when we get here, filter_type contains the filter type, and line_buffer contains the data
-        filt[j * (x * n + 1)] = (unsigned char)filter_type;
-        STBIW_MEMMOVE(filt + j * (x * n + 1) + 1, line_buffer, x * n);
+        filt[(size_t)j * ((size_t)x * (size_t)n + 1)] = (unsigned char)filter_type;
+        STBIW_MEMMOVE(filt + (size_t)j * ((size_t)x * (size_t)n + 1) + 1, line_buffer, (size_t)x * (size_t)n);
     }
     STBIW_FREE(line_buffer);
     zlib = stbi_zlib_compress(filt, y * (x * n + 1), &zlen, stbi_write_png_compression_level);

@@ -207,13 +207,20 @@ void test_json_read_token_overflow_skip_string(void)
     /* The 33rd value is a string — exercises skip_value lines 94-102 */
     static char json[2048];
     int pos = 0;
-    pos += snprintf(json + pos, sizeof(json) - pos, "{");
+    if ((size_t)pos < sizeof(json)) {
+        pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "{");
+    }
     int i;
     for (i = 0; i < 32; i++) {
-        pos += snprintf(json + pos, sizeof(json) - pos, "\"k%d\":%d%s", i, i, i < 31 ? "," : ",");
+        if ((size_t)pos < sizeof(json)) {
+            pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "\"k%d\":%d%s", i, i,
+                            i < 31 ? "," : ",");
+        }
     }
     /* 33rd key has a string value — exercises skip_value string path */
-    pos += snprintf(json + pos, sizeof(json) - pos, "\"extra\":\"overflowed\"}");
+    if ((size_t)pos < sizeof(json)) {
+        pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "\"extra\":\"overflowed\"}");
+    }
     (void)pos;
 
     SYN_JsonReader r;
@@ -229,13 +236,19 @@ void test_json_read_token_overflow_skip_object(void)
 {
     static char json[2048];
     int pos = 0;
-    pos += snprintf(json + pos, sizeof(json) - pos, "{");
+    if ((size_t)pos < sizeof(json)) {
+        pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "{");
+    }
     int i;
     for (i = 0; i < 32; i++) {
-        pos += snprintf(json + pos, sizeof(json) - pos, "\"k%d\":%d%s", i, i, ",");
+        if ((size_t)pos < sizeof(json)) {
+            pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "\"k%d\":%d%s", i, i, ",");
+        }
     }
     /* 33rd key has nested object — exercises skip_value obj path */
-    pos += snprintf(json + pos, sizeof(json) - pos, "\"nested\":{\"a\":1,\"b\":2}}");
+    if ((size_t)pos < sizeof(json)) {
+        pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "\"nested\":{\"a\":1,\"b\":2}}");
+    }
     (void)pos;
 
     SYN_JsonReader r;
@@ -320,13 +333,22 @@ static void test_json_read_escaped_string_inside_token_overflow_skip(void)
 {
     static char json[2048];
     int pos = 0;
-    pos += snprintf(json + pos, sizeof(json) - pos, "{");
+    if ((size_t)pos < sizeof(json)) {
+        pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "{");
+    }
     for (int i = 0; i < 32; i++) {
-        pos += snprintf(json + pos, sizeof(json) - pos, "\"k%d\":%d,", i, i);
+        if ((size_t)pos < sizeof(json)) {
+            pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "\"k%d\":%d,", i, i);
+        }
     }
     /* 33rd key has escaped quotes inside string and inside nested object */
-    pos += snprintf(json + pos, sizeof(json) - pos, "\"str\":\"val\\\"escaped\",");
-    snprintf(json + pos, sizeof(json) - pos, "\"obj\":{\"key\\\"sub\":\"val\\\"sub\"}}");
+    if ((size_t)pos < sizeof(json)) {
+        pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "\"str\":\"val\\\"escaped\",");
+    }
+    if ((size_t)pos < sizeof(json)) {
+        snprintf(json + pos, sizeof(json) - (size_t)pos,
+                 "\"obj\":{\"key\\\"sub\":\"val\\\"sub\"}}");
+    }
 
     SYN_JsonReader r;
     syn_json_parse(&r, json, strlen(json));

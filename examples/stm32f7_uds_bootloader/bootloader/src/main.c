@@ -31,9 +31,9 @@
 
 #define SINGLE_BANK_APP_BASE 0x08040000U /* Single-Bank Application Base (Sectors 4-7) */
 
-#define BANK_A_BASE 0x08020000U /* Application Partition A (Bank 1) */
-#define BANK_B_BASE 0x08100000U /* Application Partition B (Bank 2) */
-#define BANK_MAX_SIZE (512U * 1024U)
+#define BANK_A_BASE 0x08040000U /* Slot 0 / Application Partition A (Sector 5, 256 KB) */
+#define BANK_B_BASE 0x08080000U /* Slot 1 / Application Partition B (Sector 6, 256 KB) */
+#define BANK_MAX_SIZE (256U * 1024U)
 
 #define SYN_FBL_HEADER_MAGIC 0x53594E31U /* "SYN1" */
 #define SYN_FBL_IMAGE_STATE_VALID 0x01U

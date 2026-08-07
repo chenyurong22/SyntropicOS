@@ -50,27 +50,30 @@ static void process_serial_command(const char *cmd)
         syn_rtc_from_epoch(rtc_app.current_epoch_sec, &dt);
 
         char resp[64];
-        snprintf(resp, sizeof(resp), "TIME=%04u-%02u-%02u %02u:%02u:%02u\r\n",
-                 dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second);
+        snprintf(resp, sizeof(resp), "TIME=%04u-%02u-%02u (WD:%u) %02u:%02u:%02u\r\n",
+                 dt.year, dt.month, dt.day, dt.weekday, dt.hour, dt.minute, dt.second);
         uart_send_string(resp);
     } else if (strncmp(cmd, "SET_TIME=", 9) == 0) {
         uint32_t y, m, d, hh, mm, ss;
         if (sscanf(cmd + 9, "%lu-%lu-%lu %lu:%lu:%lu", &y, &m, &d, &hh, &mm, &ss) == 6) {
             SYN_RTC_DateTime dt;
-            dt.year   = (uint16_t)y;
-            dt.month  = (uint8_t)m;
-            dt.day    = (uint8_t)d;
-            dt.hour   = (uint8_t)hh;
-            dt.minute = (uint8_t)mm;
-            dt.second = (uint8_t)ss;
+            dt.year    = (uint16_t)y;
+            dt.month   = (uint8_t)m;
+            dt.day     = (uint8_t)d;
+            dt.weekday = 0; /* Auto-calculated by syn_rtc_from_epoch */
+            dt.hour    = (uint8_t)hh;
+            dt.minute  = (uint8_t)mm;
+            dt.second  = (uint8_t)ss;
 
             if (syn_rtc_is_valid(&dt)) {
                 rtc_app.current_epoch_sec = syn_rtc_to_epoch(&dt);
                 rtc_app.subsecond_ms = 0;
 
+                syn_rtc_from_epoch(rtc_app.current_epoch_sec, &dt);
+
                 char resp[64];
-                snprintf(resp, sizeof(resp), "OK TIME=%04u-%02u-%02u %02u:%02u:%02u\r\n",
-                         dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second);
+                snprintf(resp, sizeof(resp), "OK TIME=%04u-%02u-%02u (WD:%u) %02u:%02u:%02u\r\n",
+                         dt.year, dt.month, dt.day, dt.weekday, dt.hour, dt.minute, dt.second);
                 uart_send_string(resp);
             } else {
                 uart_send_string("ERROR INVALID_DATE_RANGE\r\n");

@@ -56,6 +56,8 @@ bool syn_rtc_is_valid(const SYN_RTC_DateTime *dt)
         return false;
     if (dt->day < 1u || dt->day > rtc_days_in_month(dt->month, dt->year))
         return false;
+    if (dt->weekday != 0u && (dt->weekday < 1u || dt->weekday > 7u))
+        return false;
     if (dt->hour > 23u)
         return false;
     if (dt->minute > 59u)
@@ -146,6 +148,9 @@ void syn_rtc_from_epoch(uint32_t epoch, SYN_RTC_DateTime *dt)
 
     /* epoch now = days since 1970-01-01 */
     uint32_t days = epoch;
+
+    /* 1970-01-01 was Thursday (weekday 4). 1 = Monday, 7 = Sunday */
+    dt->weekday = (uint8_t)(((days + 3u) % 7u) + 1u);
 
     /* Find year */
     uint16_t year = 1970u;

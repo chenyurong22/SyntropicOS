@@ -44,6 +44,7 @@ void run_ramp_tests(void);
 void run_pubsub_tests(void);
 void run_pack_tests(void);
 void run_cobs_tests(void);
+void run_ymodem_tests(void);
 void run_at_parser_tests(void);
 void run_lin_tests(void);
 void run_lintp_tests(void);
@@ -289,6 +290,7 @@ int main(void)
 
     /* Protocol */
     run_cobs_tests();
+    run_ymodem_tests();
     run_lin_tests();
     run_lintp_tests();
     run_gbt27930_tests();

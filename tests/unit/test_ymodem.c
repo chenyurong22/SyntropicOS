@@ -1,0 +1,393 @@
+/**
+ * @file test_ymodem.c
+ * @brief Unity unit tests for syn_ymodem.h / syn_ymodem.c.
+ */
+
+#include "mocks/mock_port.h"
+#include "syntropic/proto/syn_ymodem.h"
+#include "syntropic/syntropic.h"
+#include "syntropic/util/syn_crc.h"
+#include "unity/unity.h"
+
+#include <string.h>
+
+#define MOCK_STREAM_CAPACITY 8192U
+
+static uint8_t mock_tx_buf[MOCK_STREAM_CAPACITY];
+static size_t mock_tx_len = 0;
+
+static uint8_t mock_rx_stream[MOCK_STREAM_CAPACITY];
+static size_t mock_rx_head = 0;
+static size_t mock_rx_tail = 0;
+
+static SYN_YMODEM_Event last_event;
+static uint8_t event_data_copy[2048];
+static size_t event_data_len = 0;
+static int event_count = 0;
+
+static void mock_putchar(uint8_t b, void *ctx)
+{
+    (void)ctx;
+    if (mock_tx_len < MOCK_STREAM_CAPACITY) {
+        mock_tx_buf[mock_tx_len++] = b;
+    }
+}
+
+static int mock_getchar(uint32_t timeout_ms, void *ctx)
+{
+    (void)ctx;
+    (void)timeout_ms;
+    if (mock_rx_head < mock_rx_tail) {
+        return mock_rx_stream[mock_rx_head++];
+    }
+    return -1; /* Timeout */
+}
+
+static int mock_event_cb(SYN_YMODEM_Event event, const uint8_t *data, size_t len, void *ctx)
+{
+    (void)ctx;
+    last_event = event;
+    event_count++;
+    if (data != NULL && len > 0) {
+        if (len > sizeof(event_data_copy)) {
+            len = sizeof(event_data_copy);
+        }
+        memcpy(event_data_copy, data, len);
+        event_data_len = len;
+    } else {
+        event_data_len = 0;
+    }
+    return 0;
+}
+
+static void mock_reset_stream(void)
+{
+    mock_tx_len = 0;
+    mock_rx_head = 0;
+    mock_rx_tail = 0;
+    last_event = (SYN_YMODEM_Event)-1;
+    event_data_len = 0;
+    event_count = 0;
+}
+
+static void mock_feed_byte(uint8_t b)
+{
+    if (mock_rx_tail < MOCK_STREAM_CAPACITY) {
+        mock_rx_stream[mock_rx_tail++] = b;
+    }
+}
+
+static void mock_feed_packet(uint8_t header, uint8_t seq, const uint8_t *payload,
+                             size_t payload_len)
+{
+    mock_feed_byte(header);
+    mock_feed_byte(seq);
+    mock_feed_byte((uint8_t)(~seq));
+    for (size_t i = 0; i < payload_len; i++) {
+        mock_feed_byte(payload[i]);
+    }
+    uint16_t crc = syn_crc16_ccitt_update(0x0000U, payload, payload_len);
+    mock_feed_byte((uint8_t)(crc >> 8));
+    mock_feed_byte((uint8_t)(crc & 0xFFU));
+}
+
+void test_ymodem_init_and_null_checks(void)
+{
+    SYN_YMODEM_Receiver rx;
+    syn_ymodem_receiver_init(NULL, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+
+    TEST_ASSERT_EQUAL_PTR(mock_putchar, rx.putchar_fn);
+    TEST_ASSERT_EQUAL_PTR(mock_getchar, rx.getchar_fn);
+
+    /* NULL receiver / callbacks */
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_PARAM, syn_ymodem_receive(NULL));
+
+    SYN_YMODEM_Receiver rx_bad;
+    syn_ymodem_receiver_init(&rx_bad, NULL, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_PARAM, syn_ymodem_receive(&rx_bad));
+
+    SYN_YMODEM_Receiver rx_null_gc;
+    syn_ymodem_receiver_init(&rx_null_gc, mock_putchar, NULL, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_PARAM, syn_ymodem_receive(&rx_null_gc));
+}
+
+void test_ymodem_single_file_transfer(void)
+{
+    mock_reset_stream();
+
+    /* Build Block 0: filename "fw.bin\0128 1000\0" */
+    uint8_t block0[128];
+    memset(block0, 0, sizeof(block0));
+    memcpy(block0, "fw.bin", 7);
+    memcpy(&block0[7], "128 1000", 8);
+
+    /* Block 1: 128 bytes data */
+    uint8_t data_block[128];
+    for (int i = 0; i < 128; i++) {
+        data_block[i] = (uint8_t)i;
+    }
+
+    /* Feed Block 0 */
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0, 128);
+
+    /* Feed Data Block 1 */
+    mock_feed_packet(SYN_YMODEM_SOH, 0x01, data_block, 128);
+
+    /* Feed EOT sequence: 1st EOT, 2nd EOT */
+    mock_feed_byte(SYN_YMODEM_EOT);
+    mock_feed_byte(SYN_YMODEM_EOT);
+
+    /* Feed Empty Block 0 to end session */
+    uint8_t empty_block0[128];
+    memset(empty_block0, 0, sizeof(empty_block0));
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, empty_block0, 128);
+
+    SYN_YMODEM_Receiver rx;
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    SYN_YMODEM_Status st = syn_ymodem_receive(&rx);
+
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_OK, st);
+    TEST_ASSERT_EQUAL_STRING("fw.bin", rx.filename);
+    TEST_ASSERT_EQUAL_UINT32(128, rx.filesize);
+    TEST_ASSERT_EQUAL_UINT32(128, rx.bytes_received);
+    TEST_ASSERT_TRUE(mock_tx_len > 0);
+}
+
+void test_ymodem_1024b_block_transfer(void)
+{
+    mock_reset_stream();
+
+    /* Block 0 with 1024-byte filesize */
+    uint8_t block0[128];
+    memset(block0, 0, sizeof(block0));
+    memcpy(block0, "app.bin", 8);
+    memcpy(&block0[8], "1024 1000", 9);
+
+    uint8_t data1024[1024];
+    for (int i = 0; i < 1024; i++) {
+        data1024[i] = (uint8_t)(i & 0xFF);
+    }
+
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0, 128);
+    mock_feed_packet(SYN_YMODEM_STX, 0x01, data1024, 1024);
+    mock_feed_byte(SYN_YMODEM_EOT);
+    mock_feed_byte(SYN_YMODEM_EOT);
+
+    uint8_t empty0[128];
+    memset(empty0, 0, sizeof(empty0));
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, empty0, 128);
+
+    SYN_YMODEM_Receiver rx;
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    SYN_YMODEM_Status st = syn_ymodem_receive(&rx);
+
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_OK, st);
+    TEST_ASSERT_EQUAL_STRING("app.bin", rx.filename);
+    TEST_ASSERT_EQUAL_UINT32(1024, rx.filesize);
+}
+
+void test_ymodem_crc_error_and_timeout(void)
+{
+    mock_reset_stream();
+
+    /* Timeout on initial request */
+    SYN_YMODEM_Receiver rx;
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_TIMEOUT, syn_ymodem_receive(&rx));
+
+    /* CRC error packet */
+    mock_reset_stream();
+    uint8_t bad_pkt[133];
+    bad_pkt[0] = SYN_YMODEM_SOH;
+    bad_pkt[1] = 0x00;
+    bad_pkt[2] = 0xFF;
+    memset(&bad_pkt[3], 0x55, 128);
+    bad_pkt[131] = 0xDE; /* Bad CRC */
+    bad_pkt[132] = 0xAD;
+
+    for (int i = 0; i < 133; i++) {
+        mock_feed_byte(bad_pkt[i]);
+    }
+
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_CRC, syn_ymodem_receive(&rx));
+}
+
+void test_ymodem_cancel(void)
+{
+    mock_reset_stream();
+    mock_feed_byte(SYN_YMODEM_CAN);
+
+    SYN_YMODEM_Receiver rx;
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_CANCEL, syn_ymodem_receive(&rx));
+}
+
+static int cancelling_event_cb(SYN_YMODEM_Event event, const uint8_t *data, size_t len, void *ctx)
+{
+    (void)data;
+    (void)len;
+    (void)ctx;
+    if (event == SYN_YMODEM_EVENT_FILE_START) {
+        return -1; /* Reject FILE_START */
+    }
+    return 0;
+}
+
+static int cancelling_data_event_cb(SYN_YMODEM_Event event, const uint8_t *data, size_t len,
+                                    void *ctx)
+{
+    (void)data;
+    (void)len;
+    (void)ctx;
+    if (event == SYN_YMODEM_EVENT_DATA) {
+        return -1; /* Reject DATA */
+    }
+    return 0;
+}
+
+void test_ymodem_edge_cases(void)
+{
+    SYN_YMODEM_Receiver rx;
+
+    /* Invalid Block 0 header byte (e.g. 0xFF instead of SOH/STX) */
+    mock_reset_stream();
+    mock_feed_byte(0xFF);
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_SEQUENCE, syn_ymodem_receive(&rx));
+
+    /* Block 0 with invalid sequence number (0x05 instead of 0x00) */
+    mock_reset_stream();
+    uint8_t block0[128];
+    memset(block0, 0, sizeof(block0));
+    memcpy(block0, "test.bin", 8);
+    mock_feed_packet(SYN_YMODEM_SOH, 0x05, block0, 128);
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_SEQUENCE, syn_ymodem_receive(&rx));
+
+    /* Sequence number complement mismatch */
+    mock_reset_stream();
+    mock_feed_byte(SYN_YMODEM_SOH);
+    mock_feed_byte(0x00);
+    mock_feed_byte(0x00); /* Mismatch: should be 0xFF */
+    for (int i = 0; i < 130; i++) {
+        mock_feed_byte(0x00);
+    }
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_SEQUENCE, syn_ymodem_receive(&rx));
+
+    /* Callback rejection on FILE_START */
+    mock_reset_stream();
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0, 128);
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, cancelling_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_CANCEL, syn_ymodem_receive(&rx));
+
+    /* Double CAN sequence during data transfer */
+    mock_reset_stream();
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0, 128);
+    mock_feed_byte(SYN_YMODEM_CAN);
+    mock_feed_byte(SYN_YMODEM_CAN);
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_CANCEL, syn_ymodem_receive(&rx));
+
+    /* Out of order data block sequence number */
+    mock_reset_stream();
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0, 128);
+    mock_feed_packet(SYN_YMODEM_SOH, 0x05, block0, 128); /* Expected 1, got 5 */
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_SEQUENCE, syn_ymodem_receive(&rx));
+
+    /* Duplicate packet retransmission (seq 0 again when expected 1) */
+    mock_reset_stream();
+    uint8_t data_block[128];
+    memset(data_block, 0xAA, 128);
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0, 128);
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0, 128); /* Duplicate seq 0 */
+    mock_feed_packet(SYN_YMODEM_SOH, 0x01, data_block, 128);
+    mock_feed_byte(SYN_YMODEM_EOT);
+    mock_feed_byte(SYN_YMODEM_EOT);
+    uint8_t empty0[128] = {0};
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, empty0, 128);
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_OK, syn_ymodem_receive(&rx));
+
+    /* Truncated payload test (filesize = 50 bytes in 128-byte block) */
+    mock_reset_stream();
+    uint8_t block0_tr[128] = {0};
+    memcpy(block0_tr, "short.bin", 10);
+    memcpy(&block0_tr[10], "50 1000", 7);
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0_tr, 128);
+    mock_feed_packet(SYN_YMODEM_SOH, 0x01, data_block, 128);
+    mock_feed_byte(SYN_YMODEM_EOT);
+    mock_feed_byte(0x00); /* Non-EOT response after NAK */
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, empty0, 128);
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_OK, syn_ymodem_receive(&rx));
+
+    /* Data block with invalid header byte then valid block */
+    mock_reset_stream();
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0, 128);
+    mock_feed_byte(0xFF); /* Invalid data block header byte */
+    mock_feed_packet(SYN_YMODEM_SOH, 0x01, data_block, 128);
+    mock_feed_byte(SYN_YMODEM_EOT);
+    mock_feed_byte(SYN_YMODEM_EOT);
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, empty0, 128);
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_OK, syn_ymodem_receive(&rx));
+
+    /* Data block with bad CRC then valid block */
+    mock_reset_stream();
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0, 128);
+    mock_feed_byte(SYN_YMODEM_SOH);
+    mock_feed_byte(0x01);
+    mock_feed_byte(0xFE);
+    for (int i = 0; i < 128; i++)
+        mock_feed_byte(0x55);
+    mock_feed_byte(0xBA);
+    mock_feed_byte(0xDD); /* Bad CRC */
+    mock_feed_packet(SYN_YMODEM_SOH, 0x01, data_block, 128);
+    mock_feed_byte(SYN_YMODEM_EOT);
+    mock_feed_byte(SYN_YMODEM_EOT);
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, empty0, 128);
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_OK, syn_ymodem_receive(&rx));
+
+    /* Callback rejection on DATA event */
+    mock_reset_stream();
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0, 128);
+    mock_feed_packet(SYN_YMODEM_SOH, 0x01, data_block, 128);
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, cancelling_data_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_CANCEL, syn_ymodem_receive(&rx));
+
+    /* Partial packet timeout during payload read */
+    mock_reset_stream();
+    mock_feed_byte(SYN_YMODEM_SOH);
+    mock_feed_byte(0x00);
+    mock_feed_byte(0xFF);
+    mock_feed_byte(0x55); /* Partial byte; timeout on remaining 129 bytes */
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_ERR_TIMEOUT, syn_ymodem_receive(&rx));
+
+    /* Block 0 with filename only and no file size string */
+    mock_reset_stream();
+    uint8_t block0_nosize[128] = {0};
+    memcpy(block0_nosize, "nosize.bin", 11); /* NULL terminated, no size string after */
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, block0_nosize, 128);
+    mock_feed_byte(SYN_YMODEM_EOT);
+    mock_feed_byte(SYN_YMODEM_EOT);
+    mock_feed_packet(SYN_YMODEM_SOH, 0x00, empty0, 128);
+    syn_ymodem_receiver_init(&rx, mock_putchar, mock_getchar, mock_event_cb, NULL);
+    TEST_ASSERT_EQUAL_INT(SYN_YMODEM_OK, syn_ymodem_receive(&rx));
+    TEST_ASSERT_EQUAL_STRING("nosize.bin", rx.filename);
+}
+
+void run_ymodem_tests(void)
+{
+    RUN_TEST(test_ymodem_init_and_null_checks);
+    RUN_TEST(test_ymodem_single_file_transfer);
+    RUN_TEST(test_ymodem_1024b_block_transfer);
+    RUN_TEST(test_ymodem_crc_error_and_timeout);
+    RUN_TEST(test_ymodem_cancel);
+    RUN_TEST(test_ymodem_edge_cases);
+}

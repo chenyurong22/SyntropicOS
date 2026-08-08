@@ -39,4 +39,5 @@ target_sources(syntropic INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/syn_uds.c
     ${CMAKE_CURRENT_SOURCE_DIR}/syn_uds_util.c
     ${CMAKE_CURRENT_SOURCE_DIR}/syn_xcp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/syn_ymodem.c
 )
